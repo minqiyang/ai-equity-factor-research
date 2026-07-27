@@ -55,10 +55,18 @@ MAJOR_DIRS = [
 IMPORTANT_FILES = [
     ("AGENTS.md", "Agent guardrails, command-output controls, and repo safety rules."),
     ("docs/current_handoff.md", "Shortest current-state handoff; read this first."),
+    (
+        "docs/research_program_charter.md",
+        "Canonical long-term research evidence and authorization policy.",
+    ),
+    ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),
     ("docs/codex_long_running_controller.md", "Continuation and stop-condition controller."),
     (".agents/skills/staged-quant-workflow/SKILL.md", "Reusable staged workflow Skill."),
-    ("PROJECT_SPEC.md", "Research scope, assumptions, non-goals, and leakage rules."),
+    (
+        "PROJECT_SPEC.md",
+        "Research scope, evidence layers, timing rules, assumptions, and non-goals.",
+    ),
     ("README.md", "Newcomer overview and runnable demo guidance."),
     ("CHANGELOG.md", "User-visible repository changes."),
     ("docs/engineering_log.md", "Chronological engineering notes and validation history."),

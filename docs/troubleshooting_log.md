@@ -1,5 +1,167 @@
 # Troubleshooting Log
 
+## 2026-07-26 - Broad Readiness-Policy Read Exceeded The Output Cap
+
+Original mistake and consequence:
+
+- Requested the full active readiness Skill in one broad command after the
+  independent charter review.
+- The command output exceeded the context limit and was truncated, so none of
+  that output was used as evidence for an edit.
+
+Correction and final fix:
+
+- Measured the flagged files first, then read the 234-line Skill, 211-line
+  readiness audit, 151-line experiment log, and targeted controller/test
+  sections in bounded ranges.
+- Limited the remediation to the reviewer-identified active policy contracts
+  and their cross-document tests.
+
+Verification:
+
+- The replacement reads reached every line of each active readiness source.
+- Final focused, baseline, Skill, and documentation checks are recorded with
+  this charter stage after the remediation is complete.
+
+Prevention:
+
+- Measure unfamiliar policy files before reading them and paginate long inputs
+  with bounded output. Treat any truncated command as failed evidence and rerun
+  only targeted ranges.
+
+## 2026-07-26 - Initial Reads Used A Stale Dirty Local Main
+
+Original mistake:
+
+- Read the required handoff and roadmap paths before comparing the local branch
+  with freshly fetched `origin/main`.
+
+Consequence and evidence:
+
+- Local `main` was 47 commits behind and had many unrelated modified/untracked
+  files. Its handoff was stale and `docs/current_roadmap.md` appeared missing,
+  although the file exists on current `origin/main`.
+- Editing that checkout could have mixed the charter with user work or relied
+  on obsolete governance.
+
+Investigation:
+
+- Fetched `origin`, compared `HEAD...origin/main`, inspected current PRs, and
+  verified remote `main` at `a1486ea`.
+- Confirmed the local branch was one commit ahead and 47 commits behind, with
+  source, test, docs, Skill, and untracked changes outside this stage.
+
+Correction and final fix:
+
+- Created `codex/research-program-charter-reset` in an isolated worktree from
+  exact `origin/main`.
+- Re-read the complete startup control set in the new worktree before
+  auditing or editing.
+- Used the existing repo virtual environment for pytest/compilation and the
+  available Ruff executable because the shell's missing `python` alias is
+  already documented below.
+
+Verification:
+
+- Isolated `HEAD` matched `origin/main`; its tracked worktree was clean before
+  the stage.
+- The current roadmap was present, 591 tests passed, Ruff and compilation
+  passed, package build passed, and the exact-head GitHub CI run was successful.
+
+Remaining caveat:
+
+- The original checkout remains intentionally dirty and behind; none of its
+  unrelated changes were staged, rewritten, or removed.
+
+Prevention:
+
+- After the mandatory first handoff read, fetch and compare refs immediately.
+  If the local branch diverges, create a clean worktree and reread all canonical
+  control files from the verified remote baseline before drawing conclusions.
+
+## 2026-07-26 - Charter Contract Assertions Depended On Markdown Wrapping
+
+Original mistake and consequence:
+
+- The first documentation-contract update asserted two multi-word phrases as
+  literal single-line substrings and expected a stage label not present in the
+  roadmap table.
+- The focused suite failed with two assertions, then one remaining handoff
+  wording assertion after the first correction.
+
+Investigation and correction:
+
+- Located the exact wrapped Markdown text with targeted `rg`.
+- Changed the specification assertion to normalize whitespace, asserted stable
+  semantic fragments for the roadmap, and retained the established
+  `Active roadmap:` handoff marker.
+
+Verification:
+
+- `tests/test_project_structure.py` passed all 10 focused tests.
+
+Prevention:
+
+- Documentation contracts should enforce durable headings, policy terms, and
+  links without depending on prose line wrapping or incidental table prefixes.
+
+## 2026-07-26 - PowerShell Skill Audit Runtime Was Unavailable
+
+Original mistake and evidence:
+
+- Invoked `pwsh -NoProfile -File scripts/audit-skills.ps1` without first
+  checking whether PowerShell was installed.
+- The command failed with `zsh: command not found: pwsh`; neither `pwsh` nor
+  `powershell` is available.
+
+Correction attempts:
+
+- An initial inline Python equivalent failed at shell parsing with
+  `unmatched "` because the multi-line `-c` string was over-quoted.
+- Replaced the fragile inline command with an ephemeral temporary Python script
+  that implements the same frontmatter, non-empty name and description,
+  top-level heading, and balanced-fence checks as the 73-line PowerShell
+  script.
+
+Final fix and verification:
+
+- The equivalent audit passed for both repository Skill files.
+- The temporary script was deleted and no dependency or runtime was added.
+
+Remaining caveat:
+
+- The official PowerShell entrypoint was not executable in this environment;
+  CI or a PowerShell-equipped reviewer should run it if exact shell parity is
+  required.
+
+Prevention:
+
+- Check the declared script runtime before invoking workflow audits. When a
+  non-project runtime is absent, do not install it implicitly; run a documented
+  read-only equivalent and report the limitation.
+
+## 2026-07-26 - Transient Build Extra Was Not Installed In The Project Venv
+
+Original mistake and evidence:
+
+- Assumed the worktree `.venv` retained the `build` package after an earlier
+  `uv run --with build` command.
+- The final build gate failed with `No module named build`; the extra had been
+  supplied only to the transient uv invocation.
+
+Final fix and verification:
+
+- Reran the gate with
+  `uv run --no-project --with build python -m build`, avoiding a project lock
+  mutation while providing the build frontend.
+- The source distribution and wheel built successfully.
+
+Prevention:
+
+- Treat `uv --with` packages as command-scoped unless explicitly installed.
+  Use `--no-project` for an ephemeral build tool when the repository does not
+  track a uv lock.
+
 ## 2026-07-11 - Experiment Registry Has No Standalone Research Module
 
 Failure:

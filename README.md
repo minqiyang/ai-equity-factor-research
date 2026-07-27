@@ -10,9 +10,9 @@
 
 An auditable Python toolkit for equity-factor research with strict data contracts, deterministic diagnostics, drift-aware portfolio accounting, and reproducible experiment records.
 
-`POINT-IN-TIME FEATURES` · `EXPLICIT SIGNAL LAG` · `DRIFT-AWARE ACCOUNTING` · `JSON EVIDENCE`
+`LAGGED FEATURE CONTRACTS` · `EXPLICIT SIGNAL LAG` · `DRIFT-AWARE ACCOUNTING` · `JSON EVIDENCE`
 
-[Quickstart](#quickstart) · [Research method](docs/research_method.md) · [Project specification](PROJECT_SPEC.md) · [Experiment registry](reports/experiment_registry.md) · [Current roadmap](docs/current_roadmap.md)
+[Quickstart](#quickstart) · [Research charter](docs/research_program_charter.md) · [Research method](docs/research_method.md) · [Project specification](PROJECT_SPEC.md) · [Experiment registry](reports/experiment_registry.md) · [Current roadmap](docs/current_roadmap.md)
 
 ## Quickstart
 
@@ -54,8 +54,9 @@ Scope: No market-data downloader; local files and committed fixtures enter the p
 ## Project records
 
 - [`docs/current_roadmap.md`](docs/current_roadmap.md) — canonical implementation status and open gaps
+- [`docs/research_program_charter.md`](docs/research_program_charter.md) — long-term evidence policy, promotion gates, and authorization boundaries
 - [`PROJECT_SPEC.md`](PROJECT_SPEC.md) — objectives, assumptions, factor ideas, and backtesting principles
-- [`EXPERIMENT_LOG.md`](EXPERIMENT_LOG.md) — experiment record fields and retention policy
+- [`EXPERIMENT_LOG.md`](EXPERIMENT_LOG.md) — diagnostic/legacy experiment record; not the immutable all-trial ledger
 - [`reports/experiment_registry.md`](reports/experiment_registry.md) — deterministic index of committed experiment logs
 - [`docs/current_handoff.md`](docs/current_handoff.md) — current verified workflow state and next stage
 - [`docs/full_repository_conformance_audit_2026-07-11.md`](docs/full_repository_conformance_audit_2026-07-11.md) — latest full conformance audit

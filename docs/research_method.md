@@ -10,9 +10,11 @@ The method keeps local data, feature timing, simulated accounting, and evidence 
 
 <img src="../assets/readme/research-workflow.svg" width="100%" alt="Six-stage research workflow from question through deterministic evidence">
 
-`QUESTION → VALIDATE → CONSTRUCT → DIAGNOSE → SIMULATE → RECORD`
+`QUESTION -> VALIDATE -> CONSTRUCT -> DIAGNOSE -> SIMULATE -> RECORD`
 
-Every run begins with an explicit claim and ends with a retained review outcome.
+This is the target evidence lifecycle. Existing deterministic demos retain
+their configured outputs, but the immutable all-trial ledger required for
+formal campaigns is not implemented yet.
 
 ## Research contract
 
@@ -32,11 +34,14 @@ The wheel is qualitative; equal arcs indicate peer contract layers rather than m
 | Layer | Repository paths | Responsibility |
 | --- | --- | --- |
 | Inputs | `src/data/` | Local CSV validation and aligned research panels |
-| Transform | `src/features/`, `src/strategies/` | Factors, diagnostics, sample splits, and target weights |
-| Account | `src/backtest/`, `src/risk/` | Drift-aware holdings, signed trades, costs, metrics, and optional position caps |
+| Transform | `src/features/` | Factors, preprocessing, diagnostics, and basic sample slicing |
+| Account | `src/backtest/`, `src/risk/` | Current long-only selection/target construction, drift-aware holdings, signed trades, costs, metrics, and optional position caps |
 | Evidence | `src/reporting/`, `research/`, `reports/` | Deterministic runs, Markdown reports, JSON logs, and registry views |
 
-Tests and CI form the control plane. The `lean/` directory remains a metadata and signal-contract scaffold.
+`src/strategies/` is placeholder-only; the charter requires a future strategy
+layer to be evidenced separately from factors and portfolios. Tests and CI form
+the software control plane. The `lean/` directory remains a metadata and
+signal-contract scaffold.
 
 ## Accounting
 
@@ -55,12 +60,14 @@ Tests and CI form the control plane. The `lean/` directory remains a metadata an
 
 ## Controls
 
-- Explicit signal lag, point-in-time features, and exact panel alignment.
+- Default signal lag, trailing calculations on caller-supplied data, and exact
+  panel alignment. Formal point-in-time evidence remains blocked until the data
+  methodology gate passes.
 - Deterministic failure behavior for invalid or incomplete inputs.
 - Optional long-only position caps applied before drift-aware trade calculation.
 - Interpretation gates tied to provenance, universe, timing, benchmark, splits, costs, and limitations.
 
-Current methodology work is tracked in the [handoff](current_handoff.md), [roadmap](current_roadmap_gap_refresh.md), and [project specification](../PROJECT_SPEC.md).
+Current methodology work is governed by the [research program charter](research_program_charter.md), [handoff](current_handoff.md), [canonical roadmap](current_roadmap.md), and [project specification](../PROJECT_SPEC.md).
 
 ## Evidence
 

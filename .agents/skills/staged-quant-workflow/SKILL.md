@@ -16,16 +16,25 @@ Do not use it for unrelated one-off explanations unless the explanation depends 
 Codex should be able to advance one small, reviewable stage at a time without waiting for the user to supply a fresh detailed prompt. Each stage should either:
 
 - stop at a clear merge gate or blocker report; or
-- produce a validated branch, commit, and ready-for-review PR, then pause without merging.
+- produce a validated branch, commit, and ready-for-review PR, then follow the
+  protected merge policy or pause at the exact external gate.
+
+Research-program stages must conform to
+`docs/research_program_charter.md` and the dependency sequence in
+`docs/current_roadmap.md`.
 
 ## Success criteria
 
 - The current repo and PR state are verified before making decisions.
-- A previous-stage PR that is not verified merged enters a paused external PR
-  gate state after one status check; Codex does not repeatedly re-check, poll,
-  print pause notes, rerun baseline validation, mark complete, mark blocked
-  merely because the same external PR remains pending, or start the next stage
-  while the gate remains unmerged.
+- A required predecessor PR that is not verified merged enters a paused
+  external PR gate state after one status check; Codex does not repeatedly
+  re-check, poll, print pause notes, rerun baseline validation, mark complete,
+  mark blocked merely because the same predecessor remains pending, or start
+  its dependent stage while the gate remains unmerged.
+- Unrelated open or Draft PRs are classified once from their dependency,
+  changed-file, and semantic overlap. They are not automatic predecessor gates,
+  but Codex must avoid their files and must not merge, close, rebase, or
+  overwrite them without authority.
 - The next stage is chosen from current evidence: latest merged PRs, checkpoint reports, `docs/engineering_log.md`, `PROJECT_SPEC.md`, `EXPERIMENT_LOG.md`, and relevant roadmap docs.
 - Changes are tightly scoped to one coherent documentation update, test improvement, bugfix, feature, or research-process milestone.
 - Documentation-only and low-risk checkpoint PRs are opened ready for review, not draft.
@@ -39,16 +48,26 @@ Codex should be able to advance one small, reviewable stage at a time without wa
   required checks pass or auto-merge is used while checks are pending, no
   required review is pending, and changed-file scope matches the declared
   stage.
-- Guardrails remain intact: no real data fetching, no live trading, no brokerage or order execution, no credentials, and no profitability claims.
+- Guardrails remain intact: no unauthorized vendor downloads, remote data
+  access, paper deployment, live trading, brokerage or order execution,
+  credentials, or profitability claims.
+- Factor, strategy, portfolio, and execution evidence remain separate.
+- Formal real-data interpretation remains blocked until the charter's timing,
+  point-in-time data, sample, trial, statistical, cost, privacy, and holdout
+  exposure gates are accepted.
 - Any technical, methodological, environment, testing, workflow, or reasoning problem is recorded in the relevant log with the full failure-to-fix chain.
 - Low-risk ambiguity is handled by making a reasonable assumption, recording it in the final report and relevant log, and continuing.
 
 ## Inputs and context to collect
 
 Start each continuation by reading `docs/current_handoff.md` first, then
-`docs/repo_map.md` for concise orientation when needed. Read deeper logs and
-long documents only when the handoff points to them, the active stage requires
-them, a check fails, or a guardrail-sensitive decision needs source evidence.
+`docs/repo_map.md` for concise orientation. Read `AGENTS.md`,
+`PROJECT_SPEC.md`, `docs/current_roadmap.md`, the controller, and this Skill
+before selecting a stage. Read `docs/research_program_charter.md` when
+designing, reviewing, or classifying a research-program stage. Read deeper logs
+and long documents only when the handoff points to them, the active stage
+requires them, a check fails, or a guardrail-sensitive decision needs source
+evidence.
 
 After the handoff, collect:
 
@@ -61,19 +80,24 @@ After the handoff, collect:
   when needed for the active stage;
 - current test status when continuing beyond a merge gate.
 
-If a previous stage PR is open, closed-unmerged, unknown, or otherwise not
-verified merged, stop after one concise gate report instead of starting a new
-stage. Do not repeatedly re-check checks, reviews, branch protection, or
-auto-merge eligibility unless the user explicitly asks to inspect or update
-that PR.
+If a required predecessor stage PR is open, closed-unmerged, unknown, or
+otherwise not verified merged, stop after one concise gate report instead of
+starting its dependent stage. Do not repeatedly re-check checks, reviews,
+branch protection, or auto-merge eligibility unless the user explicitly asks
+to inspect or update that PR.
 
-Paused External PR Gate State: An open or not-verified-merged PR gate is an
-external wait state. After reporting it once, Codex must pause the active goal
-and wait for explicit user resume. Automatic continuation without a user-stated
-merge/resume/inspect instruction must not query GitHub again, must not repeat
-gate reports, must not mark the goal complete, and must not mark the goal
-blocked merely because the same external PR is still pending. If the interface
-forces a response during this state, return only:
+An unrelated PR may proceed independently only after one read-only
+classification proves that it is not a dependency and does not edit the same
+canonical files or create a semantic conflict. Record the classification,
+avoid the other PR's files, and do not alter its state.
+
+Paused External PR Gate State: An open or not-verified-merged required
+predecessor is an external wait state. After reporting it once, Codex must pause
+the active goal and wait for explicit user resume. Automatic continuation
+without a user-stated merge/resume/inspect instruction must not query GitHub
+again, must not repeat gate reports, must not mark the goal complete, and must
+not mark the goal blocked merely because the same predecessor is still
+pending. If the interface forces a response during this state, return only:
 `Waiting for PR #X to merge; no checks run.`
 
 If a prompt expects a missing file, do not silently treat that as fatal. Create the file in a separate workflow-control PR when it is a low-risk documentation, logging, controller, or audit-script scaffold. Stop and report when the missing file affects product behavior, strategy logic, data access, execution, credentials, or external systems.
@@ -89,8 +113,12 @@ First-pass context is limited to:
 - `docs/repo_map.md`
 - `AGENTS.md`
 - `PROJECT_SPEC.md`
+- `docs/current_roadmap.md`
 - `docs/codex_long_running_controller.md`
 - `.agents/skills/staged-quant-workflow/SKILL.md`
+
+Use `docs/research_program_charter.md` as the Level 2 policy source for
+research-program stage selection and evidence classification.
 
 Treat the short-entry files as retrieval controls:
 
@@ -144,12 +172,19 @@ assumptions, next stage, and confirmation that Codex did not merge.
 
 ## Workflow guidance
 
-Begin with read-only state inspection. If the previous required PR is not
+Begin with read-only state inspection. If the required predecessor PR is not
 verified merged, report it once and enter the paused external PR gate state. If
-the previous required PR has merged, switch to `main`, fast-forward from
-`origin/main`, and rerun baseline validation before branching.
+the required predecessor has merged, switch to `main`, fast-forward from
+`origin/main`, and rerun baseline validation before branching. Classify other
+open PRs once; an independent Draft is not a global gate.
 
 Choose the next stage conservatively from the latest checkpoint recommendation. Prefer documentation or planning stages when roadmap state is stale, when data prerequisites are missing, or when guardrails need clarification before implementation. Prefer code only when the needed design, tests, and scope boundaries are already clear.
+
+Follow the canonical roadmap in order. Do not add factor breadth before timing,
+point-in-time data, trial-accounting, and statistical prerequisites for that
+campaign are accepted. Do not interpret a nominal holdout when prior exposure
+is unknown; classify it as historical evaluation or pseudo-holdout and record
+the access.
 
 Continue as a bounded staged execution agent. Do not ask the user for a new prompt after every small step; stop only at controller-defined stop conditions, failed checks, human approval gates, PR/push/merge decisions, or the final stage report.
 
@@ -175,12 +210,23 @@ policy, enable GitHub auto-merge or perform a normal protected PR merge. If CI
 is still pending after a bounded wait, or any eligibility point is unclear,
 pause and report the gate.
 
+Keep GitHub Codex Automatic Review disabled. Do not request Codex review on a
+Draft PR. After local validation and required CI are stable, post
+`@codex review` once on the final stable head when the change affects research
+semantics, returns, costs, benchmarks, implementation, CI, security, or
+execution scope. Request re-review only after an actionable fix changes that
+head. Trivial documentation-only metadata may omit review.
+
 ## Known pitfalls
 
-- Do not continue to a new stage merely because the user says "merged"; verify the PR state and sync `main`.
-- Do not repeatedly inspect the same not-merged PR gate; one current-state check
-  is enough to enter the paused external PR gate state until external state
-  changes or the user explicitly asks to resume or inspect the PR.
+- Do not continue to a dependent stage merely because the user says "merged";
+  verify the predecessor state and sync `main`.
+- Do not repeatedly inspect the same not-merged predecessor gate; one
+  current-state check is enough to enter the paused external PR gate state until
+  external state changes or the user explicitly asks to resume or inspect the
+  PR.
+- Do not let an unrelated Draft silently become a global gate. Prove
+  independence once, avoid overlap, and leave it unchanged.
 - Do not treat automatic goal continuations as permission to re-query GitHub,
   repeat gate reports, print repeated pause notes, mark complete, or mark
   blocked merely because the same external PR remains pending.
@@ -254,8 +300,8 @@ Interpret guardrail matches carefully. Prohibitions, caveats, tests, and warning
 Before finalizing a stage, report:
 
 - PR or merge gate status;
-- whether any not-verified-merged PR gate entered a paused external wait state
-  after one status check;
+- whether any not-verified-merged predecessor entered a paused external wait
+  state after one status check and how unrelated PRs were classified;
 - branch name;
 - commit hash, if committed;
 - PR link, if opened;
@@ -268,6 +314,9 @@ Before finalizing a stage, report:
 - high, medium, and low issues;
 - confirmation that Codex did not direct-push/direct-merge to `main`, did not
   bypass protection, and did not use `--admin`.
+- trial-count impact, holdout-access impact, and confirmation that no
+  unauthorized data, paper/live, brokerage, credential, or order action
+  occurred.
 
 ## Update policy
 

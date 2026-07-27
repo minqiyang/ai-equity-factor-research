@@ -9,6 +9,14 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the canonical research program charter and reconciled the project
+  specification, roadmap, handoff, controller, staged workflow Skill, public
+  method routing, and documentation contracts around factor-to-execution
+  evidence layers, point-in-time methodology, complete trial accounting,
+  protected-sample access, statistical controls, and independent reproduction.
+- Recorded the verified timing/sample blockers and classified the previously
+  examined 2025-05-01 through 2026-05-31 interval as historical evaluation or
+  pseudo-holdout evidence rather than a presumed pristine holdout.
 - Completed a full repository conformance audit with no actionable P1/P2
   findings and linked the merged report from the current project records.
 - Implemented signed trade weights, completed-episode hit rate and average
@@ -26,6 +34,12 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Aligned the active real-data readiness Skill and checklist with the charter:
+  static or otherwise unverified historical membership is diagnostic-only,
+  formal readiness requires implemented program gates, and the current
+  experiment log is explicitly not the future immutable all-trial ledger.
+- Scoped PR pause rules to required predecessor and current-stage PRs so an
+  unrelated Draft cannot become an accidental global workflow gate.
 - Streamlined the public README and workflow diagram, removed the unused
   plotting dependency, completed package metadata, and added lint/build CI
   gates.
