@@ -337,7 +337,7 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 3. Point-in-time data methodology | "
-        "Open-interval re-review fix validated; new-head GitHub gates pending"
+        "Readiness-scope re-review fix validated; new-head GitHub gates pending"
     ) in roadmap
     assert (
         "| 4. Experiment/trial ledger | Next after Stage 3 protected merge "
@@ -1015,6 +1015,12 @@ def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:
     experiment_log = (PROJECT_ROOT / "EXPERIMENT_LOG.md").read_text(
         encoding="utf-8"
     )
+    study_checklist = (
+        PROJECT_ROOT / "docs/local_csv_study_checklist.md"
+    ).read_text(encoding="utf-8")
+    audit_template = (
+        PROJECT_ROOT / "docs/local_csv_readiness_audit_report_template.md"
+    ).read_text(encoding="utf-8")
     controller = (
         PROJECT_ROOT / "docs/codex_long_running_controller.md"
     ).read_text(encoding="utf-8")
@@ -1050,7 +1056,73 @@ def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:
         assert "non-self-issued exact-version dataset-review decision" in normalized_text
 
     for text in [readiness_skill, readiness_audit]:
-        assert "unlocked/incomplete environment" in " ".join(text.split())
+        normalized_text = " ".join(text.split())
+        assert "unlocked/incomplete environment" in normalized_text
+        assert (
+            "A diagnostic-scope audit may return `diagnostic_ready` without a "
+            "dataset-review decision"
+        ) in normalized_text
+        assert "`dataset_manifest_reviewed = false`" in normalized_text
+        assert "`formal_interpretation_eligible = false`" in normalized_text
+        assert "formal readiness remains blocked" in normalized_text
+        assert "the outcome is not `formal_ready`" in normalized_text
+        assert (
+            "when formal interpretation is proposed, the dataset-review "
+            "decision is absent"
+        ) in normalized_text.lower()
+        assert (
+            "when formal interpretation is proposed, the immutable "
+            "dataset-review decision id"
+        ) in normalized_text.lower()
+        assert (
+            "for diagnostic scope without a dataset-review decision, do not "
+            "fabricate a decision id"
+        ) in normalized_text.lower()
+        assert (
+            "access-record and exposure-decision ids"
+        ) in normalized_text.lower()
+        assert "remain scope-applicable for diagnostics" in normalized_text.lower()
+
+    normalized_readiness_skill = " ".join(readiness_skill.split()).lower()
+    assert (
+        "when formal interpretation is proposed, `dataset_manifest_reviewed` "
+        "or `formal_interpretation_eligible` is absent"
+    ) in normalized_readiness_skill
+    assert (
+        "- `dataset_manifest_reviewed` or "
+        "`formal_interpretation_eligible` is absent"
+    ) not in readiness_skill
+    assert "- the dataset-review decision is absent" not in readiness_skill.lower()
+    assert "- the dataset-review decision is absent" not in readiness_audit.lower()
+    assert "finding dispositions, and exposure-decision id" not in (
+        normalized_readiness_skill
+    )
+
+    for text in [experiment_log, study_checklist, audit_template]:
+        normalized_text = " ".join(text.split()).lower()
+        assert (
+            "when formal interpretation is proposed, the immutable "
+            "dataset-review decision"
+        ) in normalized_text
+        assert (
+            "for diagnostic scope without a dataset-review decision, do not "
+            "fabricate a decision id"
+        ) in normalized_text
+        assert "`dataset_manifest_reviewed = false`" in normalized_text
+        assert "`formal_interpretation_eligible = false`" in normalized_text
+        assert "protected-sample access-record" in normalized_text
+        assert "exposure-decision id" in normalized_text
+        assert "stop if the immutable decision is absent" not in normalized_text
+        assert (
+            "- immutable dataset-review decision id and exposure-decision id"
+            not in normalized_text
+        )
+
+    for text in [study_checklist, audit_template]:
+        normalized_text = " ".join(text.split()).lower()
+        assert "every scope-applicable statement" in normalized_text
+        assert "[formal interpretation only] dataset review" in normalized_text
+        assert "the formal-only dataset-review box is outside scope" in normalized_text
 
     for phrase in [
         "diagnostic/legacy experiment record",

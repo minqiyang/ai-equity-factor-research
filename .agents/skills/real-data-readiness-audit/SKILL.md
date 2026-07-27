@@ -107,6 +107,14 @@ the highest possible decision is diagnostic readiness. A static current
 constituent list or otherwise unverified historical membership can support only
 an explicitly survivorship-biased diagnostic, never `formal_ready`.
 
+A diagnostic-scope audit may return `diagnostic_ready` without a
+dataset-review decision only when every requirement for the declared metadata,
+loader, or fixed-cohort diagnostic scope passes and its limitations remain
+explicit. That outcome records `dataset_manifest_reviewed = false` and
+`formal_interpretation_eligible = false`; formal readiness remains blocked and
+the outcome is not `formal_ready`. It does not interpret the result beyond the
+approved diagnostic scope.
+
 The previously accessed 2025-05-01 through 2026-05-31 interval is
 `historical_evaluation`, not a pristine holdout, and must never be upgraded.
 Missing, backfilled, unknown-actor/time/impact, outcome-reconstructible, or
@@ -292,12 +300,17 @@ entry or approved research note with:
 - parameters and parameter-selection policy.
 - benchmark, risk-free policy, costs, slippage, rebalance, and execution timing.
 - metrics, missing-data summary, limitations, failure modes, and next action.
-- protected-sample classification and append-only access-record identifier.
-- immutable dataset-review decision ID, exact reviewed manifest/projection
-  identities, reviewer authority, scope/time, finding dispositions, and
-  exposure-decision ID. It must be a non-self-issued exact-version
-  dataset-review decision; a checklist or manifest producer cannot grant the
-  gate.
+- protected-sample classification plus append-only access-record and
+  exposure-decision IDs; these remain scope-applicable for diagnostics.
+- when formal interpretation is proposed, the immutable dataset-review
+  decision ID, exact reviewed manifest/projection identities, reviewer
+  authority, scope/time, and finding dispositions. It must be a non-self-issued
+  exact-version dataset-review decision; a checklist or manifest producer
+  cannot grant the gate.
+- for diagnostic scope without a dataset-review decision, do not fabricate a
+  decision ID: record `dataset_manifest_reviewed = false`,
+  `formal_interpretation_eligible = false`, the diagnostic limitation, and
+  omit the formal-only decision identity fields.
 - metric names, status, and redacted private-evidence references only; private
   performance values require a separate explicit publication decision.
 
@@ -332,13 +345,13 @@ these are true:
   calendar alignment is incompatible.
 - costs, slippage, or diagnostic-only language are absent for a backtest-like
   result.
-- `dataset_manifest_reviewed` or `formal_interpretation_eligible` is absent, or
-  any required timing, point-in-time methodology, all-trial ledger,
-  statistical, privacy, or holdout-classification program gate lacks accepted
-  implementation evidence when formal interpretation is proposed.
-- the dataset-review decision is absent, self-issued, stale,
-  version-mismatched, outside reviewer authority, or lacks finding
-  dispositions.
+- when formal interpretation is proposed, `dataset_manifest_reviewed` or
+  `formal_interpretation_eligible` is absent, or any required timing,
+  point-in-time methodology, all-trial ledger, statistical, privacy, or
+  holdout-classification program gate lacks accepted implementation evidence.
+- when formal interpretation is proposed, the dataset-review decision is
+  absent, self-issued, stale, version-mismatched, outside reviewer authority,
+  or lacks finding dispositions.
 - any high or medium readiness issue remains unresolved.
 - the result would require real data fetching, vendor APIs, credentials,
   live or paper trading, broker integration, order execution, or profitability

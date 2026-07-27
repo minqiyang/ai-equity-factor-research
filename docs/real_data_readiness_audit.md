@@ -39,6 +39,14 @@ Until a specific manifest and the Stage 4 immutable all-trial/access ledger,
 Stage 5 statistical package, and other applicable gates pass, the highest
 possible outcome remains diagnostic readiness.
 
+A diagnostic-scope audit may return `diagnostic_ready` without a
+dataset-review decision only when every requirement for the declared metadata,
+loader, or fixed-cohort diagnostic scope passes and its limitations remain
+explicit. That outcome records `dataset_manifest_reviewed = false` and
+`formal_interpretation_eligible = false`; formal readiness remains blocked and
+the outcome is not `formal_ready`. It does not interpret the result beyond the
+approved diagnostic scope.
+
 The previously accessed 2025-05-01 through 2026-05-31 interval is
 `historical_evaluation`, not a pristine holdout, and must never be upgraded.
 Missing, backfilled, unknown-actor/time/impact, outcome-reconstructible, or
@@ -262,13 +270,20 @@ Before committing any real-data experiment output, add or prepare an
 - Missing-data summary.
 - Private manifest ID and safe public projection ID; never a tracked absolute
   private path.
-- Immutable dataset-review decision ID, exact reviewed manifest/projection
-  identities, reviewer-authority reference, scope/time, finding dispositions,
-  and safe decision-record reference. It must be a non-self-issued
-  exact-version dataset-review decision; a checklist or manifest producer
-  cannot grant this gate.
-- Protected-sample access intent/completion references, classification before
-  and after, accessed artifact/metric names without values, and design impact.
+- When formal interpretation is proposed, the immutable dataset-review
+  decision ID, exact reviewed manifest/projection identities,
+  reviewer-authority reference, scope/time, finding dispositions, and safe
+  decision-record reference. It must be a non-self-issued exact-version
+  dataset-review decision; a checklist or manifest producer cannot grant this
+  gate.
+- For diagnostic scope without a dataset-review decision, do not fabricate a
+  decision ID: record `dataset_manifest_reviewed = false`,
+  `formal_interpretation_eligible = false`, the diagnostic limitation, and
+  omit the formal-only decision identity fields.
+- Protected-sample access intent/completion references, append-only
+  access-record and exposure-decision IDs, classification before and after,
+  accessed artifact/metric names without values, and design impact; these
+  remain scope-applicable for diagnostics.
 - Metric names, computation status, and redacted private-evidence references;
   private performance values require a separate explicit publication decision.
 - Failure modes.
@@ -289,9 +304,9 @@ Stop the run before interpreting any result if:
 - Required data provenance is missing.
 - License/entitlement or permitted-use evidence is asserted, unknown, expired,
   incompatible, or not owner-accepted.
-- The dataset-review decision is absent, self-issued, stale,
-  version-mismatched, outside reviewer authority, or lacks finding
-  dispositions.
+- When formal interpretation is proposed, the dataset-review decision is
+  absent, self-issued, stale, version-mismatched, outside reviewer authority,
+  or lacks finding dispositions.
 - Actual hashes, retrieval/version identity, extraction identity, or
   transformation lineage are absent.
 - Canonicalization identity, environment identity/lock, locale/timezone, or

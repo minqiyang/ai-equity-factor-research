@@ -344,6 +344,9 @@ Decision rationale:
 
 Program gate evidence (this form cannot grant any gate):
   Methodology contract decision ID:
+  dataset_manifest_reviewed:
+  formal_interpretation_eligible:
+  Formal-only dataset-review fields (omit for diagnostic scope):
   Dataset review decision ID:
   Reviewed manifest ID:
   Public projection ID/version/hash or redacted evidence reference:
@@ -360,9 +363,15 @@ only permits the next reviewed research step under the recorded limitations.
 The gate records are separate decisions: `methodology_contract_accepted` does not
 imply `dataset_manifest_reviewed`, and `dataset_manifest_reviewed` does not
 imply `formal_interpretation_eligible`. A blank field, checkbox, manifest
-author, or this form cannot self-certify `dataset_manifest_reviewed`. Stop if
-the immutable decision is absent, self-issued, stale, version-mismatched, or
-has any unresolved high or medium issue.
+author, or this form cannot self-certify `dataset_manifest_reviewed`. When
+formal interpretation is proposed, stop if the immutable dataset-review
+decision is absent, self-issued, stale, version-mismatched, or has any
+unresolved high or medium issue. For diagnostic scope without a dataset-review
+decision, do not fabricate a decision ID: record
+`dataset_manifest_reviewed = false`, `formal_interpretation_eligible = false`,
+the diagnostic limitation, and omit the formal-only decision identity,
+reviewer, and finding fields. Protected-sample access-record and
+exposure-decision IDs remain scope-applicable.
 
 ## 11. Experiment Log Handoff
 
@@ -391,14 +400,22 @@ Before any real-data output is committed or interpreted, prepare an
 - missing-data summary.
 - high, medium, and low audit issues.
 - failure modes and next action.
-- protected-sample classification and append-only access-record ID.
-- immutable dataset-review decision ID and exposure-decision ID.
+- protected-sample classification, append-only access-record ID, and
+  exposure-decision ID in every applicable scope.
+- when formal interpretation is proposed, the immutable dataset-review decision
+  ID and its exact reviewed identities, reviewer authority, and finding
+  dispositions.
+- for diagnostic scope without a dataset-review decision,
+  `dataset_manifest_reviewed = false`,
+  `formal_interpretation_eligible = false`, the diagnostic limitation, and no
+  fabricated formal-only decision fields.
 
 Synthetic JSON sidecar logs are not substitutes for this record.
 
 ## 12. Final Stop Statements
 
-Do not interpret or publish results unless every statement below is true.
+Do not interpret or publish results unless every scope-applicable statement
+below is true.
 
 - [ ] Local files were supplied by the user and no data was fetched.
 - [ ] No vendor API, `requests`, `yfinance`, Alpaca, CCXT, credential, token,
@@ -423,9 +440,10 @@ Do not interpret or publish results unless every statement below is true.
 - [ ] No unresolved high or medium audit issue remains.
 - [ ] The program-gate decision matches the evidence and does not infer formal
       eligibility from contract or manifest acceptance alone.
-- [ ] Dataset review is bound to the exact manifest/projection and was issued
-      as a non-self-issued exact-version dataset-review decision by an
-      authorized non-producing reviewer; this form did not grant it.
+- [ ] [Formal interpretation only] Dataset review is bound to the exact
+      manifest/projection and was issued as a non-self-issued exact-version
+      dataset-review decision by an authorized non-producing reviewer; this
+      form did not grant it.
 - [ ] Missing, backfilled, uncertain, outcome-reconstructible, and overlapping
       protected access was downgraded monotonically and has an exposure
       decision ID.
@@ -433,4 +451,8 @@ Do not interpret or publish results unless every statement below is true.
 - [ ] The output does not claim profitability, robustness, tradeability,
       deployment readiness, investment advice, or future performance.
 
-If any box cannot be checked, stop before interpretation.
+If any scope-applicable box cannot be checked, stop before interpretation.
+For diagnostic scope, the formal-only dataset-review box is outside scope:
+leave it unchecked, record `dataset_manifest_reviewed = false` and
+`formal_interpretation_eligible = false`, omit the formal-only decision fields,
+and retain all applicable protected-sample access and exposure records.

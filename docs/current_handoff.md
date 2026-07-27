@@ -19,12 +19,13 @@ Updated: 2026-07-27 for the Point-in-Time Data Methodology Contract.
   protected main. Stage 3 defines methodology only; it does not accept a
   provider, dataset, license, universe, field, benchmark, or historical claim.
 - Stage 3 post-review-fix local validation has 854 passing tests with the same two
-  platform-conditional skips. Ruff, compilation, build, Skill, repo-map,
-  privacy/Unicode/diff gates, and independent digest/open-interval re-reviews
-  passed with no remaining actionable P1/P2. The digest-fix head also passed
-  GitHub CI; its re-review found and drove explicit active/open interval
-  semantics. New-fix-head CI and the required current-head re-review remain
-  pending.
+  platform-conditional skips. Ruff, compilation, build, Skill, repo-map, and
+  privacy/Unicode/diff gates passed. The digest and open-interval fix heads each
+  passed GitHub CI before their required current-head reviews. The latest
+  review found and drove consistent diagnostic-versus-formal dataset-review
+  scope across the readiness Skill, audit, experiment log, and local-CSV forms.
+  Two independent read-only re-reviewers found no remaining actionable P1/P2.
+  New-fix-head CI and the required current-head review remain pending.
 - Current phase: research-only. No vendor download, credentials, brokerage,
   orders, paper deployment, live deployment, or real-money execution.
 

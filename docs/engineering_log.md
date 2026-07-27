@@ -102,6 +102,22 @@
   read-only review caught and removed one remaining ambiguity between nullable
   schema values and absent required properties. Two independent reviewers then
   reported no actionable P1/P2; neither edited the fix.
+- The open-interval fix head passed its complete GitHub CI cycle before the
+  required current-head re-review. That review found one further P2: the
+  readiness Skill treated an absent dataset-review decision as an
+  unconditional stop even though the Stage 3 scope matrix permits a bounded
+  `diagnostic_ready` outcome without formal dataset acceptance.
+- The integration owner scoped the dataset-review decision identity, reviewer,
+  and finding-disposition requirements to formal interpretation across the
+  readiness Skill, audit, legacy experiment log, and both local-CSV forms.
+  Diagnostic scope now records `dataset_manifest_reviewed = false`,
+  `formal_interpretation_eligible = false`, and the limitation without
+  fabricating formal decision fields. Protected-sample access-record and
+  exposure-decision requirements remain scope-applicable so diagnostic access
+  still downgrades classification and remains auditable. Documentation tests
+  positively require that split and reject the old unconditional wording. Two
+  independent read-only re-reviewers found no remaining actionable P1/P2 and
+  did not edit their own findings.
 - Workflow continuity correction: returning control while the asynchronous
   re-review was pending made the task appear stopped. The owner clarified that
   pending CI/review/merge gates must retain a five-minute scheduled heartbeat.

@@ -116,11 +116,17 @@ At minimum, a local CSV experiment record must include:
 - Holdout-exposure classification and append-only access-record identifier.
   The historically examined 2025-05-01 through 2026-05-31 interval is
   `historical_evaluation`, not a pristine holdout.
-- Immutable dataset-review decision ID, exact reviewed manifest/projection
-  identities, reviewer-authority reference, scope, timestamp, finding
-  dispositions, and exposure-decision ID. This must be a non-self-issued
-  exact-version dataset-review decision; the tracked record cannot grant a gate
-  or self-certify its own manifest.
+- When formal interpretation is proposed, the immutable dataset-review
+  decision ID, exact reviewed manifest/projection identities,
+  reviewer-authority reference, scope, timestamp, and finding dispositions.
+  This must be a non-self-issued exact-version dataset-review decision; the
+  tracked record cannot grant a gate or self-certify its own manifest.
+- For diagnostic scope without a dataset-review decision, do not fabricate a
+  decision ID: record `dataset_manifest_reviewed = false`,
+  `formal_interpretation_eligible = false`, the diagnostic limitation, and
+  omit the formal-only decision identity, reviewer, and finding fields.
+  Protected-sample access-record and exposure-decision IDs remain
+  scope-applicable and are not formal-only.
 
 If required provenance, adjustment policy, date alignment, benchmark coverage,
 sample splits, cost/slippage assumptions, license evidence, verified private
@@ -157,11 +163,19 @@ or an unapproved digest.
 
 ### Dataset Review Decision
 
-Immutable decision ID, exact reviewed manifest/projection identities, safe
-reviewer-authority reference, review time, declared scope, decision, finding
-dispositions, contract identity, and redacted evidence reference. This must be
-a non-self-issued exact-version dataset-review decision. The manifest producer
-or this template cannot grant `dataset_manifest_reviewed`.
+When formal interpretation is proposed, record the immutable decision ID, exact
+reviewed manifest/projection identities, safe reviewer-authority reference,
+review time, declared scope, decision, finding dispositions, contract identity,
+and redacted evidence reference. This must be a non-self-issued exact-version
+dataset-review decision. The manifest producer or this template cannot grant
+`dataset_manifest_reviewed`.
+
+For diagnostic scope without a dataset-review decision, do not fabricate a
+decision ID. Record `dataset_manifest_reviewed = false`,
+`formal_interpretation_eligible = false`, the diagnostic limitation, and omit
+the formal-only decision identity, reviewer, and finding fields. Continue to
+record every scope-applicable protected-sample access-record and
+exposure-decision ID under Sample Split.
 
 ### Universe
 
