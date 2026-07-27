@@ -56,6 +56,11 @@
   zero benchmark anchor, closed signal, held-price, execution-price, benchmark,
   and direct-return Boolean/complex/string type holes, and added direct
   metric-equity safeguards.
+- The next stable-head review caught signal-value validation occurring before
+  the exact accounting slice. The contract now validates full-source axes
+  structurally, selects exact bounded rows, and only then validates signal
+  values; deterministic mutations prove pre-start and post-end bad values
+  cannot change bounded results or exceptions.
 - Final local validation passes with 638 tests, Ruff, compilation of
   `src`, `research`, `tests`, and `lean`, sdist and wheel build, reproducible
   repo-map generation, Unicode/control scan, and branch diff checks.

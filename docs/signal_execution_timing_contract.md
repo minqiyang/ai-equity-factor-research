@@ -207,7 +207,7 @@ authorization for any of them.
 
 ### Exact axes
 
-Prices and final signals must have identical:
+Full-source prices and final signals must have identical structural axes:
 
 - `DatetimeIndex` values and order;
 - timezone awareness and timezone;
@@ -215,20 +215,41 @@ Prices and final signals must have identical:
 - unique dates and unique asset identifiers.
 
 No timing-sensitive path may silently reindex, sort, deduplicate, localize,
-convert timezones, add assets, drop assets, forward-fill, or backfill. Missing
-signal cells remain explicit unavailable scores.
+convert timezones, add assets, drop assets, forward-fill, or backfill. Bounded
+IEEE `NaN` signal cells remain explicit unavailable scores under the sequence
+below.
 
-Every available final signal score must be real numeric, non-Boolean, and
-finite. IEEE `NaN` in an otherwise real numeric signal matrix is the sole
-unavailable-score sentinel. Boolean, complex, string/object, positive or
-negative infinity, and other missing representations raise with stable reason
-`signal_value_invalid` before bounded slicing, lag application, ranking, or
-target construction; they are not coerced to scores or `NaN`.
+Validation order is normative:
 
-Feature history may precede `evaluation_start`, but Stage 2b must first select
-the bounded accounting-date signal matrix and only then apply signal lag and
-generate targets. No pre-anchor signal may create a trade on the initialization
-anchor or on a later accounting row with insufficient local lag.
+```text
+1. validate full-source price/signal axes, labels, order, uniqueness, timezone,
+   and asset columns structurally
+2. validate exact evaluation bounds and derive start_pos, end_pos, and
+   accounting_dates
+3. bounded_final_signals = final_signals.iloc[start_pos : end_pos + 1]
+4. validate bounded final-signal values
+5. apply bounded accounting-row lag and construct targets
+```
+
+Only after that exact bounded slice exists does value validation apply. Every
+available score in `bounded_final_signals` must be real numeric, non-Boolean,
+and finite. IEEE `NaN` in the bounded matrix is the sole unavailable-score
+sentinel. Boolean, complex, string/object, positive or negative infinity, and
+other missing representations inside the bounded matrix raise with stable
+reason `signal_value_invalid` before lag application, ranking, or target
+construction; they are not coerced to scores or `NaN`.
+
+Signal values strictly before `evaluation_start` or after `evaluation_end` are
+outside this validation and execution contract. Mutating only those values to
+Boolean, complex, string/object, positive or negative infinity, or another
+missing representation must not change the bounded result or its exception,
+even if the mutation changes the full signal frame's inferred dtype. Full
+structural axes validation still runs and must still pass first.
+
+Feature history may precede `evaluation_start`, but Stage 2b must use only the
+bounded accounting-date signal matrix for signal lag and target generation. No
+pre-anchor signal may create a trade on the initialization anchor or on a later
+accounting row with insufficient local lag.
 
 ### Rebalance resolution
 
@@ -632,7 +653,7 @@ Stage 2b must emit stable global metadata rather than only free-text prose:
 | `measured_return_end` | `evaluation_end` |
 | `measured_return_count` | Exact number of common measured rows |
 | `rebalance_resolution` | `last_observed_row_in_resample_bucket` |
-| `signal_value_failure_policy` | `raise_on_nonreal_boolean_or_nonfinite_available_score` |
+| `signal_value_failure_policy` | `validate_bounded_scores_after_exact_slice_raise_on_invalid_available_score` |
 | `target_freeze_policy` | `decision_information_only_no_execution_close_rerank` |
 | `incoming_price_failure_policy` | `raise_before_asset_return_on_invalid_held_endpoint` |
 | `execution_price_failure_policy` | `raise_execution_price_invalid_without_redistribution` |
@@ -769,7 +790,7 @@ holding established at `d1`.
 | --- | --- | --- |
 | `TIMING-001` | The four-row daily-rebalance reference case above, where fixture labels `d0..d3` are bounded accounting rows `a[0..3]`. | Each scheduled row uses bounded `a[j-L]`; exact signal source, execution row, first earned return, drift, trade, turnover, cost, holdings, net return, and equity values match by hand. |
 | `TIMING-002` | Lags `0`, `False`, `0.0`, `-1`, `1.5`, and `"1"`. | Every invalid lag fails before alignment or target construction; integer one passes. |
-| `TIMING-003` | Signal axes with an extra/missing/reordered date or asset, duplicate labels, or a timezone mismatch, plus Boolean, complex, string/object, positive-infinity, negative-infinity, IEEE `NaN`, and other missing signal cells. | Every axis mismatch raises; Boolean, complex, string/object, infinity, and non-`NaN` missing representations raise `signal_value_invalid` before lag or target construction; IEEE `NaN` alone remains an explicit unavailable score; no coercion, silent reindexing, sorting, or dropping occurs. |
+| `TIMING-003` | Full-source signal axes with an extra/missing/reordered date or asset, duplicate labels, or a timezone mismatch; bounded cells with Boolean, complex, string/object, positive infinity, negative infinity, IEEE `NaN`, and other missing values; and separate mutations of only pre-start or post-end signal values to every invalid value type. | Full structural axis validation runs first and every mismatch raises; exact bounds then select `bounded_final_signals`; bounded Boolean, complex, string/object, infinity, and non-`NaN` missing values raise `signal_value_invalid` before lag/target while bounded IEEE `NaN` alone remains unavailable; out-of-window value mutations, including mutations that change the full frame dtype, leave the bounded result and exception exactly unchanged. |
 | `TIMING-004` | A bounded Friday, Monday, and Wednesday accounting slice with lags one and two. | Lag one uses the immediately preceding accounting row, not a calendar-day offset; for Wednesday execution at lag two, Friday is the frozen source, Monday is an intervening close, and the asserted order ends at Wednesday execution without constraining later rows. |
 | `TIMING-005` | Monthly rebalancing with daily signal rows. | Each month-end execution uses the immediately preceding source-row signal for lag one, not the previous rebalance signal; unscheduled signals do not execute. |
 | `TIMING-006` | For each intended nonzero buy and a directly tested prevalidated frozen sell leg, separately set the execution-close price to missing, Boolean, complex, string/object, `NaN`, positive infinity, negative infinity, zero, and negative values; separately apply the same invalid values to the prior and current incoming-return endpoints of a nonzero prior holding. | Every invalid buy/sell execution leg raises `execution_price_invalid` without coercion, fill, reranking, or redistribution; every invalid held endpoint raises `incoming_price_invalid` earlier than asset return, gross validation, drift, target feasibility, trade, or cost; when an integrated held sell shares the invalid current endpoint, incoming-price failure takes precedence while the direct sell-validator fixture preserves independent sell-leg coverage. |
@@ -804,7 +825,9 @@ Stage 2b must:
 - reject zero, Boolean, fractional, and negative lag values;
 - add explicit bounded evaluation dates;
 - preserve a zero initialization anchor;
-- reject invalid available signal values before lag or target construction;
+- validate full-source axes structurally, select exact bounded accounting
+  signals, and only then reject invalid bounded available values before lag or
+  target construction;
 - freeze targets immediately after source-row signal availability;
 - validate every held prior/current incoming-price endpoint before asset
   returns or gross accounting;
@@ -857,8 +880,9 @@ Accepted here:
   `a[j-L]`; under daily rebalancing, fixture `d0` as `a[0]` maps to `d1` as
   `a[1]` execution and first earned return ending at `d2` as `a[2]`;
 - prices and signals require exact axes and timezone compatibility;
-- available signal scores are real numeric non-Boolean finite values; only
-  IEEE `NaN` denotes an unavailable score;
+- bounded available signal scores are real numeric non-Boolean finite values;
+  only bounded IEEE `NaN` denotes an unavailable score, and out-of-window value
+  mutations cannot affect bounded results or exceptions;
 - targets are frozen immediately after source-row signal availability;
 - held incoming-return endpoints are strictly validated before asset returns,
   separately from later execution-leg feasibility;
