@@ -1,5 +1,60 @@
 # Engineering Log
 
+## 2026-07-26 - Purged And Bounded Split Implementation
+
+- Started from protected `main` merge `12e0e86` in the isolated
+  `codex/purged-bounded-split-implementation` worktree. The unrelated local
+  checkout remained untouched.
+- Verified the exact merge SHA, successful post-merge GitHub CI, and a clean
+  595-test/Ruff/compilation baseline before editing.
+- Implemented the accepted six-bound contract in
+  `src/features/validation.py`: exact source-index retention, typed label
+  kinds, deterministic per-candidate ledger, row-horizon endpoints,
+  per-window purge, gap-aware embargo, feature warm-up, in-window label
+  warm-down, hard bounded test suffix, JSON-ready metadata, and raw-axis target
+  masking.
+- Added a label-aware slicer that rejects unmasked structurally excluded
+  values. Price labels are calculated only for eligible intervals; no raw
+  cross-boundary or post-test label value is exposed to diagnostics.
+- Added consumer availability accounting for eligible target cells,
+  valid/missing target cells, usable factor-label pairs,
+  `no_eligible_labels`, and `no_usable_label_pairs`.
+- Migrated all four current split consumers. EODHD and local-fixture paths use
+  the same price-label mask for assets and benchmark. Both synthetic consumers
+  now declare `synthetic_same_row_response`, horizon zero, exact `[t, t]`
+  intervals, and no forward-price-return wording.
+- The tiny four-row local fixture now records one feature warm-up row and three
+  one-row horizon-one windows. All are honestly retained as `INVALID` with
+  zero eligible labels instead of borrowing values across split boundaries.
+- Added deterministic post-test append/mutation, cross-edge mutation,
+  asset/benchmark parity, zero-eligible, partial-missing, all-missing,
+  irregular-calendar, purge/embargo-overlap, and strict-alignment tests. The
+  full suite currently passes with 633 tests.
+- Independent review found and the integration owner fixed three P2
+  hardening gaps: canonical revalidation now rejects mutated ledgers and
+  window schedules, the raw feature slicer requires an explicit feature role,
+  and configured-case evidence preserves structural label invalidity instead
+  of replacing it with a generic metric-observation reason.
+- Regenerated only the affected synthetic local-fixture and robustness
+  Markdown/JSON evidence, then regenerated the experiment registry. JSON
+  parsing and secret/private-path scans passed; the registry was
+  semantically unchanged.
+- Built the sdist and wheel successfully. The build tool created disposable
+  isolated environments and installed `setuptools==83.0.0`, `wheel==0.47.0`,
+  and transitive `packaging==26.2`; these were not installed into the project
+  environment, and no dependency or lock file changed.
+- The first direct generator invocation could not import `backtest` because a
+  one-off Python process did not include the repository `src` directory. The
+  same reviewed generator functions succeeded after explicitly placing the
+  worktree `src` directory first on that process's import path. No dependency
+  was installed and no dependency file changed.
+- Assumption: the private EODHD default bounded test ends on 2025-04-30, before
+  the already-exposed 2025-05-01 onward interval. No private file, output, or
+  performance value was opened or interpreted.
+- No factor formula, strategy, portfolio, cost, execution, data-provider, or
+  LEAN behavior changed. Trial-count impact is zero because this stage changes
+  validation plumbing and deterministic diagnostic evidence only.
+
 ## 2026-07-26 - Purged And Bounded Split Contract
 
 - Started from protected `main` merge `57f3db3` in the isolated
