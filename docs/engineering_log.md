@@ -21,6 +21,11 @@
   otherwise unverified historical membership can support diagnostics only,
   and marked `EXPERIMENT_LOG.md` as a diagnostic/legacy record rather than the
   future immutable all-trial ledger.
+- Fixed a post-publication CI toolchain drift: the unbounded development
+  requirement installed Ruff 0.16.0, whose expanded defaults surfaced 95
+  repository-wide findings after local Ruff 0.15.18 passed. Added an explicit
+  `E4`, `E7`, `E9`, and `F` rule baseline and a configuration contract test;
+  both Ruff versions pass without changing unrelated source or tests.
 - An independent documentation review found and then verified fixes for the
   readiness bypass, experiment-log authority, and broad unrelated-PR stop
   clauses. The final contract suite covers those cross-document constraints.

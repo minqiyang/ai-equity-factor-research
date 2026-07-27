@@ -34,6 +34,8 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Froze the intended Ruff lint baseline explicitly so a newly released Ruff
+  version cannot silently expand CI into a repository-wide lint migration.
 - Aligned the active real-data readiness Skill and checklist with the charter:
   static or otherwise unverified historical membership is diagnostic-only,
   formal readiness requires implemented program gates, and the current

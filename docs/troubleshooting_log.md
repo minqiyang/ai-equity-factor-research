@@ -1,5 +1,46 @@
 # Troubleshooting Log
 
+## 2026-07-26 - Unbounded Ruff Upgrade Expanded The CI Lint Baseline
+
+Original assumption and consequence:
+
+- Local validation used Ruff 0.15.18 and passed, while the development
+  requirement allowed any `ruff>=0.9` release and the repository declared no
+  explicit lint rule selection.
+- PR #158 installed Ruff 0.16.0. Its expanded default rules produced 95
+  repository-wide findings, mostly in files untouched by the charter stage, so
+  the GitHub Actions `Python validation` job failed before compilation/build.
+
+Evidence and investigation:
+
+- The failed run recorded Ruff 0.16.0 in the dependency-install log and
+  `Found 95 errors` in the lint step.
+- The charter PR changed only one Python test file; reported findings also
+  covered numerous unchanged source, research, and test files.
+- Ruff 0.16.0 passed the complete repository when invoked with the prior
+  default baseline explicitly as `E4`, `E7`, `E9`, and `F`.
+
+Final fix:
+
+- Added `[tool.ruff.lint]` with an explicit `select` list for those four rule
+  families.
+- Added a documentation/configuration contract assertion so future edits
+  cannot silently remove or broaden the baseline.
+- Deferred adoption of additional Ruff rules to a separately scoped lint
+  migration rather than auto-fixing unrelated files in the charter PR.
+
+Verification:
+
+- Ruff 0.15.18 and Ruff 0.16.0 pass the repository under the explicit baseline.
+- Final pytest, compilation, build, diff, and GitHub Actions results are
+  reported with PR #158.
+
+Prevention:
+
+- Configure intended lint semantics explicitly when development tools can
+  upgrade independently. Treat adoption of new rule families as a reviewed
+  migration, not an incidental dependency-resolution side effect.
+
 ## 2026-07-26 - Broad Readiness-Policy Read Exceeded The Output Cap
 
 Original mistake and consequence:

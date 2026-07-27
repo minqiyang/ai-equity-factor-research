@@ -252,9 +252,10 @@ def test_holding_episode_design_matches_implementation_contract() -> None:
 
 def test_public_metadata_and_readme_match_implemented_scope() -> None:
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
-    metadata = tomllib.loads(
+    configuration = tomllib.loads(
         (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    )["project"]
+    )
+    metadata = configuration["project"]
 
     assert "docs/current_roadmap.md" in readme
     assert "docs/research_program_charter.md" in readme
@@ -268,6 +269,12 @@ def test_public_metadata_and_readme_match_implemented_scope() -> None:
         "numpy>=1.26",
         "pandas>=2.1",
         "scipy>=1.11",
+    ]
+    assert configuration["tool"]["ruff"]["lint"]["select"] == [
+        "E4",
+        "E7",
+        "E9",
+        "F",
     ]
 
 
