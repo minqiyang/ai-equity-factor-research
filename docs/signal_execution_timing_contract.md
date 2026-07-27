@@ -218,6 +218,13 @@ No timing-sensitive path may silently reindex, sort, deduplicate, localize,
 convert timezones, add assets, drop assets, forward-fill, or backfill. Missing
 signal cells remain explicit unavailable scores.
 
+Every available final signal score must be real numeric, non-Boolean, and
+finite. IEEE `NaN` in an otherwise real numeric signal matrix is the sole
+unavailable-score sentinel. Boolean, complex, string/object, positive or
+negative infinity, and other missing representations raise with stable reason
+`signal_value_invalid` before bounded slicing, lag application, ranking, or
+target construction; they are not coerced to scores or `NaN`.
+
 Feature history may precede `evaluation_start`, but Stage 2b must first select
 the bounded accounting-date signal matrix and only then apply signal lag and
 generate targets. No pre-anchor signal may create a trade on the initialization
@@ -253,10 +260,25 @@ Ranking, selection, position constraints, and intended weights must use only:
 The exact execution close may be used to calculate a simulated fill price and
 test feasibility. It must not change selected membership, rerank survivors, or
 redistribute a failed asset's weight. The initial strict feasibility policy
-requires finite positive execution prices for every intended buy and every
-nonzero sell or liquidation leg. Held assets also require a valid incoming
-return before drift and trade calculation. Any failure raises without
-redistribution.
+requires the execution-close price for every intended nonzero buy, sell, or
+liquidation leg to be real numeric, non-Boolean, finite, and strictly positive.
+Missing, Boolean, complex, string/object, `NaN`, positive or negative infinity,
+zero, or negative execution prices raise with stable reason
+`execution_price_invalid`, without coercion, fill, reranking, redistribution,
+or a successful result.
+
+Incoming-return validation is distinct from execution-leg feasibility. For
+every asset whose prior post-trade holding is nonzero, both its prior-close and
+current-close endpoint prices must be real numeric, non-Boolean, finite, and
+strictly positive. Missing, Boolean, complex, string/object, non-finite, zero,
+or negative endpoint values raise with stable reason `incoming_price_invalid`
+before asset-return calculation, gross solvency, drift, target feasibility,
+trade, or cost. No coercion, fill, or zero-return substitution is allowed.
+Execution buy/sell price validation remains a separate later check.
+When the same held sell has an invalid incoming endpoint, the earlier
+`incoming_price_invalid` check takes precedence. The sell-side
+`execution_price_invalid` contract must therefore also be tested directly on
+the execution-leg validator with an otherwise prevalidated frozen sell leg.
 
 The existing `missing_price_policy="zero_return"` fallback is diagnostic-only
 and cannot satisfy this formal timing contract or support promotion evidence.
@@ -274,17 +296,30 @@ information sets include the changed value.
 For accounting row `t > 0`, with asset `i`:
 
 ```text
+for each i where posttrade_holdings[i,t-1] != 0:
+    require valid_real_nonboolean_positive(price[i,t-1])
+    require valid_real_nonboolean_positive(price[i,t])
+    otherwise raise incoming_price_invalid
+
 asset_return[i,t] =
     price[i,t] / price[i,t-1] - 1
 
 gross_return[t] =
     sum(posttrade_holdings[i,t-1] * asset_return[i,t])
 
+gross_multiplier[t] =
+    1 + gross_return[t]
+
+require isfinite(gross_return[t])
+require isfinite(gross_multiplier[t])
+require gross_multiplier[t] > 0
+otherwise raise portfolio_insolvent_or_non_finite_before_trade
+
 grown_weight[i,t] =
     posttrade_holdings[i,t-1] * (1 + asset_return[i,t])
 
 pretrade_weight[i,t] =
-    grown_weight[i,t] / (1 + gross_return[t])
+    grown_weight[i,t] / gross_multiplier[t]
 
 signed_trade_weight[i,t] =
     target_weight[i,t] - pretrade_weight[i,t]
@@ -296,10 +331,16 @@ turnover[t] =
     sum(trade_weight[i,t])
 
 fixed_cost_impact[t] =
-    turnover[t] * fixed_cost_rate * (1 + gross_return[t])
+    turnover[t] * fixed_cost_rate * gross_multiplier[t]
 
 net_return[t] =
     gross_return[t] - all_applied_cost_impacts[t]
+
+net_multiplier[t] =
+    1 + net_return[t]
+
+equity_candidate[t] =
+    equity[t-1] * net_multiplier[t]
 
 posttrade_holdings[i,t] =
     target_weight[i,t] on scheduled target rows
@@ -310,11 +351,15 @@ The row order is:
 
 ```text
 prior post-trade holdings
+-> held incoming-return endpoint validation
 -> close-to-close asset return
+-> gross return and multiplier
+-> pretrade gross solvency validation
 -> drifted pre-trade holdings
 -> frozen target feasibility
 -> signed trade and turnover
 -> cost at the ending close
+-> net-return and equity solvency validation
 -> new post-trade holdings
 ```
 
@@ -322,6 +367,55 @@ Fixed transaction cost and fixed slippage are charged against post-return
 portfolio value and expressed as beginning-period return impacts. Any
 precomputed volume impact must preserve its declared return basis and exact
 date alignment. Zero cost or zero slippage remains diagnostic-only.
+
+Before accounting begins:
+
+```text
+is_real_numeric_scalar(initial_capital)
+not isinstance(initial_capital, bool)
+initial_capital is not missing
+isfinite(initial_capital)
+initial_capital > 0
+```
+
+Type, Boolean, and missing-value validation must occur before `isfinite` or
+comparison so complex, string/object, `None`, and Boolean inputs fail
+deterministically rather than leaking a Python or NumPy type error. Any initial
+capital failure raises with stable exception evidence reason
+`initial_capital_invalid`.
+
+Before grown weights, pretrade-weight division, trade construction, or cost
+calculation, every row's already-computed gross result must satisfy:
+
+```text
+isfinite(gross_return[t])
+isfinite(gross_multiplier[t])
+gross_multiplier[t] > 0
+```
+
+Failure, including gross return exactly `-1`, below `-1`, or non-finite, raises
+with stable reason `portfolio_insolvent_or_non_finite_before_trade` before any
+division by the gross multiplier, drifted pretrade weights, trades, costs,
+equity update, metrics, or successful `BacktestResult`.
+
+After all cost impacts are applied, every row must satisfy:
+
+```text
+isfinite(net_return[t])
+isfinite(net_multiplier[t])
+net_multiplier[t] > 0
+isfinite(equity_candidate[t])
+equity_candidate[t] > 0
+```
+
+Failure of any condition, including net return exactly `-1`, below `-1`, or
+non-finite, raises deterministically before equity is updated, metrics are
+calculated, or a successful `BacktestResult` is constructed. The implementation
+must not continue into complex-valued or misleading geometric annualization,
+must not serialize the run as successful evidence, and must retain the
+stable row-failure evidence reason
+`portfolio_insolvent_or_non_finite_after_costs` for the later Stage 4 immutable
+trial ledger. It must not emit a successful result labeled `INVALID`.
 
 The model is an idealized full target reset at an observed close. It is not an
 order, fill, market-on-close auction, partial-fill, liquidity-capacity, or
@@ -397,14 +491,69 @@ unadjusted_sharpe =
     / std(net_return[measured_return_dates], ddof=0)
     * sqrt(periods_per_year)
 tracking_error =
-    std(net_return - benchmark_return, ddof=0)
+    std(
+        net_return.loc[measured_return_dates]
+        - benchmark_return.loc[measured_return_dates],
+        ddof=0,
+    )
     * sqrt(252)
 ```
+
+`initial_capital`, every measured equity value, and `final_equity` must be
+finite and strictly positive before geometric total or annualized return is
+calculated. Equivalently, the annualization base
+`1 + total_return = final_equity / initial_capital` must be finite and strictly
+positive. These metric preconditions are downstream safeguards; the row-level
+solvency validation above must fail the run earlier. Exact bounds require
+`start_pos < end_pos`, so `N = len(measured_return_dates)` is positive.
+
+Stage 2b changes the standalone public signature to:
+
+```text
+calculate_max_drawdown(equity_curve, *, initial_capital)
+```
+
+The standalone helper validates `initial_capital` under the scalar contract
+above. It independently requires `equity_curve` to be a non-empty
+`pandas.Series` with a unique, strictly increasing `DatetimeIndex` and real
+numeric non-Boolean values that are all finite and strictly positive.
+It has no external index-equality requirement because it receives no returns
+or accounting index, and it has no responsibility for validating returns.
+
+`calculate_basic_metrics` separately requires `returns` to be a non-empty
+`pandas.Series` with a unique, strictly increasing `DatetimeIndex`, real
+numeric non-Boolean finite values, and a formal first-row zero-return anchor.
+Wrong container type, empty input, non-`DatetimeIndex`, duplicate or unsorted
+dates, Boolean, complex, string/object, `NaN`, positive or negative infinity,
+or a nonzero anchor raises with stable reason `returns_invalid` before metrics.
+
+The basic-metrics equity and returns must have exactly identical
+`DatetimeIndex` values, timezone, and order. This applies in addition to the
+equity type, uniqueness, monotonicity, and value checks. Missing, extra,
+reordered, or timezone-mismatched equity dates raise rather than intersecting
+or reindexing. After validation, basic metrics passes the validated
+`initial_capital` explicitly to `calculate_max_drawdown`.
+
+Both helper paths validate before division, geometric annualization, or
+drawdown. Wrong container type, empty series, non-`DatetimeIndex`, duplicate or
+unsorted dates, zero, negative, `NaN`, positive or negative infinity, Boolean,
+complex, and string/object values raise deterministically with stable reason
+`equity_curve_invalid`. No coercion, intersection, sorting, or fill is allowed.
+These are downstream helper safeguards; a backtester-produced invalid
+intermediate or final equity must have already failed the row-level gross or
+post-cost checks. Neither equity nor returns validation produces a partial
+metric dictionary or successful result.
 
 The Sharpe-style ratio assumes a zero risk-free return and remains `NaN` when
 measured volatility is zero. The current key `sharpe_ratio` may remain for
 compatibility only if metadata identifies this exact unadjusted convention.
 Tracking error requires at least two measured daily close-to-close intervals.
+Formal `BacktestResult` arrays still require a zero initialization-anchor
+strategy and benchmark return. To preserve the existing public
+`calculate_tracking_error` contract, a direct metric-helper test may use a
+nonzero strategy anchor sentinel only to prove that exact
+`.loc[measured_return_dates]` indexing excludes it; the benchmark anchor
+remains required zero.
 
 `total_return`, total turnover, and total applied costs include every
 accounting event, including the terminal row. Maximum drawdown must seed the
@@ -434,10 +583,16 @@ The benchmark must use:
 - the same terminal return window; and
 - no strategy transaction, slippage, or impact costs.
 
-The benchmark anchor return is zero. Benchmark return row `t > 0` measures the
-same `(close[t-1], close[t]]` interval as strategy gross return row `t`.
-Tracking error subtracts benchmark returns from strategy net returns only on
-the common measured-date set.
+The benchmark price input must have the exact accounting-date axis and be real
+numeric, non-Boolean, finite, and strictly positive at every row before return
+conversion. Complex, Boolean, string/object, missing, extra-date, reordered, or
+otherwise misaligned price input raises without coercion.
+
+The benchmark anchor return is zero in both formal `BacktestResult` data and
+the public tracking-error helper contract. Benchmark return row `t > 0`
+measures the same `(close[t-1], close[t]]` interval as strategy gross return row
+`t`. Tracking error subtracts benchmark returns from strategy net returns only
+on the common measured-date set.
 
 Missing benchmark prices raise in the formal path. The existing explicit
 zero-return fill policy remains diagnostic-only and cannot produce tracking
@@ -477,8 +632,14 @@ Stage 2b must emit stable global metadata rather than only free-text prose:
 | `measured_return_end` | `evaluation_end` |
 | `measured_return_count` | Exact number of common measured rows |
 | `rebalance_resolution` | `last_observed_row_in_resample_bucket` |
+| `signal_value_failure_policy` | `raise_on_nonreal_boolean_or_nonfinite_available_score` |
 | `target_freeze_policy` | `decision_information_only_no_execution_close_rerank` |
-| `execution_price_failure_policy` | `raise_without_redistribution` |
+| `incoming_price_failure_policy` | `raise_before_asset_return_on_invalid_held_endpoint` |
+| `execution_price_failure_policy` | `raise_execution_price_invalid_without_redistribution` |
+| `gross_insolvency_failure_policy` | `raise_before_pretrade_division_or_costs` |
+| `insolvency_failure_policy` | `raise_before_successful_result_on_invalid_or_insolvent_capital` |
+| `equity_curve_failure_policy` | `reject_invalid_equity_before_metrics` |
+| `returns_failure_policy` | `reject_invalid_returns_before_basic_metrics` |
 | `terminal_row_policy` | `include_return_trade_cost_open_holdings_no_future_return` |
 | `benchmark_return_window` | `same_measured_rows_cost_free_close_to_close` |
 | `initialization_anchor_policy` | `zero_return_trade_turnover_cost_and_holdings` |
@@ -544,10 +705,12 @@ return interval when one exists and records
 `is_terminal_scheduled_row` is true, and no `a[N+1]` exists in the result.
 Missing endpoints must never be filled with an invented future date.
 
-Strict feasibility failure raises before a successful `BacktestResult` exists,
-so it is not a successful-result ledger status. Stage 2b tests must retain the
-deterministic exception evidence; the later immutable trial ledger will retain
-failed-run records.
+Signal-value, held incoming-price, or strict execution-feasibility failure
+raises before a successful `BacktestResult` exists, so none is a
+successful-result ledger status. Pretrade gross or post-cost net/equity
+insolvency has the same successful-result boundary. Stage 2b tests must retain
+the deterministic exception evidence; the later immutable trial ledger will
+retain failed-run records.
 
 Timestamp fields use the validated source labels. Phase fields preserve the
 within-row ordering without inventing timezone-aware wall-clock instants that
@@ -606,15 +769,15 @@ holding established at `d1`.
 | --- | --- | --- |
 | `TIMING-001` | The four-row daily-rebalance reference case above, where fixture labels `d0..d3` are bounded accounting rows `a[0..3]`. | Each scheduled row uses bounded `a[j-L]`; exact signal source, execution row, first earned return, drift, trade, turnover, cost, holdings, net return, and equity values match by hand. |
 | `TIMING-002` | Lags `0`, `False`, `0.0`, `-1`, `1.5`, and `"1"`. | Every invalid lag fails before alignment or target construction; integer one passes. |
-| `TIMING-003` | Signal axes with an extra/missing/reordered date or asset, duplicate labels, or a timezone mismatch. | Every mismatch raises; no silent reindexing, sorting, or dropping occurs. |
+| `TIMING-003` | Signal axes with an extra/missing/reordered date or asset, duplicate labels, or a timezone mismatch, plus Boolean, complex, string/object, positive-infinity, negative-infinity, IEEE `NaN`, and other missing signal cells. | Every axis mismatch raises; Boolean, complex, string/object, infinity, and non-`NaN` missing representations raise `signal_value_invalid` before lag or target construction; IEEE `NaN` alone remains an explicit unavailable score; no coercion, silent reindexing, sorting, or dropping occurs. |
 | `TIMING-004` | A bounded Friday, Monday, and Wednesday accounting slice with lags one and two. | Lag one uses the immediately preceding accounting row, not a calendar-day offset; for Wednesday execution at lag two, Friday is the frozen source, Monday is an intervening close, and the asserted order ends at Wednesday execution without constraining later rows. |
 | `TIMING-005` | Monthly rebalancing with daily signal rows. | Each month-end execution uses the immediately preceding source-row signal for lag one, not the previous rebalance signal; unscheduled signals do not execute. |
-| `TIMING-006` | Separately remove the execution-close price for an intended buy and for a held asset that must be sold. | The frozen target is not reranked or redistributed; strict buy/sell feasibility raises, and the zero-return fallback remains diagnostic-only. |
+| `TIMING-006` | For each intended nonzero buy and a directly tested prevalidated frozen sell leg, separately set the execution-close price to missing, Boolean, complex, string/object, `NaN`, positive infinity, negative infinity, zero, and negative values; separately apply the same invalid values to the prior and current incoming-return endpoints of a nonzero prior holding. | Every invalid buy/sell execution leg raises `execution_price_invalid` without coercion, fill, reranking, or redistribution; every invalid held endpoint raises `incoming_price_invalid` earlier than asset return, gross validation, drift, target feasibility, trade, or cost; when an integrated held sell shares the invalid current endpoint, incoming-price failure takes precedence while the direct sell-validator fixture preserves independent sell-leg coverage. |
 | `TIMING-007` | Mutate execution-row signal/eligibility values and, separately, a price strictly after the execution row. | Neither mutation changes the frozen intended target or the execution row's incoming gross return; execution-close price mutations are covered separately by feasibility and accounting tests. |
 | `TIMING-008` | Explicit full-source history before `evaluation_start`, a first post-anchor scheduled row with insufficient local accounting-row lag, later daily lag-greater-than-one no-op rows, and a non-daily window whose anchor is mid-bucket. | Pre-anchor history supports feature computation but is never consumed as a lagged trade signal; the first post-anchor scheduled row remains all cash when `j < L`; the ledger-date set is exactly the anchor/rebalance union; the mid-bucket anchor appears once with `is_scheduled_rebalance = false`, missing scheduled execution and incoming/first-holding intervals; each later insufficient-lag row records its `a[j-1]` to `a[j]` all-cash incoming interval while both first-holding endpoints remain missing. |
 | `TIMING-009` | Explicit bounded evaluation dates after a long feature warm-up, plus partial-date string `2024-01`, off-index endpoints, equal and reversed bounds, aware/naive and different-timezone endpoints, and an exact-boundary fixture. | Strategy return, benchmark return, annualized return, volatility, Sharpe, and tracking error exclude every warm-up row; the partial string and every other invalid endpoint case raise before target generation; scalar `get_loc` positions drive the valid exact positional slice, whose endpoints are each included once and whose rows alone contribute to accounting and metrics. |
-| `TIMING-010` | Hand-calculated net and benchmark returns, an anchor loss check, and `periods_per_year` values `False`, `True`, `251`, `252`, and `365`. | All period metrics share `measured_return_dates`; non-Boolean integer 252 passes, every other annualizer fails, annualization uses the exact measured count, and drawdown includes initial capital. |
-| `TIMING-011` | Exact benchmark prices plus missing, reordered, and timezone-mismatched variants. | Strategy and benchmark share anchor, measured rows, and terminal window; invalid alignment fails. |
+| `TIMING-010` | Hand-calculated net and benchmark returns; a direct tracking-error fixture with a deliberately nonzero strategy anchor sentinel and required zero benchmark anchor; an anchor loss check; `periods_per_year` values `False`, `True`, `251`, `252`, and `365`; initial capital inputs `True`, `False`, complex, string, `None`, zero, negative, `NaN`, and infinity; gross returns exactly `-1`, below `-1`, `NaN`, positive infinity, and negative infinity; separate high-cost net returns exactly `-1`, below `-1`, `NaN`, positive infinity, and negative infinity; standalone drawdown equity inputs with wrong container type, empty series, non-`DatetimeIndex`, duplicate or unsorted dates, zero, negative, `NaN`, positive infinity, negative infinity, Boolean, complex, or string/object values; basic-metrics returns with wrong container type, empty series, non-`DatetimeIndex`, duplicate or unsorted dates, Boolean, complex, string/object, `NaN`, positive infinity, negative infinity, or nonzero formal anchor; and basic-metrics equity versus returns with missing, extra, reordered, or timezone-mismatched dates. | All period metrics share `measured_return_dates`; the direct tracking-error helper remains invariant to its permitted strategy anchor sentinel while basic-metrics returns require a zero anchor; standalone drawdown requires keyword `initial_capital`, validates only its own series/index/value contract, and has no returns responsibility; basic metrics rejects every invalid returns case with `returns_invalid`, requires exact equity/returns index/timezone/order equality, and passes validated capital to drawdown; direct equity violations raise `equity_curve_invalid`; invalid initial capital, gross, and high-cost net cases raise their distinct stable reasons before downstream work. |
+| `TIMING-011` | Exact benchmark prices and zero benchmark-return anchor, plus Boolean, complex, string/object, missing, non-finite, non-positive, extra-date, missing-date, duplicate-date, reordered-date, and timezone-mismatched benchmark variants. | Strategy and benchmark share anchor, measured rows, and terminal window; tracking error explicitly subtracts only each series' `.loc[measured_return_dates]` values while preserving the helper's zero benchmark anchor; duplicate dates and every other benchmark type, price, axis, or alignment violation fail without coercion. |
 | `TIMING-012` | An incomplete terminal resample bucket with a target change at scheduled accounting row `a[N]`. | The last observed row is disclosed as a rebalance; its incoming return, turnover, and cost are included and its post-trade holdings are open; `holding_effective_start` is immediately after `close[a[N]]`, `first_holding_return_start` is `a[N]`, both the first-return endpoint and row are missing, and no `a[N+1]` is constructed or inferred. |
 | `TIMING-013` | A Stage 1 same-row synthetic response and a one-row price-forward label. | Both remain diagnostic targets and cannot be serialized as executable strategy P&L under this policy. |
 | `TIMING-014` | Every current backtest caller and serialized result. | Global typed metadata, resolved rebalance dates, and one ledger row per date in the initialization-anchor/resolved-schedule union are present; the anchor has no incoming or first-holding interval; each later insufficient-lag row has the matching prior/current accounting-date incoming interval and no first-holding interval; every nonterminal executed row has a bounded next-row first-holding endpoint, while terminal execution has start `a[N]`, missing end/row, and no invented `a[N+1]`; all statuses and intervals reconcile with accounting arrays. |
@@ -641,10 +804,25 @@ Stage 2b must:
 - reject zero, Boolean, fractional, and negative lag values;
 - add explicit bounded evaluation dates;
 - preserve a zero initialization anchor;
+- reject invalid available signal values before lag or target construction;
 - freeze targets immediately after source-row signal availability;
-- validate every buy and sell execution-price leg without redistribution;
+- validate every held prior/current incoming-price endpoint before asset
+  returns or gross accounting;
+- validate every nonzero buy/sell execution-close price as real numeric,
+  non-Boolean, finite, and positive without coercion or redistribution;
 - align every period-return metric to one measured-date set;
 - enforce the daily `periods_per_year == 252` annualizer;
+- reject non-real, non-scalar, Boolean, missing, non-finite, or non-positive
+  initial capital before unsafe numeric operations; reject invalid gross
+  multipliers before division, drift, trades, or costs; reject invalid
+  net-return multipliers or resulting equity before metrics or a successful
+  result;
+- change standalone drawdown to
+  `calculate_max_drawdown(equity_curve, *, initial_capital)`, migrate every
+  caller, and keep its self-contained series/index/value validation distinct
+  from basic-metrics equity/returns exact-index alignment;
+- validate direct basic-metrics returns as a non-empty, unique, increasing,
+  finite real non-Boolean `pandas.Series` with a zero anchor before metrics;
 - emit typed timing metadata and one ledger row per date in the
   initialization-anchor/resolved-schedule union;
 - migrate all direct callers without hidden compatibility bypasses;
@@ -679,12 +857,25 @@ Accepted here:
   `a[j-L]`; under daily rebalancing, fixture `d0` as `a[0]` maps to `d1` as
   `a[1]` execution and first earned return ending at `d2` as `a[2]`;
 - prices and signals require exact axes and timezone compatibility;
+- available signal scores are real numeric non-Boolean finite values; only
+  IEEE `NaN` denotes an unavailable score;
 - targets are frozen immediately after source-row signal availability;
+- held incoming-return endpoints are strictly validated before asset returns,
+  separately from later execution-leg feasibility;
 - execution-price feasibility cannot rerank or redistribute;
+- every intended nonzero buy/sell execution leg requires a real numeric,
+  non-Boolean, finite, positive execution-close price;
+- invalid initial capital raises before accounting; non-finite or non-positive
+  gross multiplier raises before pretrade division, drift, trades, or costs;
+  non-finite or non-positive net-return multiplier or resulting equity raises
+  before metrics or a successful result;
 - return, drift, trade, cost, and holdings follow the explicit row order;
 - evaluation bounds are explicit and the first row is a zero initialization
   anchor;
 - strategy and benchmark period metrics share the same post-anchor rows;
+- standalone drawdown validates only its own capital/equity inputs, while basic
+  metrics additionally validates formal zero-anchor returns and exact
+  equity/returns index alignment;
 - the daily annualization factor is exactly 252;
 - warm-up remains available to features but outside measured evaluation;
 - drawdown includes the initial-capital base;

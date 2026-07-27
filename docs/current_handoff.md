@@ -95,15 +95,28 @@ The accepted Stage 2a policy is
   calendar days or rebalance periods;
 - close-derived lag must be a non-boolean integer at least one;
 - prices and signals require exact axes and timezone compatibility;
+- available signal values must be real, non-Boolean, and finite, with IEEE
+  `NaN` as the sole unavailable-score sentinel;
 - the decision-time target cannot be reranked or redistributed with the
   execution close;
+- held incoming-return price endpoints and every intended nonzero execution
+  leg require real, non-Boolean, finite, strictly positive prices without
+  coercion or redistribution;
 - explicit `evaluation_start` is a zero initialization anchor, and every
   period metric uses the same post-anchor dates through explicit
   `evaluation_end`;
 - both evaluation bounds must be exact scalar timestamps on the source index;
   partial-date strings and implicit label slicing are invalid;
 - the benchmark uses the same dates and remains cost-free;
+- tracking error subtracts net strategy and benchmark returns only on
+  `measured_return_dates`; the public helper retains its required zero benchmark
+  anchor while a strategy-anchor sentinel proves exclusion;
 - daily annualization is fixed at 252 observed sessions; and
+- initial capital must be a real, non-Boolean, finite positive scalar; gross
+  return and its multiplier are validated before drift/division/trades/costs,
+  while net return, its multiplier, and the resulting equity candidate are
+  validated after costs; direct metric equity is validated before
+  annualization or drawdown; and
 - a terminal row includes its incoming return and configured trade/cost but
   creates no invented future return.
 
@@ -124,7 +137,10 @@ only. It does not change backtest behavior.
 volatility/Sharpe still include the initialization row; these remain Stage 2b
 gaps. Silent signal reindexing, execution-close target filtering, missing
 explicit evaluation bounds, drawdown anchoring, and typed timing metadata are
-also pending Stage 2b.
+also pending Stage 2b. Runtime pretrade/post-cost insolvency checks, strict
+signal/incoming/execution-price validation, direct-equity/return validation,
+and the explicit common-window tracking-error formula are likewise not yet
+implemented.
 
 ## Verified Implementation Baseline
 
@@ -160,10 +176,10 @@ Remaining high-priority methodology blockers:
 Stage 1 resolves the prior cross-split-label and unbounded-test defects in the
 current consumers. Stage 2a resolves the design ambiguity only; runtime
 zero-lag, target-freeze, evaluation-window, metric-anchor, benchmark-window,
-and metadata enforcement remain open. Additional blockers include incomplete
-trial retention, absent dependence/multiplicity/overfit controls, and
-diagnostic-only cost/capacity assumptions. See `docs/current_roadmap.md` for
-the prioritized list.
+capital-validity, and metadata enforcement remain open. Additional blockers
+include incomplete trial retention, absent dependence/multiplicity/overfit
+controls, and diagnostic-only cost/capacity assumptions. See
+`docs/current_roadmap.md` for the prioritized list.
 
 The 2026-07-11 conformance audit remains historical evidence at its audited
 SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
@@ -186,7 +202,10 @@ Stage 2b - Signal, execution, and metric timing implementation.
 Implement `docs/signal_execution_timing_contract.md` test-first. Enforce lag
 types and bounds, exact axes, bounded evaluation anchors, decision-time target
 freezing, common strategy/benchmark metric rows, initial-capital drawdown, and
-typed timing metadata across every current caller. Regenerate only
+typed timing metadata across every current caller. Enforce measured-date
+tracking error, strict signal and price-leg inputs, pretrade gross solvency,
+post-cost net/equity solvency, and direct metric equity/return validation
+before any successful result or geometric metric. Regenerate only
 deterministically affected synthetic evidence. Do not interpret historical
 diagnostics, add data providers or factors, build a strategy factory, or start
 LEAN work in Stage 2b.

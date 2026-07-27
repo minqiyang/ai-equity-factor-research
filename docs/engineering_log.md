@@ -48,6 +48,14 @@
   read-only review caught the remaining full-source-versus-accounting lag
   ambiguity, non-executable pandas boundary pseudocode, and no-op incoming
   interval distinction; those were also corrected before the next stable head.
+- The first repair-head GitHub re-review found a P1 measured-date omission in
+  the displayed tracking-error formula and a P2 missing insolvency policy.
+  A separate executor corrected the formula and added typed failure policy.
+  Adversarial read-only follow-up then separated gross failure before pretrade
+  division from post-cost net/equity failure, preserved the public helper's
+  zero benchmark anchor, closed signal, held-price, execution-price, benchmark,
+  and direct-return Boolean/complex/string type holes, and added direct
+  metric-equity safeguards.
 - Final local validation passes with 638 tests, Ruff, compilation of
   `src`, `research`, `tests`, and `lean`, sdist and wheel build, reproducible
   repo-map generation, Unicode/control scan, and branch diff checks.

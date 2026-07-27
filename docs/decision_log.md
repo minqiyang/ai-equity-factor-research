@@ -46,7 +46,10 @@ Decision:
 - Require exact signal/price axes and timezone compatibility. Freeze ranking,
   selection, constraints, and intended weights from decision-time
   information; execution-close feasibility cannot rerank or redistribute, and
-  every nonzero buy or sell leg requires a finite positive execution price.
+  available signals must be real numeric, non-Boolean, and finite, with only
+  IEEE `NaN` denoting an unavailable score. Every held incoming-price endpoint
+  and nonzero buy or sell execution leg requires a real numeric, non-Boolean,
+  finite, strictly positive price without coercion.
 - Preserve the drift-aware order: prior holdings earn the incoming return,
   drift to pre-trade weights, trade to the frozen target, incur close-time
   costs, and become post-trade holdings for the next return.
@@ -61,6 +64,18 @@ Decision:
 - Include initial capital in drawdown, keep the benchmark cost-free on the
   identical measured window, and retain the observed-bucket terminal target,
   cost, open-holdings, and no-future-return convention.
+- Compute tracking error only from strategy net and cost-free benchmark returns
+  selected by exact `measured_return_dates`. Preserve the public helper's zero
+  benchmark anchor; a nonzero strategy-anchor sentinel may appear only in a
+  direct helper test proving that the anchor is excluded.
+- Require initial capital to be a real numeric, non-Boolean, finite positive
+  scalar. Validate finite gross return and a finite positive gross multiplier
+  before pretrade division, drift, trades, or costs; validate finite net return,
+  a finite positive net multiplier, and finite positive resulting equity after
+  costs but before equity update, metrics, or a successful result. Direct
+  metric helpers independently reject invalid equity curves and return series
+  before annualization or drawdown. Failures retain distinct stable evidence
+  reasons for the later immutable trial ledger.
 - Require typed timing metadata and a Stage 2b event ledger over the sorted
   de-duplicated union of the initialization anchor and resolved rebalance dates.
   The anchor has no incoming interval; later insufficient-lag rows retain their
@@ -78,6 +93,9 @@ Rationale:
   close from silently changing portfolio membership.
 - Explicit bounds and a shared anchor keep feature warm-up and synthetic
   initialization rows from contaminating strategy-versus-benchmark metrics.
+- Separating pretrade gross failure, post-cost net/equity failure, and
+  downstream metric-input validation prevents invalid division, complex
+  annualization, and misleading successful evidence.
 
 Consequences:
 
@@ -85,7 +103,9 @@ Consequences:
   for Stage 2b.
 - Stage 2a does not fix runtime behavior. Zero lag, silent alignment,
   execution-close target filtering, inconsistent metric anchors, and untyped
-  metadata remain visible implementation gaps until Stage 2b.
+  metadata remain visible implementation gaps until Stage 2b. The accepted
+  signal/incoming/execution-price, capital-validity, and direct metric
+  equity/return failure boundaries are also pending.
 - Existing Stage 1 one-row price labels and same-row synthetic responses remain
   diagnostic targets, not strategy returns under this execution policy.
 - The local model remains idealized close-reset accounting, not MOC, order,

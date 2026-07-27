@@ -100,7 +100,11 @@ keys.
 ## Stage 2: Tracking Error
 
 Tracking error requires an exact benchmark-return contract. This section is the
-implemented Stage 2 contract and remains the authority for future maintenance.
+implemented pre-Stage-2b behavior contract and remains historical/current
+implementation evidence until Stage 2b. After Stage 2b,
+`docs/signal_execution_timing_contract.md` is the authority for the shared
+evaluation anchor and measured-return window; the `.iloc[1:]` formula below
+describes the implementation being replaced, not the future maintenance rule.
 
 ### Contract Decision
 
