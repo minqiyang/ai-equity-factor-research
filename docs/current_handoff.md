@@ -26,14 +26,18 @@ Updated: 2026-07-27 for the Signal, Execution, and Metric Timing Implementation.
   frames. Only tracked out-of-window dtype propagation may recover untouched
   bounded real/IEEE-NaN cells; native or bounded complex values remain invalid
   at their declared signal or price boundary.
-- Current Stage 2b branch validation has 847 passing tests in both the reused
+- Current Stage 2b branch validation has 849 passing tests in both the reused
   local project environment and a disposable Python 3.11/pandas 3
   CI-aligned environment. Two Linux-oriented wide-`longdouble` provenance
   regressions skip locally because macOS arm64 `longdouble` has no precision
   beyond float64; they must execute on Ubuntu CI. Deterministic generated
-  evidence, local validation, and independent read-only review are complete
-  with no remaining actionable P1/P2 finding. GitHub CI and final stable-head
-  Codex review remain required before protected merge.
+  evidence, local validation, and independent read-only review are complete.
+  The first stable-head Codex review and follow-up independent review found two
+  P2 sequence gaps. The fixes make the latest controlled bounded real/complex
+  assignment authoritative after an outside complex upcast and preserve
+  bounded recovery when a later outside non-real write changes the column to
+  object. New-head GitHub CI and Codex re-review remain required before
+  protected merge.
 - Current phase: research-only. No vendor download, credentials, brokerage,
   orders, paper deployment, live deployment, or real-money execution.
 

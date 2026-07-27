@@ -1772,9 +1772,10 @@ def _extract_bounded_source_values(
     """Extract bounded cells using only mutation-time provenance.
 
     A real column promoted by a tracked complex write outside the accounting
-    window may recover untouched bounded cells losslessly. Native complex
-    inputs, bounded complex writes, stale handles, and arbitrary pandas writes
-    never receive that recovery.
+    window may recover bounded real semantics losslessly, including when a
+    later outside non-real write promotes the current column to object. Native
+    complex inputs, latest bounded complex writes, stale handles, and arbitrary
+    pandas writes never receive that recovery.
     """
 
     bounded_index = source.index[start_pos : end_pos + 1]
@@ -1791,15 +1792,18 @@ def _extract_bounded_source_values(
             )
             for record in provenance.mutations
         )
-        bounded_complex_writes = {
-            record.row_position
+        latest_bounded_assignments: dict[int, SourceCellSnapshot] = {
+            record.row_position: record.assigned_value
             for record in provenance.mutations
             if record.column_position == column_position
-            and record.assigned_value.kind == "complex"
             and start_pos <= record.row_position <= end_pos
         }
+        current_dtype = source.dtypes.iloc[column_position]
         recover_tracked_upcast = (
-            pd.api.types.is_complex_dtype(source.dtypes.iloc[column_position])
+            (
+                pd.api.types.is_complex_dtype(current_dtype)
+                or pd.api.types.is_object_dtype(current_dtype)
+            )
             and provenance.original_dtype_families[column_position]
             == "real_numeric"
             and outside_complex_write
@@ -1810,16 +1814,19 @@ def _extract_bounded_source_values(
             recovered_any = False
             for offset, value in enumerate(bounded_column.tolist()):
                 source_row_position = start_pos + offset
-                original = provenance.original_cells[source_row_position][
-                    column_position
-                ]
-                if source_row_position in bounded_complex_writes:
+                expected = latest_bounded_assignments.get(
+                    source_row_position,
+                    provenance.original_cells[source_row_position][
+                        column_position
+                    ],
+                )
+                if expected.kind == "complex":
                     recovered.append(value)
                     contains_nonreal = True
                     continue
-                recovered_value = _losslessly_recover_original_real(
+                recovered_value = _losslessly_recover_expected_real(
                     value,
-                    original=original,
+                    expected=expected,
                 )
                 if recovered_value is not None:
                     recovered.append(recovered_value)
@@ -1852,10 +1859,10 @@ def _extract_bounded_source_values(
     return extracted_frame, tuple(recovered_column_positions)
 
 
-def _losslessly_recover_original_real(
+def _losslessly_recover_expected_real(
     value: object,
     *,
-    original: SourceCellSnapshot,
+    expected: SourceCellSnapshot,
 ) -> float | None:
     if not isinstance(value, complex | np.complexfloating):
         return None
@@ -1863,17 +1870,17 @@ def _losslessly_recover_original_real(
     imaginary_value = float(np.imag(value))
     if not imaginary_value == 0.0:
         return None
-    if original.kind == "ieee_nan":
+    if expected.kind == "ieee_nan":
         return float("nan") if math.isnan(real_value) else None
-    if original.kind == "integer":
+    if expected.kind == "integer":
         if not math.isfinite(real_value) or not real_value.is_integer():
             return None
-        original_integer = int(original.payload[0])
-        if int(real_value) != original_integer:
+        expected_integer = int(expected.payload[0])
+        if int(real_value) != expected_integer:
             return None
         return real_value
-    if original.kind == "real_float":
-        if _float_semantic_token(real_value) != original.payload[0]:
+    if expected.kind == "real_float":
+        if _float_semantic_token(real_value) != expected.payload[0]:
             return None
         return real_value
     return None

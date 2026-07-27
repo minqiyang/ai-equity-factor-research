@@ -231,6 +231,66 @@ def test_timing_003_out_of_window_signal_values_do_not_change_result(
     assert observed.metrics == baseline.metrics
 
 
+def test_timing_003_outside_complex_then_object_write_preserves_bounded_result() -> None:
+    dates = pd.bdate_range("2025-01-06", periods=6)
+    prices = pd.DataFrame(
+        {"AAA": [100.0, 101.0, 102.0, 103.0, 104.0, 105.0]},
+        index=dates,
+    )
+    signals = pd.DataFrame({"AAA": np.ones(6)}, index=dates)
+    provenance = capture_backtest_source_provenance(prices, signals)
+    baseline = _run_long_only_backtest(
+        prices,
+        signals,
+        source_provenance=provenance,
+        evaluation_start=dates[1],
+        evaluation_end=dates[4],
+        rebalance_frequency="D",
+        top_n=1,
+    )
+    tracked_prices, tracked_signals, provenance = (
+        apply_tracked_backtest_source_mutation(
+            prices,
+            signals,
+            provenance,
+            source_role="signals",
+            row_position=0,
+            column_position=0,
+            value=1.0 + 0.0j,
+        )
+    )
+    tracked_prices, tracked_signals, provenance = (
+        apply_tracked_backtest_source_mutation(
+            tracked_prices,
+            tracked_signals,
+            provenance,
+            source_role="signals",
+            row_position=-1,
+            column_position=0,
+            value="outside",
+        )
+    )
+    assert pd.api.types.is_object_dtype(tracked_signals["AAA"].dtype)
+
+    observed = _run_long_only_backtest(
+        tracked_prices,
+        tracked_signals,
+        source_provenance=provenance,
+        evaluation_start=dates[1],
+        evaluation_end=dates[4],
+        rebalance_frequency="D",
+        top_n=1,
+    )
+
+    pd.testing.assert_series_equal(observed.returns, baseline.returns)
+    pd.testing.assert_frame_equal(observed.holdings, baseline.holdings)
+    assert observed.metrics == baseline.metrics
+    assert (
+        observed.timing_metadata["backtest_source_provenance_status"]
+        == "validated_with_tracked_complex_recovery"
+    )
+
+
 @pytest.mark.filterwarnings(
     "ignore:Setting an item of incompatible dtype is deprecated:FutureWarning"
 )
@@ -528,6 +588,99 @@ def test_timing_003_mutation_ledger_distinguishes_identical_complex_frames() -> 
             top_n=1,
         )
     assert exc.value.reason == "signal_value_invalid"
+    assert exc.value.date == dates[1]
+    assert exc.value.asset == "AAA"
+
+
+def test_timing_003_latest_tracked_bounded_assignment_controls_recovery() -> None:
+    dates = pd.bdate_range("2025-01-06", periods=5)
+    prices = pd.DataFrame(
+        {
+            "AAA": np.full(5, 100.0),
+            "BBB": np.full(5, 100.0),
+        },
+        index=dates,
+    )
+    signals = pd.DataFrame(
+        {
+            "AAA": np.ones(5),
+            "BBB": np.full(5, 2.0),
+        },
+        index=dates,
+    )
+    provenance = capture_backtest_source_provenance(prices, signals)
+    tracked_prices, tracked_signals, provenance = (
+        apply_tracked_backtest_source_mutation(
+            prices,
+            signals,
+            provenance,
+            source_role="signals",
+            row_position=0,
+            column_position=0,
+            value=1.0 + 0.0j,
+        )
+    )
+    tracked_prices, tracked_signals, provenance = (
+        apply_tracked_backtest_source_mutation(
+            tracked_prices,
+            tracked_signals,
+            provenance,
+            source_role="signals",
+            row_position=1,
+            column_position=0,
+            value=3.0 + 0.0j,
+        )
+    )
+    tracked_prices, tracked_signals, provenance = (
+        apply_tracked_backtest_source_mutation(
+            tracked_prices,
+            tracked_signals,
+            provenance,
+            source_role="signals",
+            row_position=1,
+            column_position=0,
+            value=3.0,
+        )
+    )
+    assert pd.api.types.is_complex_dtype(tracked_signals["AAA"].dtype)
+
+    recovered = _run_long_only_backtest(
+        tracked_prices,
+        tracked_signals,
+        source_provenance=provenance,
+        evaluation_start=dates[1],
+        evaluation_end=dates[3],
+        rebalance_frequency="D",
+        top_n=1,
+    )
+    assert recovered.holdings.loc[dates[2], "AAA"] == pytest.approx(1.0)
+    assert (
+        recovered.timing_metadata["backtest_source_provenance_status"]
+        == "validated_with_tracked_complex_recovery"
+    )
+
+    tracked_prices, tracked_signals, provenance = (
+        apply_tracked_backtest_source_mutation(
+            tracked_prices,
+            tracked_signals,
+            provenance,
+            source_role="signals",
+            row_position=1,
+            column_position=0,
+            value=3.0 + 0.0j,
+        )
+    )
+    with pytest.raises(BacktestValidationError, match="signal_value_invalid") as exc:
+        _run_long_only_backtest(
+            tracked_prices,
+            tracked_signals,
+            source_provenance=provenance,
+            evaluation_start=dates[1],
+            evaluation_end=dates[3],
+            rebalance_frequency="D",
+            top_n=1,
+        )
+
     assert exc.value.date == dates[1]
     assert exc.value.asset == "AAA"
 

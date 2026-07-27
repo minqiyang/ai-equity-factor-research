@@ -41,15 +41,17 @@ authorized.
 | LEAN | Non-executing metadata/signal scaffold only; no algorithm runtime, parity evidence, brokerage, orders, paper, or live path. |
 
 Protected main has 638 passing tests plus successful exact-merge CI. The Stage
-2b branch has 847 passing tests in both the reused local project environment
+2b branch has 849 passing tests in both the reused local project environment
 and a disposable Python 3.11/pandas 3 CI-aligned environment after
 implementing the selected provenance contract. Two wide-`longdouble`
 provenance regressions skip on macOS arm64, where `longdouble` has no precision
 beyond float64, and must execute on Ubuntu CI. Deterministic generated
-evidence, local validation, and independent read-only review are complete with
-no remaining actionable P1/P2 finding. Current-head GitHub CI and final
-stable-head review remain gates. These checks establish software behavior, not
-empirical research validity.
+evidence, local validation, and independent read-only review are complete. The
+first stable-head Codex review and follow-up independent review found two P2
+tracked-mutation sequence gaps. Their fixes make the latest controlled bounded
+assignment authoritative and preserve bounded recovery after a later outside
+non-real/object promotion. New-head GitHub CI and Codex re-review remain gates.
+These checks establish software behavior, not empirical research validity.
 
 ## Current Research-Validity Findings
 

@@ -50,6 +50,10 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Made the latest controlled bounded real/complex assignment authoritative
+  when recovering a real column after an out-of-window complex dtype upcast,
+  including when a later out-of-window non-real write changes the container to
+  object.
 - Made completed current-head Codex review with no unresolved actionable
   findings an explicit prerequisite before auto-merge or normal protected
   merge for review-required PRs.

@@ -51,16 +51,19 @@
   before/after state; untracked post-capture writes, stale source
   identity/axes, role swaps, malformed records, and replay inconsistency fail
   closed.
-- Lossless recovery is limited to untouched bounded cells in originally real
-  columns with a tracked complex write outside the current bounds. Native or
-  bounded complex values, lossy large-integer conversion, and moved-bound
-  evidence are not recovered. Direct and nested provenance objects are rejected
-  by experiment-log serialization; current committed logs are scanned for
-  private field names and contain only the allowlisted policy/status strings.
-  Extracted primitive values remain a caller responsibility.
+- Lossless recovery is limited to bounded cells in originally real columns
+  with a tracked complex write outside the current bounds. Untouched
+  coordinates must match their original snapshot; controlled bounded
+  coordinates must match their latest tracked semantic assignment. A latest
+  real assignment may recover, while a latest complex assignment remains
+  invalid. Native complex inputs, lossy large-integer conversion, and
+  moved-bound evidence are not recovered. Direct and nested provenance objects
+  are rejected by experiment-log serialization; current committed logs are
+  scanned for private field names and contain only the allowlisted policy/status
+  strings. Extracted primitive values remain a caller responsibility.
 - Generated outputs are refreshed in dependency order for momentum,
   combined-score, and the eight-case sweep, followed by the registry and repo
-  map. The current implementation checkpoint has 847 passing tests in both
+  map. The current implementation checkpoint has 849 passing tests in both
   the local project environment and a Python 3.11/pandas 3 CI-aligned
   environment. Two wide-`longdouble` provenance regressions skip on macOS
   arm64 because its `longdouble` mantissa is not wider than float64; they are
@@ -88,11 +91,11 @@
   floating/complex scalar types whose mantissa exceeds float64 before
   conversion. Conditional `nextafter` regressions execute only on platforms
   where that wider precision exists.
-- Final independent read-only review reported no remaining actionable P1/P2
+- Pre-PR independent read-only review reported no remaining actionable P1/P2
   finding after the scalar, metric-helper, wide-precision, and canonical
   documentation fixes. Its focused review suite passed 310 tests with the same
-  two expected macOS precision skips; the full local suite passed 847 tests
-  with those two skips.
+  two expected macOS precision skips; the initial full local suite passed 847
+  tests with those two skips.
 - Final JSON SHA-256 hashes are
   `8213abbad4dcebaf76cbb0e5e4b2335b65c89ff752a1776131b3b62d4b4beb70`
   (momentum),
@@ -105,6 +108,36 @@
   did not alter numerical, holding, cost, or date evidence. JSON parsing and
   scans found no internal provenance cells, axes, identities, mutation
   ledgers, or digests in committed evidence.
+- After the first GitHub CI passed on commit `8611e54`, the required
+  stable-head Codex review found one P2 sequence gap. An outside complex write
+  can upcast a column; a later controlled bounded real write is then stored as
+  `x+0j`. Recovery incorrectly compared that coordinate only with its original
+  snapshot and rejected the new valid real value. Extraction now derives the
+  latest tracked semantic assignment per bounded coordinate: latest real
+  assignments recover only when the stored value matches, and latest complex
+  assignments remain invalid. A deterministic complex-to-real-to-complex
+  sequence protects both outcomes.
+- The first focused run of that new regression failed because the test tried
+  to inspect a non-public `target_weights` result attribute. The backtest had
+  already completed successfully; the test was corrected to assert the public
+  post-trade `holdings` evidence. Both local and pandas 3 focused reruns then
+  passed 214 tests with the two expected macOS precision skips.
+- Follow-up independent review then found a second P2 in the same chain. An
+  outside complex upcast followed by an outside string write changes the
+  current column to object while untouched bounded values remain `x+0j`;
+  recovery had required a currently complex dtype and rejected those bounded
+  cells. A real-origin column with a tracked outside complex write may now
+  recover matching bounded semantics from either a complex or object
+  container. Latest bounded non-real/complex assignments remain invalid. The
+  mixed outside-write regression passes in both local and pandas 3 focused
+  suites, which now pass 215 tests with two expected macOS precision skips.
+- Final independent re-review exercised 777 mutation sequences spanning real,
+  integer, Fraction, IEEE `NaN`, complex, Boolean, string, missing, and object
+  promotion cases and reported no remaining actionable P1/P2 finding. The full
+  local and Python 3.11/pandas 3 suites each pass 849 tests with the same two
+  expected macOS precision skips. Ruff, compilation, build, Skill audit, JSON
+  parsing, privacy/path scanning, hidden-Unicode scanning, and diff checks
+  pass; new-head GitHub CI and Codex re-review remain protected-merge gates.
 - The default `python` alias remains absent and alternate system interpreters
   lack the repository test stack. Local tests reused the existing project
   `.venv` with `PYTHONPATH=src`. A disposable, ignored worktree `.venv` was
