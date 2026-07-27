@@ -9,12 +9,17 @@ profitability, or trading readiness.
 
 ### Added
 
-- Added the accepted signal, execution, and metric timing contract for an
-  after-close signal and next-observed-close idealized target reset. It freezes
-  nonzero source-row lag, decision-time target intent, return/trade/cost
-  ordering, bounded evaluation anchors, common strategy/benchmark metric rows,
-  terminal behavior, typed metadata, and a 14-case Stage 2b test matrix.
-  Runtime behavior remains unchanged until Stage 2b.
+- Implemented the accepted signal, execution, and metric timing contract for
+  an after-close signal and next-observed-close idealized target reset. The
+  runtime now enforces nonzero source-row lag, exact axes/bounds, decision-time
+  targets, ordered price/solvency gates, common strategy/benchmark metric rows,
+  terminal behavior, typed metadata, and the Stage 2b behavior matrix.
+- Added mandatory `tracked_pre_mutation_source_snapshot_v1` provenance to the
+  close-only backtester. A controlled coordinate ledger distinguishes native
+  or bounded complex values from tracked post-capture out-of-window dtype
+  propagation and rejects stale/untracked/tampered later state. Direct and
+  nested provenance objects are refused by experiment-log serialization;
+  current committed logs carry only allowlisted policy/status metadata.
 - Added the accepted purged and bounded chronological split contract with six
   explicit inclusive boundaries, complete label-interval ownership, a hard
   bounded test cutoff, horizon-aware purge, optional embargo, raw-axis target

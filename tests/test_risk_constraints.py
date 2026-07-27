@@ -47,6 +47,28 @@ def test_position_cap_rejects_invalid_cap(cap: object) -> None:
         apply_long_only_position_cap(_targets(), max_position_weight=cap)
 
 
+def test_position_cap_rejects_stateful_float_subclass_without_conversion() -> None:
+    class StatefulFloat(float):
+        def __new__(cls, value: float):
+            instance = super().__new__(cls, value)
+            instance.float_calls = 0
+            return instance
+
+        def __float__(self) -> float:
+            self.float_calls += 1
+            return super().__float__()
+
+    cap = StatefulFloat(0.3)
+
+    with pytest.raises(
+        ValueError,
+        match="max_position_weight must be greater than 0 and no greater than 1",
+    ):
+        apply_long_only_position_cap(_targets(), max_position_weight=cap)
+
+    assert cap.float_calls == 0
+
+
 @pytest.mark.parametrize(
     ("mutator", "error_type", "message"),
     [

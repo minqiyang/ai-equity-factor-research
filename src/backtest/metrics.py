@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from fractions import Fraction
 import math
 
 import numpy as np
@@ -14,24 +15,46 @@ _HOLDINGS_METRIC_DECIMAL_PLACES = 15
 _TRACKING_ERROR_FREQUENCY = "daily_close_to_close"
 _TRACKING_ERROR_PERIODS_PER_YEAR = 252
 _EPISODE_ACCOUNTING_TOLERANCE = 1e-12
+_NUMPY_INTEGER_SCALAR_TYPES = frozenset(
+    np.dtype(typecode).type for typecode in np.typecodes["AllInteger"]
+)
+_NUMPY_FLOAT_SCALAR_TYPES = frozenset(
+    np.dtype(typecode).type for typecode in np.typecodes["Float"]
+)
+_EXACT_INTEGER_SCALAR_TYPES = frozenset({int, *_NUMPY_INTEGER_SCALAR_TYPES})
+_EXACT_REAL_SCALAR_TYPES = frozenset(
+    {
+        int,
+        float,
+        Fraction,
+        *_NUMPY_INTEGER_SCALAR_TYPES,
+        *_NUMPY_FLOAT_SCALAR_TYPES,
+    }
+)
 
 
-def calculate_max_drawdown(equity_curve: pd.Series) -> float:
+def calculate_max_drawdown(
+    equity_curve: pd.Series,
+    *,
+    initial_capital: float,
+) -> float:
     """Calculate maximum drawdown from a portfolio equity curve.
 
     Args:
         equity_curve: Portfolio value indexed by date.
+        initial_capital: Positive finite capital base before the first
+            reported equity value.
 
     Returns:
         Maximum drawdown as a negative decimal value. For example, ``-0.25``
         means a 25% peak-to-trough drawdown.
     """
 
-    if equity_curve.empty:
-        return math.nan
+    clean_initial_capital = _validate_initial_capital(initial_capital)
+    clean_equity_curve = _validate_equity_curve(equity_curve)
 
-    running_peak = equity_curve.cummax()
-    drawdowns = equity_curve / running_peak - 1.0
+    running_peak = clean_equity_curve.cummax().clip(lower=clean_initial_capital)
+    drawdowns = clean_equity_curve / running_peak - 1.0
     return float(drawdowns.min())
 
 
@@ -67,7 +90,11 @@ def calculate_tracking_error(
             "benchmark_returns first row must be the synthetic zero-return anchor"
         )
 
-    measured_active_returns = (clean_strategy - clean_benchmark).iloc[1:]
+    measured_return_dates = clean_strategy.index[1:]
+    measured_active_returns = (
+        clean_strategy.loc[measured_return_dates]
+        - clean_benchmark.loc[measured_return_dates]
+    )
     if len(measured_active_returns) < 2:
         raise ValueError("tracking error requires at least 2 measured return periods")
 
@@ -224,83 +251,440 @@ def calculate_basic_metrics(
     are included when they exist.
     """
 
-    if equity_curve.empty:
-        raise ValueError("equity_curve must not be empty")
-    if returns.empty:
-        raise ValueError("returns must not be empty")
-    if initial_capital <= 0:
-        raise ValueError("initial_capital must be positive")
-    if periods_per_year <= 0:
-        raise ValueError("periods_per_year must be positive")
-    if benchmark_returns is not None and periods_per_year != 252:
-        raise ValueError("tracking error supports daily_close_to_close only")
+    clean_initial_capital = _validate_initial_capital(initial_capital)
+    clean_periods_per_year = _validate_periods_per_year(periods_per_year)
+    clean_equity_curve = _validate_equity_curve(equity_curve)
+    clean_returns = _validate_basic_metrics_returns(returns)
+    _validate_exact_index(
+        clean_equity_curve,
+        clean_returns.index,
+        name="equity_curve",
+        reason="equity_curve_invalid",
+    )
 
-    total_return = float(equity_curve.iloc[-1] / initial_capital - 1.0)
-    realized_periods = max(len(returns) - 1, 1)
-    annualized_return = float((1.0 + total_return) ** (periods_per_year / realized_periods) - 1.0)
+    clean_holdings: pd.DataFrame | None = None
+    if holdings is not None:
+        clean_holdings = _validate_holdings_for_metrics(holdings)
+        _validate_exact_index(
+            clean_holdings,
+            clean_returns.index,
+            name="holdings",
+            reason="holdings_invalid",
+        )
 
-    annualized_volatility = float(returns.std(ddof=0) * math.sqrt(periods_per_year))
+    clean_turnover = _validate_optional_accounting_series(
+        turnover,
+        clean_returns.index,
+        name="turnover",
+        non_negative=True,
+    )
+    clean_transaction_costs = _validate_optional_accounting_series(
+        transaction_costs,
+        clean_returns.index,
+        name="transaction_costs",
+        non_negative=True,
+    )
+    clean_slippage_costs = _validate_optional_accounting_series(
+        slippage_costs,
+        clean_returns.index,
+        name="slippage_costs",
+        non_negative=True,
+    )
+    clean_volume_aware_slippage_costs = _validate_optional_accounting_series(
+        volume_aware_slippage_costs,
+        clean_returns.index,
+        name="volume_aware_slippage_costs",
+        non_negative=True,
+    )
+
+    clean_benchmark_equity_curve: pd.Series | None = None
+    if benchmark_equity_curve is not None:
+        clean_benchmark_equity_curve = _validate_equity_curve(
+            benchmark_equity_curve,
+            name="benchmark_equity_curve",
+            reason="benchmark_equity_curve_invalid",
+        )
+        _validate_exact_index(
+            clean_benchmark_equity_curve,
+            clean_returns.index,
+            name="benchmark_equity_curve",
+            reason="benchmark_equity_curve_invalid",
+        )
+
+    clean_benchmark_returns: pd.Series | None = None
+    if benchmark_returns is not None:
+        clean_benchmark_returns = _validate_real_finite_series(
+            benchmark_returns,
+            name="benchmark_returns",
+            reason="benchmark_returns_invalid",
+        )
+        _validate_exact_index(
+            clean_benchmark_returns,
+            clean_returns.index,
+            name="benchmark_returns",
+            reason="benchmark_returns_invalid",
+        )
+        if clean_benchmark_returns.iloc[0] != 0.0:
+            raise ValueError(
+                "benchmark_returns_invalid: benchmark_returns first row must "
+                "be the synthetic zero-return anchor"
+            )
+
+    if (
+        clean_benchmark_equity_curve is not None
+        and clean_benchmark_returns is None
+    ):
+        raise ValueError(
+            "benchmark_returns_invalid: benchmark_returns are required when "
+            "benchmark_equity_curve is provided"
+        )
+    if (
+        clean_benchmark_equity_curve is not None
+        and clean_benchmark_returns is not None
+    ):
+        _validate_benchmark_equity_path(
+            clean_benchmark_equity_curve,
+            clean_benchmark_returns,
+            initial_capital=clean_initial_capital,
+        )
+
+    measured_return_dates = clean_returns.index[1:]
+    measured_returns = clean_returns.loc[measured_return_dates]
+    final_equity = clean_equity_curve.loc[measured_return_dates].iloc[-1]
+    equity_multiple = _validate_capital_multiple(
+        final_equity,
+        clean_initial_capital,
+        reason="equity_curve_invalid",
+        name="final equity",
+    )
+    total_return = equity_multiple - 1.0
+    with np.errstate(over="ignore", invalid="ignore"):
+        annualized_return = float(
+            np.power(
+                equity_multiple,
+                clean_periods_per_year / len(measured_return_dates),
+            )
+            - 1.0
+        )
+    if not math.isfinite(annualized_return):
+        raise ValueError(
+            "equity_curve_invalid: annualized return must be finite"
+        )
+
+    with np.errstate(over="ignore", invalid="ignore"):
+        measured_mean = float(measured_returns.mean())
+        measured_volatility = float(measured_returns.std(ddof=0))
+    if not math.isfinite(measured_mean) or not math.isfinite(measured_volatility):
+        raise ValueError(
+            "returns_invalid: measured return mean and volatility must be finite"
+        )
+    annualized_volatility = float(
+        measured_volatility * math.sqrt(clean_periods_per_year)
+    )
     sharpe_ratio = math.nan
-    if annualized_volatility > 0:
-        sharpe_ratio = float(returns.mean() / returns.std(ddof=0) * math.sqrt(periods_per_year))
+    if measured_volatility > 0:
+        sharpe_ratio = float(
+            measured_mean / measured_volatility
+            * math.sqrt(clean_periods_per_year)
+        )
 
     metrics = {
         "total_return": total_return,
         "annualized_return": annualized_return,
         "annualized_volatility": annualized_volatility,
         "sharpe_ratio": sharpe_ratio,
-        "max_drawdown": calculate_max_drawdown(equity_curve),
+        "max_drawdown": calculate_max_drawdown(
+            clean_equity_curve,
+            initial_capital=clean_initial_capital,
+        ),
     }
 
-    if holdings is not None:
-        if not holdings.index.equals(returns.index):
-            raise ValueError("holdings index must exactly match returns index")
-        metrics.update(calculate_holdings_state_metrics(holdings))
+    if clean_holdings is not None:
+        metrics.update(calculate_holdings_state_metrics(clean_holdings))
 
-    if turnover is not None:
-        metrics["average_turnover"] = float(turnover.mean())
-        metrics["total_turnover"] = float(turnover.sum())
+    if clean_turnover is not None:
+        metrics["average_turnover"] = float(
+            clean_turnover.loc[measured_return_dates].mean()
+        )
+        metrics["total_turnover"] = float(clean_turnover.sum())
 
-    if transaction_costs is not None:
-        metrics["total_transaction_cost_impact"] = float(transaction_costs.sum())
+    if clean_transaction_costs is not None:
+        metrics["total_transaction_cost_impact"] = float(
+            clean_transaction_costs.sum()
+        )
 
-    if slippage_costs is not None:
-        metrics["total_slippage_cost_impact"] = float(slippage_costs.sum())
+    if clean_slippage_costs is not None:
+        metrics["total_slippage_cost_impact"] = float(
+            clean_slippage_costs.sum()
+        )
 
-    if volume_aware_slippage_costs is not None:
+    if clean_volume_aware_slippage_costs is not None:
         metrics["total_volume_aware_slippage_cost_impact"] = float(
-            volume_aware_slippage_costs.sum(),
+            clean_volume_aware_slippage_costs.sum(),
         )
 
     if (
-        transaction_costs is not None
-        or slippage_costs is not None
-        or volume_aware_slippage_costs is not None
+        clean_transaction_costs is not None
+        or clean_slippage_costs is not None
+        or clean_volume_aware_slippage_costs is not None
     ):
-        transaction_total = 0.0 if transaction_costs is None else float(transaction_costs.sum())
-        slippage_total = 0.0 if slippage_costs is None else float(slippage_costs.sum())
+        transaction_total = (
+            0.0
+            if clean_transaction_costs is None
+            else float(clean_transaction_costs.sum())
+        )
+        slippage_total = (
+            0.0
+            if clean_slippage_costs is None
+            else float(clean_slippage_costs.sum())
+        )
         volume_aware_total = (
             0.0
-            if volume_aware_slippage_costs is None
-            else float(volume_aware_slippage_costs.sum())
+            if clean_volume_aware_slippage_costs is None
+            else float(clean_volume_aware_slippage_costs.sum())
         )
         metrics["total_trading_cost_impact"] = (
             transaction_total + slippage_total + volume_aware_total
         )
 
-    if benchmark_equity_curve is not None:
-        benchmark_total_return = float(benchmark_equity_curve.iloc[-1] / initial_capital - 1.0)
+    if clean_benchmark_returns is not None:
+        benchmark_multiple = _compound_return_multiple(
+            clean_benchmark_returns.loc[measured_return_dates],
+            reason="benchmark_returns_invalid",
+            name="benchmark measured returns",
+        )
+        benchmark_total_return = benchmark_multiple - 1.0
         metrics["benchmark_total_return"] = benchmark_total_return
         metrics["excess_total_return"] = total_return - benchmark_total_return
 
-    if benchmark_returns is not None:
         metrics["tracking_error"] = calculate_tracking_error(
-            returns,
-            benchmark_returns,
+            clean_returns,
+            clean_benchmark_returns,
             return_frequency=_TRACKING_ERROR_FREQUENCY,
         )
 
     return metrics
+
+
+def _validate_initial_capital(initial_capital: object) -> float:
+    if type(initial_capital) not in _EXACT_REAL_SCALAR_TYPES:
+        raise ValueError(
+            "initial_capital_invalid: initial_capital must be a real "
+            "non-boolean immutable numeric scalar"
+        )
+
+    try:
+        clean_initial_capital = float(initial_capital)
+    except (OverflowError, TypeError, ValueError) as exc:
+        raise ValueError(
+            "initial_capital_invalid: initial_capital must convert to a finite "
+            "positive float"
+        ) from exc
+    if not math.isfinite(clean_initial_capital) or clean_initial_capital <= 0.0:
+        raise ValueError(
+            "initial_capital_invalid: initial_capital must be finite and positive"
+        )
+    return clean_initial_capital
+
+
+def _validate_periods_per_year(periods_per_year: object) -> int:
+    if type(periods_per_year) not in _EXACT_INTEGER_SCALAR_TYPES:
+        raise ValueError(
+            "periods_per_year_invalid: daily_close_to_close only supports "
+            "the non-boolean integer 252"
+        )
+    clean_periods_per_year = int(periods_per_year)
+    if clean_periods_per_year != _TRACKING_ERROR_PERIODS_PER_YEAR:
+        raise ValueError(
+            "periods_per_year_invalid: daily_close_to_close only supports "
+            "the non-boolean integer 252"
+        )
+    return clean_periods_per_year
+
+
+def _validate_capital_multiple(
+    final_equity: float,
+    initial_capital: float,
+    *,
+    reason: str,
+    name: str,
+) -> float:
+    with np.errstate(over="ignore", divide="ignore", invalid="ignore"):
+        multiple = float(np.float64(final_equity) / np.float64(initial_capital))
+    if not math.isfinite(multiple) or multiple <= 0.0:
+        raise ValueError(
+            f"{reason}: {name} divided by initial_capital must be finite "
+            "and positive"
+        )
+    return multiple
+
+
+def _compound_return_multiple(
+    returns: pd.Series,
+    *,
+    reason: str,
+    name: str,
+) -> float:
+    with np.errstate(over="ignore", invalid="ignore"):
+        period_multipliers = 1.0 + returns.to_numpy()
+    if (
+        not np.isfinite(period_multipliers).all()
+        or (period_multipliers <= 0.0).any()
+    ):
+        raise ValueError(
+            f"{reason}: every {name} multiplier must be finite and positive"
+        )
+    with np.errstate(over="ignore", invalid="ignore"):
+        multiple = float(np.prod(period_multipliers))
+    if not math.isfinite(multiple) or multiple <= 0.0:
+        raise ValueError(
+            f"{reason}: compounded {name} multiplier must be finite and positive"
+        )
+    return multiple
+
+
+def _validate_benchmark_equity_path(
+    benchmark_equity_curve: pd.Series,
+    benchmark_returns: pd.Series,
+    *,
+    initial_capital: float,
+) -> None:
+    with np.errstate(over="ignore", invalid="ignore"):
+        expected_equity = initial_capital * np.cumprod(
+            1.0 + benchmark_returns.to_numpy()
+        )
+    if (
+        not np.isfinite(expected_equity).all()
+        or (expected_equity <= 0.0).any()
+    ):
+        raise ValueError(
+            "benchmark_returns_invalid: benchmark return path must compound "
+            "to finite positive equity"
+        )
+    if not np.allclose(
+        benchmark_equity_curve.to_numpy(),
+        expected_equity,
+        rtol=1e-12,
+        atol=0.0,
+    ):
+        raise ValueError(
+            "benchmark_equity_curve_invalid: benchmark equity must start from "
+            "initial_capital and match the benchmark return path"
+        )
+
+
+def _validate_equity_curve(
+    equity_curve: object,
+    *,
+    name: str = "equity_curve",
+    reason: str = "equity_curve_invalid",
+) -> pd.Series:
+    clean_equity_curve = _validate_real_finite_series(
+        equity_curve,
+        name=name,
+        reason=reason,
+    )
+    if clean_equity_curve.le(0.0).any():
+        raise ValueError(f"{reason}: {name} values must be strictly positive")
+    return clean_equity_curve
+
+
+def _validate_basic_metrics_returns(returns: object) -> pd.Series:
+    clean_returns = _validate_real_finite_series(
+        returns,
+        name="returns",
+        reason="returns_invalid",
+    )
+    if len(clean_returns) < 2:
+        raise ValueError(
+            "returns_invalid: returns must include a zero anchor and at least "
+            "one measured return"
+        )
+    if clean_returns.iloc[0] != 0.0:
+        raise ValueError(
+            "returns_invalid: returns first row must be the synthetic "
+            "zero-return anchor"
+        )
+    return clean_returns
+
+
+def _validate_optional_accounting_series(
+    series: pd.Series | None,
+    expected_index: pd.DatetimeIndex,
+    *,
+    name: str,
+    non_negative: bool,
+) -> pd.Series | None:
+    if series is None:
+        return None
+
+    reason = f"{name}_invalid"
+    clean_series = _validate_real_finite_series(
+        series,
+        name=name,
+        reason=reason,
+    )
+    _validate_exact_index(
+        clean_series,
+        expected_index,
+        name=name,
+        reason=reason,
+    )
+    if non_negative and clean_series.lt(0.0).any():
+        raise ValueError(f"{reason}: {name} values must be non-negative")
+    return clean_series
+
+
+def _validate_real_finite_series(
+    series: object,
+    *,
+    name: str,
+    reason: str,
+) -> pd.Series:
+    if not isinstance(series, pd.Series):
+        raise ValueError(f"{reason}: {name} must be a pandas Series")
+    if not isinstance(series.index, pd.DatetimeIndex):
+        raise ValueError(
+            f"{reason}: {name} must be indexed by a pandas DatetimeIndex"
+        )
+    if series.empty:
+        raise ValueError(f"{reason}: {name} must not be empty")
+    if series.index.has_duplicates:
+        raise ValueError(f"{reason}: {name} index must not contain duplicate dates")
+    if not series.index.is_monotonic_increasing:
+        raise ValueError(
+            f"{reason}: {name} index must be sorted in increasing date order"
+        )
+    if (
+        is_bool_dtype(series.dtype)
+        or is_complex_dtype(series.dtype)
+        or not is_numeric_dtype(series.dtype)
+    ):
+        raise ValueError(
+            f"{reason}: {name} must contain real numeric, non-boolean values"
+        )
+    if series.isna().any():
+        raise ValueError(f"{reason}: {name} must not contain missing values")
+
+    clean_series = series.astype(float)
+    if not np.isfinite(clean_series.to_numpy()).all():
+        raise ValueError(f"{reason}: {name} must contain finite values")
+    return clean_series
+
+
+def _validate_exact_index(
+    values: pd.Series | pd.DataFrame,
+    expected_index: pd.DatetimeIndex,
+    *,
+    name: str,
+    reason: str,
+) -> None:
+    if values.index.tz != expected_index.tz:
+        raise ValueError(
+            f"{reason}: {name} index timezone must exactly match returns"
+        )
+    if not values.index.equals(expected_index):
+        raise ValueError(f"{reason}: {name} index must exactly match returns")
 
 
 def _validate_tracking_error_returns(

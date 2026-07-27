@@ -7,19 +7,26 @@ fetch data.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any, Mapping
+from dataclasses import dataclass, field, replace
+from fractions import Fraction
+import hashlib
+import math
+from numbers import Integral, Real
+from typing import Any, Literal, Mapping
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_bool_dtype, is_complex_dtype, is_numeric_dtype
 
 from backtest.metrics import calculate_basic_metrics, calculate_holding_episode_metrics
 from risk.constraints import apply_long_only_position_cap
 
 
 _VOLUME_AWARE_SLIPPAGE_MODES = {"diagnostic_only", "apply_precomputed_impact"}
-_PORTFOLIO_GROWTH_STABILITY_THRESHOLD = 1e-8
+_TIMING_CONTRACT = "after_close_signal_next_observed_close_v1"
+_SOURCE_PROVENANCE_POLICY = "tracked_pre_mutation_source_snapshot_v1"
+_LEDGER_PHASE_SIGNAL_AVAILABILITY = "strictly_after_feature_row_close"
+_LEDGER_PHASE_DECISION = "immediately_after_signal_availability"
+_LEDGER_PHASE_EXECUTION = "observed_source_row_close_idealized_reset"
 _TRACKING_ERROR_ASSUMPTIONS = {
     "tracking_error_contract": "daily_close_to_close_v1",
     "tracking_error_return_basis": "strategy_net_after_applied_costs_vs_cost_free_benchmark",
@@ -65,6 +72,144 @@ _REQUIRED_VOLUME_AWARE_METADATA_KEYS = {
     "volume_policy",
     "window",
 }
+_NUMPY_INTEGER_SCALAR_TYPES = frozenset(
+    np.dtype(typecode).type for typecode in np.typecodes["AllInteger"]
+)
+_NUMPY_FLOAT_SCALAR_TYPES = frozenset(
+    np.dtype(typecode).type for typecode in np.typecodes["Float"]
+)
+_NUMPY_COMPLEX_SCALAR_TYPES = frozenset(
+    np.dtype(typecode).type for typecode in np.typecodes["Complex"]
+)
+_MAX_SOURCE_FLOAT_MANTISSA_BITS = np.finfo(np.float64).nmant
+_SOURCE_NUMPY_FLOAT_SCALAR_TYPES = frozenset(
+    scalar_type
+    for scalar_type in _NUMPY_FLOAT_SCALAR_TYPES
+    if np.finfo(scalar_type).nmant <= _MAX_SOURCE_FLOAT_MANTISSA_BITS
+)
+_SOURCE_NUMPY_COMPLEX_SCALAR_TYPES = frozenset(
+    scalar_type
+    for scalar_type in _NUMPY_COMPLEX_SCALAR_TYPES
+    if np.finfo(scalar_type).nmant <= _MAX_SOURCE_FLOAT_MANTISSA_BITS
+)
+_EXACT_INTEGER_SCALAR_TYPES = frozenset({int, *_NUMPY_INTEGER_SCALAR_TYPES})
+_EXACT_REAL_SCALAR_TYPES = frozenset(
+    {
+        int,
+        float,
+        Fraction,
+        *_NUMPY_INTEGER_SCALAR_TYPES,
+        *_NUMPY_FLOAT_SCALAR_TYPES,
+    }
+)
+_EXACT_BOOLEAN_SCALAR_TYPES = frozenset({bool, np.bool_})
+_EXACT_SOURCE_COMPLEX_SCALAR_TYPES = frozenset(
+    {complex, *_SOURCE_NUMPY_COMPLEX_SCALAR_TYPES}
+)
+
+
+class BacktestValidationError(ValueError):
+    """Deterministic validation failure with a machine-readable reason."""
+
+    def __init__(
+        self,
+        reason: str,
+        detail: str,
+        *,
+        date: pd.Timestamp | None = None,
+        asset: object | None = None,
+    ) -> None:
+        self.reason = reason
+        self.date = date
+        self.asset = asset
+        context = []
+        if date is not None:
+            context.append(f"date={date.isoformat()}")
+        if asset is not None:
+            context.append(f"asset={asset!r}")
+        suffix = "" if not context else f" ({', '.join(context)})"
+        super().__init__(f"{reason}: {detail}{suffix}")
+
+
+class _SourceLineageToken:
+    """Opaque in-process marker for a library-issued provenance lineage."""
+
+    __slots__ = ()
+
+
+@dataclass(frozen=True, slots=True)
+class SourceCellSnapshot:
+    """Immutable semantic representation of one source cell."""
+
+    __experiment_log_private__ = True
+
+    kind: str
+    payload: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class SourceMutationRecord:
+    """One mutation performed through the provenance-controlled API."""
+
+    __experiment_log_private__ = True
+
+    sequence: int
+    row_position: int
+    column_position: int
+    assigned_value: SourceCellSnapshot
+    before_state_digest: str
+    after_state_digest: str
+    record_digest: str
+
+
+@dataclass(frozen=True, slots=True, repr=False)
+class SourceFrameProvenance:
+    """Role-bound immutable snapshot and controlled mutation ledger."""
+
+    __experiment_log_private__ = True
+
+    schema_version: str
+    role: Literal["prices", "signals"]
+    axis_fingerprint: tuple[object, ...]
+    original_dtype_names: tuple[str, ...]
+    original_dtype_families: tuple[str, ...]
+    original_cells: tuple[tuple[SourceCellSnapshot, ...], ...]
+    original_state_digest: str
+    current_state_digest: str
+    mutations: tuple[SourceMutationRecord, ...]
+    _source_identity: int = field(repr=False, compare=False)
+    _lineage_token: object = field(repr=False, compare=False)
+
+
+@dataclass(frozen=True, slots=True, repr=False)
+class BacktestSourceProvenance:
+    """Exact price/signal provenance required by the bounded backtester."""
+
+    __experiment_log_private__ = True
+
+    schema_version: str
+    prices: SourceFrameProvenance
+    signals: SourceFrameProvenance
+
+
+@dataclass(frozen=True)
+class TimingLedgerRow:
+    """One auditable signal/decision/execution timing event."""
+
+    ledger_date: pd.Timestamp
+    scheduled_execution_date: pd.Timestamp | None
+    is_scheduled_rebalance: bool
+    event_status: str
+    signal_source_date: pd.Timestamp | None
+    feature_observation_end: pd.Timestamp | None
+    signal_availability_phase: str | None
+    decision_phase: str | None
+    execution_phase: str | None
+    incoming_return_start: pd.Timestamp | None
+    incoming_return_end: pd.Timestamp | None
+    first_holding_return_start: pd.Timestamp | None
+    first_holding_return_end: pd.Timestamp | None
+    is_terminal_scheduled_row: bool
 
 
 @dataclass(frozen=True)
@@ -95,13 +240,183 @@ class BacktestResult:
     metrics: dict[str, float]
     benchmark_equity_curve: pd.Series | None
     benchmark_returns: pd.Series | None
+    timing_metadata: dict[str, Any]
+    timing_ledger: tuple[TimingLedgerRow, ...]
     assumptions: dict[str, Any]
+
+
+def capture_backtest_source_provenance(
+    prices: pd.DataFrame,
+    signals: pd.DataFrame,
+) -> BacktestSourceProvenance:
+    """Capture the caller-declared immutable baseline source state.
+
+    Enforcement begins at this call; the library cannot infer source history
+    that was already erased before capture. Callers must invoke it immediately
+    after the final price and signal panels are constructed. Any later source
+    mutation must use
+    :func:`apply_tracked_backtest_source_mutation`; an arbitrary pandas write,
+    copy, replacement, or dtype conversion invalidates the handle.
+    """
+
+    if not isinstance(prices, pd.DataFrame) or not isinstance(
+        signals,
+        pd.DataFrame,
+    ):
+        raise BacktestValidationError(
+            "source_axes_invalid",
+            "source provenance requires pandas DataFrame price and signal sources",
+        )
+    return BacktestSourceProvenance(
+        schema_version=_SOURCE_PROVENANCE_POLICY,
+        prices=_capture_source_frame_provenance(prices, role="prices"),
+        signals=_capture_source_frame_provenance(signals, role="signals"),
+    )
+
+
+def apply_tracked_backtest_source_mutation(
+    prices: pd.DataFrame,
+    signals: pd.DataFrame,
+    source_provenance: BacktestSourceProvenance,
+    *,
+    source_role: Literal["prices", "signals"],
+    row_position: int,
+    column_position: int,
+    value: object,
+) -> tuple[pd.DataFrame, pd.DataFrame, BacktestSourceProvenance]:
+    """Return copied sources plus provenance after one controlled mutation."""
+
+    if source_role not in {"prices", "signals"}:
+        raise BacktestValidationError(
+            "source_provenance_invalid",
+            "source_role must be either 'prices' or 'signals'",
+        )
+    _validate_backtest_source_provenance(
+        prices=prices,
+        signals=signals,
+        source_provenance=source_provenance,
+    )
+    row = _read_exact_integral_scalar(row_position)
+    column = _read_exact_integral_scalar(column_position)
+    if row is None or column is None:
+        raise BacktestValidationError(
+            "source_provenance_invalid",
+            "tracked mutation coordinates must be non-boolean integer positions",
+        )
+
+    selected = prices if source_role == "prices" else signals
+    if row < 0:
+        row += len(selected.index)
+    if column < 0:
+        column += len(selected.columns)
+    if (
+        row < 0
+        or row >= len(selected.index)
+        or column < 0
+        or column >= len(selected.columns)
+    ):
+        raise BacktestValidationError(
+            "source_provenance_invalid",
+            "tracked mutation coordinates must resolve inside the source axes",
+        )
+
+    mutated_prices = prices
+    mutated_signals = signals
+    selected_copy = selected.copy(deep=True)
+    _prepare_tracked_mutation_column(
+        selected_copy,
+        column_position=column,
+        value=value,
+    )
+    selected_copy.iat[row, column] = value
+    selected_provenance = (
+        source_provenance.prices
+        if source_role == "prices"
+        else source_provenance.signals
+    )
+    before_digest = selected_provenance.current_state_digest
+    after_digest = _source_state_digest(selected_copy, role=source_role)
+    assigned_value = _snapshot_source_cell(value)
+    sequence = len(selected_provenance.mutations)
+    record = SourceMutationRecord(
+        sequence=sequence,
+        row_position=row,
+        column_position=column,
+        assigned_value=assigned_value,
+        before_state_digest=before_digest,
+        after_state_digest=after_digest,
+        record_digest=_mutation_record_digest(
+            lineage_digest=selected_provenance.original_state_digest,
+            sequence=sequence,
+            row_position=row,
+            column_position=column,
+            assigned_value=assigned_value,
+            before_state_digest=before_digest,
+            after_state_digest=after_digest,
+        ),
+    )
+    updated_frame_provenance = replace(
+        selected_provenance,
+        current_state_digest=after_digest,
+        mutations=(*selected_provenance.mutations, record),
+        _source_identity=id(selected_copy),
+    )
+    if source_role == "prices":
+        mutated_prices = selected_copy
+        updated_provenance = replace(
+            source_provenance,
+            prices=updated_frame_provenance,
+        )
+    else:
+        mutated_signals = selected_copy
+        updated_provenance = replace(
+            source_provenance,
+            signals=updated_frame_provenance,
+        )
+    return mutated_prices, mutated_signals, updated_provenance
+
+
+def _prepare_tracked_mutation_column(
+    source: pd.DataFrame,
+    *,
+    column_position: int,
+    value: object,
+) -> None:
+    """Promote a copied column explicitly before an incompatible test write."""
+
+    dtype = source.dtypes.iloc[column_position]
+    if isinstance(value, complex | np.complexfloating):
+        if not (
+            pd.api.types.is_complex_dtype(dtype)
+            or pd.api.types.is_object_dtype(dtype)
+        ):
+            target_dtype = (
+                complex
+                if isinstance(dtype, np.dtype)
+                and pd.api.types.is_numeric_dtype(dtype)
+                and not pd.api.types.is_bool_dtype(dtype)
+                else object
+            )
+            source.isetitem(
+                column_position,
+                source.iloc[:, column_position].astype(target_dtype),
+            )
+        return
+    if isinstance(value, bool | np.bool_) or not isinstance(value, Real):
+        if not pd.api.types.is_object_dtype(dtype):
+            source.isetitem(
+                column_position,
+                source.iloc[:, column_position].astype(object),
+            )
 
 
 def run_long_only_backtest(
     prices: pd.DataFrame,
     signals: pd.DataFrame,
     *,
+    source_provenance: BacktestSourceProvenance,
+    evaluation_start: pd.Timestamp,
+    evaluation_end: pd.Timestamp,
     rebalance_frequency: str = "ME",
     top_n: int | None = None,
     top_pct: float | None = None,
@@ -118,49 +433,22 @@ def run_long_only_backtest(
     periods_per_year: int = 252,
     max_position_weight: float | None = None,
 ) -> BacktestResult:
-    """Run a minimal long-only, equal-weight cross-sectional backtest.
+    """Run the bounded after-close/next-observed-close research contract.
 
-    Execution alignment:
-    - Signals are treated as values known after the close of their timestamp.
-    - By default, ``signal_lag_periods=1`` means a rebalance on date ``t`` uses
-      the previous available signal row, not the signal stamped at ``t``.
-    - Target holdings set on date ``t`` earn returns starting on the next
-      available price row.
-    - Signals are aligned to the price index and price columns; the aligned
-      non-null signal coverage ratio is reported in ``result.assumptions``.
+    The inclusive evaluation bounds are exact source-row labels. The first
+    bounded row is an all-cash initialization anchor. A scheduled row ``a[j]``
+    uses only ``signals[a[j - signal_lag_periods]]`` and a target established at
+    its close first earns the return ending on the next observed row.
 
-    Portfolio rules:
-    - Long-only only.
-    - No leverage; selected assets receive equal weights summing to 1.0.
-    - No shorting and no cash interest.
-    - Trades occur only on rebalance dates. Between rebalances, weights drift
-      with asset returns; the engine does not silently rebalance them each day.
-    - Transaction costs are a fixed basis-point cost applied to target-weight
-      turnover on rebalance dates. Because trades occur after that date's asset
-      returns, the cost is charged against post-return portfolio value and then
-      expressed as an impact on beginning-period return.
-    - Slippage is a separate fixed basis-point impact applied to the same
-      target-weight turnover model. This is a deterministic research
-      assumption, not an order-fill or market-impact model.
-    - Volume-aware slippage remains diagnostic-only by default. The first
-      supported integration path accepts an explicit precomputed impact series
-      and metadata; the backtester does not calculate rolling dollar volume.
-    - Missing held-asset returns raise by default. Passing
-      ``missing_price_policy="zero_return"`` is an explicit diagnostic fallback
-      that treats missing held returns as 0.0.
-    - Missing benchmark prices raise by default. Passing
-      ``benchmark_missing_policy="zero_return"`` freezes benchmark returns on
-      missing dates and should be documented as a simplifying assumption.
-
-    Turnover is the sum of absolute changes from drifted pre-trade weights to
-    target weights on each rebalance date:
-    ``sum(abs(target_weights - drifted_pretrade_weights))``. The convention is
-    not divided by two, so a full switch between two assets has turnover 2.0.
+    This is idealized close-reset accounting, not order, fill, auction,
+    brokerage, LEAN-parity, or live-trading behavior.
     """
 
     _validate_backtest_inputs(
         prices=prices,
         signals=signals,
+        evaluation_start=evaluation_start,
+        evaluation_end=evaluation_end,
         top_n=top_n,
         top_pct=top_pct,
         transaction_cost_bps=transaction_cost_bps,
@@ -173,15 +461,39 @@ def run_long_only_backtest(
         periods_per_year=periods_per_year,
     )
 
-    price_data = prices.astype(float)
-    signal_data = signals.reindex(index=price_data.index, columns=price_data.columns).astype(float)
-    rebalance_dates = _get_rebalance_dates(price_data.index, rebalance_frequency)
+    start_pos, end_pos, accounting_dates = _resolve_accounting_window(
+        prices.index,
+        evaluation_start=evaluation_start,
+        evaluation_end=evaluation_end,
+    )
+    price_provenance, signal_provenance = _validate_backtest_source_provenance(
+        prices=prices,
+        signals=signals,
+        source_provenance=source_provenance,
+    )
+    price_data, recovered_price_columns = _extract_bounded_source_values(
+        prices,
+        provenance=price_provenance,
+        start_pos=start_pos,
+        end_pos=end_pos,
+    )
+    bounded_signal_values, recovered_signal_columns = (
+        _extract_bounded_source_values(
+            signals,
+            provenance=signal_provenance,
+            start_pos=start_pos,
+            end_pos=end_pos,
+        )
+    )
+    signal_data = _validate_bounded_signal_values(bounded_signal_values)
+    rebalance_dates = _get_rebalance_dates(accounting_dates, rebalance_frequency)
     lagged_signals = signal_data.shift(signal_lag_periods)
 
     target_weights = _build_target_weights(
-        prices=price_data,
         lagged_signals=lagged_signals,
         rebalance_dates=rebalance_dates,
+        initialization_anchor=accounting_dates[0],
+        signal_lag_periods=signal_lag_periods,
         top_n=top_n,
         top_pct=top_pct,
     )
@@ -191,58 +503,49 @@ def run_long_only_backtest(
             max_position_weight=max_position_weight,
         ).where(target_weights.notna())
 
-    asset_returns = price_data.pct_change(fill_method=None)
-    asset_returns = asset_returns.replace([np.inf, -np.inf], np.nan)
+    raw_volume_impact, volume_impact_basis = _prepare_volume_aware_slippage_input(
+        accounting_dates=accounting_dates,
+        mode=volume_aware_slippage_mode,
+        impact=volume_aware_slippage_impact,
+        metadata=volume_aware_slippage_metadata,
+        fixed_slippage_bps=slippage_bps,
+    )
     (
         holdings,
         gross_returns,
         signed_trade_weights,
         trade_weights,
         resolved_asset_returns,
-    ) = _calculate_drift_aware_portfolio_path(
-        asset_returns=asset_returns,
+        turnover,
+        transaction_costs,
+        slippage_costs,
+        volume_aware_slippage_costs,
+        total_trading_costs,
+        net_returns,
+        equity_curve,
+    ) = _calculate_bounded_portfolio_path(
+        prices=price_data,
         target_weights=target_weights,
+        initial_capital=float(initial_capital),
+        transaction_cost_bps=float(transaction_cost_bps),
+        slippage_bps=float(slippage_bps),
+        raw_volume_impact=raw_volume_impact,
+        volume_impact_basis=volume_impact_basis,
         missing_price_policy=missing_price_policy,
     )
-    turnover = trade_weights.sum(axis=1).rename("turnover")
-    post_return_growth = 1.0 + gross_returns
-    transaction_costs = (
-        turnover * (transaction_cost_bps / 10_000.0) * post_return_growth
-    )
-    slippage_costs = turnover * (slippage_bps / 10_000.0) * post_return_growth
-    volume_aware_slippage_costs = _prepare_volume_aware_slippage_costs(
-        price_index=price_data.index,
-        mode=volume_aware_slippage_mode,
-        impact=volume_aware_slippage_impact,
-        metadata=volume_aware_slippage_metadata,
-        fixed_slippage_bps=slippage_bps,
-        post_return_growth=post_return_growth,
-    )
-    total_trading_costs = (
-        transaction_costs + slippage_costs + volume_aware_slippage_costs
-    )
-    net_returns = gross_returns - total_trading_costs
-    net_growth = 1.0 + net_returns
-    exhausted = net_growth.le(0.0)
-    if exhausted.any():
-        first_exhausted_date = exhausted[exhausted].index[0]
-        raise ValueError(
-            "Asset returns and trading costs exhausted the portfolio on "
-            f"{first_exhausted_date.date()}"
-        )
-    equity_curve = initial_capital * (1.0 + net_returns).cumprod()
 
     benchmark_equity_curve, benchmark_returns = _calculate_benchmark_path(
         benchmark_prices=benchmark_prices,
-        price_index=price_data.index,
-        initial_capital=initial_capital,
+        accounting_dates=accounting_dates,
+        initial_capital=float(initial_capital),
         benchmark_missing_policy=benchmark_missing_policy,
     )
-    benchmark_returns_for_tracking_error = None
-    if benchmark_returns is not None and benchmark_missing_policy == "raise":
-        if periods_per_year != 252:
-            raise ValueError("tracking error supports daily_close_to_close only")
-        benchmark_returns_for_tracking_error = benchmark_returns
+    formal_benchmark_equity = (
+        benchmark_equity_curve if benchmark_missing_policy == "raise" else None
+    )
+    formal_benchmark_returns = (
+        benchmark_returns if benchmark_missing_policy == "raise" else None
+    )
 
     metrics = calculate_basic_metrics(
         equity_curve,
@@ -252,9 +555,9 @@ def run_long_only_backtest(
         transaction_costs=transaction_costs,
         slippage_costs=slippage_costs,
         volume_aware_slippage_costs=volume_aware_slippage_costs,
-        benchmark_equity_curve=benchmark_equity_curve,
-        benchmark_returns=benchmark_returns_for_tracking_error,
-        initial_capital=initial_capital,
+        benchmark_equity_curve=formal_benchmark_equity,
+        benchmark_returns=formal_benchmark_returns,
+        initial_capital=float(initial_capital),
         periods_per_year=periods_per_year,
     )
     episode_metrics, closed_episode_count, open_episode_count = (
@@ -280,6 +583,22 @@ def run_long_only_backtest(
     zero_cost_or_slippage_is_diagnostic = transaction_cost_bps == 0.0 or (
         slippage_bps == 0.0 and not volume_aware_slippage_applied
     )
+    timing_metadata = _build_timing_metadata(
+        accounting_dates=accounting_dates,
+        rebalance_dates=rebalance_dates,
+        signal_lag_periods=signal_lag_periods,
+        missing_price_policy=missing_price_policy,
+        benchmark_missing_policy=benchmark_missing_policy,
+        provenance_recovery_applied=bool(
+            recovered_price_columns or recovered_signal_columns
+        ),
+    )
+    timing_ledger = _build_timing_ledger(
+        accounting_dates=accounting_dates,
+        rebalance_dates=rebalance_dates,
+        target_weights=target_weights,
+        signal_lag_periods=signal_lag_periods,
+    )
 
     return BacktestResult(
         equity_curve=equity_curve.rename("equity"),
@@ -298,6 +617,8 @@ def run_long_only_backtest(
         metrics=metrics,
         benchmark_equity_curve=benchmark_equity_curve,
         benchmark_returns=benchmark_returns,
+        timing_metadata=timing_metadata,
+        timing_ledger=timing_ledger,
         assumptions={
             "rebalance_frequency": rebalance_frequency,
             "top_n": top_n,
@@ -308,7 +629,7 @@ def run_long_only_backtest(
             "missing_price_policy": missing_price_policy,
             "benchmark_missing_policy": benchmark_missing_policy,
             "aligned_signal_coverage": _calculate_signal_coverage(signal_data),
-            "execution_timing": "signals known after close; trades on rebalance dates using lagged signals; holdings affect next price row",
+            "execution_timing": _TIMING_CONTRACT,
             "turnover_model": "target_weight_turnover",
             "turnover_reference": "drifted_pretrade_weights",
             "trade_weight_model": "absolute_target_minus_drifted_pretrade_by_asset",
@@ -318,9 +639,19 @@ def run_long_only_backtest(
             "slippage_model": "fixed_bps_on_target_weight_turnover",
             "fixed_cost_application_timing": "close_after_asset_returns",
             "fixed_cost_return_impact_basis": "beginning_period_portfolio_value",
+            "sharpe_return_basis": "net_after_applied_costs",
+            "sharpe_risk_free_policy": "zero",
+            "sharpe_ddof": 0,
+            "sharpe_periods_per_year": 252,
+            "sharpe_measured_row_policy": "exclude_initialization_anchor",
             "zero_cost_or_slippage_is_diagnostic": zero_cost_or_slippage_is_diagnostic,
+            "formal_timing_evidence_eligible": (
+                missing_price_policy == "raise"
+                and benchmark_missing_policy == "raise"
+            ),
             "long_only": True,
             "leverage": "none",
+            **timing_metadata,
             **_HOLDING_EPISODE_ASSUMPTIONS,
             "holding_episode_closed_count": closed_episode_count,
             "holding_episode_terminal_open_count": open_episode_count,
@@ -331,7 +662,7 @@ def run_long_only_backtest(
             ),
             **(
                 _TRACKING_ERROR_ASSUMPTIONS
-                if benchmark_returns_for_tracking_error is not None
+                if formal_benchmark_returns is not None
                 else {}
             ),
             **volume_aware_assumptions,
@@ -341,20 +672,27 @@ def run_long_only_backtest(
 
 def _build_target_weights(
     *,
-    prices: pd.DataFrame,
     lagged_signals: pd.DataFrame,
     rebalance_dates: pd.DatetimeIndex,
+    initialization_anchor: pd.Timestamp,
+    signal_lag_periods: int,
     top_n: int | None,
     top_pct: float | None,
 ) -> pd.DataFrame:
-    target_weights = pd.DataFrame(np.nan, index=prices.index, columns=prices.columns)
+    target_weights = pd.DataFrame(
+        np.nan,
+        index=lagged_signals.index,
+        columns=lagged_signals.columns,
+    )
 
     for date in rebalance_dates:
-        target_weights.loc[date] = 0.0
+        position = lagged_signals.index.get_loc(date)
+        if date == initialization_anchor or position < signal_lag_periods:
+            continue
 
+        target_weights.loc[date] = 0.0
         scores = lagged_signals.loc[date]
-        tradable = prices.loc[date].notna() & prices.loc[date].gt(0.0)
-        valid_scores = scores[tradable & scores.notna()]
+        valid_scores = scores[scores.notna()]
 
         selected_assets = _select_top_assets(valid_scores, top_n=top_n, top_pct=top_pct)
         if not selected_assets:
@@ -366,64 +704,155 @@ def _build_target_weights(
     return target_weights
 
 
-def _calculate_drift_aware_portfolio_path(
+def _calculate_bounded_portfolio_path(
     *,
-    asset_returns: pd.DataFrame,
+    prices: pd.DataFrame,
     target_weights: pd.DataFrame,
+    initial_capital: float,
+    transaction_cost_bps: float,
+    slippage_bps: float,
+    raw_volume_impact: pd.Series,
+    volume_impact_basis: str | None,
     missing_price_policy: str,
-) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Propagate holdings and record per-asset trades only on target rows."""
+) -> tuple[
+    pd.DataFrame,
+    pd.Series,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.Series,
+    pd.Series,
+    pd.Series,
+    pd.Series,
+    pd.Series,
+    pd.Series,
+    pd.Series,
+]:
+    """Advance bounded accounting rows in the contract's normative order."""
 
-    holdings = pd.DataFrame(0.0, index=asset_returns.index, columns=asset_returns.columns)
-    gross_returns = pd.Series(0.0, index=asset_returns.index, name="gross_return")
-    trade_weights = pd.DataFrame(
+    index = prices.index
+    columns = prices.columns
+    holdings = pd.DataFrame(0.0, index=index, columns=columns)
+    gross_returns = pd.Series(0.0, index=index, name="gross_return")
+    signed_trade_weights = pd.DataFrame(0.0, index=index, columns=columns)
+    trade_weights = pd.DataFrame(0.0, index=index, columns=columns)
+    resolved_asset_returns = pd.DataFrame(0.0, index=index, columns=columns)
+    turnover = pd.Series(0.0, index=index, name="turnover")
+    transaction_costs = pd.Series(
         0.0,
-        index=asset_returns.index,
-        columns=asset_returns.columns,
+        index=index,
+        name="transaction_cost_impact",
     )
-    signed_trade_weights = trade_weights.copy()
-    resolved_asset_returns = trade_weights.copy()
-    post_trade_weights = pd.Series(0.0, index=asset_returns.columns, dtype=float)
+    slippage_costs = pd.Series(0.0, index=index, name="slippage_impact")
+    volume_aware_costs = pd.Series(
+        0.0,
+        index=index,
+        name="volume_aware_slippage_impact",
+    )
+    total_costs = pd.Series(0.0, index=index, name="total_trading_cost_impact")
+    net_returns = pd.Series(0.0, index=index, name="return")
+    equity_curve = pd.Series(np.nan, index=index, name="equity")
+    equity_curve.iloc[0] = initial_capital
+    post_trade_weights = pd.Series(0.0, index=columns, dtype=float)
 
-    for date in asset_returns.index:
-        period_returns = _resolve_period_asset_returns(
-            asset_returns=asset_returns.loc[date],
+    if raw_volume_impact.iloc[0] != 0.0:
+        raise BacktestValidationError(
+            "volume_aware_slippage_invalid",
+            "the initialization anchor must have zero applied impact",
+            date=index[0],
+        )
+
+    for position in range(1, len(index)):
+        date = index[position]
+        previous_date = index[position - 1]
+        period_returns = _calculate_held_asset_returns(
+            previous_prices=prices.iloc[position - 1],
+            current_prices=prices.iloc[position],
             previous_holdings=post_trade_weights,
-            date=date,
+            previous_date=previous_date,
+            current_date=date,
             missing_price_policy=missing_price_policy,
         )
         resolved_asset_returns.loc[date] = period_returns
-        grown_weights = post_trade_weights * (1.0 + period_returns)
-        gross_return = float((post_trade_weights * period_returns).sum())
-        portfolio_growth = 1.0 + gross_return
-        if (
-            post_trade_weights.gt(0.0).any()
-            and portfolio_growth <= _PORTFOLIO_GROWTH_STABILITY_THRESHOLD
-        ):
-            portfolio_growth = float(grown_weights.sum())
-            gross_return = portfolio_growth - 1.0
+
+        with np.errstate(over="ignore", invalid="ignore"):
+            weighted_asset_returns = post_trade_weights * period_returns
+            weighted_return_values = (
+                weighted_asset_returns.to_numpy(dtype=float).tolist()
+            )
+            gross_return = math.fsum(weighted_return_values)
+            gross_multiplier = math.fsum([1.0, *weighted_return_values])
+        _validate_pretrade_gross(
+            gross_return=gross_return,
+            gross_multiplier=gross_multiplier,
+            date=date,
+        )
         gross_returns.loc[date] = gross_return
 
-        if portfolio_growth <= 0.0 and post_trade_weights.gt(0.0).any():
-            raise ValueError(
-                "Portfolio value was exhausted before weights could be propagated "
-                f"on {date.date()}"
-            )
-        if post_trade_weights.gt(0.0).any():
-            pretrade_weights = grown_weights / portfolio_growth
-        else:
-            pretrade_weights = post_trade_weights.copy()
+        with np.errstate(over="ignore", invalid="ignore"):
+            grown_weights = post_trade_weights * (1.0 + period_returns)
+        pretrade_weights = (
+            grown_weights / gross_multiplier
+            if post_trade_weights.ne(0.0).any()
+            else post_trade_weights.copy()
+        )
 
         target = target_weights.loc[date]
         if target.notna().any():
-            target = target.fillna(0.0)
-            signed_trade_weights.loc[date] = target - pretrade_weights
-            trade_weights.loc[date] = signed_trade_weights.loc[date].abs()
-            post_trade_weights = target
+            frozen_target = target.fillna(0.0)
+            signed_trades = frozen_target - pretrade_weights
+            _validate_execution_price_legs(
+                execution_prices=prices.iloc[position],
+                signed_trade_weights=signed_trades,
+                date=date,
+            )
+            signed_trade_weights.loc[date] = signed_trades
+            trade_weights.loc[date] = signed_trades.abs()
+            next_holdings = frozen_target
         else:
-            post_trade_weights = pretrade_weights
+            next_holdings = pretrade_weights
 
-        holdings.loc[date] = post_trade_weights
+        row_turnover = float(trade_weights.loc[date].sum())
+        turnover.loc[date] = row_turnover
+        with np.errstate(over="ignore", invalid="ignore"):
+            fixed_transaction_cost = (
+                row_turnover * (transaction_cost_bps / 10_000.0) * gross_multiplier
+            )
+            fixed_slippage_cost = (
+                row_turnover * (slippage_bps / 10_000.0) * gross_multiplier
+            )
+            volume_cost = float(raw_volume_impact.loc[date])
+            if volume_impact_basis == "post_return_portfolio_value":
+                volume_cost *= gross_multiplier
+
+        if row_turnover == 0.0 and volume_cost != 0.0:
+            raise BacktestValidationError(
+                "volume_aware_slippage_invalid",
+                "applied impact must be zero when turnover is zero",
+                date=date,
+            )
+        transaction_costs.loc[date] = fixed_transaction_cost
+        slippage_costs.loc[date] = fixed_slippage_cost
+        volume_aware_costs.loc[date] = volume_cost
+        row_total_cost = (
+            fixed_transaction_cost + fixed_slippage_cost + volume_cost
+        )
+        total_costs.loc[date] = row_total_cost
+
+        with np.errstate(over="ignore", invalid="ignore"):
+            net_return = gross_return - row_total_cost
+            net_multiplier = 1.0 + net_return
+            equity_candidate = float(equity_curve.iloc[position - 1]) * net_multiplier
+        _validate_postcost_net_equity(
+            net_return=net_return,
+            net_multiplier=net_multiplier,
+            equity_candidate=equity_candidate,
+            date=date,
+        )
+        net_returns.loc[date] = net_return
+        equity_curve.loc[date] = equity_candidate
+        holdings.loc[date] = next_holdings
+        post_trade_weights = next_holdings
 
     return (
         holdings,
@@ -431,7 +860,111 @@ def _calculate_drift_aware_portfolio_path(
         signed_trade_weights,
         trade_weights,
         resolved_asset_returns,
+        turnover,
+        transaction_costs,
+        slippage_costs,
+        volume_aware_costs,
+        total_costs,
+        net_returns,
+        equity_curve,
     )
+
+
+def _calculate_held_asset_returns(
+    *,
+    previous_prices: pd.Series,
+    current_prices: pd.Series,
+    previous_holdings: pd.Series,
+    previous_date: pd.Timestamp,
+    current_date: pd.Timestamp,
+    missing_price_policy: str,
+) -> pd.Series:
+    """Calculate only economically relevant held-asset returns."""
+
+    period_returns = pd.Series(0.0, index=previous_holdings.index, dtype=float)
+    for asset in previous_holdings.index[previous_holdings.ne(0.0)]:
+        previous_price = _read_positive_price(previous_prices.loc[asset])
+        current_price = _read_positive_price(current_prices.loc[asset])
+        if previous_price is None or current_price is None:
+            if missing_price_policy == "zero_return":
+                period_returns.loc[asset] = 0.0
+                continue
+            invalid_endpoint = (
+                previous_date if previous_price is None else current_date
+            )
+            raise BacktestValidationError(
+                "incoming_price_invalid",
+                "held prior/current close endpoints must be finite positive real values",
+                date=invalid_endpoint,
+                asset=asset,
+            )
+        with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+            period_returns.loc[asset] = current_price / previous_price - 1.0
+    return period_returns
+
+
+def _validate_execution_price_legs(
+    *,
+    execution_prices: pd.Series,
+    signed_trade_weights: pd.Series,
+    date: pd.Timestamp,
+) -> None:
+    """Validate every frozen nonzero buy, sell, or liquidation leg."""
+
+    for asset in signed_trade_weights.index[signed_trade_weights.ne(0.0)]:
+        if _read_positive_price(execution_prices.loc[asset]) is None:
+            raise BacktestValidationError(
+                "execution_price_invalid",
+                "every nonzero frozen trade leg requires a finite positive real close",
+                date=date,
+                asset=asset,
+            )
+
+
+def _validate_pretrade_gross(
+    *,
+    gross_return: float,
+    gross_multiplier: float,
+    date: pd.Timestamp,
+) -> None:
+    if (
+        not np.isfinite(gross_return)
+        or not np.isfinite(gross_multiplier)
+        or gross_multiplier <= 0.0
+    ):
+        raise BacktestValidationError(
+            "portfolio_insolvent_or_non_finite_before_trade",
+            "gross return and multiplier must be finite with positive multiplier",
+            date=date,
+        )
+
+
+def _validate_postcost_net_equity(
+    *,
+    net_return: float,
+    net_multiplier: float,
+    equity_candidate: float,
+    date: pd.Timestamp,
+) -> None:
+    if (
+        not np.isfinite(net_return)
+        or not np.isfinite(net_multiplier)
+        or net_multiplier <= 0.0
+        or not np.isfinite(equity_candidate)
+        or equity_candidate <= 0.0
+    ):
+        raise BacktestValidationError(
+            "portfolio_insolvent_or_non_finite_after_costs",
+            "net return, multiplier, and resulting equity must remain finite and positive",
+            date=date,
+        )
+
+
+def _read_positive_price(value: object) -> float | None:
+    numeric = _read_finite_real_scalar(value)
+    if numeric is None or numeric <= 0.0:
+        return None
+    return numeric
 
 
 def _select_top_assets(scores: pd.Series, *, top_n: int | None, top_pct: float | None) -> list[str]:
@@ -455,98 +988,114 @@ def _get_rebalance_dates(index: pd.DatetimeIndex, rebalance_frequency: str) -> p
     return pd.DatetimeIndex(date_series.resample(rebalance_frequency).last().dropna().to_list())
 
 
-def _resolve_period_asset_returns(
-    *,
-    asset_returns: pd.Series,
-    previous_holdings: pd.Series,
-    date: pd.Timestamp,
-    missing_price_policy: str,
-) -> pd.Series:
-    held_missing_returns = previous_holdings.gt(0.0) & asset_returns.isna()
-
-    if held_missing_returns.any() and missing_price_policy == "raise":
-        first_asset = held_missing_returns[held_missing_returns].index[0]
-        raise ValueError(
-            "Missing return for held asset "
-            f"{first_asset} on {date.date()}; set missing_price_policy='zero_return' "
-            "only for an explicit diagnostic fallback."
-        )
-
-    return asset_returns.fillna(0.0)
-
-
 def _calculate_benchmark_path(
     *,
     benchmark_prices: pd.Series | None,
-    price_index: pd.DatetimeIndex,
+    accounting_dates: pd.DatetimeIndex,
     initial_capital: float,
     benchmark_missing_policy: str,
 ) -> tuple[pd.Series | None, pd.Series | None]:
     if benchmark_prices is None:
         return None, None
 
-    if not isinstance(benchmark_prices, pd.Series):
-        raise TypeError("benchmark_prices must be a pandas Series")
-    if not isinstance(benchmark_prices.index, pd.DatetimeIndex):
-        raise TypeError("benchmark_prices must be indexed by a pandas DatetimeIndex")
-    if benchmark_prices.index.tz != price_index.tz:
-        raise ValueError("benchmark_prices and strategy prices must have matching timezones")
+    _validate_benchmark_structure(
+        benchmark_prices,
+        accounting_dates=accounting_dates,
+        require_exact_axis=benchmark_missing_policy == "raise",
+    )
 
-    if benchmark_prices.index.has_duplicates:
-        raise ValueError("benchmark_prices index must not contain duplicate dates")
-    if not benchmark_prices.index.is_monotonic_increasing:
-        raise ValueError("benchmark_prices index must be sorted in increasing date order")
-    if (
-        is_bool_dtype(benchmark_prices.dtype)
-        or is_complex_dtype(benchmark_prices.dtype)
-        or not is_numeric_dtype(benchmark_prices.dtype)
-    ):
-        raise TypeError(
-            "benchmark_prices must contain real numeric, non-boolean values"
+    if benchmark_missing_policy == "raise":
+        clean_values = []
+        for date, value in benchmark_prices.items():
+            price = _read_positive_price(value)
+            if price is None:
+                raise BacktestValidationError(
+                    "benchmark_prices_invalid",
+                    "formal benchmark prices must be finite positive real values",
+                    date=date,
+                )
+            clean_values.append(price)
+        aligned_prices = pd.Series(
+            clean_values,
+            index=accounting_dates,
+            name=benchmark_prices.name,
         )
-
-    observed_prices = benchmark_prices.dropna().astype(float)
-    if (
-        not np.isfinite(observed_prices.to_numpy()).all()
-        or observed_prices.le(0.0).any()
-    ):
-        raise ValueError("benchmark_prices must contain finite positive values")
-
-    aligned_prices = benchmark_prices.reindex(price_index).astype(float)
-    if aligned_prices.isna().any() and benchmark_missing_policy == "raise":
-        first_missing_date = aligned_prices[aligned_prices.isna()].index[0]
-        raise ValueError(
-            "benchmark_prices are missing on strategy date "
-            f"{first_missing_date.date()}; set benchmark_missing_policy='zero_return' "
-            "only for an explicit diagnostic fallback."
+    else:
+        observed_values: list[float] = []
+        observed_dates: list[pd.Timestamp] = []
+        for date, value in benchmark_prices.items():
+            price = _read_positive_price(value)
+            if price is None:
+                if pd.isna(value):
+                    continue
+                raise BacktestValidationError(
+                    "benchmark_prices_invalid",
+                    "diagnostic benchmark observations must be finite positive real values",
+                    date=date,
+                )
+            observed_dates.append(date)
+            observed_values.append(price)
+        observed = pd.Series(observed_values, index=observed_dates, dtype=float)
+        combined_index = observed.index.union(accounting_dates).sort_values()
+        aligned_prices = observed.reindex(combined_index).ffill().reindex(
+            accounting_dates
         )
-    if benchmark_missing_policy == "zero_return":
-        combined_index = benchmark_prices.index.union(price_index).sort_values()
-        aligned_prices = (
-            benchmark_prices.astype(float)
-            .reindex(combined_index)
-            .ffill()
-            .reindex(price_index)
-        )
+        if aligned_prices.iloc[0] != aligned_prices.iloc[0]:
+            aligned_prices.iloc[0] = 1.0
+        aligned_prices = aligned_prices.ffill()
 
     benchmark_returns = aligned_prices.pct_change(fill_method=None)
-    if benchmark_missing_policy == "raise":
-        benchmark_returns.iloc[0] = 0.0
-        invalid_returns = benchmark_returns.isna() | ~np.isfinite(benchmark_returns)
-        if invalid_returns.any():
-            first_invalid_date = invalid_returns[invalid_returns].index[0]
-            raise ValueError(
-                "benchmark_prices produce missing or non-finite returns on "
-                f"{first_invalid_date.date()}"
-            )
-    else:
+    if benchmark_missing_policy == "zero_return":
         benchmark_returns = benchmark_returns.replace([np.inf, -np.inf], np.nan).fillna(0.0)
+    else:
+        benchmark_returns.iloc[0] = 0.0
+        if not np.isfinite(benchmark_returns.to_numpy()).all():
+            raise BacktestValidationError(
+                "benchmark_prices_invalid",
+                "benchmark price ratios must produce finite returns",
+            )
 
     benchmark_returns = benchmark_returns.rename("benchmark_return")
     benchmark_equity_curve = (
         initial_capital * (1.0 + benchmark_returns).cumprod()
     ).rename("benchmark_equity")
     return benchmark_equity_curve, benchmark_returns
+
+
+def _validate_benchmark_structure(
+    benchmark_prices: pd.Series,
+    *,
+    accounting_dates: pd.DatetimeIndex,
+    require_exact_axis: bool,
+) -> None:
+    if not isinstance(benchmark_prices, pd.Series):
+        raise BacktestValidationError(
+            "benchmark_prices_invalid",
+            "benchmark_prices must be a pandas Series",
+        )
+    if not isinstance(benchmark_prices.index, pd.DatetimeIndex):
+        raise BacktestValidationError(
+            "benchmark_prices_invalid",
+            "benchmark_prices must use a DatetimeIndex",
+        )
+    if (
+        benchmark_prices.index.has_duplicates
+        or not benchmark_prices.index.is_monotonic_increasing
+    ):
+        raise BacktestValidationError(
+            "benchmark_prices_invalid",
+            "benchmark dates must be unique and strictly increasing",
+        )
+    if benchmark_prices.index.tz != accounting_dates.tz:
+        raise BacktestValidationError(
+            "benchmark_prices_invalid",
+            "benchmark and accounting dates must use the same timezone",
+        )
+    if require_exact_axis and not benchmark_prices.index.equals(accounting_dates):
+        raise BacktestValidationError(
+            "benchmark_prices_invalid",
+            "formal benchmark index must exactly match accounting dates",
+        )
 
 
 def _calculate_signal_coverage(signal_data: pd.DataFrame) -> float:
@@ -556,10 +1105,159 @@ def _calculate_signal_coverage(signal_data: pd.DataFrame) -> float:
     return float(signal_data.notna().sum().sum() / signal_data.size)
 
 
+def _build_timing_metadata(
+    *,
+    accounting_dates: pd.DatetimeIndex,
+    rebalance_dates: pd.DatetimeIndex,
+    signal_lag_periods: int,
+    missing_price_policy: str,
+    benchmark_missing_policy: str,
+    provenance_recovery_applied: bool,
+) -> dict[str, Any]:
+    measured_dates = accounting_dates[1:]
+    return {
+        "timing_contract": _TIMING_CONTRACT,
+        "feature_time": "source_row_close_conservative",
+        "signal_availability_time": "strictly_after_feature_row_close",
+        "decision_time": "immediately_after_signal_availability_on_signal_source_row",
+        "execution_time": "observed_source_row_close_idealized_reset",
+        "signal_lag_rows": signal_lag_periods,
+        "signal_lag_unit": "observed_source_rows_within_bounded_accounting_slice",
+        "return_frequency": "daily_close_to_close",
+        "periods_per_year": 252,
+        "return_interval": "previous_close_to_current_close",
+        "holding_effective_interval": "execution_close_to_next_observed_close",
+        "cost_application_time": "execution_close_after_row_gross_return",
+        "cost_return_basis": "beginning_period_portfolio_value",
+        "evaluation_start": accounting_dates[0],
+        "evaluation_end": accounting_dates[-1],
+        "metric_anchor_policy": "exclude_initialization_anchor_use_common_measured_rows",
+        "measured_return_start": measured_dates[0],
+        "measured_return_end": measured_dates[-1],
+        "measured_return_count": len(measured_dates),
+        "rebalance_resolution": "last_observed_row_in_resample_bucket",
+        "resolved_rebalance_dates": tuple(rebalance_dates),
+        "backtest_source_provenance_policy": _SOURCE_PROVENANCE_POLICY,
+        "backtest_source_provenance_status": (
+            "validated_with_tracked_complex_recovery"
+            if provenance_recovery_applied
+            else "validated_without_recovery"
+        ),
+        "signal_value_failure_policy": (
+            "validate_bounded_scores_after_exact_slice_raise_on_invalid_available_score"
+        ),
+        "target_freeze_policy": "decision_information_only_no_execution_close_rerank",
+        "target_input_scope": "final_masked_signal_matrix_only",
+        "incoming_price_failure_policy": (
+            "raise_before_asset_return_on_invalid_held_endpoint"
+        ),
+        "execution_price_failure_policy": (
+            "raise_execution_price_invalid_without_redistribution"
+        ),
+        "gross_insolvency_failure_policy": (
+            "raise_before_pretrade_division_or_costs"
+        ),
+        "insolvency_failure_policy": (
+            "raise_before_successful_result_on_invalid_or_insolvent_capital"
+        ),
+        "equity_curve_failure_policy": "reject_invalid_equity_before_metrics",
+        "returns_failure_policy": "reject_invalid_returns_before_basic_metrics",
+        "terminal_row_policy": (
+            "include_return_trade_cost_open_holdings_no_future_return"
+        ),
+        "benchmark_return_window": "same_measured_rows_cost_free_close_to_close",
+        "initialization_anchor_policy": (
+            "zero_return_trade_turnover_cost_and_holdings"
+        ),
+        "missing_price_policy_classification": (
+            "formal_raise"
+            if missing_price_policy == "raise"
+            else "diagnostic_zero_return_not_promotion_evidence"
+        ),
+        "benchmark_missing_policy_classification": (
+            "formal_raise"
+            if benchmark_missing_policy == "raise"
+            else "diagnostic_zero_return_no_formal_relative_metrics"
+        ),
+    }
+
+
+def _build_timing_ledger(
+    *,
+    accounting_dates: pd.DatetimeIndex,
+    rebalance_dates: pd.DatetimeIndex,
+    target_weights: pd.DataFrame,
+    signal_lag_periods: int,
+) -> tuple[TimingLedgerRow, ...]:
+    ledger_dates = pd.DatetimeIndex(
+        [accounting_dates[0], *rebalance_dates.to_list()]
+    ).unique().sort_values()
+    scheduled_dates = set(rebalance_dates)
+    rows: list[TimingLedgerRow] = []
+
+    for date in ledger_dates:
+        position = int(accounting_dates.get_loc(date))
+        is_scheduled = date in scheduled_dates
+        is_anchor = position == 0
+        insufficient_lag = is_scheduled and position < signal_lag_periods
+        if is_anchor:
+            status = "initialization_anchor_no_execution"
+        elif insufficient_lag:
+            status = "insufficient_lag_no_execution"
+        else:
+            target = target_weights.loc[date]
+            status = (
+                "executed_invested_target"
+                if float(target.fillna(0.0).sum()) > 0.0
+                else "executed_cash_target"
+            )
+
+        executed = status in {
+            "executed_invested_target",
+            "executed_cash_target",
+        }
+        source_date = (
+            accounting_dates[position - signal_lag_periods] if executed else None
+        )
+        incoming_start = accounting_dates[position - 1] if position > 0 else None
+        incoming_end = date if position > 0 else None
+        first_holding_start = date if executed else None
+        first_holding_end = (
+            accounting_dates[position + 1]
+            if executed and position + 1 < len(accounting_dates)
+            else None
+        )
+        rows.append(
+            TimingLedgerRow(
+                ledger_date=date,
+                scheduled_execution_date=date if is_scheduled else None,
+                is_scheduled_rebalance=is_scheduled,
+                event_status=status,
+                signal_source_date=source_date,
+                feature_observation_end=source_date,
+                signal_availability_phase=(
+                    _LEDGER_PHASE_SIGNAL_AVAILABILITY if executed else None
+                ),
+                decision_phase=_LEDGER_PHASE_DECISION if executed else None,
+                execution_phase=_LEDGER_PHASE_EXECUTION if executed else None,
+                incoming_return_start=incoming_start,
+                incoming_return_end=incoming_end,
+                first_holding_return_start=first_holding_start,
+                first_holding_return_end=first_holding_end,
+                is_terminal_scheduled_row=(
+                    is_scheduled and position == len(accounting_dates) - 1
+                ),
+            )
+        )
+    return tuple(rows)
+
+
 def _validate_backtest_inputs(
     *,
     prices: pd.DataFrame,
     signals: pd.DataFrame,
+    evaluation_start: pd.Timestamp,
+    evaluation_end: pd.Timestamp,
     top_n: int | None,
     top_pct: float | None,
     transaction_cost_bps: float,
@@ -571,69 +1269,662 @@ def _validate_backtest_inputs(
     benchmark_missing_policy: str,
     periods_per_year: int,
 ) -> None:
+    signal_lag_value = _read_exact_integral_scalar(signal_lag_periods)
+    if signal_lag_value is None or signal_lag_value < 1:
+        raise BacktestValidationError(
+            "signal_lag_invalid",
+            "signal_lag_periods must be a non-boolean integer of at least one",
+        )
+    _validate_initial_capital(initial_capital)
+
     if not isinstance(prices, pd.DataFrame):
-        raise TypeError("prices must be a pandas DataFrame")
+        raise BacktestValidationError(
+            "source_axes_invalid",
+            "prices must be a pandas DataFrame",
+        )
     if not isinstance(signals, pd.DataFrame):
-        raise TypeError("signals must be a pandas DataFrame")
+        raise BacktestValidationError(
+            "source_axes_invalid",
+            "signals must be a pandas DataFrame",
+        )
     if not isinstance(prices.index, pd.DatetimeIndex):
-        raise TypeError("prices must be indexed by a pandas DatetimeIndex")
+        raise BacktestValidationError(
+            "source_axes_invalid",
+            "prices must use a DatetimeIndex",
+        )
     if not isinstance(signals.index, pd.DatetimeIndex):
-        raise TypeError("signals must be indexed by a pandas DatetimeIndex")
+        raise BacktestValidationError(
+            "source_axes_invalid",
+            "signals must use a DatetimeIndex",
+        )
     if prices.empty:
-        raise ValueError("prices must not be empty")
-    if prices.index.has_duplicates or signals.index.has_duplicates:
-        raise ValueError("prices and signals must not contain duplicate dates")
-    if not prices.index.is_monotonic_increasing:
-        raise ValueError("prices index must be sorted in increasing date order")
-    if not signals.index.is_monotonic_increasing:
-        raise ValueError("signals index must be sorted in increasing date order")
+        raise BacktestValidationError(
+            "source_axes_invalid",
+            "prices and signals must contain dates and assets",
+        )
+    if (
+        prices.index.has_duplicates
+        or signals.index.has_duplicates
+        or prices.columns.has_duplicates
+        or signals.columns.has_duplicates
+    ):
+        raise BacktestValidationError(
+            "source_axes_invalid",
+            "source dates and asset identifiers must be unique",
+        )
+    if (
+        not prices.index.is_monotonic_increasing
+        or not signals.index.is_monotonic_increasing
+    ):
+        raise BacktestValidationError(
+            "source_axes_invalid",
+            "source dates must be strictly increasing",
+        )
+    if prices.index.tz != signals.index.tz:
+        raise BacktestValidationError(
+            "source_axes_invalid",
+            "price and signal indexes must use the same timezone",
+        )
+    if not prices.index.equals(signals.index):
+        raise BacktestValidationError(
+            "source_axes_invalid",
+            "price and signal dates must match exactly in order",
+        )
+    if not prices.columns.equals(signals.columns):
+        raise BacktestValidationError(
+            "source_axes_invalid",
+            "price and signal asset columns must match exactly in order",
+        )
+
+    _resolve_accounting_window(
+        prices.index,
+        evaluation_start=evaluation_start,
+        evaluation_end=evaluation_end,
+    )
+
     if top_n is None and top_pct is None:
         raise ValueError("either top_n or top_pct must be provided")
     if top_n is not None and top_pct is not None:
         raise ValueError("provide only one of top_n or top_pct")
-    if top_n is not None and top_n <= 0:
-        raise ValueError("top_n must be positive")
-    if top_pct is not None and not 0.0 < top_pct <= 1.0:
-        raise ValueError("top_pct must be greater than 0 and no more than 1")
-    if transaction_cost_bps < 0:
+    if top_n is not None:
+        top_n_value = _read_exact_integral_scalar(top_n)
+        if top_n_value is None or top_n_value <= 0:
+            raise ValueError("top_n must be positive")
+    if top_pct is not None:
+        top_pct_value = _read_finite_real_scalar(top_pct)
+        if top_pct_value is None or not 0.0 < top_pct_value <= 1.0:
+            raise ValueError("top_pct must be greater than 0 and no more than 1")
+    transaction_cost_value = _read_finite_real_scalar(transaction_cost_bps)
+    if transaction_cost_value is None or transaction_cost_value < 0.0:
         raise ValueError("transaction_cost_bps must be non-negative")
-    if slippage_bps < 0:
+    slippage_value = _read_finite_real_scalar(slippage_bps)
+    if slippage_value is None or slippage_value < 0.0:
         raise ValueError("slippage_bps must be non-negative")
     if volume_aware_slippage_mode not in _VOLUME_AWARE_SLIPPAGE_MODES:
         raise ValueError(
             "volume_aware_slippage_mode must be 'diagnostic_only' or "
             "'apply_precomputed_impact'"
         )
-    if initial_capital <= 0:
-        raise ValueError("initial_capital must be positive")
-    if signal_lag_periods < 0:
-        raise ValueError("signal_lag_periods must be non-negative")
     if missing_price_policy not in {"raise", "zero_return"}:
         raise ValueError("missing_price_policy must be 'raise' or 'zero_return'")
     if benchmark_missing_policy not in {"raise", "zero_return"}:
         raise ValueError("benchmark_missing_policy must be 'raise' or 'zero_return'")
-    if periods_per_year <= 0:
-        raise ValueError("periods_per_year must be positive")
+    periods_per_year_value = _read_exact_integral_scalar(periods_per_year)
+    if periods_per_year_value != 252:
+        raise BacktestValidationError(
+            "periods_per_year_invalid",
+            "daily close-to-close accounting requires integer periods_per_year=252",
+        )
 
 
-def _prepare_volume_aware_slippage_costs(
+def _validate_initial_capital(initial_capital: object) -> None:
+    numeric = _read_finite_real_scalar(initial_capital)
+    if numeric is None or numeric <= 0.0:
+        raise BacktestValidationError(
+            "initial_capital_invalid",
+            "initial_capital must be a finite positive real non-boolean scalar",
+        )
+
+
+def _is_finite_real_scalar(value: object) -> bool:
+    return _read_finite_real_scalar(value) is not None
+
+
+def _read_finite_real_scalar(value: object) -> float | None:
+    if type(value) not in _EXACT_REAL_SCALAR_TYPES:
+        return None
+    try:
+        numeric = float(value)
+    except (OverflowError, TypeError, ValueError):
+        return None
+    return numeric if np.isfinite(numeric) else None
+
+
+def _read_exact_integral_scalar(value: object) -> int | None:
+    if type(value) not in _EXACT_INTEGER_SCALAR_TYPES:
+        return None
+    return int(value)
+
+
+def _capture_source_frame_provenance(
+    source: pd.DataFrame,
     *,
+    role: Literal["prices", "signals"],
+) -> SourceFrameProvenance:
+    axis_fingerprint = _source_axis_fingerprint(source)
+    dtype_names = tuple(str(dtype) for dtype in source.dtypes)
+    dtype_families = tuple(_source_dtype_family(dtype) for dtype in source.dtypes)
+    cells = _snapshot_source_cells(source)
+    _reject_unsupported_source_cells(cells)
+    state_digest = _snapshot_state_digest(
+        role=role,
+        axis_fingerprint=axis_fingerprint,
+        dtype_names=dtype_names,
+        cells=cells,
+    )
+    return SourceFrameProvenance(
+        schema_version=_SOURCE_PROVENANCE_POLICY,
+        role=role,
+        axis_fingerprint=axis_fingerprint,
+        original_dtype_names=dtype_names,
+        original_dtype_families=dtype_families,
+        original_cells=cells,
+        original_state_digest=state_digest,
+        current_state_digest=state_digest,
+        mutations=(),
+        _source_identity=id(source),
+        _lineage_token=_SourceLineageToken(),
+    )
+
+
+def _validate_backtest_source_provenance(
+    *,
+    prices: pd.DataFrame,
+    signals: pd.DataFrame,
+    source_provenance: BacktestSourceProvenance,
+) -> tuple[SourceFrameProvenance, SourceFrameProvenance]:
+    if (
+        not isinstance(source_provenance, BacktestSourceProvenance)
+        or source_provenance.schema_version != _SOURCE_PROVENANCE_POLICY
+    ):
+        raise BacktestValidationError(
+            "source_provenance_invalid",
+            "a current library-issued backtest source provenance handle is required",
+        )
+    _validate_source_frame_provenance(
+        source=prices,
+        provenance=source_provenance.prices,
+        expected_role="prices",
+    )
+    _validate_source_frame_provenance(
+        source=signals,
+        provenance=source_provenance.signals,
+        expected_role="signals",
+    )
+    return source_provenance.prices, source_provenance.signals
+
+
+def _validate_source_frame_provenance(
+    *,
+    source: pd.DataFrame,
+    provenance: SourceFrameProvenance,
+    expected_role: Literal["prices", "signals"],
+) -> None:
+    if (
+        not isinstance(provenance, SourceFrameProvenance)
+        or provenance.schema_version != _SOURCE_PROVENANCE_POLICY
+        or provenance.role != expected_role
+        or type(provenance._lineage_token) is not _SourceLineageToken
+        or provenance._source_identity != id(source)
+    ):
+        raise BacktestValidationError(
+            "source_provenance_invalid",
+            "source provenance is stale, copied, malformed, or bound to another role",
+        )
+
+    axis_fingerprint = _source_axis_fingerprint(source)
+    if provenance.axis_fingerprint != axis_fingerprint:
+        raise BacktestValidationError(
+            "source_provenance_invalid",
+            "source axes no longer match the captured provenance",
+        )
+    row_count = len(source.index)
+    column_count = len(source.columns)
+    if (
+        len(provenance.original_dtype_names) != column_count
+        or len(provenance.original_dtype_families) != column_count
+        or len(provenance.original_cells) != row_count
+        or any(len(row) != column_count for row in provenance.original_cells)
+    ):
+        raise BacktestValidationError(
+            "source_provenance_invalid",
+            "source provenance shape does not match the runtime source",
+        )
+
+    expected_original_digest = _snapshot_state_digest(
+        role=expected_role,
+        axis_fingerprint=provenance.axis_fingerprint,
+        dtype_names=provenance.original_dtype_names,
+        cells=provenance.original_cells,
+    )
+    if expected_original_digest != provenance.original_state_digest:
+        raise BacktestValidationError(
+            "source_provenance_invalid",
+            "source provenance lineage is internally inconsistent",
+        )
+
+    previous_digest = provenance.original_state_digest
+    for sequence, record in enumerate(provenance.mutations):
+        if (
+            not isinstance(record, SourceMutationRecord)
+            or record.sequence != sequence
+            or record.before_state_digest != previous_digest
+            or record.row_position < 0
+            or record.row_position >= row_count
+            or record.column_position < 0
+            or record.column_position >= column_count
+            or record.record_digest
+            != _mutation_record_digest(
+                lineage_digest=provenance.original_state_digest,
+                sequence=record.sequence,
+                row_position=record.row_position,
+                column_position=record.column_position,
+                assigned_value=record.assigned_value,
+                before_state_digest=record.before_state_digest,
+                after_state_digest=record.after_state_digest,
+            )
+        ):
+            raise BacktestValidationError(
+                "source_provenance_invalid",
+                "source mutation ledger is malformed or replay-inconsistent",
+            )
+        previous_digest = record.after_state_digest
+    if (
+        previous_digest != provenance.current_state_digest
+        or _source_state_digest(source, role=expected_role)
+        != provenance.current_state_digest
+    ):
+        raise BacktestValidationError(
+            "source_provenance_invalid",
+            "runtime source state does not match the controlled mutation ledger",
+        )
+
+
+def _source_axis_fingerprint(source: pd.DataFrame) -> tuple[object, ...]:
+    return (
+        "source_axis_v1",
+        _qualified_type_name(source.index),
+        tuple(_typed_value_token(name) for name in source.index.names),
+        tuple(_typed_value_token(label) for label in source.index),
+        _qualified_type_name(source.columns),
+        tuple(_typed_value_token(name) for name in source.columns.names),
+        tuple(_typed_value_token(label) for label in source.columns),
+    )
+
+
+def _typed_value_token(value: object) -> str:
+    return f"{_qualified_type_name(value)}:{value!r}"
+
+
+def _qualified_type_name(value: object) -> str:
+    value_type = type(value)
+    return f"{value_type.__module__}.{value_type.__qualname__}"
+
+
+def _source_dtype_family(dtype: object) -> str:
+    if pd.api.types.is_complex_dtype(dtype):
+        return "complex"
+    if pd.api.types.is_bool_dtype(dtype):
+        return "boolean"
+    if pd.api.types.is_numeric_dtype(dtype):
+        return "real_numeric"
+    if pd.api.types.is_object_dtype(dtype):
+        return "object"
+    return "other"
+
+
+def _snapshot_source_cells(
+    source: pd.DataFrame,
+) -> tuple[tuple[SourceCellSnapshot, ...], ...]:
+    return tuple(
+        tuple(
+            _snapshot_source_cell(source.iat[row_position, column_position])
+            for column_position in range(len(source.columns))
+        )
+        for row_position in range(len(source.index))
+    )
+
+
+def _snapshot_source_cell(value: object) -> SourceCellSnapshot:
+    value_type = type(value)
+    if value_type in _EXACT_BOOLEAN_SCALAR_TYPES:
+        return SourceCellSnapshot("boolean", ("true" if bool(value) else "false",))
+    if value_type in _EXACT_SOURCE_COMPLEX_SCALAR_TYPES:
+        return SourceCellSnapshot(
+            "complex",
+            (
+                _float_semantic_token(float(np.real(value))),
+                _float_semantic_token(float(np.imag(value))),
+            ),
+        )
+    if value_type in _EXACT_INTEGER_SCALAR_TYPES:
+        return SourceCellSnapshot("integer", (str(int(value)),))
+    if value_type in _SOURCE_NUMPY_FLOAT_SCALAR_TYPES or value_type is float:
+        numeric = float(value)
+        if np.isnan(numeric):
+            return SourceCellSnapshot("ieee_nan", ())
+        return SourceCellSnapshot("real_float", (_float_semantic_token(numeric),))
+    if value_type is Fraction:
+        return SourceCellSnapshot(
+            "fraction",
+            (str(value.numerator), str(value.denominator)),
+        )
+    if isinstance(value, complex | Integral | Real | np.number):
+        return SourceCellSnapshot(
+            "unsupported_numeric",
+            (_qualified_type_name(value),),
+        )
+    if value is None or value is pd.NA or value is pd.NaT:
+        return SourceCellSnapshot("missing_other", (_qualified_type_name(value),))
+    return SourceCellSnapshot(
+        "other",
+        (_qualified_type_name(value), repr(value)),
+    )
+
+
+def _float_semantic_token(value: float) -> str:
+    if math.isnan(value):
+        return "nan"
+    if math.isinf(value):
+        return "inf" if value > 0.0 else "-inf"
+    return value.hex()
+
+
+def _snapshot_state_digest(
+    *,
+    role: str,
+    axis_fingerprint: tuple[object, ...],
+    dtype_names: tuple[str, ...],
+    cells: tuple[tuple[SourceCellSnapshot, ...], ...],
+) -> str:
+    payload = (
+        _SOURCE_PROVENANCE_POLICY,
+        role,
+        axis_fingerprint,
+        dtype_names,
+        cells,
+    )
+    return hashlib.sha256(
+        repr(payload).encode("utf-8", errors="backslashreplace"),
+    ).hexdigest()
+
+
+def _source_state_digest(
+    source: pd.DataFrame,
+    *,
+    role: Literal["prices", "signals"],
+) -> str:
+    cells = _snapshot_source_cells(source)
+    _reject_unsupported_source_cells(cells)
+    return _snapshot_state_digest(
+        role=role,
+        axis_fingerprint=_source_axis_fingerprint(source),
+        dtype_names=tuple(str(dtype) for dtype in source.dtypes),
+        cells=cells,
+    )
+
+
+def _reject_unsupported_source_cells(
+    cells: tuple[tuple[SourceCellSnapshot, ...], ...],
+) -> None:
+    if any(
+        cell.kind == "unsupported_numeric"
+        for row in cells
+        for cell in row
+    ):
+        raise BacktestValidationError(
+            "source_provenance_invalid",
+            "custom numeric source cells are not supported",
+        )
+
+
+def _mutation_record_digest(
+    *,
+    lineage_digest: str,
+    sequence: int,
+    row_position: int,
+    column_position: int,
+    assigned_value: SourceCellSnapshot,
+    before_state_digest: str,
+    after_state_digest: str,
+) -> str:
+    payload = (
+        _SOURCE_PROVENANCE_POLICY,
+        lineage_digest,
+        sequence,
+        row_position,
+        column_position,
+        assigned_value,
+        before_state_digest,
+        after_state_digest,
+    )
+    return hashlib.sha256(
+        repr(payload).encode("utf-8", errors="backslashreplace"),
+    ).hexdigest()
+
+
+def _resolve_accounting_window(
     price_index: pd.DatetimeIndex,
+    *,
+    evaluation_start: pd.Timestamp,
+    evaluation_end: pd.Timestamp,
+) -> tuple[int, int, pd.DatetimeIndex]:
+    if type(evaluation_start) is not pd.Timestamp or type(
+        evaluation_end
+    ) is not pd.Timestamp:
+        raise BacktestValidationError(
+            "evaluation_bounds_invalid",
+            "evaluation bounds must be exact scalar pandas Timestamps",
+        )
+    if pd.isna(evaluation_start) or pd.isna(evaluation_end):
+        raise BacktestValidationError(
+            "evaluation_bounds_invalid",
+            "evaluation bounds must not be missing",
+        )
+    if (
+        evaluation_start.tz != price_index.tz
+        or evaluation_end.tz != price_index.tz
+    ):
+        raise BacktestValidationError(
+            "evaluation_bounds_invalid",
+            "evaluation bounds must exactly match the source timezone",
+        )
+    try:
+        start_pos = price_index.get_loc(evaluation_start)
+        end_pos = price_index.get_loc(evaluation_end)
+    except KeyError as exc:
+        raise BacktestValidationError(
+            "evaluation_bounds_invalid",
+            "evaluation bounds must be exact source-index members",
+        ) from exc
+    if (
+        not isinstance(start_pos, Integral)
+        or isinstance(start_pos, bool | np.bool_)
+        or not isinstance(end_pos, Integral)
+        or isinstance(end_pos, bool | np.bool_)
+        or start_pos >= end_pos
+    ):
+        raise BacktestValidationError(
+            "evaluation_bounds_invalid",
+            "evaluation bounds must resolve to increasing scalar positions",
+        )
+    accounting_dates = price_index[int(start_pos) : int(end_pos) + 1]
+    return int(start_pos), int(end_pos), accounting_dates
+
+
+def _extract_bounded_source_values(
+    source: pd.DataFrame,
+    *,
+    provenance: SourceFrameProvenance,
+    start_pos: int,
+    end_pos: int,
+) -> tuple[pd.DataFrame, tuple[int, ...]]:
+    """Extract bounded cells using only mutation-time provenance.
+
+    A real column promoted by a tracked complex write outside the accounting
+    window may recover untouched bounded cells losslessly. Native complex
+    inputs, bounded complex writes, stale handles, and arbitrary pandas writes
+    never receive that recovery.
+    """
+
+    bounded_index = source.index[start_pos : end_pos + 1]
+    extracted_columns: list[pd.Series] = []
+    recovered_column_positions: list[int] = []
+    for column_position, asset in enumerate(source.columns):
+        bounded_column = source.iloc[start_pos : end_pos + 1, column_position]
+        outside_complex_write = any(
+            record.column_position == column_position
+            and record.assigned_value.kind == "complex"
+            and (
+                record.row_position < start_pos
+                or record.row_position > end_pos
+            )
+            for record in provenance.mutations
+        )
+        bounded_complex_writes = {
+            record.row_position
+            for record in provenance.mutations
+            if record.column_position == column_position
+            and record.assigned_value.kind == "complex"
+            and start_pos <= record.row_position <= end_pos
+        }
+        recover_tracked_upcast = (
+            pd.api.types.is_complex_dtype(source.dtypes.iloc[column_position])
+            and provenance.original_dtype_families[column_position]
+            == "real_numeric"
+            and outside_complex_write
+        )
+        if recover_tracked_upcast:
+            recovered: list[object] = []
+            contains_nonreal = False
+            recovered_any = False
+            for offset, value in enumerate(bounded_column.tolist()):
+                source_row_position = start_pos + offset
+                original = provenance.original_cells[source_row_position][
+                    column_position
+                ]
+                if source_row_position in bounded_complex_writes:
+                    recovered.append(value)
+                    contains_nonreal = True
+                    continue
+                recovered_value = _losslessly_recover_original_real(
+                    value,
+                    original=original,
+                )
+                if recovered_value is not None:
+                    recovered.append(recovered_value)
+                    recovered_any = True
+                else:
+                    recovered.append(value)
+                    contains_nonreal = True
+            extracted = pd.Series(
+                recovered,
+                index=bounded_index,
+                dtype=object if contains_nonreal else float,
+                name=asset,
+            )
+            if recovered_any:
+                recovered_column_positions.append(column_position)
+        elif pd.api.types.is_object_dtype(source.dtypes.iloc[column_position]):
+            extracted = pd.Series(
+                bounded_column.tolist(),
+                index=bounded_index,
+                dtype=object,
+                name=asset,
+            )
+        else:
+            extracted = bounded_column.copy()
+            extracted.name = asset
+        extracted_columns.append(extracted)
+
+    extracted_frame = pd.concat(extracted_columns, axis=1)
+    extracted_frame.columns = source.columns.copy()
+    return extracted_frame, tuple(recovered_column_positions)
+
+
+def _losslessly_recover_original_real(
+    value: object,
+    *,
+    original: SourceCellSnapshot,
+) -> float | None:
+    if not isinstance(value, complex | np.complexfloating):
+        return None
+    real_value = float(np.real(value))
+    imaginary_value = float(np.imag(value))
+    if not imaginary_value == 0.0:
+        return None
+    if original.kind == "ieee_nan":
+        return float("nan") if math.isnan(real_value) else None
+    if original.kind == "integer":
+        if not math.isfinite(real_value) or not real_value.is_integer():
+            return None
+        original_integer = int(original.payload[0])
+        if int(real_value) != original_integer:
+            return None
+        return real_value
+    if original.kind == "real_float":
+        if _float_semantic_token(real_value) != original.payload[0]:
+            return None
+        return real_value
+    return None
+
+
+def _validate_bounded_signal_values(
+    bounded_signals: pd.DataFrame,
+) -> pd.DataFrame:
+    clean = pd.DataFrame(
+        np.nan,
+        index=bounded_signals.index,
+        columns=bounded_signals.columns,
+        dtype=float,
+    )
+    for row_position, date in enumerate(bounded_signals.index):
+        for column_position, asset in enumerate(bounded_signals.columns):
+            value = bounded_signals.iat[row_position, column_position]
+            if isinstance(value, float | np.floating) and np.isnan(value):
+                continue
+            if not _is_finite_real_scalar(value):
+                raise BacktestValidationError(
+                    "signal_value_invalid",
+                    "bounded scores must be finite real values or IEEE NaN",
+                    date=date,
+                    asset=asset,
+                )
+            clean.iat[row_position, column_position] = float(value)
+    return clean
+
+
+def _prepare_volume_aware_slippage_input(
+    *,
+    accounting_dates: pd.DatetimeIndex,
     mode: str,
     impact: pd.Series | None,
     metadata: Mapping[str, Any] | None,
     fixed_slippage_bps: float,
-    post_return_growth: pd.Series,
-) -> pd.Series:
-    zero_costs = pd.Series(0.0, index=price_index, name="volume_aware_slippage_impact")
+) -> tuple[pd.Series, str | None]:
+    zero_costs = pd.Series(
+        0.0,
+        index=accounting_dates,
+        name="volume_aware_slippage_impact",
+    )
 
     if mode == "diagnostic_only":
         if impact is not None:
             _validate_precomputed_volume_aware_slippage_impact(
                 impact=impact,
-                price_index=price_index,
+                accounting_dates=accounting_dates,
             )
-        return zero_costs
+        return zero_costs, None
 
     if impact is None:
         raise ValueError(
@@ -644,12 +1935,10 @@ def _prepare_volume_aware_slippage_costs(
     _validate_volume_aware_slippage_metadata(metadata)
     costs = _validate_precomputed_volume_aware_slippage_impact(
         impact=impact,
-        price_index=price_index,
+        accounting_dates=accounting_dates,
     )
 
     return_impact_basis = metadata["return_impact_basis"]
-    if return_impact_basis == "post_return_portfolio_value":
-        costs = costs * post_return_growth
 
     if fixed_slippage_bps > 0.0 and costs.gt(0.0).any():
         raise ValueError(
@@ -657,13 +1946,13 @@ def _prepare_volume_aware_slippage_costs(
             "volume_aware_slippage_impact without a reviewed combined-model policy"
         )
 
-    return costs
+    return costs, return_impact_basis
 
 
 def _validate_precomputed_volume_aware_slippage_impact(
     *,
     impact: pd.Series,
-    price_index: pd.DatetimeIndex,
+    accounting_dates: pd.DatetimeIndex,
 ) -> pd.Series:
     if not isinstance(impact, pd.Series):
         raise TypeError("volume_aware_slippage_impact must be a pandas Series")
@@ -677,24 +1966,25 @@ def _validate_precomputed_volume_aware_slippage_impact(
         raise ValueError(
             "volume_aware_slippage_impact index must be sorted in increasing date order"
         )
-    if not impact.index.equals(price_index):
+    if impact.index.tz != accounting_dates.tz or not impact.index.equals(
+        accounting_dates
+    ):
         raise ValueError(
-            "volume_aware_slippage_impact index must exactly match backtest dates"
+            "volume_aware_slippage_impact index must exactly match accounting dates"
         )
 
-    try:
-        costs = impact.astype(float)
-    except (TypeError, ValueError) as exc:
-        raise TypeError("volume_aware_slippage_impact must contain numeric values") from exc
-
-    if costs.isna().any():
-        first_missing_date = costs[costs.isna()].index[0]
+    if impact.isna().any():
+        first_missing_date = impact[impact.isna()].index[0]
         raise ValueError(
             "volume_aware_slippage_impact must not contain missing values; "
             f"first missing date is {first_missing_date.date()}"
         )
-    if not np.isfinite(costs.to_numpy()).all():
-        raise ValueError("volume_aware_slippage_impact must contain finite values")
+    if any(not _is_finite_real_scalar(value) for value in impact.to_numpy(dtype=object)):
+        raise TypeError(
+            "volume_aware_slippage_impact must contain finite real non-boolean values"
+        )
+    costs = impact.astype(float)
+
     if costs.lt(0.0).any():
         first_negative_date = costs[costs.lt(0.0)].index[0]
         raise ValueError(

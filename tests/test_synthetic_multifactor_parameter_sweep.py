@@ -112,6 +112,38 @@ def test_parameter_sweep_report_and_log_are_caveated(tmp_path: Path) -> None:
     assert "all parameter cases reported" in payload["caveats"]
     assert "not parameter optimization" in payload["caveats"]
     assert payload["assumptions"]["parameter_policy"] == "all configured cases are reported; no best-only filtering"
+    assert payload["assumptions"]["timing_metadata"]["timing_contract"] == (
+        "after_close_signal_next_observed_close_v1"
+    )
+    assert payload["assumptions"]["timing_metadata"][
+        "backtest_source_provenance_policy"
+    ] == "tracked_pre_mutation_source_snapshot_v1"
+    assert payload["assumptions"]["timing_metadata"][
+        "backtest_source_provenance_status"
+    ] == "validated_without_recovery"
+    assert payload["assumptions"]["sharpe_risk_free_policy"] == "zero"
+    timing_by_case = payload["diagnostics"]["timing_ledger_by_case"]
+    assert set(timing_by_case) == set(result.results["case_id"])
+    assert payload["diagnostics"]["timing_metadata_applies_to_cases"] == sorted(
+        result.results["case_id"]
+    )
+    assert all(
+        ledger[0]["event_status"] == "initialization_anchor_no_execution"
+        for ledger in timing_by_case.values()
+    )
+    serialized = json.dumps(payload, sort_keys=True)
+    for private_field in [
+        "axis_fingerprint",
+        "original_cells",
+        "original_dtype_names",
+        "original_state_digest",
+        "current_state_digest",
+        "mutations",
+        "record_digest",
+        "_source_identity",
+        "_lineage_token",
+    ]:
+        assert f'"{private_field}"' not in serialized
 
 
 def test_main_writes_requested_report_and_log(tmp_path: Path) -> None:

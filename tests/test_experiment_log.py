@@ -3,8 +3,11 @@ from datetime import date
 import json
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 import pytest
 
+from backtest.portfolio import capture_backtest_source_provenance
 from reporting.experiment_log import (
     SYNTHETIC_RESEARCH_CAVEATS,
     resolve_experiment_log_path,
@@ -16,6 +19,11 @@ from reporting.experiment_log import (
 class ExampleConfig:
     seed: int
     run_date: date
+
+
+@dataclass(frozen=True)
+class NestedConfig:
+    payload: object
 
 
 def test_write_experiment_log_is_deterministic_json(tmp_path: Path) -> None:
@@ -59,6 +67,58 @@ def test_write_experiment_log_requires_synthetic_caveats(tmp_path: Path) -> None
             caveats=("synthetic data only",),
             next_action="Stop.",
         )
+
+
+def test_write_experiment_log_rejects_private_source_provenance(
+    tmp_path: Path,
+) -> None:
+    dates = pd.bdate_range("2025-01-06", periods=3)
+    prices = pd.DataFrame({"AAA": np.full(3, 100.0)}, index=dates)
+    signals = pd.DataFrame({"AAA": np.ones(3)}, index=dates)
+    source_provenance = capture_backtest_source_provenance(prices, signals)
+    log_path = tmp_path / "private_provenance.json"
+
+    with pytest.raises(
+        TypeError,
+        match="private backtest source provenance must not be serialized",
+    ):
+        write_experiment_log(
+            log_path=log_path,
+            experiment_id="private-provenance",
+            title="Private Provenance Guard",
+            experiment_type="synthetic_diagnostic",
+            summary="Exercise the non-serialization boundary.",
+            config={},
+            assumptions={"source_provenance": source_provenance},
+            outputs={},
+            caveats=SYNTHETIC_RESEARCH_CAVEATS,
+            next_action="Retain only allowlisted provenance status metadata.",
+        )
+
+    assert not log_path.exists()
+
+    nested_log_path = tmp_path / "nested_private_provenance.json"
+    nested_private_value = NestedConfig(
+        payload=source_provenance.signals.original_cells[0][0],
+    )
+    with pytest.raises(
+        TypeError,
+        match="private backtest source provenance must not be serialized",
+    ):
+        write_experiment_log(
+            log_path=nested_log_path,
+            experiment_id="nested-private-provenance",
+            title="Nested Private Provenance Guard",
+            experiment_type="synthetic_diagnostic",
+            summary="Exercise the recursive non-serialization boundary.",
+            config=nested_private_value,
+            assumptions={},
+            outputs={},
+            caveats=SYNTHETIC_RESEARCH_CAVEATS,
+            next_action="Reject nested private provenance before dataclass conversion.",
+        )
+
+    assert not nested_log_path.exists()
 
 
 def test_resolve_experiment_log_path_uses_default_log_dir_for_default_report() -> None:

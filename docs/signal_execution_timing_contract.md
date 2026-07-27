@@ -1,23 +1,26 @@
 # Signal, Execution, and Metric Timing Contract
 
-Status: accepted Stage 2a design target; implementation is deferred to Stage
-2b.
+Status: accepted Stage 2a design; Stage 2b runtime implementation complete on
+the branch and awaiting final validation/review gates.
 
-Baseline: protected `main` merge `202273b` (PR #160), with 637 tests passing.
+Implementation baseline: protected `main` merge `275982f` (PR #161), with 638
+tests passing before Stage 2b changes.
 
-This is a documentation and methodology contract, not implemented behavior.
-It defines the only daily-close timing model that Stage 2b may implement in
-the current close-only backtester. It is not historical research evidence and
-does not authorize real-data interpretation, factor promotion, LEAN execution,
-paper trading, brokerage access, orders, or live trading.
+This is the normative documentation and methodology target for the current
+close-only backtester and deterministic tests. Implementation conformance is
+not historical research evidence and does not authorize real-data
+interpretation, factor promotion, LEAN execution, paper trading, brokerage
+access, orders, or live trading.
 
 ## Scope
 
-Stage 2b must implement:
+Stage 2b implementation covers:
 
 - one named after-close signal and next-observed-close execution policy;
 - explicit evaluation start and end anchors;
 - exact signal, price, benchmark, and metric date alignment;
+- required role-bound caller-declared source provenance captured before any
+  later mutation;
 - a non-boolean integer signal-row lag of at least one;
 - decision-time target freezing separated from execution-price feasibility;
 - deterministic return, drift, trade, turnover, cost, and holdings ordering;
@@ -27,15 +30,20 @@ Stage 2b must implement:
 - deterministic tests for zero lag, warm-up exclusion, terminal handling, and
   mutation invariance.
 
-Stage 2a changes documentation, repo-map index tooling, and
-documentation-contract tests only. It does not change backtest behavior.
-Current code remains non-conforming until Stage 2b is merged.
+Stage 2a changed documentation, repo-map index tooling, and
+documentation-contract tests only. Stage 2b enforces the contract in runtime
+code, direct callers, metrics, serialized synthetic evidence, and behavior
+tests, including the homogeneous-complex provenance case stated below.
 
 This contract does not select an exchange calendar, vendor, point-in-time
 universe, benchmark security, risk-free series, intraday clock, auction model,
 order type, fill model, or empirical promotion threshold.
 
-## Verified Current Behavior and Gaps
+## Pre-Implementation Baseline and Closed Gaps
+
+The table below records the verified pre-Stage 2b baseline that motivated this
+contract. Its line references are historical and do not describe the current
+runtime.
 
 | Evidence | Current behavior | Contract consequence |
 | --- | --- | --- |
@@ -49,10 +57,10 @@ order type, fill model, or empirical promotion threshold.
 | `src/backtest/portfolio.py:450-455` | A rebalance period resolves to the last observed row in each pandas bucket, including an incomplete terminal bucket. | The behavior is retained as an observed-row rule and must be disclosed in resolved metadata. |
 | `lean/signal_only_momentum_draft.py:39-44` | The LEAN scaffold lacks local decision, execution, return-window, and metric-anchor fields. | Stage 2a and Stage 2b cannot claim LEAN parity. |
 
-The default lag-one accounting path is internally reproducible. The defects are
-the untyped same-close loophole, silent alignment, execution-close target
-membership, and inconsistent evaluation anchors. No current synthetic or
-private result is reinterpreted by this contract.
+Stage 2b closes the untyped same-close loophole, silent alignment,
+execution-close target membership, and inconsistent evaluation anchors. It
+regenerates only deterministic synthetic implementation evidence; no private
+result is opened or reinterpreted.
 
 ## Normative Terms
 
@@ -245,6 +253,49 @@ Boolean, complex, string/object, positive or negative infinity, or another
 missing representation must not change the bounded result or its exception,
 even if the mutation changes the full signal frame's inferred dtype. Full
 structural axes validation still runs and must still pass first.
+
+Pandas can erase per-cell type provenance when a complex assignment promotes
+an otherwise real homogeneous column to `complex128`. A pre-start `1+0j` write
+and a bounded `1+0j` write can produce identical final frames, so a post-hoc
+snapshot alone cannot preserve both strict bounded-complex rejection and
+out-of-window mutation invariance.
+
+The selected policy is `tracked_pre_mutation_source_snapshot_v1`:
+
+- `run_long_only_backtest` requires `source_provenance` with no default or
+  compatibility bypass;
+- capture is the caller-declared baseline after final price/signal panel
+  construction; enforcement begins at capture, so the library cannot infer or
+  recover type history already erased before that call;
+- the immutable handle binds separate price/signal roles, exact axes, original
+  dtype/cell semantics, current source identity/state, and a chained mutation
+  ledger;
+- source-cell semantic hashing supports built-in binary64-or-narrower numeric
+  scalars and NumPy floating/complex scalar types whose mantissa is no wider
+  than float64. A wider NumPy scalar such as x86 `longdouble` or
+  `clongdouble` raises `source_provenance_invalid` at capture before any Python
+  `float` conversion; this prevents precision-colliding digests and false
+  lossless-recovery claims;
+- later writes must use the controlled API, which records source role,
+  coordinate, assigned semantic type, and before/after state digests;
+- arbitrary pandas writes, copies/replacements, stale axes, role swaps,
+  malformed ledgers, and replay-inconsistent state raise
+  `source_provenance_invalid`;
+- only a tracked complex write outside the current evaluation bounds can
+  authorize lossless recovery of untouched bounded cells from an originally
+  real numeric column; IEEE `NaN`, signed zero, and large integers retain exact
+  semantic checks; and
+- native complex sources, tracked bounded complex writes, and lossy bounded
+  conversions are not recovered. Signals retain `signal_value_invalid`; prices
+  retain the existing incoming/execution economic-boundary reasons.
+
+The trust boundary is library-issued in-process provenance plus controlled
+post-capture mutations, not cryptographic proof against a malicious caller or
+proof of pre-capture history. Direct and nested provenance objects are rejected
+by the experiment-log serializer, and current committed logs include only the
+allowlisted policy/status and are scanned for private field names. A caller
+that extracts an internal primitive or reconstructs a plain mapping remains
+responsible for not logging it.
 
 Feature history may precede `evaluation_start`, but Stage 2b must use only the
 bounded accounting-date signal matrix for signal lag and target generation. No
@@ -653,6 +704,8 @@ Stage 2b must emit stable global metadata rather than only free-text prose:
 | `measured_return_end` | `evaluation_end` |
 | `measured_return_count` | Exact number of common measured rows |
 | `rebalance_resolution` | `last_observed_row_in_resample_bucket` |
+| `backtest_source_provenance_policy` | `tracked_pre_mutation_source_snapshot_v1` |
+| `backtest_source_provenance_status` | `validated_without_recovery` or `validated_with_tracked_complex_recovery` |
 | `signal_value_failure_policy` | `validate_bounded_scores_after_exact_slice_raise_on_invalid_available_score` |
 | `target_freeze_policy` | `decision_information_only_no_execution_close_rerank` |
 | `incoming_price_failure_policy` | `raise_before_asset_return_on_invalid_held_endpoint` |
@@ -790,7 +843,7 @@ holding established at `d1`.
 | --- | --- | --- |
 | `TIMING-001` | The four-row daily-rebalance reference case above, where fixture labels `d0..d3` are bounded accounting rows `a[0..3]`. | Each scheduled row uses bounded `a[j-L]`; exact signal source, execution row, first earned return, drift, trade, turnover, cost, holdings, net return, and equity values match by hand. |
 | `TIMING-002` | Lags `0`, `False`, `0.0`, `-1`, `1.5`, and `"1"`. | Every invalid lag fails before alignment or target construction; integer one passes. |
-| `TIMING-003` | Full-source signal axes with an extra/missing/reordered date or asset, duplicate labels, or a timezone mismatch; bounded cells with Boolean, complex, string/object, positive infinity, negative infinity, IEEE `NaN`, and other missing values; and separate mutations of only pre-start or post-end signal values to every invalid value type. | Full structural axis validation runs first and every mismatch raises; exact bounds then select `bounded_final_signals`; bounded Boolean, complex, string/object, infinity, and non-`NaN` missing values raise `signal_value_invalid` before lag/target while bounded IEEE `NaN` alone remains unavailable; out-of-window value mutations, including mutations that change the full frame dtype, leave the bounded result and exception exactly unchanged. |
+| `TIMING-003` | Full-source signal axes with an extra/missing/reordered date or asset, duplicate labels, or a timezone mismatch; bounded cells with Boolean, complex, string/object, positive infinity, negative infinity, IEEE `NaN`, and other missing values; native homogeneous complex inputs; NumPy float/complex scalars wider than float64 on platforms that provide them; the identical-frame pre-start-versus-bounded `1+0j` counterexample; controlled pre-start/post-end mutations; and stale, swapped, untracked, tampered, moved-bound, or lossy provenance cases. | Full structural axis validation runs first; exact bounds then select `bounded_final_signals`; every native/bounded complex and other invalid value raises its domain reason while bounded IEEE `NaN` alone remains unavailable. Wider-than-float64 NumPy source scalars fail provenance capture before downcast. Tracked out-of-window signal/price mutations leave bounded results and exceptions unchanged, including dtype-changing `1+0j`; arbitrary or inconsistent state raises `source_provenance_invalid`; the coordinate ledger distinguishes identical final complex frames. |
 | `TIMING-004` | A bounded Friday, Monday, and Wednesday accounting slice with lags one and two. | Lag one uses the immediately preceding accounting row, not a calendar-day offset; for Wednesday execution at lag two, Friday is the frozen source, Monday is an intervening close, and the asserted order ends at Wednesday execution without constraining later rows. |
 | `TIMING-005` | Monthly rebalancing with daily signal rows. | Each month-end execution uses the immediately preceding source-row signal for lag one, not the previous rebalance signal; unscheduled signals do not execute. |
 | `TIMING-006` | For each intended nonzero buy and a directly tested prevalidated frozen sell leg, separately set the execution-close price to missing, Boolean, complex, string/object, `NaN`, positive infinity, negative infinity, zero, and negative values; separately apply the same invalid values to the prior and current incoming-return endpoints of a nonzero prior holding. | Every invalid buy/sell execution leg raises `execution_price_invalid` without coercion, fill, reranking, or redistribution; every invalid held endpoint raises `incoming_price_invalid` earlier than asset return, gross validation, drift, target feasibility, trade, or cost; when an integrated held sell shares the invalid current endpoint, incoming-price failure takes precedence while the direct sell-validator fixture preserves independent sell-leg coverage. |
@@ -801,7 +854,7 @@ holding established at `d1`.
 | `TIMING-011` | Exact benchmark prices and zero benchmark-return anchor, plus Boolean, complex, string/object, missing, non-finite, non-positive, extra-date, missing-date, duplicate-date, reordered-date, and timezone-mismatched benchmark variants. | Strategy and benchmark share anchor, measured rows, and terminal window; tracking error explicitly subtracts only each series' `.loc[measured_return_dates]` values while preserving the helper's zero benchmark anchor; duplicate dates and every other benchmark type, price, axis, or alignment violation fail without coercion. |
 | `TIMING-012` | An incomplete terminal resample bucket with a target change at scheduled accounting row `a[N]`. | The last observed row is disclosed as a rebalance; its incoming return, turnover, and cost are included and its post-trade holdings are open; `holding_effective_start` is immediately after `close[a[N]]`, `first_holding_return_start` is `a[N]`, both the first-return endpoint and row are missing, and no `a[N+1]` is constructed or inferred. |
 | `TIMING-013` | A Stage 1 same-row synthetic response and a one-row price-forward label. | Both remain diagnostic targets and cannot be serialized as executable strategy P&L under this policy. |
-| `TIMING-014` | Every current backtest caller and serialized result. | Global typed metadata, resolved rebalance dates, and one ledger row per date in the initialization-anchor/resolved-schedule union are present; the anchor has no incoming or first-holding interval; each later insufficient-lag row has the matching prior/current accounting-date incoming interval and no first-holding interval; every nonterminal executed row has a bounded next-row first-holding endpoint, while terminal execution has start `a[N]`, missing end/row, and no invented `a[N+1]`; all statuses and intervals reconcile with accounting arrays. |
+| `TIMING-014` | Every current backtest caller and serialized result. | Every caller declares a capture baseline and passes required provenance at the final-panel boundary. Global typed metadata includes only the allowlisted provenance policy/status, resolved rebalance dates, and one ledger row per date in the initialization-anchor/resolved-schedule union. Direct/nested provenance-object serialization is rejected, and current committed logs are scanned for internal field names. The anchor, insufficient-lag, nonterminal, and terminal intervals reconcile with accounting arrays without inventing `a[N+1]`. |
 
 Implementation tests must assert values, dates, event ordering, error messages,
 and mutation invariance. Static wording checks alone do not complete Stage 2b.
@@ -828,6 +881,10 @@ Stage 2b must:
 - validate full-source axes structurally, select exact bounded accounting
   signals, and only then reject invalid bounded available values before lag or
   target construction;
+- require immutable price/signal provenance as a caller-declared baseline,
+  state that enforcement begins at capture, reject stale or untracked later
+  source state, and permit complex-dtype recovery only through the controlled
+  coordinate ledger;
 - freeze targets immediately after source-row signal availability;
 - validate every held prior/current incoming-price endpoint before asset
   returns or gross accounting;
@@ -883,6 +940,11 @@ Accepted here:
 - bounded available signal scores are real numeric non-Boolean finite values;
   only bounded IEEE `NaN` denotes an unavailable score, and out-of-window value
   mutations cannot affect bounded results or exceptions;
+- source provenance is mandatory; the selected
+  `tracked_pre_mutation_source_snapshot_v1` policy distinguishes native,
+  bounded, and tracked post-capture out-of-window complex values. It cannot
+  prove pre-capture history; direct and nested provenance objects are not
+  serializable, while callers remain responsible for extracted primitives;
 - targets are frozen immediately after source-row signal availability;
 - held incoming-return endpoints are strictly validated before asset returns,
   separately from later execution-leg feasibility;

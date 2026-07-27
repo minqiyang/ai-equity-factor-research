@@ -1,4 +1,5 @@
 import math
+from fractions import Fraction
 
 import numpy as np
 import pandas as pd
@@ -8,6 +9,7 @@ from backtest.metrics import (
     calculate_basic_metrics,
     calculate_holding_episode_metrics,
     calculate_holdings_state_metrics,
+    calculate_max_drawdown,
     calculate_tracking_error,
 )
 
@@ -295,6 +297,474 @@ def test_holdings_state_metrics_reject_duplicate_and_unsorted_axes() -> None:
     duplicate_assets.columns = ["AAA", "AAA"]
     with pytest.raises(ValueError, match="duplicate assets"):
         calculate_holdings_state_metrics(duplicate_assets)
+
+
+def test_max_drawdown_uses_keyword_capital_anchor() -> None:
+    index = pd.date_range("2024-01-01", periods=3, freq="D")
+    equity = pd.Series([0.90, 0.95, 0.80], index=index)
+
+    assert calculate_max_drawdown(
+        equity,
+        initial_capital=1.0,
+    ) == pytest.approx(-0.20)
+    with pytest.raises(TypeError):
+        calculate_max_drawdown(equity, 1.0)  # type: ignore[misc]
+
+
+def test_basic_metrics_match_four_row_timing_reference() -> None:
+    index = pd.date_range("2024-01-01", periods=4, freq="D")
+    returns = pd.Series([0.0, -0.01, 0.078, 0.0], index=index)
+    equity = pd.Series([1.0, 0.99, 1.06722, 1.06722], index=index)
+    turnover = pd.Series([0.0, 1.0, 2.0, 0.0], index=index)
+    transaction_costs = pd.Series([0.0, 0.01, 0.022, 0.0], index=index)
+    benchmark_returns = pd.Series([0.0, 0.01, -0.02, 0.03], index=index)
+    benchmark_equity = (1.0 + benchmark_returns).cumprod()
+
+    metrics = calculate_basic_metrics(
+        equity,
+        returns,
+        turnover=turnover,
+        transaction_costs=transaction_costs,
+        benchmark_equity_curve=benchmark_equity,
+        benchmark_returns=benchmark_returns,
+        initial_capital=1.0,
+        periods_per_year=252,
+    )
+
+    measured_returns = returns.loc[index[1:]]
+    measured_benchmark = benchmark_returns.loc[index[1:]]
+    expected_benchmark_total = float((1.0 + measured_benchmark).prod() - 1.0)
+    expected_active = measured_returns - measured_benchmark
+
+    assert metrics["total_return"] == pytest.approx(0.06722)
+    assert metrics["annualized_return"] == pytest.approx(
+        1.06722 ** (252 / 3) - 1.0
+    )
+    assert metrics["annualized_volatility"] == pytest.approx(
+        measured_returns.std(ddof=0) * np.sqrt(252)
+    )
+    assert metrics["sharpe_ratio"] == pytest.approx(
+        measured_returns.mean()
+        / measured_returns.std(ddof=0)
+        * np.sqrt(252)
+    )
+    assert metrics["max_drawdown"] == pytest.approx(-0.01)
+    assert metrics["average_turnover"] == pytest.approx(1.0)
+    assert metrics["total_turnover"] == pytest.approx(3.0)
+    assert metrics["total_transaction_cost_impact"] == pytest.approx(0.032)
+    assert metrics["total_trading_cost_impact"] == pytest.approx(0.032)
+    assert metrics["benchmark_total_return"] == pytest.approx(
+        expected_benchmark_total
+    )
+    assert metrics["excess_total_return"] == pytest.approx(
+        0.06722 - expected_benchmark_total
+    )
+    assert metrics["tracking_error"] == pytest.approx(
+        expected_active.std(ddof=0) * np.sqrt(252)
+    )
+
+
+def test_basic_metrics_use_measured_rows_for_averages_and_all_rows_for_totals() -> None:
+    index = pd.date_range("2024-01-01", periods=4, freq="D")
+    returns = pd.Series([0.0, 0.01, -0.02, 0.03], index=index)
+    equity = (1.0 + returns).cumprod()
+    turnover = pd.Series([10.0, 1.0, 2.0, 3.0], index=index)
+    transaction_costs = pd.Series([0.4, 0.1, 0.2, 0.3], index=index)
+    slippage_costs = pd.Series([0.04, 0.01, 0.02, 0.03], index=index)
+    volume_costs = pd.Series([0.004, 0.001, 0.002, 0.003], index=index)
+
+    metrics = calculate_basic_metrics(
+        equity,
+        returns,
+        turnover=turnover,
+        transaction_costs=transaction_costs,
+        slippage_costs=slippage_costs,
+        volume_aware_slippage_costs=volume_costs,
+    )
+
+    assert metrics["total_return"] == pytest.approx(equity.iloc[-1] - 1.0)
+    assert metrics["average_turnover"] == pytest.approx(2.0)
+    assert metrics["total_turnover"] == pytest.approx(16.0)
+    assert metrics["total_transaction_cost_impact"] == pytest.approx(1.0)
+    assert metrics["total_slippage_cost_impact"] == pytest.approx(0.1)
+    assert metrics["total_volume_aware_slippage_cost_impact"] == pytest.approx(
+        0.01
+    )
+    assert metrics["total_trading_cost_impact"] == pytest.approx(1.11)
+
+
+@pytest.mark.parametrize(
+    "initial_capital",
+    [
+        True,
+        False,
+        np.bool_(True),
+        1.0 + 0.0j,
+        "1.0",
+        None,
+        pd.NA,
+        0.0,
+        -1.0,
+        np.nan,
+        np.inf,
+        -np.inf,
+        Fraction(10**400, 1),
+    ],
+)
+def test_metric_helpers_reject_invalid_initial_capital(
+    initial_capital: object,
+) -> None:
+    index = pd.date_range("2024-01-01", periods=2, freq="D")
+    equity = pd.Series([1.0, 1.01], index=index)
+    returns = pd.Series([0.0, 0.01], index=index)
+
+    with pytest.raises(ValueError, match="initial_capital_invalid"):
+        calculate_max_drawdown(
+            equity,
+            initial_capital=initial_capital,  # type: ignore[arg-type]
+        )
+    with pytest.raises(ValueError, match="initial_capital_invalid"):
+        calculate_basic_metrics(
+            equity,
+            returns,
+            initial_capital=initial_capital,  # type: ignore[arg-type]
+        )
+
+
+def test_metric_helpers_reject_stateful_initial_capital_without_conversion() -> None:
+    class StatefulFloat(float):
+        def __new__(cls, value: float):
+            instance = super().__new__(cls, value)
+            instance.float_calls = 0
+            return instance
+
+        def __float__(self) -> float:
+            self.float_calls += 1
+            return 1.0 if self.float_calls == 1 else 2.0
+
+    index = pd.date_range("2024-01-01", periods=2, freq="D")
+    equity = pd.Series([1.0, 1.01], index=index)
+    returns = pd.Series([0.0, 0.01], index=index)
+    capital = StatefulFloat(1.0)
+
+    with pytest.raises(ValueError, match="initial_capital_invalid"):
+        calculate_max_drawdown(equity, initial_capital=capital)
+    with pytest.raises(ValueError, match="initial_capital_invalid"):
+        calculate_basic_metrics(equity, returns, initial_capital=capital)
+
+    assert capital.float_calls == 0
+
+
+def test_max_drawdown_rejects_invalid_equity_matrix() -> None:
+    index = pd.date_range("2024-01-01", periods=3, freq="D")
+    duplicate_index = pd.DatetimeIndex([index[0], index[0], index[2]])
+    invalid_equity_curves: list[object] = [
+        [1.0, 1.1, 1.2],
+        pd.Series(dtype=float, index=pd.DatetimeIndex([])),
+        pd.Series([1.0, 1.1, 1.2]),
+        pd.Series([1.0, 1.1, 1.2], index=duplicate_index),
+        pd.Series([1.0, 1.1, 1.2], index=index[::-1]),
+        pd.Series([1.0, 0.0, 1.2], index=index),
+        pd.Series([1.0, -0.1, 1.2], index=index),
+        pd.Series([1.0, np.nan, 1.2], index=index),
+        pd.Series([1.0, np.inf, 1.2], index=index),
+        pd.Series([1.0, -np.inf, 1.2], index=index),
+        pd.Series([True, True, True], index=index),
+        pd.Series([1.0 + 0.0j, 1.1 + 1.0j, 1.2 + 0.0j], index=index),
+        pd.Series(["1.0", "1.1", "1.2"], index=index),
+    ]
+
+    for equity_curve in invalid_equity_curves:
+        with pytest.raises(ValueError, match="equity_curve_invalid"):
+            calculate_max_drawdown(
+                equity_curve,  # type: ignore[arg-type]
+                initial_capital=1.0,
+            )
+
+
+def test_basic_metrics_reject_invalid_returns_matrix() -> None:
+    index = pd.date_range("2024-01-01", periods=3, freq="D")
+    equity = pd.Series([1.0, 1.01, 1.02], index=index)
+    duplicate_index = pd.DatetimeIndex([index[0], index[0], index[2]])
+    invalid_returns: list[object] = [
+        [0.0, 0.01, 0.02],
+        pd.Series(dtype=float, index=pd.DatetimeIndex([])),
+        pd.Series([0.0, 0.01, 0.02]),
+        pd.Series([0.0, 0.01, 0.02], index=duplicate_index),
+        pd.Series([0.0, 0.01, 0.02], index=index[::-1]),
+        pd.Series([False, False, False], index=index),
+        pd.Series([0.0 + 0.0j, 0.01 + 1.0j, 0.02 + 0.0j], index=index),
+        pd.Series(["0.0", "0.01", "0.02"], index=index),
+        pd.Series([0.0, np.nan, 0.02], index=index),
+        pd.Series([0.0, np.inf, 0.02], index=index),
+        pd.Series([0.0, -np.inf, 0.02], index=index),
+        pd.Series([0.01, 0.01, 0.02], index=index),
+        pd.Series([0.0], index=index[:1]),
+    ]
+
+    for invalid in invalid_returns:
+        with pytest.raises(ValueError, match="returns_invalid"):
+            calculate_basic_metrics(
+                equity,
+                invalid,  # type: ignore[arg-type]
+            )
+
+
+def test_basic_metrics_require_exact_equity_return_axes() -> None:
+    index = pd.date_range("2024-01-01", periods=3, freq="D")
+    returns = pd.Series([0.0, 0.01, 0.02], index=index)
+    exact_equity = pd.Series([1.0, 1.01, 1.0302], index=index)
+    extra_index = index.append(pd.DatetimeIndex([index[-1] + pd.Timedelta(days=1)]))
+    invalid_equity_curves = [
+        exact_equity.iloc[:-1],
+        pd.Series([1.0, 1.01, 1.0302, 1.04], index=extra_index),
+        exact_equity.shift(freq="D"),
+        exact_equity.tz_localize("UTC"),
+    ]
+
+    for invalid_equity in invalid_equity_curves:
+        with pytest.raises(ValueError, match="equity_curve_invalid"):
+            calculate_basic_metrics(invalid_equity, returns)
+
+
+@pytest.mark.parametrize(
+    ("final_equity", "initial_capital"),
+    [
+        (1e308, 1e-308),
+        (1e308, 1.0),
+    ],
+)
+def test_basic_metrics_reject_non_finite_geometric_results(
+    final_equity: float,
+    initial_capital: float,
+) -> None:
+    index = pd.date_range("2024-01-01", periods=2, freq="D")
+    equity = pd.Series([1.0, final_equity], index=index)
+    returns = pd.Series([0.0, 0.0], index=index)
+
+    with pytest.raises(ValueError, match="equity_curve_invalid"):
+        calculate_basic_metrics(
+            equity,
+            returns,
+            initial_capital=initial_capital,
+        )
+
+
+@pytest.mark.parametrize(
+    "periods_per_year",
+    [False, True, np.bool_(False), 251, 365, 252.0, "252", None],
+)
+def test_basic_metrics_require_exact_daily_annualizer(
+    periods_per_year: object,
+) -> None:
+    index = pd.date_range("2024-01-01", periods=2, freq="D")
+    returns = pd.Series([0.0, 0.01], index=index)
+    equity = (1.0 + returns).cumprod()
+
+    with pytest.raises(ValueError, match="periods_per_year_invalid"):
+        calculate_basic_metrics(
+            equity,
+            returns,
+            periods_per_year=periods_per_year,  # type: ignore[arg-type]
+        )
+
+    metrics = calculate_basic_metrics(
+        equity,
+        returns,
+        periods_per_year=np.int64(252),
+    )
+    assert metrics["annualized_return"] == pytest.approx(1.01**252 - 1.0)
+
+
+def test_basic_metrics_reject_stateful_integer_annualizer_without_conversion() -> None:
+    class StatefulInt(int):
+        def __new__(cls, value: int):
+            instance = super().__new__(cls, value)
+            instance.int_calls = 0
+            return instance
+
+        def __int__(self) -> int:
+            self.int_calls += 1
+            return 365
+
+    index = pd.date_range("2024-01-01", periods=2, freq="D")
+    returns = pd.Series([0.0, 0.01], index=index)
+    equity = (1.0 + returns).cumprod()
+    annualizer = StatefulInt(252)
+
+    with pytest.raises(ValueError, match="periods_per_year_invalid"):
+        calculate_basic_metrics(
+            equity,
+            returns,
+            periods_per_year=annualizer,
+        )
+
+    assert annualizer.int_calls == 0
+
+
+@pytest.mark.parametrize(
+    "parameter_name",
+    [
+        "turnover",
+        "transaction_costs",
+        "slippage_costs",
+        "volume_aware_slippage_costs",
+    ],
+)
+def test_basic_metrics_reject_invalid_optional_accounting_series(
+    parameter_name: str,
+) -> None:
+    index = pd.date_range("2024-01-01", periods=4, freq="D")
+    returns = pd.Series([0.0, 0.01, 0.02, 0.03], index=index)
+    equity = (1.0 + returns).cumprod()
+    valid = pd.Series([0.0, 0.1, 0.2, 0.3], index=index)
+    duplicate_index = pd.DatetimeIndex([index[0], index[0], index[2], index[3]])
+    extra_index = index.append(pd.DatetimeIndex([index[-1] + pd.Timedelta(days=1)]))
+    invalid_series: list[object] = [
+        valid.tolist(),
+        pd.Series(valid.to_numpy()),
+        pd.Series(valid.to_numpy(), index=duplicate_index),
+        valid.sort_index(ascending=False),
+        valid.iloc[:-1],
+        pd.Series([0.0, 0.1, 0.2, 0.3, 0.4], index=extra_index),
+        valid.shift(freq="D"),
+        valid.tz_localize("UTC"),
+        pd.Series([False, False, False, False], index=index),
+        pd.Series([0.0 + 0.0j, 0.1 + 1.0j, 0.2, 0.3], index=index),
+        pd.Series(["0.0", "0.1", "0.2", "0.3"], index=index),
+        pd.Series([0.0, np.nan, 0.2, 0.3], index=index),
+        pd.Series([0.0, np.inf, 0.2, 0.3], index=index),
+        pd.Series([0.0, -np.inf, 0.2, 0.3], index=index),
+        pd.Series([0.0, -0.1, 0.2, 0.3], index=index),
+    ]
+
+    for invalid in invalid_series:
+        with pytest.raises(ValueError, match=f"{parameter_name}_invalid"):
+            calculate_basic_metrics(
+                equity,
+                returns,
+                **{parameter_name: invalid},
+            )
+
+
+def test_basic_metrics_reject_invalid_benchmark_metric_series() -> None:
+    index = pd.date_range("2024-01-01", periods=4, freq="D")
+    returns = pd.Series([0.0, 0.01, 0.02, 0.03], index=index)
+    equity = (1.0 + returns).cumprod()
+    benchmark_returns = pd.Series([0.0, 0.0, 0.01, 0.01], index=index)
+    benchmark_equity = (1.0 + benchmark_returns).cumprod()
+
+    invalid_benchmark_equity = [
+        benchmark_equity.iloc[:-1],
+        benchmark_equity.shift(freq="D"),
+        benchmark_equity.tz_localize("UTC"),
+        pd.Series([1.0, np.nan, 1.01, 1.02], index=index),
+        pd.Series([1.0, 0.0, 1.01, 1.02], index=index),
+        pd.Series([True, True, True, True], index=index),
+    ]
+    for invalid in invalid_benchmark_equity:
+        with pytest.raises(ValueError, match="benchmark_equity_curve_invalid"):
+            calculate_basic_metrics(
+                equity,
+                returns,
+                benchmark_equity_curve=invalid,
+            )
+
+    invalid_benchmark_returns = [
+        benchmark_returns.iloc[:-1],
+        benchmark_returns.shift(freq="D"),
+        benchmark_returns.tz_localize("UTC"),
+        pd.Series([0.0, np.nan, 0.01, 0.01], index=index),
+        pd.Series([False, False, False, False], index=index),
+        pd.Series([0.01, 0.0, 0.01, 0.01], index=index),
+    ]
+    for invalid in invalid_benchmark_returns:
+        with pytest.raises(ValueError, match="benchmark_returns_invalid"):
+            calculate_basic_metrics(
+                equity,
+                returns,
+                benchmark_returns=invalid,
+            )
+
+
+def test_basic_metrics_require_returns_for_benchmark_equity() -> None:
+    index = pd.date_range("2024-01-01", periods=3, freq="D")
+    returns = pd.Series([0.0, 0.01, 0.02], index=index)
+    equity = (1.0 + returns).cumprod()
+    flat_benchmark_equity = pd.Series([2.0, 2.0, 2.0], index=index)
+
+    with pytest.raises(ValueError, match="benchmark_returns_invalid"):
+        calculate_basic_metrics(
+            equity,
+            returns,
+            benchmark_equity_curve=flat_benchmark_equity,
+        )
+
+
+def test_basic_metrics_compound_benchmark_returns_from_shared_anchor() -> None:
+    index = pd.date_range("2024-01-01", periods=3, freq="D")
+    returns = pd.Series([0.0, 0.01, 0.02], index=index)
+    equity = (1.0 + returns).cumprod()
+    benchmark_returns = pd.Series([0.0, 0.00, 0.01], index=index)
+
+    metrics = calculate_basic_metrics(
+        equity,
+        returns,
+        benchmark_returns=benchmark_returns,
+    )
+
+    assert metrics["benchmark_total_return"] == pytest.approx(0.01)
+    assert metrics["excess_total_return"] == pytest.approx(
+        float(equity.iloc[-1] - 1.0) - 0.01
+    )
+
+
+def test_basic_metrics_reject_nonpositive_benchmark_period_multipliers() -> None:
+    index = pd.date_range("2024-01-01", periods=3, freq="D")
+    returns = pd.Series([0.0, 0.01, 0.02], index=index)
+    equity = (1.0 + returns).cumprod()
+    benchmark_returns = pd.Series([0.0, -2.0, -2.0], index=index)
+
+    with pytest.raises(ValueError, match="benchmark_returns_invalid"):
+        calculate_basic_metrics(
+            equity,
+            returns,
+            benchmark_returns=benchmark_returns,
+        )
+
+
+def test_basic_metrics_require_benchmark_equity_to_match_return_path() -> None:
+    index = pd.date_range("2024-01-01", periods=3, freq="D")
+    returns = pd.Series([0.0, 0.01, 0.02], index=index)
+    equity = (1.0 + returns).cumprod()
+    benchmark_returns = pd.Series([0.0, 0.00, 0.01], index=index)
+    mismatched_benchmark_equity = pd.Series([2.0, 2.0, 2.02], index=index)
+
+    with pytest.raises(ValueError, match="benchmark_equity_curve_invalid"):
+        calculate_basic_metrics(
+            equity,
+            returns,
+            benchmark_equity_curve=mismatched_benchmark_equity,
+            benchmark_returns=benchmark_returns,
+        )
+
+
+def test_basic_metrics_benchmark_path_check_scales_with_initial_capital() -> None:
+    index = pd.date_range("2024-01-01", periods=3, freq="D")
+    initial_capital = 1e-20
+    returns = pd.Series([0.0, 0.01, 0.02], index=index)
+    equity = initial_capital * (1.0 + returns).cumprod()
+    benchmark_returns = pd.Series([0.0, 0.0, 0.0], index=index)
+    mismatched_benchmark_equity = pd.Series([5e-13, 5e-13, 5e-13], index=index)
+
+    with pytest.raises(ValueError, match="benchmark_equity_curve_invalid"):
+        calculate_basic_metrics(
+            equity,
+            returns,
+            benchmark_equity_curve=mismatched_benchmark_equity,
+            benchmark_returns=benchmark_returns,
+            initial_capital=initial_capital,
+        )
 
 
 def test_basic_metrics_remain_backward_compatible_without_holdings() -> None:

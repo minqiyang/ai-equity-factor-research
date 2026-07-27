@@ -18,7 +18,8 @@ Demonstrate the local research workflow:
 - Random seed: `20260521`
 - Asset count: `20`
 - Price rows: `756`
-- Date range: `2021-01-01` to `2023-11-24`
+- Source date range: `2021-01-01` to `2023-11-24`
+- Evaluation date range: `2021-12-21` to `2023-11-24`
 - Momentum lookback periods: `252`
 - Momentum skipped recent periods: `21`
 - Rebalance frequency: `ME`
@@ -34,34 +35,35 @@ Demonstrate the local research workflow:
 - Tracking-error missing policy: `raise`
 - Tracking-error terminal-row policy: `include_terminal_close_to_close_window`
 - Benchmark cost basis: `cost_free_price_return`
+- Sharpe convention: `net_after_applied_costs`, risk-free `zero`, `ddof=0`, `252` periods/year, `exclude_initialization_anchor`
 - Holding-episode contract: `continuous_positive_weight_v1`
 - Holding-episode return/cost basis: `net_contribution_over_cumulative_deployed_weight`, `pro_rata_absolute_signed_trade_weight`
 - Holding-episode terminal policy: `exclude_open`
 - Closed/terminal-open episodes: `29` / `5`
-- Execution timing: signals known after close; trades on rebalance dates using lagged signals; holdings affect next price row
+- Execution timing: after_close_signal_next_observed_close_v1
 
 ## Metrics
 
 | Metric | Value |
 | --- | ---: |
 | Total return | -7.91% |
-| Annualized return | -2.71% |
-| Annualized volatility | 10.31% |
-| Tracking error vs synthetic benchmark | 9.09% |
+| Annualized return | -4.04% |
+| Annualized volatility | 12.64% |
+| Tracking error vs synthetic benchmark | 7.74% |
 | Episode hit rate | 34.48% |
 | Average holding-period return | -2.14% |
-| Sharpe ratio | -0.2146 |
+| Sharpe ratio | -0.2631 |
 | Max drawdown | -22.64% |
 | Average holding count | 5.0000 |
 | Average position concentration HHI | 0.2003 |
 | Max position concentration HHI | 0.2017 |
-| Average turnover | 1.75% |
+| Average turnover | 2.62% |
 | Total turnover | 13.1962 |
 | Total transaction cost impact | 1.32% |
 | Total slippage cost impact | 0.00% |
 | Total trading cost impact | 1.32% |
-| Benchmark total return | 28.16% |
-| Excess total return vs synthetic benchmark | -36.07% |
+| Benchmark total return | 9.85% |
+| Excess total return vs synthetic benchmark | -17.75% |
 
 ## Limitations
 

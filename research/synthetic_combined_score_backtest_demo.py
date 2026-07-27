@@ -14,7 +14,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from backtest.portfolio import BacktestResult, run_long_only_backtest
+from backtest.portfolio import (
+    BacktestResult,
+    capture_backtest_source_provenance,
+    run_long_only_backtest,
+)
 from features.combine import combine_factors
 from features.diagnostics import factor_correlation_matrix
 from features.normalize import (
@@ -155,6 +159,10 @@ def run_synthetic_combined_score_backtest_demo(
     }
     correlation_matrix = factor_correlation_matrix(zscore_factors)
     combined_score = combine_factors(zscore_factors, config.weights)
+    source_provenance = capture_backtest_source_provenance(
+        prices,
+        combined_score,
+    )
     benchmark_prices = build_synthetic_equal_weight_benchmark(
         prices,
         starting_price=config.starting_price,
@@ -163,6 +171,9 @@ def run_synthetic_combined_score_backtest_demo(
     backtest_result = run_long_only_backtest(
         prices,
         combined_score,
+        source_provenance=source_provenance,
+        evaluation_start=prices.index[0],
+        evaluation_end=prices.index[-1],
         rebalance_frequency=config.rebalance_frequency,
         top_n=config.top_n,
         transaction_cost_bps=config.transaction_cost_bps,
@@ -216,6 +227,12 @@ def write_demo_experiment_log(
             "data_source": "local deterministic price and factor generators; no external data fetch",
             "universe": f"{config.asset_count} synthetic assets",
             "date_range": {
+                "start": result.backtest_result.timing_metadata[
+                    "evaluation_start"
+                ].date(),
+                "end": result.backtest_result.timing_metadata["evaluation_end"].date(),
+            },
+            "source_date_range": {
                 "start": result.prices.index.min().date(),
                 "end": result.prices.index.max().date(),
             },
@@ -277,6 +294,12 @@ def write_demo_experiment_log(
             "benchmark_cost_basis": result.backtest_result.assumptions[
                 "benchmark_cost_basis"
             ],
+            "timing_metadata": result.backtest_result.timing_metadata,
+            **{
+                key: result.backtest_result.assumptions[key]
+                for key in result.backtest_result.assumptions
+                if key.startswith("sharpe_")
+            },
             **{
                 key: result.backtest_result.assumptions[key]
                 for key in result.backtest_result.assumptions
@@ -299,6 +322,7 @@ def write_demo_experiment_log(
             ],
             "correlation_method": "pearson",
             "total_turnover": metrics["total_turnover"],
+            "timing_ledger": result.backtest_result.timing_ledger,
         },
         caveats=(
             *SYNTHETIC_RESEARCH_CAVEATS,
@@ -350,7 +374,8 @@ Exercise the integration path from existing factor research helpers into the exi
 | Price seed | `{config.price_seed}` |
 | Asset count | `{config.asset_count}` |
 | Price rows | `{len(result.prices)}` |
-| Date range | `{result.prices.index.min().date()}` to `{result.prices.index.max().date()}` |
+| Source date range | `{result.prices.index.min().date()}` to `{result.prices.index.max().date()}` |
+| Evaluation date range | `{result.backtest_result.timing_metadata["evaluation_start"].date()}` to `{result.backtest_result.timing_metadata["evaluation_end"].date()}` |
 | Factor names | `{", ".join(FACTOR_NAMES)}` |
 | Combination weights | `{_format_weights(config.weights)}` |
 | Rebalance frequency | `{config.rebalance_frequency}` |
@@ -369,6 +394,7 @@ Exercise the integration path from existing factor research helpers into the exi
 | Tracking-error missing policy | `{result.backtest_result.assumptions["tracking_error_missing_policy"]}` |
 | Tracking-error terminal-row policy | `{result.backtest_result.assumptions["tracking_error_terminal_row_policy"]}` |
 | Benchmark cost basis | `{result.backtest_result.assumptions["benchmark_cost_basis"]}` |
+| Sharpe convention | `{result.backtest_result.assumptions["sharpe_return_basis"]}`, risk-free `{result.backtest_result.assumptions["sharpe_risk_free_policy"]}`, `ddof={result.backtest_result.assumptions["sharpe_ddof"]}`, `{result.backtest_result.assumptions["sharpe_periods_per_year"]}` periods/year, `{result.backtest_result.assumptions["sharpe_measured_row_policy"]}` |
 | Holding-episode contract | `{result.backtest_result.assumptions["holding_episode_contract"]}` |
 | Holding-episode return basis | `{result.backtest_result.assumptions["holding_episode_return_basis"]}` |
 | Holding-episode cost allocation | `{result.backtest_result.assumptions["holding_episode_cost_allocation"]}` |
@@ -442,6 +468,20 @@ def _validate_config(config: SyntheticCombinedScoreBacktestConfig) -> None:
         raise ValueError("starting_price must be positive")
     if set(config.weights) != set(FACTOR_NAMES):
         raise ValueError("weights must exactly match synthetic factor names")
+    if (
+        isinstance(config.signal_lag_periods, bool)
+        or not isinstance(config.signal_lag_periods, int)
+        or config.signal_lag_periods < 1
+    ):
+        raise ValueError(
+            "signal_lag_periods must be a non-boolean integer of at least one"
+        )
+    if (
+        isinstance(config.periods_per_year, bool)
+        or not isinstance(config.periods_per_year, int)
+        or config.periods_per_year != 252
+    ):
+        raise ValueError("combined-score backtest requires integer periods_per_year=252")
 
 
 def _format_weights(weights: dict[str, float]) -> str:
