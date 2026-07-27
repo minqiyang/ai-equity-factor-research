@@ -59,6 +59,10 @@ IMPORTANT_FILES = [
         "docs/research_program_charter.md",
         "Canonical long-term research evidence and authorization policy.",
     ),
+    (
+        "docs/purged_bounded_split_contract.md",
+        "Accepted Stage 1a timing and sample-isolation design.",
+    ),
     ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),
     ("docs/codex_long_running_controller.md", "Continuation and stop-condition controller."),

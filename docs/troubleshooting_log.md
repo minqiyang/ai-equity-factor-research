@@ -1,5 +1,43 @@
 # Troubleshooting Log
 
+## 2026-07-26 - Isolated Package Build Initially Lacked Network Access
+
+Original failure and consequence:
+
+- The default system Python did not contain the repository development tools,
+  so validation reused the existing project test environment, existing Ruff
+  command, and cached `build` frontend.
+- The first package-build attempt ran inside the filesystem/network sandbox.
+  PEP 517 correctly created a temporary isolated environment, but pip could not
+  resolve the declared `setuptools>=77` and `wheel` build requirements because
+  DNS/network access was unavailable.
+
+Correction:
+
+- Did not modify `pyproject.toml`, install a new production dependency, or
+  create a persistent project environment.
+- Reran the same cached `build 1.5.0` frontend with network permission. Its
+  temporary isolated environment installed the already-declared
+  `setuptools>=77` and `wheel` requirements and was removed after the build.
+- The frontend reported the requirement names but not their resolved versions;
+  because the environment was ephemeral, no persistent package state remains
+  to inspect or reuse.
+
+Verification:
+
+- The source distribution and wheel both built successfully.
+- Tests, Ruff, and compilation also passed, and `git status --porcelain`
+  remained empty.
+
+Prevention:
+
+- Distinguish a sandbox network failure during isolated build bootstrapping
+  from a package or source defect.
+- Reuse declared environments when sufficient. If a future stage requires a
+  persistent missing dependency, install only the minimal declared scope and
+  report its package, resolved version, location, purpose, and repository-file
+  impact.
+
 ## 2026-07-26 - Auto-Merge Eligibility Preceded Required Codex Review
 
 Original policy defect and consequence:

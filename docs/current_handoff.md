@@ -1,14 +1,15 @@
 # Current Handoff
 
-Updated: 2026-07-26 for the Research Charter Reset.
+Updated: 2026-07-26 for the Purged and Bounded Split Contract.
 
 ## Canonical State
 
 - Long-term evidence policy: `docs/research_program_charter.md`.
+- Accepted Stage 1a design: `docs/purged_bounded_split_contract.md`.
 - Active roadmap: `docs/current_roadmap.md`.
 - Short operational controller: `docs/codex_long_running_controller.md`.
-- Verified starting `origin/main`: `a1486ea`, the merge of PR #157.
-- Starting validation: 591 tests passed; Ruff, compilation, package build, and
+- Verified starting `origin/main`: `57f3db3`, the protected merge of PR #158.
+- Starting validation: 594 tests passed; Ruff, compilation, package build, and
   exact-head GitHub CI passed.
 - Current phase: research-only. No vendor download, credentials, brokerage,
   orders, paper deployment, live deployment, or real-money execution.
@@ -29,6 +30,24 @@ Future formal historical interpretation requires:
 This charter stage changes documentation and workflow control only. It does not
 add factors, alter calculations, read private performance values, generate
 research evidence, or authorize paper/live behavior.
+
+## Stage 1a Split Contract Decision
+
+The accepted design requires:
+
+- six explicit inclusive boundaries for train, validation, and test;
+- a hard `test_end` information cutoff even when later source rows exist;
+- row-based label start/end metadata and complete interval ownership;
+- horizon-aware purge in every window plus optional explicit embargo;
+- raw split axes with purged/embargoed targets masked to `NaN`;
+- separate feature warm-up, in-window label warm-down, gap, and ignored
+  post-test metadata; and
+- typed price/synthetic label derivations, consumer-level usable-pair counts,
+  and deterministic raw asset/benchmark mutation-invariance tests.
+
+The contract preserves zero-eligible windows as visible `INVALID` evidence
+rather than borrowing cross-boundary labels. It does not implement the fix.
+Current future-return workflows remain diagnostic-only until Stage 1b passes.
 
 ## Verified Implementation Baseline
 
@@ -73,26 +92,27 @@ SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
 
 ## PR #148 Interaction
 
-PR #148 is an open Draft governance PR from an older base and changes only
-`AGENTS.md`. It is not a predecessor for the charter stage. Do not edit
-`AGENTS.md` in the charter branch, and do not merge, close, rebase, or overwrite
-PR #148 without a separate owner disposition.
+At the charter-stage verification, PR #148 was an independent Draft governance
+PR from an older base that changed only `AGENTS.md`. It was not a predecessor
+for PR #158. This Stage 1a branch also does not edit `AGENTS.md` or alter that
+external PR.
 
 ## Next Safe Stage
 
-After the charter PR is merged, begin only:
+After the Stage 1a PR is merged, begin only:
 
 ```text
-Stage 1a - Purged and bounded sample-split contract.
+Stage 1b - Purged and bounded sample-split implementation.
 ```
 
-That design/test-plan stage must freeze split starts/ends, bounded test
-semantics, label start/end ownership, horizon-aware purge, optional embargo,
-and warm-up/down metadata before implementation.
+Implement `docs/purged_bounded_split_contract.md` test-first. Migrate every
+current future-return consumer, preserve masked exclusions and exact metadata,
+and prove later-price invariance before regenerating any affected synthetic
+evidence.
 
-Do not fix timing code, interpret historical diagnostics, add data providers,
-expand the factor catalog, build a strategy factory, or start LEAN work in the
-charter PR.
+Do not interpret historical diagnostics, add data providers, expand the factor
+catalog, resolve zero-lag execution, build a strategy factory, or start LEAN
+work in Stage 1b.
 
 ## Freshness Checklist
 

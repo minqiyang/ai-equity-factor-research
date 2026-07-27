@@ -15,6 +15,68 @@ investment performance.
 
 ---
 
+## 2026-07-26 - Freeze The Purged And Bounded Split Contract
+
+Context:
+
+- Protected `main` at `57f3db3` contains the Research Charter Reset and a
+  594-test software baseline.
+- `make_train_validation_test_split()` still has implicit starts, rejects a
+  bounded `test_end`, and cannot retain source history outside the split axes.
+- Both current price-derived diagnostic workflows calculate forward returns on
+  the complete panel before slicing by signal date. The local fixture workflow
+  also calculates unsplit diagnostics from those targets.
+
+Decision:
+
+- Require six explicit inclusive train/validation/test boundaries and allow
+  recorded gaps.
+- Treat `test_end` as a hard information cutoff even when later source rows
+  exist. No post-test value may complete a test label.
+- Define price-derived row-horizon labels by exact `signal_date`,
+  `label_start`, and `label_end`; purge every label whose complete interval is
+  not contained in one configured window.
+- Require typed label-kind and derivation metadata. Existing synthetic split
+  responses use exact same-row `[t,t]` intervals and cannot claim a price
+  forward-return horizon.
+- Keep raw split axes visible and mask purged or embargoed target rows to
+  `NaN`. Preserve zero-eligible windows as visible `INVALID` evidence.
+- Keep purge and optional row-based embargo as independent recorded flags. A
+  preregistered explicit gap can satisfy embargo, with exact transition sets
+  and partial-gap behavior recorded.
+- Record exact feature warm-up dates, in-window purged label warm-down dates,
+  ignored post-test dates, and per-candidate exclusion reasons.
+- Separate structural eligibility from consumer-level valid/missing target
+  cells and usable factor-label pairs; retain `no_usable_label_pairs`.
+- Require post-test and cross-boundary mutation-invariance tests before Stage
+  1b can be accepted, including independent raw asset and benchmark mutation.
+
+Rationale:
+
+- Non-overlapping signal-date rows do not isolate samples when a target still
+  reads a later split's prices.
+- A hard information cutoff is the narrow interpretation consistent with the
+  charter rule that a complete label interval must belong to one split.
+- Masking rather than dropping exclusions keeps sample failures and raw date
+  counts auditable without exposing invalid label values to metrics.
+
+Consequences:
+
+- `docs/purged_bounded_split_contract.md` is the implementation authority for
+  Stage 1b.
+- The current code defects remain present until Stage 1b; this design does not
+  validate or reinterpret any existing diagnostic.
+- Stage 2 execution timing, nonzero-embargo selection, walk-forward folds,
+  point-in-time data, and empirical thresholds remain deferred.
+- This stage creates zero research trials, reads no private values, and changes
+  no factor, label, strategy, portfolio, cost, benchmark, or LEAN behavior.
+
+Follow-up:
+
+- Implement the contract test-first in Stage 1b, migrate every current
+  future-return consumer, regenerate only affected synthetic evidence, and run
+  the full current-head validation and review gates.
+
 ## 2026-07-26 - Reset The Research Program Around Evidence Gates
 
 Context:
