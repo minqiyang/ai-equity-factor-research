@@ -1,4 +1,8 @@
+import hashlib
+import json
 from pathlib import Path
+import re
+import runpy
 import tomllib
 
 
@@ -33,6 +37,7 @@ def test_required_governance_files_exist() -> None:
         "docs/research_program_charter.md",
         "docs/purged_bounded_split_contract.md",
         "docs/signal_execution_timing_contract.md",
+        "docs/point_in_time_data_methodology_contract.md",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
@@ -61,8 +66,9 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "2a. Signal/execution timing contract",
         "2b. Signal/execution timing implementation",
         "3. Point-in-time data methodology",
+        "`docs/point_in_time_data_methodology_contract.md`",
         "Target construction currently lives in `src/backtest/portfolio.py`",
-        "pseudo-holdout evidence",
+        "`historical_evaluation`, not a pristine holdout",
         "request `@codex review` once on the",
         "`docs/purged_bounded_split_contract.md`",
         "`docs/signal_execution_timing_contract.md`",
@@ -75,17 +81,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Research Charter Decision",
         "## Stage 1 Split Decision",
         "## Stage 2 Timing Decision",
+        "## Stage 3 Data Methodology Decision",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Stage 3 - Point-in-time data methodology",
+        "Stage 4 - Experiment and trial ledger",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "638 passing tests" in roadmap
-    assert "Starting validation: 638 tests passed" in handoff
+    assert "849 passing tests" in roadmap
+    assert "Starting validation: 849 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -192,10 +199,10 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
     assert "| 2a. Signal/execution timing contract | Complete" in roadmap
     assert (
         "| 2b. Signal/execution timing implementation | "
-        "Local validation/review complete; GitHub gates pending"
+        "Complete on protected main via PR #162"
     ) in roadmap
     assert (
-        "Stage 3 - Point-in-time data methodology"
+        "Stage 4 - Experiment and trial ledger"
         in handoff
     )
 
@@ -216,7 +223,7 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
 
     for phrase in [
-        "Status: accepted Stage 2a design; Stage 2b runtime implementation complete on",
+        "Status: accepted Stage 2 design; Stage 2b runtime implementation complete on",
         "This is the normative documentation and methodology target for the current",
         "after_close_signal_next_observed_close_v1",
         "A close-derived signal stamped at row `t` becomes available only after",
@@ -325,9 +332,271 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     assert "| 2a. Signal/execution timing contract | Complete" in roadmap
     assert (
         "| 2b. Signal/execution timing implementation | "
+        "Complete on protected main via PR #162"
+    ) in roadmap
+    assert (
+        "| 3. Point-in-time data methodology | "
         "Local validation/review complete; GitHub gates pending"
     ) in roadmap
-    assert "| 3. Point-in-time data methodology | Next" in roadmap
+    assert (
+        "| 4. Experiment/trial ledger | Next after Stage 3 protected merge "
+        "and successful exact merge-head CI"
+    ) in roadmap
+
+
+def test_point_in_time_data_methodology_contract_freezes_stage_three_design() -> None:
+    contract = (
+        PROJECT_ROOT / "docs/point_in_time_data_methodology_contract.md"
+    ).read_text(encoding="utf-8")
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
+        encoding="utf-8"
+    )
+    readiness_audit = (
+        PROJECT_ROOT / "docs/real_data_readiness_audit.md"
+    ).read_text(encoding="utf-8")
+    readiness_skill = (
+        PROJECT_ROOT / ".agents/skills/real-data-readiness-audit/SKILL.md"
+    ).read_text(encoding="utf-8")
+    study_checklist = (
+        PROJECT_ROOT / "docs/local_csv_study_checklist.md"
+    ).read_text(encoding="utf-8")
+    audit_template = (
+        PROJECT_ROOT / "docs/local_csv_readiness_audit_report_template.md"
+    ).read_text(encoding="utf-8")
+    experiment_log = (PROJECT_ROOT / "EXPERIMENT_LOG.md").read_text(
+        encoding="utf-8"
+    )
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
+
+    for phrase in [
+        "Status: proposed Stage 3 methodology contract",
+        "Contract ID: `point_in_time_data_methodology_contract_v1`",
+        "Contract version: `1.0.0`",
+        "`methodology_contract_accepted`",
+        "`dataset_manifest_reviewed`",
+        "`formal_interpretation_eligible`",
+        "Contract acceptance does not verify any dataset",
+        "`UNKNOWN`",
+        "`NOT_APPLICABLE`",
+        "`asserted`",
+        "`owner_accepted`",
+        "`canonical_manifest_sha256`",
+        "`raw_byte_sha256`",
+        "`ordered_manifest_sha256`",
+        "`canonicalization_id`",
+        "`environment_id`",
+        "`environment_lock_sha256`",
+        "`review_decision_id`",
+        "`public_projection_sha256`",
+        "`contract_content_sha256`",
+        "`contract_protected_merge_sha`",
+        "`decision_canonicalization_id`",
+        "`decision_record_sha256`",
+        "`pit_canonical_json_v1`",
+        "RFC 8785 JCS",
+        "tests/fixtures/pit_canonical_json_v1_golden.json",
+        "`permanent_security_id`",
+        "`listing_id`",
+        "`ticker_alias`",
+        "`effective_from`",
+        "`effective_to`",
+        "`known_at`",
+        "`public_available_at`",
+        "`provider_available_at`",
+        "`revision_published_at`",
+        "`supersedes`",
+        "`delisting_terminal_value_policy`",
+        "`adjustment_set_id`",
+        "`volume_basis`",
+        "`NOT_YET_LISTED`",
+        "`PROVIDER_GAP`",
+        "`calendar_id`",
+        "`calendar_version`",
+        "`source_timezone`",
+        "`session_date`",
+        "`available_at`",
+        "`benchmark_purpose`",
+        "`risk_free_policy`",
+        "`private_full_manifest`",
+        "`public_redacted_projection`",
+        "`sealed_at`",
+        "`accessed_at`",
+        "`recorded_at`",
+        "`backfilled`",
+        "`classification_before`",
+        "`classification_after`",
+        "`design_impact`",
+        "`historical_evaluation`",
+        "2025-05-01 through 2026-05-31",
+        "Stage 4 owns append-only enforcement",
+        "and known_at <= t",
+        "Neither a manifest author nor a checklist can self-certify",
+        "No provider selection, download, credentials, or remote data access",
+        "## Deterministic Stage 3 Test Matrix",
+        "## Accepted Decisions and Deferred Implementation",
+    ]:
+        assert phrase in contract
+
+    for case_number in range(1, 15):
+        assert contract.count(f"`PIT-{case_number:03d}`") == 1
+
+    for case_id, decision_fragment in {
+        "PIT-003": "changed identity-bearing lineage/environment/decision fields",
+        "PIT-004": "It is unavailable to that signal",
+        "PIT-011": "Serialization fails closed through the allowlist",
+        "PIT-012": "cannot retain or establish holdout status and is downgraded",
+        "PIT-013": "uncertain overlap downgrades the nominal window",
+        "PIT-014": "dataset verification and formal interpretation blocked",
+    }.items():
+        case_row = next(
+            line for line in contract.splitlines() if f"`{case_id}`" in line
+        )
+        assert decision_fragment in case_row
+
+    for canonical_doc in [
+        roadmap,
+        handoff,
+        specification,
+        readiness_audit,
+        readiness_skill,
+        study_checklist,
+        audit_template,
+        experiment_log,
+        readme,
+        repo_map,
+    ]:
+        assert "docs/point_in_time_data_methodology_contract.md" in canonical_doc
+
+    normalized_contract = " ".join(contract.split())
+    assert "Classification moves only toward greater exposure" in normalized_contract
+    assert "An existing window is never upgraded" in normalized_contract
+    assert (
+        "methodology_contract_accepted does not imply "
+        "dataset_manifest_reviewed"
+    ) in normalized_contract
+    assert (
+        "dataset_manifest_reviewed does not imply "
+        "formal_interpretation_eligible"
+    ) in normalized_contract
+    assert (
+        "does not establish `formal_ready`, point-in-time status, license "
+        "entitlement, or historical validity"
+    ) in normalized_contract
+    assert (
+        "Tracked records must not contain private absolute paths"
+        in normalized_contract
+    )
+    assert "Static or survivor-selected cohorts remain `DIAGNOSTIC_ONLY`" in contract
+
+    for intake_doc in [study_checklist, audit_template]:
+        normalized_intake = " ".join(intake_doc.split())
+        assert "dataset-manifest review candidate (not formal evidence)" in normalized_intake
+        assert "methodology_contract_accepted" in normalized_intake
+        assert "dataset_manifest_reviewed" in normalized_intake
+        assert "formal_interpretation_eligible" in normalized_intake
+        assert "private absolute paths" in normalized_intake
+        assert "hash plan is not evidence" in normalized_intake
+        assert "this form cannot grant any gate" in normalized_intake
+        assert "Dataset review decision ID:" in normalized_intake
+        assert "Reviewer authority reference:" in normalized_intake
+        assert "Finding IDs and dispositions:" in normalized_intake
+        assert "cannot self-certify" in normalized_intake
+        assert "outcome-reconstructible" in normalized_intake
+        assert "2025-05-01 through 2026-05-31" in normalized_intake
+        assert "`historical_evaluation`, never a pristine holdout" in normalized_intake
+        assert "must not be upgraded" in normalized_intake
+        assert "canonicalization_id" in normalized_intake
+        assert "environment_id" in normalized_intake
+        assert "environment_lock_sha256" in normalized_intake
+        assert "known_at <= decision_time" in normalized_intake
+        assert "non-self-issued exact-version dataset-review decision" in normalized_intake
+        assert (
+            "methodology_contract_accepted` does not imply "
+            "`dataset_manifest_reviewed"
+        ) in normalized_intake
+        assert (
+            "dataset_manifest_reviewed` does not imply "
+            "`formal_interpretation_eligible"
+        ) in normalized_intake
+
+
+def test_pit_canonical_json_v1_golden_bytes_and_digest() -> None:
+    fixture = json.loads(
+        (
+            PROJECT_ROOT
+            / "tests/fixtures/pit_canonical_json_v1_golden.json"
+        ).read_text(encoding="utf-8")
+    )
+    canonical_text = json.dumps(
+        fixture["semantic_input"],
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+
+    assert fixture["schema_version"] == "pit_canonical_json_v1_golden_v1"
+    assert canonical_text == fixture["canonical_utf8"]
+    assert " " not in canonical_text
+    assert (
+        hashlib.sha256(canonical_text.encode("utf-8")).hexdigest()
+        == fixture["sha256"]
+    )
+
+
+def test_stage_three_tracked_policy_files_fail_closed_on_private_identifiers() -> None:
+    tracked_policy_paths = [
+        ".agents/skills/real-data-readiness-audit/SKILL.md",
+        "EXPERIMENT_LOG.md",
+        "docs/local_csv_study_checklist.md",
+        "docs/local_csv_readiness_audit_report_template.md",
+        "docs/point_in_time_data_methodology_contract.md",
+        "docs/real_data_readiness_audit.md",
+    ]
+
+    for relative_path in tracked_policy_paths:
+        text = (PROJECT_ROOT / relative_path).read_text(encoding="utf-8")
+        assert "/Users/" not in text
+        assert "/home/" not in text
+        assert "/private/tmp/" not in text
+        assert "file://" not in text
+        assert re.search(r"(?i)\b[a-z]:[\\/]", text) is None
+        assert re.search(r"\b[0-9a-fA-F]{64}\b", text) is None
+
+    for relative_path in tracked_policy_paths[:4] + [tracked_policy_paths[-1]]:
+        normalized_text = " ".join(
+            (PROJECT_ROOT / relative_path)
+            .read_text(encoding="utf-8")
+            .split()
+        )
+        assert (
+            "publication-approved hash or redacted private-evidence reference"
+            in normalized_text
+        )
+
+    checklist = (
+        PROJECT_ROOT / "docs/local_csv_study_checklist.md"
+    ).read_text(encoding="utf-8")
+    audit_template = (
+        PROJECT_ROOT / "docs/local_csv_readiness_audit_report_template.md"
+    ).read_text(encoding="utf-8")
+    experiment_log = (PROJECT_ROOT / "EXPERIMENT_LOG.md").read_text(
+        encoding="utf-8"
+    )
+    assert "| Actual hash |" not in checklist
+    assert "| Actual hash |" not in audit_template
+    assert "License documents, contract/account IDs" in experiment_log
+    assert (
+        "Private performance values remain outside tracked records"
+        in " ".join(experiment_log.split())
+    )
 
 
 def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:
@@ -343,8 +612,20 @@ def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:
     controller = (
         PROJECT_ROOT / "docs/codex_long_running_controller.md"
     ).read_text(encoding="utf-8")
+    methodology_contract = (
+        PROJECT_ROOT / "docs/point_in_time_data_methodology_contract.md"
+    ).read_text(encoding="utf-8")
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
+        encoding="utf-8"
+    )
 
-    for text in [readiness_skill, readiness_audit]:
+    for text in [readiness_skill, readiness_audit, methodology_contract]:
         normalized_text = " ".join(text.split())
         assert "docs/research_program_charter.md" in normalized_text
         assert "docs/current_roadmap.md" in normalized_text
@@ -354,13 +635,38 @@ def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:
         assert "blocks formal interpretation" in normalized_text
         assert "immutable all-trial ledger" in normalized_text
 
+    for text in [readiness_skill, readiness_audit, experiment_log]:
+        normalized_text = " ".join(text.split())
+        assert "canonicalization_id" in normalized_text
+        assert "environment_id" in normalized_text
+        assert "environment_lock_sha256" in normalized_text
+        assert "known_at <= decision_time" in normalized_text
+        assert "non-self-issued exact-version dataset-review decision" in normalized_text
+
+    for text in [readiness_skill, readiness_audit]:
+        assert "unlocked/incomplete environment" in " ".join(text.split())
+
     for phrase in [
         "diagnostic/legacy experiment record",
         "not the immutable all-trial ledger",
         "must not support formal historical interpretation",
         "Every configured case",
+        "Tracked records must not contain private absolute paths",
     ]:
         assert phrase in " ".join(experiment_log.split())
+
+    for text in [
+        methodology_contract,
+        roadmap,
+        handoff,
+        specification,
+        readiness_skill,
+        readiness_audit,
+        experiment_log,
+    ]:
+        normalized_text = " ".join(text.split())
+        assert "2025-05-01 through 2026-05-31" in normalized_text
+        assert "`historical_evaluation`" in normalized_text
 
     assert "the required predecessor or current-stage PR" in controller
     assert "the current-stage PR has been opened" in controller
@@ -501,6 +807,7 @@ def test_public_metadata_and_readme_match_implemented_scope() -> None:
 
     assert "docs/current_roadmap.md" in readme
     assert "docs/research_program_charter.md" in readme
+    assert "docs/point_in_time_data_methodology_contract.md" in readme
     assert "plotting remains unimplemented" in readme
     assert "No market-data downloader" in readme
     assert "POINT-IN-TIME FEATURES" not in readme
@@ -536,3 +843,6 @@ def test_ci_and_generated_repo_map_share_core_validation_commands() -> None:
     for command in commands:
         assert command in workflow
         assert command in repo_map
+
+    repo_map_module = runpy.run_path(str(PROJECT_ROOT / "scripts/repo_map.py"))
+    assert repo_map_module["build_repo_map"]() == repo_map

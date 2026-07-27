@@ -12,7 +12,7 @@ An auditable Python toolkit for equity-factor research with strict data contract
 
 `LAGGED FEATURE CONTRACTS` · `EXPLICIT SIGNAL LAG` · `DRIFT-AWARE ACCOUNTING` · `JSON EVIDENCE`
 
-[Quickstart](#quickstart) · [Research charter](docs/research_program_charter.md) · [Research method](docs/research_method.md) · [Project specification](PROJECT_SPEC.md) · [Experiment registry](reports/experiment_registry.md) · [Current roadmap](docs/current_roadmap.md)
+[Quickstart](#quickstart) · [Research charter](docs/research_program_charter.md) · [Data methodology](docs/point_in_time_data_methodology_contract.md) · [Research method](docs/research_method.md) · [Project specification](PROJECT_SPEC.md) · [Experiment registry](reports/experiment_registry.md) · [Current roadmap](docs/current_roadmap.md)
 
 ## Quickstart
 
@@ -49,12 +49,18 @@ The timing model, portfolio accounting, control gates, system map, and evidence 
 
 Current documented gap: plotting remains unimplemented; the roadmap tracks its delivery status.
 
-Scope: No market-data downloader; local files and committed fixtures enter the public research path.
+Scope: No market-data downloader; local files and committed fixtures enter the
+public research path. The provider-agnostic
+[point-in-time data methodology contract](docs/point_in_time_data_methodology_contract.md)
+defines future manifest, universe, corporate-action, field, privacy, and
+holdout-access requirements. Accepting that contract does not verify a dataset
+or authorize formal historical interpretation.
 
 ## Project records
 
 - [`docs/current_roadmap.md`](docs/current_roadmap.md) — canonical implementation status and open gaps
 - [`docs/research_program_charter.md`](docs/research_program_charter.md) — long-term evidence policy, promotion gates, and authorization boundaries
+- [`docs/point_in_time_data_methodology_contract.md`](docs/point_in_time_data_methodology_contract.md) — provider-agnostic Stage 3 data and holdout-evidence contract
 - [`PROJECT_SPEC.md`](PROJECT_SPEC.md) — objectives, assumptions, factor ideas, and backtesting principles
 - [`EXPERIMENT_LOG.md`](EXPERIMENT_LOG.md) — diagnostic/legacy experiment record; not the immutable all-trial ledger
 - [`reports/experiment_registry.md`](reports/experiment_registry.md) — deterministic index of committed experiment logs

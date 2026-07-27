@@ -20,6 +20,10 @@ authority. Stage 2b implements it with required, role-bound, immutable source
 provenance whose caller-declared baseline is captured before later mutation,
 plus a controlled coordinate ledger for any later source write. Enforcement
 begins at capture and cannot reconstruct pre-capture history.
+`docs/point_in_time_data_methodology_contract.md` is the proposed Stage 3
+provider-agnostic data authority. It separates acceptance of the methodology
+contract from review of a particular immutable dataset manifest and from
+eligibility for formal interpretation.
 
 ## Current Phase and Boundary
 
@@ -63,11 +67,19 @@ tests proves implementation behavior, not historical validity.
   permanent identifiers, historical membership, delistings, mergers, ticker
   changes, corporate actions, raw/adjusted field semantics, filing/publication
   times, revision policy, missing/stale behavior, calendar/timezone, benchmark,
-  risk-free policy, and private-data boundary.
+  risk-free policy, canonicalization and environment identity, an immutable
+  non-self-issued dataset-review decision, and the private-data boundary.
 - A static survivor cohort may be used for diagnostics but not presented as
   point-in-time universe evidence.
 
 No research-grade provider is selected by this specification.
+Accepting the Stage 3 contract does not verify a dataset, entitlement,
+historical membership, or field semantics and does not establish
+`formal_ready`. A dataset-specific private manifest, safe public projection,
+and exact-version immutable review decision issued by an authorized
+non-producing reviewer must satisfy the contract for one declared use, while
+later trial, statistical, cost, privacy, and evidence-layer gates remain
+independently required.
 
 ## Factor Program
 
@@ -135,6 +147,16 @@ gates remain open.
 Every protected-sample access must enter the holdout exposure ledger. Previously
 examined data is `historical_evaluation` or `pseudo_holdout`, not an untouched
 holdout.
+
+Viewing asset or benchmark levels, corporate-action inputs, returns, labels,
+or any other data from which protected outcomes can be reconstructed is
+protected-sample access, not metadata-only intake.
+
+The private diagnostics covering 2025-05-01 through 2026-05-31 are confirmed
+historical access and are classified `historical_evaluation`; that interval
+cannot be upgraded to a pristine holdout. Stage 3 defines the exposure schema
+and downgrade rules. Stage 4 must implement append-only, pre-access allocation
+and completeness enforcement.
 
 ## Backtesting Principles
 

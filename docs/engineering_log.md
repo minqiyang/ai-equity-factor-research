@@ -1,5 +1,76 @@
 # Engineering Log
 
+## 2026-07-27 - Point-In-Time Data Methodology Contract
+
+- Started from protected `main` merge `8a352d3` (PR #162) in the isolated
+  `codex/point-in-time-data-methodology-contract` worktree. The clean starting
+  baseline had 849 passing tests, two platform-conditional skips, successful
+  compilation, and successful exact merge-head GitHub CI.
+- Five non-overlapping read-only audits covered canonical documentation,
+  point-in-time universe and corporate actions, field/calendar/benchmark
+  semantics, provenance/privacy/holdout exposure, and adversarial contract
+  failure modes. No private source file, private performance value, vendor API,
+  credential, or holdout result was opened.
+- The audits confirmed that current loaders, inventory metadata, and EODHD
+  diagnostics support only scope-limited intake and static-cohort diagnostics.
+  They do not prove permanent identity, historical membership, delistings,
+  corporate actions, field availability or revisions, license entitlement,
+  immutable lineage, calendar alignment, or formal benchmark/risk-free
+  suitability.
+- Added a provider-agnostic Stage 3 contract that separates
+  `methodology_contract_accepted`, `dataset_manifest_reviewed`, and
+  `formal_interpretation_eligible`; specifies immutable provenance/license,
+  canonicalization/environment, non-self-issued dataset review, bitemporal
+  identity/universe/field, adjustment, calendar, missingness,
+  benchmark/risk-free, privacy, and exposure-ledger records; and freezes
+  deterministic `PIT-001` through `PIT-014` documentation cases.
+- Classified the previously examined 2025-05-01 through 2026-05-31 interval as
+  `historical_evaluation`, never a pristine holdout. Stage 4 owns append-only
+  enforcement; Stage 3 does not backfill or claim that enforcement.
+- Reconciled the canonical roadmap, handoff, project specification, README,
+  readiness audit and Skill, local-CSV checklist/report, legacy experiment
+  template, changelog, decision log, and generated repo map. The new contract
+  and updated forward-looking templates require private-manifest IDs and
+  redacted public logical IDs rather than private absolute paths; legacy
+  diagnostic scripts and historical records still require separate path
+  hardening.
+- Added documentation-contract tests before implementation. The focused suite
+  initially failed seven assertions for the intentionally missing contract and
+  stale canonical status, then served as the acceptance gate for the docs-only
+  implementation.
+- Initial independent review found that general `known_at` was absent from the
+  usability predicate, outcome-reconstructible raw inputs were absent from
+  exposure downgrade rules, dataset review could be self-declared, tracked
+  templates could solicit restricted hashes/license evidence/private metrics,
+  environment/canonicalization identity was underspecified, and several
+  canonical/test assertions were incomplete. The main integration owner fixed
+  those findings; the reviewers did not edit their own findings.
+- Final canonicalization review found that the named scheme still omitted
+  complete JSON byte rules. The contract now applies exact RFC 8785/JCS after
+  typed preprocessing, rejects ambiguous inputs, and carries a tiny synthetic
+  canonical-text/SHA-256 golden fixture. This is contract evidence, not a
+  production manifest implementation or private data fingerprint.
+- This stage adds no research trial, factor, strategy, provider, data download,
+  private-data artifact, dependency, generated performance evidence, paper/live
+  trading path, brokerage connection, order behavior, or credential handling.
+- Final Python 3.12/pandas 2 local validation passed 852 tests with the same two
+  platform-conditional wide-`longdouble` skips. Focused documentation tests
+  passed 17 cases; Ruff, compilation, PEP 517 sdist/wheel build, Skill audit,
+  deterministic repo-map equality, privacy/path/digest, Markdown-table,
+  Unicode/control-character, and diff checks passed.
+- A Python 3.11/pandas 3 CI-aligned run reused the isolated Stage 2 environment
+  and cached pytest overlay and also passed 852 tests with the same two
+  platform-conditional skips. No repository dependency or lock file changed.
+- Four independent, non-overlapping read-only re-reviews reported no remaining
+  actionable P1/P2 after the integration-owner fixes. No reviewer edited its
+  own finding, and no review opened private data, generated performance values,
+  vendor APIs, credentials, or network data.
+- The existing project environment lacked repository gate tools, so the owner-
+  authorized isolated install added Ruff 0.16.0 and build 1.5.0 plus packaging
+  26.2 and pyproject-hooks 1.2.0. The PEP 517 build used a disposable
+  setuptools/wheel environment. These installs changed no tracked dependency
+  declaration or lock file.
+
 ## 2026-07-26 - Signal, Execution, And Metric Timing Implementation
 
 - Started from protected `main` merge `275982f` (PR #161) in the isolated

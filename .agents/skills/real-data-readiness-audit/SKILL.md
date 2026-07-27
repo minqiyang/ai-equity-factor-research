@@ -50,6 +50,7 @@ Inspect the current project rules and readiness references:
 - `README.md`
 - `docs/research_program_charter.md`
 - `docs/current_roadmap.md`
+- `docs/point_in_time_data_methodology_contract.md`
 - `docs/real_data_readiness_audit.md`
 - `docs/csv_data_interface_plan.md`
 - `docs/volume_ohlcv_schema_plan.md`
@@ -68,12 +69,30 @@ caveated fixed-cohort diagnostics. It cannot supersede
 `docs/research_program_charter.md` or promote a run to formal historical
 evidence while a prerequisite remains blocked in `docs/current_roadmap.md`.
 
+Stage 3 keeps three decisions separate:
+
+- `methodology_contract_accepted` accepts the provider-agnostic rules only.
+- `dataset_manifest_reviewed` accepts one immutable dataset manifest and its
+  redacted public projection only after evidence review.
+- `formal_interpretation_eligible` accepts a specific frozen run only after all
+  active program gates pass.
+
+`methodology_contract_accepted` does not imply `dataset_manifest_reviewed`, and
+`dataset_manifest_reviewed` does not imply
+`formal_interpretation_eligible`. A checklist, loader success, hash, license
+assertion, or readiness report cannot collapse those gates.
+
 `formal_ready` requires implemented, reviewed, and tested evidence for all of
 the following:
 
 - bounded, horizon-purged sample splits and an explicit timing contract.
-- provider-agnostic point-in-time membership, delisting, corporate-action,
-  field-semantics, provenance/license, benchmark, and missing-data contracts.
+- the accepted point-in-time methodology contract plus a reviewed immutable
+  dataset manifest and non-self-issued exact-version dataset-review decision
+  proving provenance/license, canonicalization/environment identity, permanent
+  identifiers, bitemporal membership and field availability,
+  delisting/corporate-action handling, field semantics, calendar/session
+  policy, benchmark/risk-free policy, typed missingness, privacy, and
+  protected-sample classification.
 - immutable experiment, campaign, trial-family, and trial identifiers allocated
   before execution, including failed and invalid trials.
 - the registered statistical and multiple-testing protocol required for the
@@ -87,6 +106,12 @@ Roadmap intent is not implementation evidence. Until these gates are accepted,
 the highest possible decision is diagnostic readiness. A static current
 constituent list or otherwise unverified historical membership can support only
 an explicitly survivorship-biased diagnostic, never `formal_ready`.
+
+The previously accessed 2025-05-01 through 2026-05-31 interval is
+`historical_evaluation`, not a pristine holdout, and must never be upgraded.
+Missing, backfilled, unknown-actor/time/impact, outcome-reconstructible, or
+overlapping protected access forces a monotone downgrade; a form or later
+record cannot restore a less-exposed classification.
 
 ## Read-only checks
 
@@ -109,18 +134,32 @@ vendor API, read secrets, or mutate git state.
 
 ## Data provenance checks
 
-Before any result interpretation, record:
+Before any result interpretation, record in the repo-external private manifest:
 
-- approved local file path for each input.
-- file timestamp, version, or hash when the file may change.
-- user-provided source name.
-- whether the file is raw export, hand-cleaned, vendor-cleaned, or derived.
-- known manual edits, missing symbols, missing dates, stale prices, or excluded
-  rows.
-- confirmation that no credentials, account IDs, API keys, or private account
-  metadata are being committed.
+- a stable private-manifest identifier for each input and a separate redacted
+  public logical identifier.
+- the hash algorithm and actual raw-byte hash, ordered-manifest hash, immutable
+  dataset version, retrieval timestamp, extraction query or scope, and
+  transformation lineage.
+- `canonicalization_id`, `environment_id`, `environment_lock_sha256`,
+  interpreter/platform, locale, process timezone, and parsing/calendar/library
+  versions.
+- the user-provided source name and whether each input is a raw export,
+  hand-cleaned, vendor-cleaned, or derived.
+- evidence-backed license state (`owner_accepted`, `asserted`, `unknown`, or
+  `blocked`), permitted research use, redistribution restriction, and reviewer.
+- known manual edits, revisions, missing symbols, missing dates, stale prices,
+  or excluded rows.
+- confirmation that no credentials, account IDs, API keys, private paths,
+  source rows, or private account metadata enter the public projection.
 
-Unknown provenance blocks interpretation.
+Tracked records must not contain private absolute paths. They may contain only
+a publication-approved hash or redacted private-evidence reference and
+verification state, never an unapproved digest.
+
+A hash plan, mutable timestamp, unreviewed license assertion, or filename is
+not immutable provenance. Unknown provenance, license entitlement, lineage, or
+privacy classification blocks formal interpretation.
 
 ## Schema and OHLCV checks
 
@@ -148,15 +187,23 @@ Keep these dates distinct:
 - observation date.
 - feature date.
 - universe decision date.
+- source effective date.
+- source publication timestamp.
+- source ingestion timestamp.
+- revision/supersession timestamp.
 - signal date.
 - execution date.
 - return measurement date.
 
 Confirm that features use only information known before portfolio formation.
 Check lookbacks, skipped windows, rolling warm-up periods, signal lag, and
-rebalance timing. Same-period target returns, future returns, future universe
-membership, future fundamentals, future benchmark data, or same-day close data
-without an explicit execution assumption must not enter features.
+rebalance timing. Every membership, classification, fundamental, and revised
+field needs a conservative `known_at` no earlier than every applicable public,
+provider, revision, parent, and environment-resolved availability time; require
+`known_at <= decision_time`. Same-period target returns, future returns, future
+universe membership, future fundamentals, later revisions, future benchmark
+data, or same-day close data without an explicit execution assumption must not
+enter features.
 
 Unresolved date-alignment or leakage risk blocks interpretation.
 
@@ -165,18 +212,27 @@ Unresolved date-alignment or leakage risk blocks interpretation.
 Record universe and benchmark assumptions before metrics are interpreted:
 
 - universe definition and eligibility rules.
-- verified point-in-time membership for every formal evidence window.
+- permanent security, listing, and issuer identifiers plus ticker-alias
+  effective intervals.
+- membership effective start/end, `known_at`, inclusion/exclusion reason, and
+  point-in-time eligibility for every formal evidence window.
+- delisting return/source, terminal valuation, merger/conversion terms, cash
+  distributions, symbol changes, and corporate-action effective/known times.
 - an explicit survivorship-bias label when a static or otherwise unverified
   cohort is retained for diagnostics only.
 - liquidity, dollar-volume, price, stale-data, zero-volume, and minimum-history
   rules when used.
-- benchmark symbol or file, date range, adjustment convention, missing dates,
-  and reason it matches the intended universe.
+- benchmark identity/version, investable or comparator role, date range,
+  adjustment convention, calendar/session/timezone, missing dates, and reason
+  it matches the intended universe.
+- risk-free source/version, tenor, units, day-count convention, publication
+  availability, and missing-date policy when risk-adjusted metrics are claimed.
 
-Incompatible benchmark coverage, unknown benchmark adjustment, or undocumented
-survivorship risk blocks any interpretation. Static or otherwise unverified
-historical membership blocks formal interpretation even when its survivorship
-caveat is documented.
+Incompatible benchmark coverage, unknown benchmark adjustment, unspecified
+calendar/session alignment, undocumented survivorship risk, or an undefined
+risk-free series for a risk-adjusted claim blocks formal interpretation.
+Static or otherwise unverified historical membership blocks formal
+interpretation even when its survivorship caveat is documented.
 
 ## Missing data and adjustment policy checks
 
@@ -189,6 +245,11 @@ diagnostics:
 - whether volume is raw, adjusted, or unknown.
 - handling of splits, dividends, mergers, symbol changes, delistings, halts,
   stale rows, and zero-volume rows.
+- typed missingness (`NOT_APPLICABLE`, `NOT_YET_LISTED`, `PROVIDER_GAP`,
+  `STALE`, `HALTED`, `DELISTED`, or another reviewed reason) rather than one
+  undifferentiated null.
+- field dictionary version, currency/unit, source timezone, availability lag,
+  and compatible price/volume adjustment bases.
 
 Do not forward-fill, backward-fill, zero-fill, interpolate, or infer corporate
 actions by default. Unknown adjustment policy blocks interpretation.
@@ -215,14 +276,30 @@ validation.
 Before committing or publishing real-data outputs, prepare an `EXPERIMENT_LOG.md`
 entry or approved research note with:
 
-- data source and approved local file references.
-- schema, provenance, and validation summary.
+- private-manifest IDs and redacted public logical IDs, never private absolute
+  paths.
+- schema, immutable version, retrieval/extraction metadata, transformation
+  lineage, `canonicalization_id`, `environment_id`,
+  `environment_lock_sha256`, license decision, and validation summary; actual
+  hashes remain in the private manifest, while the tracked record carries only
+  a publication-approved hash or redacted private-evidence reference.
 - universe definition and survivorship caveats.
+- identifier history, point-in-time membership, corporate actions, field
+  availability/revision, calendar/session/timezone, and typed-missingness
+  decisions.
 - date range and train/validation/test or holdout splits.
 - feature formulas, lookbacks, lags, and data availability assumptions.
 - parameters and parameter-selection policy.
-- benchmark, costs, slippage, rebalance, and execution timing.
+- benchmark, risk-free policy, costs, slippage, rebalance, and execution timing.
 - metrics, missing-data summary, limitations, failure modes, and next action.
+- protected-sample classification and append-only access-record identifier.
+- immutable dataset-review decision ID, exact reviewed manifest/projection
+  identities, reviewer authority, scope/time, finding dispositions, and
+  exposure-decision ID. It must be a non-self-issued exact-version
+  dataset-review decision; a checklist or manifest producer cannot grant the
+  gate.
+- metric names, status, and redacted private-evidence references only; private
+  performance values require a separate explicit publication decision.
 
 Synthetic JSON sidecar logs are not substitutes for the real-data experiment
 record. The current `EXPERIMENT_LOG.md` template is a diagnostic/legacy record,
@@ -238,20 +315,30 @@ these are true:
 
 - user did not explicitly approve a local CSV path for inspection.
 - a path appears credential-like or may contain secrets.
-- provenance is unknown.
+- provenance, actual content hash, immutable version, extraction lineage,
+  canonicalization/environment identity, environment-lock digest, license
+  entitlement, or public/private projection is unknown.
 - schema, required columns, duplicate rows, invalid numeric values, missing
   values, or OHLCV checks remain unresolved.
 - adjustment policy is unknown or incompatible with the intended calculation.
 - date alignment, signal lag, execution timing, or leakage risk is unresolved.
+- identifier continuity, corporate-action or delisting treatment, field
+  availability/revisions, calendar/session/timezone, or typed missingness is
+  unresolved.
 - universe membership is static, current-list-based, or otherwise unverified
   for the intended historical dates when formal interpretation is proposed; a
   survivorship caveat permits diagnostics only.
-- benchmark coverage or adjustment is incompatible.
+- benchmark or risk-free coverage, units, adjustment, availability, or
+  calendar alignment is incompatible.
 - costs, slippage, or diagnostic-only language are absent for a backtest-like
   result.
-- any required timing, point-in-time methodology, all-trial ledger,
+- `dataset_manifest_reviewed` or `formal_interpretation_eligible` is absent, or
+  any required timing, point-in-time methodology, all-trial ledger,
   statistical, privacy, or holdout-classification program gate lacks accepted
   implementation evidence when formal interpretation is proposed.
+- the dataset-review decision is absent, self-issued, stale,
+  version-mismatched, outside reviewer authority, or lacks finding
+  dispositions.
 - any high or medium readiness issue remains unresolved.
 - the result would require real data fetching, vendor APIs, credentials,
   live or paper trading, broker integration, order execution, or profitability
@@ -260,13 +347,21 @@ these are true:
 ## Mistakes to avoid
 
 - Treating a local CSV loader success as research validation.
+- Treating contract acceptance, a hash plan, or a self-asserted license as
+  dataset approval.
+- Treating a form checkbox or manifest-author declaration as an immutable
+  dataset-review decision.
+- Treating an unlocked/incomplete environment or ambiguous canonicalization as
+  reproducible evidence.
 - Treating a survivorship caveat as a substitute for point-in-time membership.
 - Treating unknown adjustment policy as acceptable evidence.
 - Silently filling missing prices, volumes, benchmark rows, or universe data.
 - Using future membership, future returns, or same-period targets as features.
 - Reporting only the best parameter result.
-- Committing private local paths, credentials, vendor secrets, or account
-  metadata.
+- Committing private local paths, source rows, credentials, vendor secrets, or
+  account metadata instead of a redacted public projection.
+- Committing restricted hashes, license/entitlement documents, or private
+  metric values instead of safe decision/evidence references.
 - Presenting diagnostics, synthetic fixtures, or smoke tests as profitability,
   robustness, or trading-readiness evidence.
 - Duplicating `staged-quant-workflow` branch, PR, merge, and long-running stage

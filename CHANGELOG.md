@@ -9,6 +9,15 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the proposed provider-agnostic point-in-time data methodology contract.
+  It separates methodology acceptance, dataset-manifest review, and
+  run-specific formal-interpretation eligibility; freezes provenance/license,
+  canonicalization/environment identity, immutable non-self-issued dataset
+  review, bitemporal universe and field availability, corporate actions,
+  adjustment semantics, calendars, benchmark/risk-free, typed missingness,
+  privacy, and protected-sample requirements; and adds a deterministic 14-case
+  documentation matrix plus an RFC 8785/JCS synthetic canonical-byte golden
+  fixture without approving a vendor, dataset, or real-data interpretation.
 - Implemented the accepted signal, execution, and metric timing contract for
   an after-close signal and next-observed-close idealized target reset. The
   runtime now enforces nonzero source-row lag, exact axes/bounds, decision-time

@@ -1,0 +1,14 @@
+{
+  "schema_version": "pit_canonical_json_v1_golden_v1",
+  "semantic_input": {
+    "z": null,
+    "timestamp": "2026-07-27T00:00:00Z",
+    "decimal": "1.23",
+    "a": [
+      true,
+      false
+    ]
+  },
+  "canonical_utf8": "{\"a\":[true,false],\"decimal\":\"1.23\",\"timestamp\":\"2026-07-27T00:00:00Z\",\"z\":null}",
+  "sha256": "05efd6eb1bbdaf7f3d51beef89d0f7266afdc30abdf4ebd71777ad00e7d3a81d"
+}

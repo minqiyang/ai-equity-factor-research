@@ -10,6 +10,11 @@ the current synthetic and local-CSV documentation workflow, but it is not the
 immutable all-trial ledger required by Stage 4 of
 `docs/research_program_charter.md` and `docs/current_roadmap.md`.
 
+`docs/point_in_time_data_methodology_contract.md` defines the Stage 3
+provider-agnostic data and holdout-evidence requirements. Accepting that
+contract does not review a dataset manifest or make a run eligible for formal
+interpretation.
+
 Until that ledger allocates experiment, campaign, trial-family, and trial
 identifiers before execution and retains every attempt, failure, invalid or
 aborted run, full configuration, code/data lineage, output hash, review
@@ -56,8 +61,21 @@ gates required for formal evidence.
 
 At minimum, a local CSV experiment record must include:
 
-- Local source path for each input file, plus file timestamp, file hash, or
-  version identifier when the file may be revised.
+- Private-manifest ID and redacted public logical ID for each input. Tracked
+  records must not contain private absolute paths.
+- Private evidence that records the hash algorithm, actual raw-byte and
+  ordered-manifest hashes, immutable dataset version, retrieval timestamp,
+  extraction scope, transformation lineage, and any revision/supersession
+  relationship, plus `canonicalization_id`, `environment_id`,
+  `environment_lock_sha256`, interpreter/platform, locale, process timezone,
+  and parsing/calendar/transformation library versions. Actual hashes remain
+  in the private manifest; this tracked record contains only a
+  publication-approved hash or redacted private-evidence reference and
+  verification state.
+- Redacted license-decision ID/evidence reference and review state, permitted
+  research use, redistribution restriction, and public/private classification.
+  License documents, contract/account IDs, and restricted entitlement metadata
+  remain private. An asserted license is not an accepted entitlement decision.
 - Schema for each file: wide price, long price, benchmark, universe membership,
   factor panel, metadata, or another reviewed schema.
 - Validation summary: date parsing, sorted dates, duplicate checks, numeric
@@ -69,28 +87,50 @@ At minimum, a local CSV experiment record must include:
   dividend-adjusted, total-return adjusted, or unknown, including benchmark
   adjustment compatibility.
 - Universe rules: starting universe, point-in-time membership status, liquidity
-  filters, price filters, minimum history, exclusions, delistings, symbol
-  changes, and survivorship-bias caveats.
+  filters, price filters, minimum history, exclusions, permanent/listing/issuer
+  identifiers, ticker-alias intervals, membership effective/known times,
+  delistings, mergers, corporate actions, and survivorship-bias caveats.
+- Field and calendar policy: source field dictionary/version, units/currency,
+  field availability and revision timestamps, exchange calendar,
+  session/timezone conventions, typed missingness, and stale/zero-volume rules.
 - Feature and signal timing: formulas, lookbacks, skipped windows, latest data
-  timestamp available for each signal date, signal lag, and execution timing.
+  timestamp available for each signal date, conservative `known_at` with
+  `known_at <= decision_time`, signal lag, and execution timing.
 - Sample splits and parameter policy: in-sample, validation, test or holdout
   periods, warm-up exclusion, fixed parameters or grid, and whether choices were
   made before seeing results.
 - Benchmark: symbol or local benchmark file, date range, price or return field,
-  missing dates, adjustment convention, and alignment to strategy dates.
+  version, role, missing dates, adjustment convention, availability, and
+  alignment to strategy dates; include risk-free source, version, tenor,
+  units, day-count, availability, and missing-date policy when applicable.
 - Costs, slippage, turnover, rebalance frequency, and execution assumptions,
   including whether zero-cost or zero-slippage settings are diagnostic only.
-- Metrics and limitations, including missing-data limitations, benchmark
-  mismatch, corporate-action uncertainty, vendor differences, stale prices,
-  delisting risk, and any unresolved low issues from the readiness audit.
+- Metric names, computation status, redacted private-evidence references, and
+  limitations, including missing-data limitations, benchmark mismatch,
+  corporate-action uncertainty, vendor differences, stale prices, delisting
+  risk, and any unresolved low issues from the readiness audit. Private
+  performance values remain outside tracked records unless a separate
+  publication decision explicitly approves named aggregate fields.
 - Failure modes and next action, including weak, failed, ambiguous, or stopped
   cases. Do not report only the best parameter result.
+- Holdout-exposure classification and append-only access-record identifier.
+  The historically examined 2025-05-01 through 2026-05-31 interval is
+  `historical_evaluation`, not a pristine holdout.
+- Immutable dataset-review decision ID, exact reviewed manifest/projection
+  identities, reviewer-authority reference, scope, timestamp, finding
+  dispositions, and exposure-decision ID. This must be a non-self-issued
+  exact-version dataset-review decision; the tracked record cannot grant a gate
+  or self-certify its own manifest.
 
 If required provenance, adjustment policy, date alignment, benchmark coverage,
-sample splits, cost/slippage assumptions, or missing-data evidence is absent,
-stop before interpreting even diagnostic metrics. Synthetic JSON sidecar logs
-are not substitutes for local CSV experiment records, and neither record type
-is the future immutable all-trial ledger.
+sample splits, cost/slippage assumptions, license evidence, verified private
+hash evidence,
+identifier history, field availability, calendar policy, privacy projection,
+canonicalization/environment identity, protected-sample classification, or
+missing-data evidence is absent, stop before interpreting even diagnostic
+metrics. Synthetic JSON sidecar logs are not substitutes for local CSV
+experiment records, and neither record type is the future immutable all-trial
+ledger.
 
 ## Template
 
@@ -108,11 +148,26 @@ What should be true if this experiment is useful?
 
 ### Data Source
 
-Dataset name, vendor, file path, version, and any known limitations.
+Dataset name, vendor, private-manifest ID, redacted public logical ID, immutable
+version, hash-verification state plus a publication-approved hash or redacted
+private-evidence reference, retrieval/extraction metadata, lineage, license
+state, `canonicalization_id`, `environment_id`, `environment_lock_sha256`,
+privacy class, and any known limitations. Do not record a private absolute path
+or an unapproved digest.
+
+### Dataset Review Decision
+
+Immutable decision ID, exact reviewed manifest/projection identities, safe
+reviewer-authority reference, review time, declared scope, decision, finding
+dispositions, contract identity, and redacted evidence reference. This must be
+a non-self-issued exact-version dataset-review decision. The manifest producer
+or this template cannot grant `dataset_manifest_reviewed`.
 
 ### Universe
 
-Universe definition, liquidity screen, exclusions, and survivorship-bias notes.
+Universe definition, permanent/listing identifiers, point-in-time membership
+and known-at times, liquidity screen, exclusions, corporate actions,
+delistings, and survivorship-bias notes.
 
 ### Date Range
 
@@ -128,7 +183,9 @@ All strategy, backtest, ranking, selection, and risk-control parameters.
 
 ### Benchmark
 
-Benchmark symbol or dataset and benchmark return calculation assumptions.
+Benchmark identity/version, role, availability/calendar/alignment, and return
+calculation assumptions. Include the risk-free source and convention when
+risk-adjusted metrics are claimed.
 
 ### Transaction Costs
 
@@ -144,23 +201,37 @@ Daily, weekly, monthly, or custom schedule. State exact execution timing.
 
 ### Performance Metrics
 
-Total return, annualized return, annualized volatility, Sharpe ratio, benchmark-relative return, or other relevant metrics.
+For synthetic or explicitly publication-approved evidence, record the named
+total-return, annualized-return, volatility, Sharpe-style,
+benchmark-relative, or other approved fields. For private evidence, record
+only metric names, computation status, and redacted private-evidence IDs unless
+a separate publication decision approves the named aggregate values.
 
 ### Turnover
 
-Average turnover, rebalance turnover distribution, and cost impact.
+Record the method and approved evidence fields. Private turnover values and
+distributions remain external unless separately approved for publication.
 
 ### Max Drawdown
 
-Maximum drawdown, drawdown dates, and comparison with benchmark drawdown.
+Record the method and approved evidence fields. Private drawdown values, dates,
+and benchmark comparison remain external unless separately approved for
+publication.
 
 ### Sample Split
 
-In-sample, validation, and test period definitions.
+In-sample, validation, and test period definitions, protected-sample
+classification, append-only access-record identifier, and exposure-decision
+ID. Missing, backfilled, uncertain, outcome-reconstructible, or overlapping
+access downgrades the sample monotonically; the 2025-05-01 through 2026-05-31
+interval remains `historical_evaluation` and cannot be upgraded.
 
 ### Result Summary
 
 Concise summary of what happened. Include weak, failed, or ambiguous results.
+For private evidence, do not reveal direction, magnitude, rank, or metric
+value; record only status and a redacted private-evidence reference unless
+publication is separately approved.
 
 ### Failure Modes
 
