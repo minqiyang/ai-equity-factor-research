@@ -29,7 +29,7 @@
 - Added deterministic post-test append/mutation, cross-edge mutation,
   asset/benchmark parity, zero-eligible, partial-missing, all-missing,
   irregular-calendar, purge/embargo-overlap, and strict-alignment tests. The
-  full suite currently passes with 634 tests.
+  full suite currently passes with 637 tests.
 - Independent review found and the integration owner fixed three P2
   hardening gaps: canonical revalidation now rejects mutated ledgers and
   window schedules, the raw feature slicer requires an explicit feature role,
@@ -61,6 +61,32 @@
   invalid reasons first and otherwise records
   `no_valid_factor_diagnostic_dates` / `INVALID` when every diagnostic is
   empty. A one-asset sparse-universe regression test covers the case.
+- The next Codex review on commit `60d7b7f` found the same P2 classification
+  gap in the synthetic IC/Rank-IC consumer and local CSV fixture consumer.
+  Classification is now centralized in `features.validation`; EODHD,
+  synthetic split, and local fixture summaries preserve availability failures
+  first and otherwise mark all-metric-empty splits
+  `no_valid_factor_diagnostic_dates` / `INVALID`. Two deterministic sparse
+  coverage tests reproduce the findings and also verify that the local
+  configured-case JSON summary agrees with its split summary. A shared-helper
+  contract test preserves availability precedence and confirms that one
+  non-empty diagnostic remains `DIAGNOSTIC_ONLY`.
+- Independent review then found a pandas 3 compatibility P2 in the robustness
+  consumer: a missing availability reason can materialize as `NaN`, so an
+  `is not None` check marked valid train rows `INVALID`. The robustness path
+  now uses the shared classifier for missing-reason normalization and
+  structural precedence while preserving its stricter one-metric failure
+  reasons. A CI-aligned pandas 3 regression keeps valid train rows
+  `DIAGNOSTIC_ONLY`, constant-signal rows invalid for absent metrics, and
+  zero-eligible validation/test rows structurally invalid.
+- Regenerating the scoped local-fixture and robustness Markdown/JSON outputs
+  plus the experiment registry after the classification fixes reproduced
+  their exact prior SHA-256 hashes; no generated evidence changed.
+- The review-fix package rebuild reused a disposable `uvx`
+  `build==1.5.0` frontend. Its isolated sdist and wheel environments each
+  installed `setuptools==83.0.0`, `wheel==0.47.0`, and transitive
+  `packaging==26.2`; no project environment, dependency declaration, or lock
+  file changed.
 - The first narrowed pandas 3 review-fix check omitted the declared SciPy
   runtime dependency and stopped at pandas' Spearman import. The same
   disposable Python 3.11 check passed all six EODHD tests after adding

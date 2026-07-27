@@ -132,11 +132,22 @@ def test_synthetic_split_robustness_assumptions_keep_costs_separate() -> None:
     ]
 
 
-def test_synthetic_robustness_retains_zero_eligible_windows_as_invalid() -> None:
+def test_synthetic_robustness_classifies_train_and_zero_eligible_windows() -> None:
     config = SyntheticSplitRobustnessConfig(
         base_config=demo.SyntheticSplitICRankICConfig(embargo_rows=4),
     )
     result = run_synthetic_split_robustness_demo(config)
+
+    for case_id in ("base_signal", "inverse_signal"):
+        train = result.summary.loc[(case_id, "train")]
+        assert train["eligible_date_count"] == 4
+        assert pd.isna(train["invalid_reason"])
+        assert train["status"] == "DIAGNOSTIC_ONLY"
+
+    constant_train = result.summary.loc[("constant_signal", "train")]
+    assert constant_train["eligible_date_count"] == 4
+    assert constant_train["invalid_reason"] == "no_valid_ic_or_rank_ic_dates"
+    assert constant_train["status"] == "INVALID"
 
     for case_id in ("base_signal", "inverse_signal", "constant_signal"):
         for split_name in ("validation", "test"):

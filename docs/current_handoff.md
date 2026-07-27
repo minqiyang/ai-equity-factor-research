@@ -11,7 +11,7 @@ Updated: 2026-07-26 for the Purged and Bounded Split Implementation.
 - Verified starting `origin/main`: `12e0e86`, the protected merge of PR #159.
 - Starting validation: 595 tests passed; Ruff, compilation, and exact-head
   GitHub CI passed.
-- Stage 1b branch validation currently has 634 passing tests plus Ruff,
+- Stage 1b branch validation currently has 637 passing tests plus Ruff,
   compilation, and package-build evidence.
 - Current phase: research-only. No vendor download, credentials, brokerage,
   orders, paper deployment, live deployment, or real-money execution.
@@ -51,7 +51,9 @@ The implementation in `src/features/validation.py` retains the exact source
 index, constructs one deterministic ledger row per candidate, calculates only
 eligible price labels, and rejects unmasked excluded targets at the
 label-aware slicer. Consumer summaries separate structural eligibility,
-asset-level target missingness, and usable factor-label pairs.
+asset-level target missingness, usable factor-label pairs, and realized
+diagnostic coverage. A structurally usable split is still `INVALID` when every
+configured factor diagnostic has zero valid dates.
 
 All four current consumers now use the contract:
 

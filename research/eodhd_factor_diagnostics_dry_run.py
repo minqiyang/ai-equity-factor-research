@@ -22,6 +22,7 @@ from features.validation import (
     TrainValidationTestSplit,
     make_price_forward_return_labels,
     make_train_validation_test_split,
+    resolve_diagnostic_classification,
     split_label_panel_by_train_validation_test,
     split_panel_by_train_validation_test,
     summarize_label_availability,
@@ -273,11 +274,13 @@ def _summarize_split_diagnostics(
                     "top_minus_bottom_spread"
                 ].notna().sum()
             )
-            invalid_reason, status = _resolve_split_diagnostic_classification(
+            invalid_reason, status = resolve_diagnostic_classification(
                 availability_invalid_reason=availability["invalid_reason"],
-                ic_valid_dates=ic_valid_dates,
-                rank_ic_valid_dates=rank_ic_valid_dates,
-                quantile_spread_valid_dates=quantile_spread_valid_dates,
+                metric_valid_date_counts={
+                    "ic": ic_valid_dates,
+                    "rank_ic": rank_ic_valid_dates,
+                    "quantile_spread": quantile_spread_valid_dates,
+                },
             )
             rows.append(
                 {
@@ -319,24 +322,6 @@ def _summarize_split_diagnostics(
             )
 
     return pd.DataFrame.from_records(rows)
-
-
-def _resolve_split_diagnostic_classification(
-    *,
-    availability_invalid_reason: object,
-    ic_valid_dates: int,
-    rank_ic_valid_dates: int,
-    quantile_spread_valid_dates: int,
-) -> tuple[str | None, str]:
-    if not pd.isna(availability_invalid_reason):
-        return str(availability_invalid_reason), "INVALID"
-    if (
-        ic_valid_dates == 0
-        and rank_ic_valid_dates == 0
-        and quantile_spread_valid_dates == 0
-    ):
-        return "no_valid_factor_diagnostic_dates", "INVALID"
-    return None, "DIAGNOSTIC_ONLY"
 
 
 def _summarize_benchmark_label_availability(

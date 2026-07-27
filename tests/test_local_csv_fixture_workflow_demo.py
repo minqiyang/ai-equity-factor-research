@@ -486,6 +486,69 @@ def test_local_consumer_retains_zero_eligible_windows_as_invalid() -> None:
     assert result.split_summary["ic_valid_dates"].eq(0).all()
 
 
+def test_local_consumer_marks_metric_empty_split_invalid(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    _install_extended_fixture_loaders(monkeypatch)
+    config = replace(
+        _extended_split_config(),
+        ic_min_periods=4,
+        min_assets_per_quantile=2,
+    )
+    report_path = tmp_path / "metric_empty.md"
+    log_path = tmp_path / "metric_empty.json"
+
+    result = run_local_csv_fixture_workflow_demo(
+        config=config,
+        report_path=report_path,
+        experiment_log_path=log_path,
+        update_registry=False,
+        include_configured_case_summary=True,
+    )
+
+    train = result.split_summary.loc["train"]
+    alpha_train_availability = result.label_availability.loc["train"]
+    assert isinstance(alpha_train_availability, pd.DataFrame)
+    alpha_train_availability = alpha_train_availability.loc[
+        alpha_train_availability["factor"].eq("alpha_009")
+    ].iloc[0]
+    assert pd.isna(alpha_train_availability["invalid_reason"])
+    assert alpha_train_availability["status"] == "DIAGNOSTIC_ONLY"
+    assert train["eligible_date_count"] == 1
+    assert train["usable_factor_label_pairs"] == 3
+    assert train["ic_valid_dates"] == 0
+    assert train["rank_ic_valid_dates"] == 0
+    assert train["quantile_spread_valid_dates"] == 0
+    assert train["invalid_reason"] == "no_valid_factor_diagnostic_dates"
+    assert train["status"] == "INVALID"
+
+    configured_summary = result.configured_case_summary
+    assert configured_summary is not None
+    configured_train = configured_summary[
+        configured_summary["case_id"].eq("alpha_009")
+        & configured_summary["split"].eq("train")
+    ].iloc[0]
+    assert configured_train["invalid_reason"] == (
+        "no_valid_factor_diagnostic_dates"
+    )
+    assert configured_train["status"] == "INVALID"
+
+    payload = json.loads(log_path.read_text(encoding="utf-8"))
+    logged_train = payload["diagnostics"]["split_summary"]["train"]
+    logged_configured_train = next(
+        row
+        for row in payload["diagnostics"]["configured_fixture_case_summary"]
+        if row["case_id"] == "alpha_009" and row["split"] == "train"
+    )
+    assert logged_train["invalid_reason"] == "no_valid_factor_diagnostic_dates"
+    assert logged_train["status"] == "INVALID"
+    assert logged_configured_train["invalid_reason"] == (
+        logged_train["invalid_reason"]
+    )
+    assert logged_configured_train["status"] == logged_train["status"]
+
+
 def test_local_consumer_audits_partial_and_all_missing_targets(
     monkeypatch,
 ) -> None:

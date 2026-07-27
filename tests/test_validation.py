@@ -17,6 +17,7 @@ from features.validation import (
     make_price_forward_return_labels,
     make_train_validation_test_split,
     mask_label_panel_by_train_validation_test,
+    resolve_diagnostic_classification,
     split_label_panel_by_train_validation_test,
     split_panel_by_train_validation_test,
     summarize_label_availability,
@@ -64,6 +65,21 @@ def _price_panel(index: pd.DatetimeIndex | None = None) -> pd.DataFrame:
         },
         index=dates,
     )
+
+
+def test_diagnostic_classification_preserves_precedence_and_partial_coverage() -> None:
+    assert resolve_diagnostic_classification(
+        availability_invalid_reason="no_usable_label_pairs",
+        metric_valid_date_counts={"ic": 0, "rank_ic": 0},
+    ) == ("no_usable_label_pairs", "INVALID")
+    assert resolve_diagnostic_classification(
+        availability_invalid_reason=None,
+        metric_valid_date_counts={"ic": 0, "rank_ic": 0},
+    ) == ("no_valid_factor_diagnostic_dates", "INVALID")
+    assert resolve_diagnostic_classification(
+        availability_invalid_reason=pd.NA,
+        metric_valid_date_counts={"ic": 1, "rank_ic": 0},
+    ) == (None, "DIAGNOSTIC_ONLY")
 
 
 def test_split_001_hand_calculated_reference_sets() -> None:

@@ -719,6 +719,42 @@ def summarize_label_availability(
     return pd.DataFrame.from_records(records).set_index("split")
 
 
+def resolve_diagnostic_classification(
+    *,
+    availability_invalid_reason: object,
+    metric_valid_date_counts: Mapping[str, int],
+    all_metrics_empty_invalid_reason: str = (
+        "no_valid_factor_diagnostic_dates"
+    ),
+) -> tuple[str | None, str]:
+    """Combine label availability with realized diagnostic coverage."""
+
+    if not isinstance(metric_valid_date_counts, Mapping):
+        raise TypeError("metric_valid_date_counts must be a mapping")
+    if not metric_valid_date_counts:
+        raise ValueError("metric_valid_date_counts must not be empty")
+    for metric_name, valid_date_count in metric_valid_date_counts.items():
+        if not isinstance(metric_name, str) or not metric_name.strip():
+            raise ValueError("metric names must be non-empty strings")
+        _validate_non_negative_integer(
+            valid_date_count,
+            f"metric_valid_date_counts[{metric_name!r}]",
+        )
+    if (
+        not isinstance(all_metrics_empty_invalid_reason, str)
+        or not all_metrics_empty_invalid_reason.strip()
+    ):
+        raise ValueError(
+            "all_metrics_empty_invalid_reason must be a non-empty string"
+        )
+
+    if not pd.isna(availability_invalid_reason):
+        return str(availability_invalid_reason), "INVALID"
+    if all(count == 0 for count in metric_valid_date_counts.values()):
+        return all_metrics_empty_invalid_reason, "INVALID"
+    return None, "DIAGNOSTIC_ONLY"
+
+
 def _build_transition_metadata(
     *,
     source_dates: pd.DatetimeIndex,
@@ -1099,6 +1135,7 @@ __all__ = [
     "make_price_forward_return_labels",
     "make_train_validation_test_split",
     "mask_label_panel_by_train_validation_test",
+    "resolve_diagnostic_classification",
     "split_label_panel_by_train_validation_test",
     "split_panel_by_train_validation_test",
     "summarize_label_availability",

@@ -29,7 +29,7 @@ authorized.
 | --- | --- |
 | Data | Strict local wide, long, benchmark, and OHLCV CSV validation; metadata inventory; no downloader. |
 | Factors | 12-1 momentum, short-term reversal, realized volatility, liquidity helpers, Alpha #009/#012, normalization, combination, and reusable panel operators. |
-| Diagnostics | Correlation, IC, Rank IC, top-minus-bottom quantile spread, coverage, and explicit purged/bounded train/validation/test slicing with typed label intervals, optional embargo, raw-axis masking, and consumer missingness audits. |
+| Diagnostics | Correlation, IC, Rank IC, top-minus-bottom quantile spread, coverage, and explicit purged/bounded train/validation/test slicing with typed label intervals, optional embargo, raw-axis masking, consumer missingness audits, and metric-empty split invalidation. |
 | Portfolio | One long-only equal-weight ranking engine with default one-row lag, drift-aware holdings, signed trades, turnover, fixed costs/slippage, optional position clipping, residual cash, and benchmark accounting. Target construction currently lives in `src/backtest/portfolio.py`; `src/strategies/` is placeholder-only. |
 | Metrics | Return, volatility, unadjusted Sharpe-style ratio, drawdown, turnover/cost totals, benchmark/excess return, holdings count, normalized HHI, exact-date tracking error, and completed holding-episode metrics. |
 | Volume impact | Lagged dollar-volume participation diagnostics and optional precomputed return impact; not a calibrated fill, capacity, or market-impact model. |
@@ -37,7 +37,7 @@ authorized.
 | Private diagnostics | Local-only EODHD validation and factor diagnostics on a fixed cohort; not accepted point-in-time real-data interpretation. |
 | LEAN | Non-executing metadata/signal scaffold only; no algorithm runtime, parity evidence, brokerage, orders, paper, or live path. |
 
-The Stage 1b branch has 634 passing tests plus Ruff, compilation, and
+The Stage 1b branch has 637 passing tests plus Ruff, compilation, and
 package-build evidence. Current-head GitHub CI and final-head review remain PR
 gates. These checks establish software behavior, not empirical research
 validity.
@@ -62,7 +62,7 @@ horizon-aware purge, optional embargo, raw-axis target masking,
 warm-up/down metadata, and consumer missingness accounting. All four current
 split consumers use the typed contract. Deterministic tests cover post-test,
 asset/benchmark mutation, cross-edge asset mutation, zero-eligible,
-partial-missing, and all-missing cases.
+partial-missing, all-missing, and usable-label but metric-empty cases.
 
 ### Medium
 

@@ -22,6 +22,7 @@ from features.validation import (
     TrainValidationTestSplit,
     make_train_validation_test_split,
     mask_label_panel_by_train_validation_test,
+    resolve_diagnostic_classification,
     split_label_panel_by_train_validation_test,
     split_panel_by_train_validation_test,
     summarize_label_availability,
@@ -244,6 +245,19 @@ def summarize_split_diagnostics(
         rank_information_coefficient = rank_information_coefficient_by_split[
             split_name
         ]
+        ic_valid_dates = int(information_coefficient.notna().sum())
+        rank_ic_valid_dates = int(
+            rank_information_coefficient.notna().sum()
+        )
+        invalid_reason, status = resolve_diagnostic_classification(
+            availability_invalid_reason=label_availability.loc[
+                split_name, "invalid_reason"
+            ],
+            metric_valid_date_counts={
+                "ic": ic_valid_dates,
+                "rank_ic": rank_ic_valid_dates,
+            },
+        )
         rows.append(
             {
                 "split": split_name,
@@ -253,10 +267,8 @@ def summarize_split_diagnostics(
                 "synthetic_response_valid_observations": int(
                     synthetic_responses.notna().sum().sum()
                 ),
-                "ic_valid_dates": int(information_coefficient.notna().sum()),
-                "rank_ic_valid_dates": int(
-                    rank_information_coefficient.notna().sum()
-                ),
+                "ic_valid_dates": ic_valid_dates,
+                "rank_ic_valid_dates": rank_ic_valid_dates,
                 "mean_ic": float(information_coefficient.mean()),
                 "mean_rank_ic": float(rank_information_coefficient.mean()),
                 "eligible_date_count": int(
@@ -272,10 +284,8 @@ def summarize_split_diagnostics(
                         split_name, "has_usable_label_pairs"
                     ]
                 ),
-                "invalid_reason": label_availability.loc[
-                    split_name, "invalid_reason"
-                ],
-                "status": label_availability.loc[split_name, "status"],
+                "invalid_reason": invalid_reason,
+                "status": status,
             }
         )
 

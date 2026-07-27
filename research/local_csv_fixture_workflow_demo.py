@@ -36,6 +36,7 @@ from features.validation import (
     TrainValidationTestSplit,
     make_price_forward_return_labels,
     make_train_validation_test_split,
+    resolve_diagnostic_classification,
     split_label_panel_by_train_validation_test,
     split_panel_by_train_validation_test,
     summarize_label_availability,
@@ -591,6 +592,21 @@ def summarize_split_diagnostics(
             availability = availability.loc[
                 availability["factor"].eq(factor_name)
             ].iloc[0]
+        ic_valid_dates = int(information_coefficient.notna().sum())
+        rank_ic_valid_dates = int(
+            rank_information_coefficient.notna().sum()
+        )
+        quantile_spread_valid_dates = int(
+            quantile_spread["top_minus_bottom_spread"].notna().sum()
+        )
+        invalid_reason, status = resolve_diagnostic_classification(
+            availability_invalid_reason=availability["invalid_reason"],
+            metric_valid_date_counts={
+                "ic": ic_valid_dates,
+                "rank_ic": rank_ic_valid_dates,
+                "quantile_spread": quantile_spread_valid_dates,
+            },
+        )
         rows.append(
             {
                 "split": split_name,
@@ -600,13 +616,9 @@ def summarize_split_diagnostics(
                 "forward_return_valid_observations": int(
                     forward_returns.notna().sum().sum()
                 ),
-                "ic_valid_dates": int(information_coefficient.notna().sum()),
-                "rank_ic_valid_dates": int(
-                    rank_information_coefficient.notna().sum()
-                ),
-                "quantile_spread_valid_dates": int(
-                    quantile_spread["top_minus_bottom_spread"].notna().sum()
-                ),
+                "ic_valid_dates": ic_valid_dates,
+                "rank_ic_valid_dates": rank_ic_valid_dates,
+                "quantile_spread_valid_dates": quantile_spread_valid_dates,
                 "mean_ic": float(information_coefficient.mean()),
                 "mean_rank_ic": float(rank_information_coefficient.mean()),
                 "eligible_date_count": int(
@@ -624,8 +636,8 @@ def summarize_split_diagnostics(
                 "has_usable_label_pairs": bool(
                     availability["has_usable_label_pairs"]
                 ),
-                "invalid_reason": availability["invalid_reason"],
-                "status": availability["status"],
+                "invalid_reason": invalid_reason,
+                "status": status,
             }
         )
 

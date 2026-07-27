@@ -23,6 +23,7 @@ from features.diagnostics import (
 from features.validation import (
     TrainValidationTestSplit,
     make_train_validation_test_split,
+    resolve_diagnostic_classification,
     split_label_panel_by_train_validation_test,
     split_panel_by_train_validation_test,
     summarize_label_availability,
@@ -248,16 +249,26 @@ def summarize_synthetic_split_robustness(
             ic_valid_dates = int(information_coefficient.notna().sum())
             rank_ic_valid_dates = int(rank_information_coefficient.notna().sum())
             availability_row = availability.loc[split_name]
-            structural_invalid_reason = availability_row["invalid_reason"]
-            metric_invalid_reason = _invalid_reason(
-                ic_valid_dates,
-                rank_ic_valid_dates,
+            invalid_reason, status = resolve_diagnostic_classification(
+                availability_invalid_reason=availability_row["invalid_reason"],
+                metric_valid_date_counts={
+                    "ic": ic_valid_dates,
+                    "rank_ic": rank_ic_valid_dates,
+                },
+                all_metrics_empty_invalid_reason=(
+                    "no_valid_ic_or_rank_ic_dates"
+                ),
             )
-            invalid_reason = (
-                structural_invalid_reason
-                if structural_invalid_reason is not None
-                else metric_invalid_reason
-            )
+            if invalid_reason is None:
+                invalid_reason = _invalid_reason(
+                    ic_valid_dates,
+                    rank_ic_valid_dates,
+                )
+                status = (
+                    "INVALID"
+                    if invalid_reason is not None
+                    else "DIAGNOSTIC_ONLY"
+                )
             records.append(
                 {
                     "case_id": case_id,
@@ -294,11 +305,7 @@ def summarize_synthetic_split_robustness(
                     "mean_ic": _mean_or_nan(information_coefficient),
                     "mean_rank_ic": _mean_or_nan(rank_information_coefficient),
                     "invalid_reason": invalid_reason,
-                    "status": (
-                        "INVALID"
-                        if invalid_reason is not None
-                        else "DIAGNOSTIC_ONLY"
-                    ),
+                    "status": status,
                 }
             )
 

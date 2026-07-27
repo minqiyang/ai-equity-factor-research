@@ -131,6 +131,33 @@ def test_synthetic_consumer_retains_zero_eligible_windows_as_invalid() -> None:
         assert result.summary.loc[split_name, "ic_valid_dates"] == 0
 
 
+def test_synthetic_consumer_marks_metric_empty_split_invalid() -> None:
+    result = run_synthetic_split_ic_rank_ic_demo(
+        config=SyntheticSplitICRankICConfig(
+            asset_count=4,
+            validation_start="2024-01-09",
+            validation_end="2024-01-09",
+            ic_min_periods=4,
+        ),
+        write_outputs=False,
+    )
+
+    validation = result.summary.loc["validation"]
+    assert pd.isna(
+        result.label_availability.loc["validation", "invalid_reason"]
+    )
+    assert (
+        result.label_availability.loc["validation", "status"]
+        == "DIAGNOSTIC_ONLY"
+    )
+    assert validation["eligible_date_count"] == 1
+    assert validation["usable_factor_label_pairs"] == 3
+    assert validation["ic_valid_dates"] == 0
+    assert validation["rank_ic_valid_dates"] == 0
+    assert validation["invalid_reason"] == "no_valid_factor_diagnostic_dates"
+    assert validation["status"] == "INVALID"
+
+
 def test_synthetic_consumer_audits_partial_and_all_missing_targets(
     monkeypatch,
 ) -> None:
