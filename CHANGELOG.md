@@ -34,6 +34,9 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Made completed current-head Codex review with no unresolved actionable
+  findings an explicit prerequisite before auto-merge or normal protected
+  merge for review-required PRs.
 - Froze the intended Ruff lint baseline explicitly so a newly released Ruff
   version cannot silently expand CI into a repository-wide lint migration.
 - Aligned the active real-data readiness Skill and checklist with the charter:

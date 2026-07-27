@@ -26,10 +26,14 @@
   repository-wide findings after local Ruff 0.15.18 passed. Added an explicit
   `E4`, `E7`, `E9`, and `F` rule baseline and a configuration contract test;
   both Ruff versions pass without changing unrelated source or tests.
+- Addressed the final-head Codex review P1 that auto-merge eligibility could
+  precede the required review. Controller, workflow Skill, roadmap, and tests
+  now require stable checks and a completed current-head Codex review with no
+  unresolved actionable findings before either merge path is eligible.
 - An independent documentation review found and then verified fixes for the
   readiness bypass, experiment-log authority, and broad unrelated-PR stop
   clauses. The final contract suite covers those cross-document constraints.
-- Final local validation reached 593 passing tests; Ruff, both compilation
+- Final local validation reached 594 passing tests; Ruff, both compilation
   gates, package build, generated repo-map determinism, the equivalent two-Skill
   audit, Unicode/control-character scan, and diff checks passed. PowerShell was
   unavailable for the official Skill-audit entrypoint.

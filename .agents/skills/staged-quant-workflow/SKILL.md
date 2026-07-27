@@ -45,9 +45,9 @@ Research-program stages must conform to
 - After PR creation, Codex may enable GitHub auto-merge or perform a normal
   protected PR merge only when risk is not high or unclear, GitHub PR metadata
   verifies author/head owner as `minqiyang`, branch protection is verifiable,
-  required checks pass or auto-merge is used while checks are pending, no
-  required review is pending, and changed-file scope matches the declared
-  stage.
+  required checks pass, any applicable Codex review completed on the current
+  head with no unresolved actionable findings, no other required review is
+  pending, and changed-file scope matches the declared stage.
 - Guardrails remain intact: no unauthorized vendor downloads, remote data
   access, paper deployment, live trading, brokerage or order execution,
   credentials, or profitability claims.
@@ -216,6 +216,12 @@ Draft PR. After local validation and required CI are stable, post
 semantics, returns, costs, benchmarks, implementation, CI, security, or
 execution scope. Request re-review only after an actionable fix changes that
 head. Trivial documentation-only metadata may omit review.
+
+Do not enable auto-merge or attempt a merge while required checks or an
+applicable current-head Codex review is pending. When Codex review applies, it
+must complete on the current head with no unresolved actionable findings before
+either merge path becomes eligible. An actionable fix requires stable CI and
+re-review on the new head.
 
 ## Known pitfalls
 

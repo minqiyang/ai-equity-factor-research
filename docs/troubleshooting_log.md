@@ -1,5 +1,46 @@
 # Troubleshooting Log
 
+## 2026-07-26 - Auto-Merge Eligibility Preceded Required Codex Review
+
+Original policy defect and consequence:
+
+- The controller required nontrivial PRs to request `@codex review` only after
+  CI stabilized, but separately allowed auto-merge while required checks were
+  still pending.
+- A review-required PR could therefore merge immediately when CI passed,
+  before the final-head Codex review was requested or completed.
+
+Evidence and investigation:
+
+- Codex review of PR #158 raised this as a P1 on
+  `docs/codex_long_running_controller.md`.
+- Thread-aware review inspection confirmed one unresolved, current inline
+  thread and no conflicting or duplicate findings.
+- The same permissive check language existed in the staged workflow Skill,
+  while the roadmap stated the review timing but not its merge prerequisite.
+
+Final fix:
+
+- Prohibited enabling auto-merge or attempting either merge path while required
+  checks or an applicable current-head Codex review is pending.
+- Required the applicable review to complete with no unresolved actionable
+  findings. Any actionable fix now requires stable CI and re-review on the new
+  head.
+- Added a cross-document contract test and aligned the roadmap, Skill, durable
+  decision, engineering record, and changelog.
+
+Verification and remaining gate:
+
+- Focused and baseline validation, Skill audit, regenerated repo map, final CI,
+  and Codex re-review are required on the changed head before merge.
+- The review thread must not be resolved or replied to until the fix is pushed
+  and verified; those external writes require explicit scope.
+
+Prevention:
+
+- Treat review ordering as a merge precondition, not merely a request-timing
+  convention. Auto-merge convenience cannot bypass a current-head review gate.
+
 ## 2026-07-26 - Unbounded Ruff Upgrade Expanded The CI Lint Baseline
 
 Original assumption and consequence:

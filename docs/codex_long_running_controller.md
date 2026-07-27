@@ -342,14 +342,22 @@ research semantics, returns, costs, benchmarks, implementation, CI, security,
 or execution scope. Re-review only when an actionable fix changes the reviewed
 head. Trivial documentation-only metadata may omit Codex review.
 
+Do not enable auto-merge or attempt a merge while required checks or an
+applicable current-head Codex review is pending. When Codex review applies, it
+must complete on the current head with no unresolved actionable findings before
+either merge path becomes eligible. An actionable fix invalidates the prior
+review and requires stable CI plus re-review on the new head.
+
 After creating a PR, Codex may enable GitHub auto-merge or perform a normal
 protected PR merge only when all of these are true:
 
 - risk is not high or unclear.
 - GitHub PR metadata verifies the author/head owner as `minqiyang`.
 - branch protection or rulesets are verifiable.
-- required checks pass, or auto-merge is enabled while checks are pending.
-- no required review is pending.
+- required checks pass.
+- any applicable Codex review completed on the current head with no unresolved
+  actionable findings.
+- no other required review is pending.
 - changed-file scope matches the declared stage.
 
 If author/head owner, protection, checks, reviews, merge queue, conflict status,

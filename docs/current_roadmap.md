@@ -114,6 +114,8 @@ timing, holdout, statistical, or public-documentation findings above.
 - After local validation and CI are stable, request `@codex review` once on the
   final stable head when review is required. Re-review only after an actionable
   fix changes that head.
+- Do not enable auto-merge or merge a review-required PR until Codex review has
+  completed on the current head with no unresolved actionable findings.
 - Do not let multiple agents edit the roadmap, handoff, same factor/operator,
   or same evidence record concurrently.
 - Preserve failures and caveats; do not implement more factors while

@@ -39,6 +39,9 @@ Decision:
   only, even when its survivorship caveat is documented.
 - Keep `EXPERIMENT_LOG.md` as a diagnostic/legacy record until Stage 4 provides
   immutable pre-execution identifiers and complete all-trial retention.
+- Require any applicable Codex review to complete on the current head with no
+  unresolved actionable findings before auto-merge or normal protected merge;
+  an actionable fix requires stable CI and re-review on the new head.
 - Classify previously examined data as historical evaluation or pseudo-holdout
   unless a holdout exposure ledger proves a narrower claim.
 - Keep the current phase research-only. Paper runtime, live trading, brokerage,

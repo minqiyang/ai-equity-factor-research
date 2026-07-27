@@ -166,6 +166,45 @@ def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:
     assert "- a PR has been opened but is not eligible" not in controller
 
 
+def test_review_required_prs_complete_current_head_review_before_merge() -> None:
+    controller = " ".join(
+        (PROJECT_ROOT / "docs/codex_long_running_controller.md")
+        .read_text(encoding="utf-8")
+        .split()
+    )
+    workflow_skill = " ".join(
+        (PROJECT_ROOT / ".agents/skills/staged-quant-workflow/SKILL.md")
+        .read_text(encoding="utf-8")
+        .split()
+    )
+    roadmap = " ".join(
+        (PROJECT_ROOT / "docs/current_roadmap.md")
+        .read_text(encoding="utf-8")
+        .split()
+    )
+
+    for text in [controller, workflow_skill]:
+        assert (
+            "Do not enable auto-merge or attempt a merge while required checks "
+            "or an applicable current-head Codex review is pending."
+        ) in text
+        assert (
+            "completed on the current head with no unresolved actionable "
+            "findings"
+        ) in text
+        assert text.index("post `@codex review` once") < text.index(
+            "Do not enable auto-merge or attempt a merge"
+        )
+        assert "required checks pass, or auto-merge" not in text
+        assert "required checks pass or auto-merge" not in text
+
+    assert (
+        "Do not enable auto-merge or merge a review-required PR until Codex "
+        "review has completed on the current head with no unresolved actionable "
+        "findings."
+    ) in roadmap
+
+
 def test_tracking_error_design_freezes_stage_two_contract() -> None:
     design = (
         PROJECT_ROOT / "docs/risk_evaluation_metrics_design.md"
