@@ -81,16 +81,18 @@ visible as `INVALID`; no cross-window label is borrowed.
 The accepted Stage 2a policy is
 `after_close_signal_next_observed_close_v1`:
 
-- for every scheduled execution row `d[j]`, lag `L` uses source signal
-  `d[j-L]` and freezes the decision immediately after that source signal is
-  available;
+- the full source index is `s[0..M]`, while the exact bounded accounting slice
+  is `a[0..N]`; every scheduled execution row `a[j]` uses source signal
+  `a[j-L]` and freezes the decision immediately after that signal is available;
+- pre-anchor `s` rows may support feature computation but never satisfy
+  execution lag or create a target;
 - under daily rebalancing, a final signal stamped at `d0` is conservatively
   available strictly after `close[d0]`, and lag one executes its idealized
   frozen target at `close[d1]`;
 - that target first earns the return from `close[d1]` to `close[d2]`, recorded
   on `d2`;
-- row lag counts exact observed source rows, not calendar days or rebalance
-  periods;
+- row lag counts exact observed rows inside the bounded accounting slice, not
+  calendar days or rebalance periods;
 - close-derived lag must be a non-boolean integer at least one;
 - prices and signals require exact axes and timezone compatibility;
 - the decision-time target cannot be reranked or redistributed with the
@@ -98,10 +100,17 @@ The accepted Stage 2a policy is
 - explicit `evaluation_start` is a zero initialization anchor, and every
   period metric uses the same post-anchor dates through explicit
   `evaluation_end`;
+- both evaluation bounds must be exact scalar timestamps on the source index;
+  partial-date strings and implicit label slicing are invalid;
 - the benchmark uses the same dates and remains cost-free;
 - daily annualization is fixed at 252 observed sessions; and
 - a terminal row includes its incoming return and configured trade/cost but
   creates no invented future return.
+
+The timing ledger covers the sorted de-duplicated union of the initialization
+anchor and resolved scheduled rebalance dates. The anchor has no incoming
+interval; a later insufficient-lag row records its all-cash incoming interval
+but no execution or first-holding interval.
 
 The model is idealized close-reset accounting, not order-fill, MOC auction,
 capacity, brokerage, or LEAN evidence. Current Stage 1 one-row forward labels

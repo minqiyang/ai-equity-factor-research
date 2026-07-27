@@ -9,11 +9,13 @@
 - Four non-overlapping read-only audits mapped backtest timing, metric anchors,
   callers, canonical documentation, and adversarial leakage risks. No private
   result or holdout value was opened.
-- Confirmed that each scheduled execution row `d[j]` uses source signal
-  `d[j-L]`. Under daily rebalancing, lag one maps a signal stamped at `d0` to a
-  target reset after the return ending at `d1`, with the target's first earned
-  return ending at `d2`. The existing Stage 1 `d0`-to-`d1` label is therefore
-  diagnostic and not that strategy return.
+- Distinguished the full source index `s[0..M]` from bounded accounting dates
+  `a[0..N]`. Each scheduled execution row `a[j]` uses source signal `a[j-L]`;
+  pre-anchor history may support feature calculation but cannot satisfy
+  execution lag. Under daily rebalancing, lag one maps fixture `d0`/`a[0]` to a
+  target reset after the return ending at `d1`/`a[1]`, with the target's first
+  earned return ending at `d2`/`a[2]`. The existing Stage 1 `d0`-to-`d1` label
+  is therefore diagnostic and not that strategy return.
 - Recorded three high-risk Stage 2b gaps: zero lag is accepted even though
   signals are declared available after close; signals are silently reindexed;
   and execution-close price validity can change target membership.
@@ -39,7 +41,13 @@
   several P2 contract gaps in the first draft. The integration owner fixed
   decision-time ambiguity, scheduled-row mapping, buy/sell feasibility,
   annualization, no-op and terminal ledger states, mutation tests, and the
-  repo-map scope wording. Both reviewers then reported no remaining P1/P2.
+  repo-map scope wording.
+- The first stable-head GitHub review then found three P2 ambiguities in the
+  intervening-close invariant, non-daily anchor ledger cardinality, and
+  evaluation-bound test matrix. A separate executor fixed them. A fresh
+  read-only review caught the remaining full-source-versus-accounting lag
+  ambiguity, non-executable pandas boundary pseudocode, and no-op incoming
+  interval distinction; those were also corrected before the next stable head.
 - Final local validation passes with 638 tests, Ruff, compilation of
   `src`, `research`, `tests`, and `lean`, sdist and wheel build, reproducible
   repo-map generation, Unicode/control scan, and branch diff checks.

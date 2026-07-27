@@ -22,7 +22,8 @@ Stage 2b must implement:
 - decision-time target freezing separated from execution-price feasibility;
 - deterministic return, drift, trade, turnover, cost, and holdings ordering;
 - one common measured-return window for strategy and benchmark metrics;
-- typed global timing metadata and a per-rebalance timing ledger; and
+- typed global timing metadata and a timing ledger over the initialization
+  anchor/resolved-schedule union; and
 - deterministic tests for zero lag, warm-up exclusion, terminal handling, and
   mutation invariance.
 
@@ -55,9 +56,10 @@ private result is reinterpreted by this contract.
 
 ## Normative Terms
 
-- **Source index**: the unique, strictly increasing daily-close observation
-  index shared by prices and final signals. A row denotes one observed session
-  close; it is not automatically a calendar day.
+- **Full source index**: the unique, strictly increasing daily-close
+  observation index shared by prices and final signals, denoted `s[0..M]`. A
+  row denotes one observed session close; it is not automatically a calendar
+  day.
 - **Feature observation end**: the latest source event used by a feature value.
   Under the generic current API, a final signal stamped at row `t` is
   conservatively treated as depending on `close[t]`, even when a particular
@@ -77,8 +79,11 @@ private result is reinterpreted by this contract.
   redistribute the target with information learned at that close.
 - **Post-trade holdings**: closing weights immediately after the row's target
   reset. They first earn the next observed close-to-close return.
-- **Accounting dates**: the inclusive source rows from `evaluation_start`
-  through `evaluation_end`.
+- **Accounting dates**: the exact contiguous slice of the full source index
+  from `evaluation_start` through `evaluation_end`, denoted `a[0..N]`, where
+  `a[0]` is the initialization anchor. Feature calculations may read earlier
+  full-source history, but signal lag and target generation may use only this
+  bounded slice.
 - **Initialization anchor**: `evaluation_start`, which establishes initial
   capital and the first price anchor but has no preceding measured return.
 - **Measured return dates**: accounting rows after the initialization anchor.
@@ -103,22 +108,33 @@ after_close_signal_next_observed_close_v1
 A close-derived signal stamped at row `t` becomes available only after
 `close[t]`.
 
-For each resolved scheduled execution row `d[j]` and configured signal lag
-`L`, the source signal is `d[j - L]`. When `j < L`, that scheduled row has
-insufficient lag history and is a disclosed no-op rather than an execution.
-For `j >= L`:
+For each resolved scheduled execution accounting row `a[j]` and configured
+signal lag `L`, the source signal is `a[j - L]`. When `j < L`, that scheduled
+row has insufficient bounded accounting-row history and is a disclosed no-op
+rather than an execution. A signal stamped on `s[k] < a[0]` may contribute to
+feature computation, but it cannot satisfy execution lag or be consumed as a
+trade signal. For `j >= L`:
 
 ```text
-signal_source_row       = d[j - L]
-feature_observation_end = close[d[j - L]]
-signal_availability     = strictly_after_close[d[j - L]]
-decision_time           = immediately_after_availability[d[j - L]]
-execution_time          = close[d[j]]
-holding_effective_start = immediately_after_close[d[j]]
-first_return_start      = close[d[j]]
-first_return_end        = close[d[j + 1]]
-first_return_row        = d[j + 1]
+signal_source_row       = a[j - L]
+feature_observation_end = close[a[j - L]]
+signal_availability     = strictly_after_close[a[j - L]]
+decision_time           = immediately_after_availability[a[j - L]]
+execution_time          = close[a[j]]
+holding_effective_start = immediately_after_close[a[j]]
+first_return_start      = close[a[j]]
+if j < N:
+    first_return_end    = close[a[j + 1]]
+    first_return_row    = a[j + 1]
+if j = N:
+    first_return_end    = missing
+    first_return_row    = missing
 ```
+
+The terminal scheduled execution at `a[N]` still has a valid
+`holding_effective_start` immediately after `close[a[N]]` and a
+`first_return_start` at `close[a[N]]`, but it has no return endpoint or return
+row inside the bounded evaluation. It must not construct or infer `a[N+1]`.
 
 The earliest supported execution is `close[t+1]`, the next observed source
 row, only when that row is a resolved scheduled execution. With daily
@@ -134,11 +150,20 @@ close[d0] observation
 The ordering is strict where information availability requires it:
 
 ```text
+close[a[j-L]] = feature_observation_end
 feature_observation_end < signal_availability < decision_time
-decision_time < every later source-row close <= execution_time
-execution_time = holding_effective_start
-holding_effective_start < first_return_end
+decision_time < close[a[j-L+1]] < ... < close[a[j]] = execution_time
+execution_time < holding_effective_start
+if j < N:
+    holding_effective_start < first_return_end
 ```
+
+The middle chain contains only the observed source-row closes strictly after
+the selected signal-source row and through that scheduled execution row. For
+`L = 1`, it reduces to `decision_time < close[a[j]]`.
+It does not constrain source rows after execution. For `L > 1`, every
+intervening observed close must precede execution and must not replace
+`a[j-L]` as the frozen signal source.
 
 A target executed at close `t` does not earn the return stamped `t`; it first
 earns `(t,t+1]`.
@@ -169,10 +194,12 @@ and signal_lag_periods >= 1
 fractional, negative, string, or missing values are also invalid and must fail
 before alignment, shifting, target construction, or accounting.
 
-Row lag counts observed source-index rows, not calendar days and not rebalance
-periods. Lag one means the immediately preceding source row, not the preceding
-rebalance. On a Friday/Monday/Wednesday index, Monday uses Friday's signal and
-Wednesday uses Monday's signal.
+Row lag counts observed source rows within the exact bounded accounting slice,
+not calendar days and not rebalance periods. Lag one means the immediately
+preceding accounting row, not the preceding rebalance. On a bounded
+Friday/Monday/Wednesday slice, Monday uses Friday's signal and Wednesday uses
+Monday's signal. Rows in the full source index before `a[0]` never satisfy lag,
+even when they supplied feature warm-up inputs.
 
 A same-close, next-open, auction, pre-close, or intraday model requires a
 separate typed and reviewed execution contract. Integer zero is not implicit
@@ -191,9 +218,10 @@ No timing-sensitive path may silently reindex, sort, deduplicate, localize,
 convert timezones, add assets, drop assets, forward-fill, or backfill. Missing
 signal cells remain explicit unavailable scores.
 
-Feature history may precede `evaluation_start`, but Stage 2b must scope target
-generation to the bounded accounting dates before applying signal lag. No
-pre-anchor signal may create a trade on the initialization anchor.
+Feature history may precede `evaluation_start`, but Stage 2b must first select
+the bounded accounting-date signal matrix and only then apply signal lag and
+generate targets. No pre-anchor signal may create a trade on the initialization
+anchor or on a later accounting row with insufficient local lag.
 
 ### Rebalance resolution
 
@@ -308,10 +336,25 @@ Every backtest must receive explicit inclusive `evaluation_start` and
 `evaluation_end` source rows with:
 
 ```text
-evaluation_start < evaluation_end
-accounting_dates = price_index[evaluation_start:evaluation_end]
+require evaluation_start and evaluation_end to be exact scalar Timestamp labels
+require exact timezone compatibility and membership in price_index
+start_pos = price_index.get_loc(evaluation_start)
+end_pos = price_index.get_loc(evaluation_end)
+require start_pos and end_pos to be scalar integer positions
+require start_pos < end_pos
+accounting_dates = price_index[start_pos : end_pos + 1]
 measured_return_dates = accounting_dates[1:]
 ```
+
+Both bounds must be exact scalar timestamp labels in the validated price index,
+with the same timezone awareness and timezone as that index. Strings,
+including partial-date strings such as `2024-01`, are invalid rather than
+instructions for pandas partial-label resolution. An off-index endpoint, an
+aware/naive mismatch, a different timezone, a non-scalar `get_loc` result,
+equal bounds, or reversed bounds must raise before target generation or
+accounting. Bounds must not be rounded, localized, converted, or resolved by
+label slicing. When both labels are valid, positional slicing includes each
+boundary exactly once.
 
 `evaluation_start` is frozen from the experiment configuration; it must not be
 inferred after seeing the first non-null score, first selection, first trade,
@@ -420,7 +463,7 @@ Stage 2b must emit stable global metadata rather than only free-text prose:
 | `decision_time` | `immediately_after_signal_availability_on_signal_source_row` |
 | `execution_time` | `observed_source_row_close_idealized_reset` |
 | `signal_lag_rows` | Validated non-boolean integer at least one |
-| `signal_lag_unit` | `observed_source_rows` |
+| `signal_lag_unit` | `observed_source_rows_within_bounded_accounting_slice` |
 | `return_frequency` | `daily_close_to_close` |
 | `periods_per_year` | `252` |
 | `return_interval` | `previous_close_to_current_close` |
@@ -440,12 +483,26 @@ Stage 2b must emit stable global metadata rather than only free-text prose:
 | `benchmark_return_window` | `same_measured_rows_cost_free_close_to_close` |
 | `initialization_anchor_policy` | `zero_return_trade_turnover_cost_and_holdings` |
 
-The result must also expose one deterministic ledger row for every resolved
-scheduled rebalance date, including initialization and insufficient-lag no-op
-rows. It contains at least:
+The result must also expose one deterministic ledger row for every date in the
+sorted, de-duplicated union:
 
 ```text
+timing_ledger_dates =
+    {evaluation_start} union {resolved scheduled rebalance dates}
+```
+
+The initialization anchor is therefore always represented even when a
+non-daily evaluation window starts mid-bucket and the anchor is not a resolved
+scheduled rebalance. When the anchor is also a scheduled date, the union still
+contains one row: it retains `initialization_anchor_no_execution` and records
+`is_scheduled_rebalance = true`; initialization never executes. A later
+scheduled row with insufficient lag uses
+`insufficient_lag_no_execution`. Each ledger row contains at least:
+
+```text
+ledger_date
 scheduled_execution_date
+is_scheduled_rebalance
 event_status
 signal_source_date
 feature_observation_end
@@ -459,6 +516,12 @@ first_holding_return_end
 is_terminal_scheduled_row
 ```
 
+`ledger_date` is the union member. `scheduled_execution_date` equals
+`ledger_date` only when `is_scheduled_rebalance` is true and is otherwise
+missing. For a mid-bucket, non-scheduled initialization anchor,
+`is_scheduled_rebalance` is false, `scheduled_execution_date` is missing, and
+the initialization status and all no-execution null-field rules apply.
+
 `event_status` is one of:
 
 ```text
@@ -469,11 +532,17 @@ executed_cash_target
 ```
 
 For either no-execution status, signal, decision, execution, and first-holding
-fields are missing, and the row has no target, trade, turnover, or cost. An
-executed terminal target has a valid incoming return interval when one exists,
-but `first_holding_return_end` is missing and
-`is_terminal_scheduled_row` is true. Missing endpoints must never be filled
-with an invented future date.
+fields are missing, and the row has no target, trade, turnover, or cost. The
+initialization anchor also has missing `incoming_return_start` and
+`incoming_return_end` because no measured interval precedes `a[0]`. A later
+`insufficient_lag_no_execution` row at `a[j]`, where `j > 0`, records
+`incoming_return_start = a[j-1]` and `incoming_return_end = a[j]` for its
+measured all-cash prior-close-to-current-close return; both first-holding
+endpoints remain missing. An executed terminal target has a valid incoming
+return interval when one exists and records
+`first_holding_return_start = a[N]`, but `first_holding_return_end` is missing,
+`is_terminal_scheduled_row` is true, and no `a[N+1]` exists in the result.
+Missing endpoints must never be filled with an invented future date.
 
 Strict feasibility failure raises before a successful `BacktestResult` exists,
 so it is not a successful-result ledger status. Stage 2b tests must retain the
@@ -535,20 +604,20 @@ holding established at `d1`.
 
 | ID | Fixture | Required assertion |
 | --- | --- | --- |
-| `TIMING-001` | The four-row daily-rebalance reference case above. | Each scheduled row uses `d[j-L]`; exact signal source, execution row, first earned return, drift, trade, turnover, cost, holdings, net return, and equity values match by hand. |
+| `TIMING-001` | The four-row daily-rebalance reference case above, where fixture labels `d0..d3` are bounded accounting rows `a[0..3]`. | Each scheduled row uses bounded `a[j-L]`; exact signal source, execution row, first earned return, drift, trade, turnover, cost, holdings, net return, and equity values match by hand. |
 | `TIMING-002` | Lags `0`, `False`, `0.0`, `-1`, `1.5`, and `"1"`. | Every invalid lag fails before alignment or target construction; integer one passes. |
 | `TIMING-003` | Signal axes with an extra/missing/reordered date or asset, duplicate labels, or a timezone mismatch. | Every mismatch raises; no silent reindexing, sorting, or dropping occurs. |
-| `TIMING-004` | Friday, Monday, and Wednesday source rows. | Lag one uses the immediately preceding observed row, not a calendar-day offset. |
+| `TIMING-004` | A bounded Friday, Monday, and Wednesday accounting slice with lags one and two. | Lag one uses the immediately preceding accounting row, not a calendar-day offset; for Wednesday execution at lag two, Friday is the frozen source, Monday is an intervening close, and the asserted order ends at Wednesday execution without constraining later rows. |
 | `TIMING-005` | Monthly rebalancing with daily signal rows. | Each month-end execution uses the immediately preceding source-row signal for lag one, not the previous rebalance signal; unscheduled signals do not execute. |
 | `TIMING-006` | Separately remove the execution-close price for an intended buy and for a held asset that must be sold. | The frozen target is not reranked or redistributed; strict buy/sell feasibility raises, and the zero-return fallback remains diagnostic-only. |
 | `TIMING-007` | Mutate execution-row signal/eligibility values and, separately, a price strictly after the execution row. | Neither mutation changes the frozen intended target or the execution row's incoming gross return; execution-close price mutations are covered separately by feasibility and accounting tests. |
-| `TIMING-008` | Explicit history before `evaluation_start` plus daily and lag-greater-than-one no-op rows. | History supports feature construction; the anchor stays all cash with zero return/trade/turnover/cost, and ledger statuses/null fields distinguish initialization from insufficient lag. |
-| `TIMING-009` | Explicit bounded evaluation dates after a long feature warm-up. | Strategy return, benchmark return, annualized return, volatility, Sharpe, and tracking error exclude every warm-up row. |
+| `TIMING-008` | Explicit full-source history before `evaluation_start`, a first post-anchor scheduled row with insufficient local accounting-row lag, later daily lag-greater-than-one no-op rows, and a non-daily window whose anchor is mid-bucket. | Pre-anchor history supports feature computation but is never consumed as a lagged trade signal; the first post-anchor scheduled row remains all cash when `j < L`; the ledger-date set is exactly the anchor/rebalance union; the mid-bucket anchor appears once with `is_scheduled_rebalance = false`, missing scheduled execution and incoming/first-holding intervals; each later insufficient-lag row records its `a[j-1]` to `a[j]` all-cash incoming interval while both first-holding endpoints remain missing. |
+| `TIMING-009` | Explicit bounded evaluation dates after a long feature warm-up, plus partial-date string `2024-01`, off-index endpoints, equal and reversed bounds, aware/naive and different-timezone endpoints, and an exact-boundary fixture. | Strategy return, benchmark return, annualized return, volatility, Sharpe, and tracking error exclude every warm-up row; the partial string and every other invalid endpoint case raise before target generation; scalar `get_loc` positions drive the valid exact positional slice, whose endpoints are each included once and whose rows alone contribute to accounting and metrics. |
 | `TIMING-010` | Hand-calculated net and benchmark returns, an anchor loss check, and `periods_per_year` values `False`, `True`, `251`, `252`, and `365`. | All period metrics share `measured_return_dates`; non-Boolean integer 252 passes, every other annualizer fails, annualization uses the exact measured count, and drawdown includes initial capital. |
 | `TIMING-011` | Exact benchmark prices plus missing, reordered, and timezone-mismatched variants. | Strategy and benchmark share anchor, measured rows, and terminal window; invalid alignment fails. |
-| `TIMING-012` | An incomplete terminal resample bucket with a terminal target change. | The last observed row is disclosed as a rebalance; its return, turnover, and cost are included, its post-trade holdings are open, and no future return is invented. |
+| `TIMING-012` | An incomplete terminal resample bucket with a target change at scheduled accounting row `a[N]`. | The last observed row is disclosed as a rebalance; its incoming return, turnover, and cost are included and its post-trade holdings are open; `holding_effective_start` is immediately after `close[a[N]]`, `first_holding_return_start` is `a[N]`, both the first-return endpoint and row are missing, and no `a[N+1]` is constructed or inferred. |
 | `TIMING-013` | A Stage 1 same-row synthetic response and a one-row price-forward label. | Both remain diagnostic targets and cannot be serialized as executable strategy P&L under this policy. |
-| `TIMING-014` | Every current backtest caller and serialized result. | Global typed metadata, resolved rebalance dates, and one ledger row per scheduled date are present; event statuses and incoming/first-holding intervals reconcile with accounting arrays. |
+| `TIMING-014` | Every current backtest caller and serialized result. | Global typed metadata, resolved rebalance dates, and one ledger row per date in the initialization-anchor/resolved-schedule union are present; the anchor has no incoming or first-holding interval; each later insufficient-lag row has the matching prior/current accounting-date incoming interval and no first-holding interval; every nonterminal executed row has a bounded next-row first-holding endpoint, while terminal execution has start `a[N]`, missing end/row, and no invented `a[N+1]`; all statuses and intervals reconcile with accounting arrays. |
 
 Implementation tests must assert values, dates, event ordering, error messages,
 and mutation invariance. Static wording checks alone do not complete Stage 2b.
@@ -576,7 +645,8 @@ Stage 2b must:
 - validate every buy and sell execution-price leg without redistribution;
 - align every period-return metric to one measured-date set;
 - enforce the daily `periods_per_year == 252` annualizer;
-- emit typed timing metadata and a per-rebalance ledger;
+- emit typed timing metadata and one ledger row per date in the
+  initialization-anchor/resolved-schedule union;
 - migrate all direct callers without hidden compatibility bypasses;
 - retain changed and failed deterministic evidence; and
 - run focused tests plus the complete repository gates.
@@ -602,10 +672,12 @@ Accepted here:
   `after_close_signal_next_observed_close_v1`;
 - every generic final signal is conservatively available after its stamped
   close;
-- signal lag is a non-boolean integer source-row count of at least one;
-- for every scheduled execution `d[j]`, lag `L` uses source signal
-  `d[j-L]`; under daily rebalancing, lag one maps `d0` to `d1` execution and
-  first earned return ending at `d2`;
+- signal lag is a non-boolean integer bounded accounting-source-row count of
+  at least one; full-source pre-anchor history may support feature computation
+  but cannot satisfy execution lag;
+- for every scheduled execution `a[j]`, lag `L` uses source signal
+  `a[j-L]`; under daily rebalancing, fixture `d0` as `a[0]` maps to `d1` as
+  `a[1]` execution and first earned return ending at `d2` as `a[2]`;
 - prices and signals require exact axes and timezone compatibility;
 - targets are frozen immediately after source-row signal availability;
 - execution-price feasibility cannot rerank or redistribute;

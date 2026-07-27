@@ -34,12 +34,15 @@ Decision:
 - Adopt `after_close_signal_next_observed_close_v1` as the only timing policy
   for the current close-only backtester.
 - Conservatively treat every generic final signal as available strictly after
-  its stamped close. Require a non-boolean integer source-row lag of at least
-  one; lag zero is not a hidden same-close or next-open model.
-- For every scheduled execution `d[j]`, map lag `L` to source signal
-  `d[j-L]` and freeze the target immediately after that source signal becomes
-  available. Under daily rebalancing, lag one maps `d0` to an idealized target
-  reset at `d1` close and its first earned return over `(d1,d2]`.
+  its stamped close. Require a non-boolean integer accounting-row lag of at
+  least one; lag zero is not a hidden same-close or next-open model.
+- Distinguish the full source index `s[0..M]` from the exact bounded accounting
+  slice `a[0..N]`. For every scheduled execution `a[j]`, map lag `L` to source
+  signal `a[j-L]` and freeze the target immediately after that signal becomes
+  available. Pre-anchor `s` rows may support feature calculation but cannot
+  satisfy execution lag. Under daily rebalancing, fixture `d0` as `a[0]` maps
+  to an idealized target reset at `d1`/`a[1]` close and its first earned return
+  over `(d1,d2]`.
 - Require exact signal/price axes and timezone compatibility. Freeze ranking,
   selection, constraints, and intended weights from decision-time
   information; execution-close feasibility cannot rerank or redistribute, and
@@ -49,13 +52,20 @@ Decision:
   costs, and become post-trade holdings for the next return.
 - Require explicit bounded `evaluation_start` and `evaluation_end`.
   `evaluation_start` is a zero initialization anchor; all period-return metrics
-  and benchmark-relative metrics use the same later rows.
+  and benchmark-relative metrics use the same later rows. Bounds must be exact
+  scalar timestamps resolved to unique integer positions; partial-label
+  strings, implicit rounding, timezone conversion, and non-inclusive slicing
+  are invalid.
 - Fix daily annualization at a non-boolean integer 252 so basic and
   benchmark-relative metrics cannot use conflicting annualizers.
 - Include initial capital in drawdown, keep the benchmark cost-free on the
   identical measured window, and retain the observed-bucket terminal target,
   cost, open-holdings, and no-future-return convention.
-- Require typed timing metadata and a per-rebalance event ledger in Stage 2b.
+- Require typed timing metadata and a Stage 2b event ledger over the sorted
+  de-duplicated union of the initialization anchor and resolved rebalance dates.
+  The anchor has no incoming interval; later insufficient-lag rows retain their
+  measured all-cash incoming interval but have no execution or first-holding
+  interval.
 
 Rationale:
 
