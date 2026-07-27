@@ -9,6 +9,11 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the accepted purged and bounded chronological split contract with six
+  explicit inclusive boundaries, complete label-interval ownership, a hard
+  bounded test cutoff, horizon-aware purge, optional embargo, raw-axis target
+  masking, warm-up/down metadata, and a deterministic 22-case Stage 1b test
+  matrix. This design stage changes no research calculation or evidence.
 - Added the canonical research program charter and reconciled the project
   specification, roadmap, handoff, controller, staged workflow Skill, public
   method routing, and documentation contracts around factor-to-execution

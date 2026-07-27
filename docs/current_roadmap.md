@@ -1,12 +1,15 @@
 # Current Roadmap
 
-Updated: 2026-07-26 for the Research Charter Reset.
+Updated: 2026-07-26 for the Purged and Bounded Split Contract.
 
-Baseline SHA verified before this stage: `a1486ea`.
+Protected-main baseline verified before this stage: `57f3db3`, the merge of PR
+#158.
 
 This is the canonical roadmap. `docs/research_program_charter.md` defines the
 long-term evidence policy. Older checkpoints, gap refreshes, plans, and audits
 remain historical evidence and must not be used as active task queues.
+`docs/purged_bounded_split_contract.md` is the accepted Stage 1a design for the
+next implementation stage.
 
 ## Objective
 
@@ -34,7 +37,7 @@ authorized.
 | Private diagnostics | Local-only EODHD validation and factor diagnostics on a fixed cohort; not accepted point-in-time real-data interpretation. |
 | LEAN | Non-executing metadata/signal scaffold only; no algorithm runtime, parity evidence, brokerage, orders, paper, or live path. |
 
-The verified software baseline has 591 passing tests plus Ruff, compilation,
+The verified software baseline has 594 passing tests plus Ruff, compilation,
 package-build, and exact-head CI evidence. Those checks establish software
 behavior, not empirical research validity.
 
@@ -57,6 +60,14 @@ behavior, not empirical research validity.
 5. The fixed EODHD cohort lacks point-in-time membership, delisting/symbol
    history, resolved corporate-action and adjusted price/volume semantics, and
    complete provenance/license evidence.
+
+Stage 1a has accepted the design for findings 1 and 2 without changing their
+current implementation. `docs/purged_bounded_split_contract.md` freezes six
+explicit inclusive boundaries, complete label-interval ownership, a hard
+bounded test cutoff, horizon-aware purge, optional embargo, raw-axis target
+masking, warm-up/down metadata, and deterministic mutation-invariance tests.
+Until Stage 1b passes, current diagnostic outputs remain subject to the
+implementation defects above.
 
 ### Medium
 
@@ -90,9 +101,9 @@ timing, holdout, statistical, or public-documentation findings above.
 
 | Stage | Status | Scope | Completion gate |
 | --- | --- | --- | --- |
-| 0. Research Charter Reset | Complete on this head | Add the charter and reconcile specification, roadmap, handoff, controller, workflow Skill, and documentation contracts without changing research behavior. | Documentation tests, Skill audit, repo-map refresh, full baseline validation, and independent read-only review pass. |
-| 1a. Purged/bounded split contract | Next | Design explicit split starts/ends, bounded test windows, label start/end ownership, horizon purge, optional embargo, and warm-up/down metadata. | Design and deterministic boundary-test matrix accepted before implementation. |
-| 1b. Purged/bounded split implementation | Blocked by 1a | Implement the accepted split contract and remove cross-split labels. | Focused tests prove later prices cannot alter earlier split labels or metrics; full gates pass. |
+| 0. Research Charter Reset | Complete on protected main via PR #158 | Add the charter and reconcile specification, roadmap, handoff, controller, workflow Skill, and documentation contracts without changing research behavior. | Documentation tests, Skill audit, repo-map refresh, full baseline validation, CI, and final current-head review passed. |
+| 1a. Purged/bounded split contract | Complete on this head | Freeze explicit split starts/ends, bounded test semantics, label start/end ownership, horizon purge, optional embargo, raw-axis target masking, and warm-up/down metadata. | `docs/purged_bounded_split_contract.md`, its hand-calculated boundary matrix, documentation contracts, full gates, and independent read-only review pass. |
+| 1b. Purged/bounded split implementation | Next after Stage 1a merge | Implement the accepted split contract and remove cross-split labels from every current future-return workflow. | Focused tests prove later prices cannot alter earlier split labels or metrics; raw axes retain masked exclusions; full gates pass. |
 | 2. Signal/execution timing | Blocked by Stage 1 | Freeze feature, availability, decision, execution, and return timestamps; resolve zero-lag and metric-window contracts. | Close-derived signals cannot receive ambiguous same-close fills; timing and anchor tests pass. |
 | 3. Point-in-time data methodology | Blocked by Stages 1-2 | Define provider-agnostic provenance, universe, delisting/corporate-action, field, benchmark, missing-data, privacy, and holdout-ledger contracts. | Every required methodology field is accepted before formal interpretation; no vendor download is implied. |
 | 4. Experiment/trial ledger | Blocked by Stage 3 design dependencies | Allocate immutable IDs before execution and retain every attempted, failed, invalid, aborted, and excluded trial plus hashes and access records. | Append-only and completeness tests pass; no silent overwrite or failed-before-write loss. |

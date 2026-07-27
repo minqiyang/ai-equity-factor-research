@@ -1,5 +1,36 @@
 # Engineering Log
 
+## 2026-07-26 - Purged And Bounded Split Contract
+
+- Started from protected `main` merge `57f3db3` in the isolated
+  `codex/purged-bounded-split-contract` worktree and preserved the unrelated
+  local checkout.
+- Verified the 594-test baseline, Ruff, compilation, and package build before
+  editing. The first isolated build lacked sandbox network access; the same
+  declared build passed when allowed to resolve its temporary build
+  requirements.
+- Mapped the shared split helper, all four Python consumers, their tests, and
+  the duplicated full-panel forward-return calculations. Confirmed that
+  repairing only the split dictionary would leave the local fixture's unsplit
+  diagnostics unsafe.
+- Added `docs/purged_bounded_split_contract.md` with six explicit inclusive
+  bounds, hard bounded-test semantics, exact row-horizon label intervals,
+  per-window purge, optional embargo, feature warm-up, in-window label
+  warm-down, ignored suffix, and deterministic metadata.
+- Chose raw-axis target masking so purged and embargoed rows remain visible as
+  all-`NaN` targets. Zero-eligible windows remain explicit `INVALID` evidence
+  rather than borrowing cross-boundary labels.
+- Added a 22-case Stage 1b matrix including hand-calculated ownership,
+  irregular calendars, explicit gaps, purge/embargo overlap, asset/benchmark
+  parity, synthetic-label honesty, and post-test/cross-edge mutation
+  invariance.
+- Used one independent read-only timing/leakage reviewer. No private files or
+  performance values were opened.
+- Kept this stage documentation/test-contract only. No `src/`, `research/`,
+  generated research evidence, dependency declaration, factor, backtest,
+  benchmark, cost, execution, or LEAN behavior changed. Trial-count impact is
+  zero.
+
 ## 2026-07-26 - Research Charter Reset
 
 - Verified `origin/main` at `a1486ea`, latest merged PR #157, successful

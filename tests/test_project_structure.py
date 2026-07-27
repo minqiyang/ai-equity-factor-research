@@ -31,6 +31,7 @@ def test_required_governance_files_exist() -> None:
         "EXPERIMENT_LOG.md",
         "pyproject.toml",
         "docs/research_program_charter.md",
+        "docs/purged_bounded_split_contract.md",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
@@ -54,9 +55,12 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Current Research-Validity Findings",
         "## Delivery Sequence",
         "0. Research Charter Reset",
+        "1a. Purged/bounded split contract",
+        "1b. Purged/bounded split implementation",
         "Target construction currently lives in `src/backtest/portfolio.py`",
         "pseudo-holdout evidence",
         "request `@codex review` once on the",
+        "`docs/purged_bounded_split_contract.md`",
     ]:
         assert phrase in roadmap
 
@@ -64,16 +68,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "Long-term evidence policy: `docs/research_program_charter.md`",
         "Active roadmap: `docs/current_roadmap.md`",
         "## Research Charter Decision",
+        "## Stage 1a Split Contract Decision",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
+        "Stage 1b - Purged and bounded sample-split implementation",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "591 passing tests" in roadmap
-    assert "Starting validation: 591 tests passed" in handoff
+    assert "594 passing tests" in roadmap
+    assert "Starting validation: 594 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -125,6 +131,59 @@ def test_research_program_charter_defines_evidence_and_authorization_gates() -> 
         "authorization to paper trade or trade live",
     ]:
         assert phrase in specification
+
+
+def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
+    contract = (
+        PROJECT_ROOT / "docs/purged_bounded_split_contract.md"
+    ).read_text(encoding="utf-8")
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
+
+    for phrase in [
+        "train_start",
+        "validation_start",
+        "test_start",
+        "`test_end` is always explicit",
+        "label_start = source_index[i]",
+        "label_end = source_index[i + h]",
+        "`price_forward_return` requires `label_horizon_rows >= 1`",
+        "`synthetic_same_row_response` requires",
+        "`label_derivation`",
+        "`label_crosses_window_end`",
+        "masks every purged or embargoed target value to `NaN`",
+        "`embargo_rows`",
+        "An explicit gap can therefore satisfy all or part of an embargo",
+        "`feature_warm_up_rows`",
+        "The purged tail is the label warm-down set",
+        "`no_eligible_labels`",
+        "`SPLIT-005`",
+        "`SPLIT-006`",
+        "`SPLIT-017`",
+        "`SPLIT-021`",
+        "`SPLIT-022`",
+        "`no_usable_label_pairs`",
+        "gap_dates_consuming_embargo",
+        "No post-test value may complete a test label",
+        "supersede that earlier wording for Stage 1b",
+        "Stage 2",
+    ]:
+        assert phrase in contract
+
+    for canonical_doc in [roadmap, handoff, repo_map]:
+        assert "docs/purged_bounded_split_contract.md" in canonical_doc
+
+    for case_number in range(1, 23):
+        assert contract.count(f"`SPLIT-{case_number:03d}`") == 1
+
+    assert roadmap.count("| 1b. Purged/bounded split implementation |") == 1
+    assert "| 1b. Purged/bounded split implementation | Next" in roadmap
+    assert "Stage 1b - Purged and bounded sample-split implementation" in handoff
 
 
 def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:
