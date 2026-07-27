@@ -44,15 +44,15 @@ def test_split_ic_rank_ic_demo_builds_expected_split_windows() -> None:
 def test_split_ic_rank_ic_demo_outputs_are_aligned_and_preserve_missing_values() -> None:
     result = run_synthetic_split_ic_rank_ic_demo(write_outputs=False)
 
-    assert result.factor.index.equals(result.forward_returns.index)
-    assert result.factor.columns.equals(result.forward_returns.columns)
+    assert result.factor.index.equals(result.synthetic_responses.index)
+    assert result.factor.columns.equals(result.synthetic_responses.columns)
 
     for split_name in ("train", "validation", "test"):
         assert result.factor_by_split[split_name].index.equals(
-            result.forward_returns_by_split[split_name].index,
+            result.synthetic_responses_by_split[split_name].index,
         )
         assert result.factor_by_split[split_name].columns.equals(
-            result.forward_returns_by_split[split_name].columns,
+            result.synthetic_responses_by_split[split_name].columns,
         )
         assert result.information_coefficient_by_split[split_name].index.equals(
             result.factor_by_split[split_name].index,
@@ -63,10 +63,10 @@ def test_split_ic_rank_ic_demo_outputs_are_aligned_and_preserve_missing_values()
 
     assert pd.isna(result.factor.loc[pd.Timestamp("2024-01-09"), "ASSET_02"])
     assert pd.isna(
-        result.forward_returns.loc[pd.Timestamp("2024-01-16"), "ASSET_04"],
+        result.synthetic_responses.loc[pd.Timestamp("2024-01-16"), "ASSET_04"],
     )
     assert result.summary.loc["validation", "factor_valid_observations"] == 23
-    assert result.summary.loc["test", "forward_return_valid_observations"] == 23
+    assert result.summary.loc["test", "synthetic_response_valid_observations"] == 23
 
 
 def test_split_ic_rank_ic_demo_is_deterministic() -> None:
@@ -74,7 +74,7 @@ def test_split_ic_rank_ic_demo_is_deterministic() -> None:
     second = run_synthetic_split_ic_rank_ic_demo(write_outputs=False)
 
     assert_frame_equal(first.factor, second.factor)
-    assert_frame_equal(first.forward_returns, second.forward_returns)
+    assert_frame_equal(first.synthetic_responses, second.synthetic_responses)
     assert_frame_equal(first.summary, second.summary)
     for split_name in ("train", "validation", "test"):
         assert_series_equal(
@@ -101,6 +101,91 @@ def test_split_ic_rank_ic_demo_summary_is_hand_checked() -> None:
         "validation": 4,
         "test": 4,
     }
+
+
+def test_split_019_synthetic_consumer_records_honest_same_row_labels() -> None:
+    result = run_synthetic_split_ic_rank_ic_demo(write_outputs=False)
+    ledger = result.split.label_ledger
+
+    assert result.split.label_kind == "synthetic_same_row_response"
+    assert result.split.label_horizon_rows == 0
+    assert result.split.label_derivation == "factor_scaled_same_row_response_v1"
+    assert (ledger["signal_date"] == ledger["label_start"]).all()
+    assert (ledger["signal_date"] == ledger["label_end"]).all()
+    assert "forward return" not in inspect.getsource(demo).lower()
+
+
+def test_synthetic_consumer_retains_zero_eligible_windows_as_invalid() -> None:
+    result = run_synthetic_split_ic_rank_ic_demo(
+        config=SyntheticSplitICRankICConfig(embargo_rows=4),
+        write_outputs=False,
+    )
+
+    for split_name in ("validation", "test"):
+        assert result.synthetic_responses_by_split[split_name].isna().all().all()
+        assert result.summary.loc[split_name, "eligible_date_count"] == 0
+        assert result.summary.loc[split_name, "invalid_reason"] == (
+            "no_eligible_labels"
+        )
+        assert result.summary.loc[split_name, "status"] == "INVALID"
+        assert result.summary.loc[split_name, "ic_valid_dates"] == 0
+
+
+def test_synthetic_consumer_marks_metric_empty_split_invalid() -> None:
+    result = run_synthetic_split_ic_rank_ic_demo(
+        config=SyntheticSplitICRankICConfig(
+            asset_count=4,
+            validation_start="2024-01-09",
+            validation_end="2024-01-09",
+            ic_min_periods=4,
+        ),
+        write_outputs=False,
+    )
+
+    validation = result.summary.loc["validation"]
+    assert pd.isna(
+        result.label_availability.loc["validation", "invalid_reason"]
+    )
+    assert (
+        result.label_availability.loc["validation", "status"]
+        == "DIAGNOSTIC_ONLY"
+    )
+    assert validation["eligible_date_count"] == 1
+    assert validation["usable_factor_label_pairs"] == 3
+    assert validation["ic_valid_dates"] == 0
+    assert validation["rank_ic_valid_dates"] == 0
+    assert validation["invalid_reason"] == "no_valid_factor_diagnostic_dates"
+    assert validation["status"] == "INVALID"
+
+
+def test_synthetic_consumer_audits_partial_and_all_missing_targets(
+    monkeypatch,
+) -> None:
+    partial = run_synthetic_split_ic_rank_ic_demo(write_outputs=False)
+    assert partial.label_availability.loc[
+        "test", "missing_eligible_target_cells"
+    ] == 1
+
+    original_generator = demo.generate_synthetic_responses
+
+    def all_missing_test_responses(factor, split):
+        responses = original_generator(factor, split)
+        responses.loc[split.window_metadata["test"].eligible_dates] = pd.NA
+        return responses
+
+    monkeypatch.setattr(
+        demo,
+        "generate_synthetic_responses",
+        all_missing_test_responses,
+    )
+    missing = run_synthetic_split_ic_rank_ic_demo(write_outputs=False)
+
+    assert missing.summary.loc["test", "eligible_date_count"] == 4
+    assert missing.summary.loc["test", "usable_factor_label_pairs"] == 0
+    assert missing.summary.loc["test", "invalid_reason"] == (
+        "no_usable_label_pairs"
+    )
+    assert missing.summary.loc["test", "status"] == "INVALID"
 
 
 def test_split_ic_rank_ic_demo_can_skip_outputs(tmp_path: Path) -> None:
@@ -149,6 +234,11 @@ def test_split_ic_rank_ic_demo_writes_caveated_report_and_log(tmp_path: Path) ->
     assert payload["assumptions"]["backtest_integration"] == "not included"
     assert payload["assumptions"]["live_trading"] is False
     assert payload["diagnostics"]["summary"]["train"]["date_count"] == 4
+    assert payload["diagnostics"]["split_contract"]["label_kind"] == (
+        "synthetic_same_row_response"
+    )
+    assert payload["diagnostics"]["split_contract"]["label_horizon_rows"] == 0
+    assert "forward return" not in report_text.lower()
 
 
 def test_split_ic_rank_ic_demo_uses_split_and_diagnostic_helpers(monkeypatch) -> None:
@@ -188,7 +278,7 @@ def test_split_ic_rank_ic_demo_uses_split_and_diagnostic_helpers(monkeypatch) ->
 
     assert calls == {
         "make_split": 1,
-        "split_panel": 2,
+        "split_panel": 1,
         "ic": 3,
         "rank_ic": 3,
     }

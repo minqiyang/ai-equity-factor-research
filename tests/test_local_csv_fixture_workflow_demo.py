@@ -1,8 +1,10 @@
 import ast
+from dataclasses import replace
 import inspect
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_series_equal
@@ -17,6 +19,72 @@ from research.local_csv_fixture_workflow_demo import (
     main,
     run_local_csv_fixture_workflow_demo,
 )
+
+
+def _install_extended_fixture_loaders(monkeypatch):
+    original_price_loader = demo.load_wide_price_csv
+    original_benchmark_loader = demo.load_benchmark_price_csv
+    state = {"asset": "base", "benchmark": "base"}
+    extended_dates = pd.date_range("2024-01-02", periods=9, freq="D", name="date")
+
+    def price_loader(*args, **kwargs):
+        result = original_price_loader(*args, **kwargs)
+        data = result.data.reindex(extended_dates).copy()
+        last = result.data.iloc[-1]
+        for offset, date in enumerate(extended_dates[4:], start=1):
+            data.loc[date] = last + offset * pd.Series(
+                {"AAA": 1.0, "BBB": 2.0, "CCC": 3.0}
+            )
+        mode = state["asset"]
+        if mode == "post_test":
+            data.loc[data.index > pd.Timestamp("2024-01-08")] *= 20.0
+        elif mode == "validation":
+            data.loc[
+                (data.index >= pd.Timestamp("2024-01-05"))
+                & (data.index <= pd.Timestamp("2024-01-06"))
+            ] *= 20.0
+        elif mode == "test":
+            data.loc[
+                (data.index >= pd.Timestamp("2024-01-07"))
+                & (data.index <= pd.Timestamp("2024-01-08"))
+            ] *= 20.0
+        summary = replace(
+            result.summary,
+            source_row_count=len(data),
+            end_date=data.index[-1],
+        )
+        return replace(result, data=data.astype(float), summary=summary)
+
+    def benchmark_loader(*args, **kwargs):
+        result = original_benchmark_loader(*args, **kwargs)
+        data = result.data.reindex(extended_dates).copy()
+        last = float(result.data.iloc[-1])
+        for offset, date in enumerate(extended_dates[4:], start=1):
+            data.loc[date] = last + offset
+        if state["benchmark"] == "post_test":
+            data.loc[data.index > pd.Timestamp("2024-01-08")] *= 20.0
+        summary = replace(
+            result.summary,
+            source_row_count=len(data),
+            end_date=data.index[-1],
+        )
+        return replace(result, data=data.astype(float), summary=summary)
+
+    monkeypatch.setattr(demo, "load_wide_price_csv", price_loader)
+    monkeypatch.setattr(demo, "load_benchmark_price_csv", benchmark_loader)
+    return state
+
+
+def _extended_split_config() -> LocalCSVFixtureWorkflowConfig:
+    return LocalCSVFixtureWorkflowConfig(
+        train_start="2024-01-03",
+        train_end="2024-01-04",
+        validation_start="2024-01-05",
+        validation_end="2024-01-06",
+        test_start="2024-01-07",
+        test_end="2024-01-08",
+        feature_warm_up_rows=1,
+    )
 
 
 def test_local_csv_fixture_workflow_loads_committed_fixtures() -> None:
@@ -66,14 +134,20 @@ def test_local_csv_fixture_workflow_loads_committed_fixtures() -> None:
     assert result.price_summary.missing_value_count == 0
     assert result.benchmark_summary.missing_value_count == 0
     assert result.ohlcv_summary.missing_value_count == 0
-    assert result.split.train.equals(pd.DatetimeIndex(["2024-01-02"], name="date"))
-    assert result.split.validation.equals(pd.DatetimeIndex(["2024-01-03"], name="date"))
-    assert result.split.test.equals(
-        pd.DatetimeIndex(["2024-01-04", "2024-01-05"], name="date")
+    assert result.split.train.equals(pd.DatetimeIndex(["2024-01-03"], name="date"))
+    assert result.split.validation.equals(
+        pd.DatetimeIndex(["2024-01-04"], name="date")
     )
-    assert result.split.train_end == pd.Timestamp("2024-01-02")
-    assert result.split.validation_end == pd.Timestamp("2024-01-03")
+    assert result.split.test.equals(pd.DatetimeIndex(["2024-01-05"], name="date"))
+    assert result.split.train_start == pd.Timestamp("2024-01-03")
+    assert result.split.train_end == pd.Timestamp("2024-01-03")
+    assert result.split.validation_start == pd.Timestamp("2024-01-04")
+    assert result.split.validation_end == pd.Timestamp("2024-01-04")
+    assert result.split.test_start == pd.Timestamp("2024-01-05")
     assert result.split.test_end == pd.Timestamp("2024-01-05")
+    assert result.split.label_kind == "price_forward_return"
+    assert result.split.label_horizon_rows == 1
+    assert result.split.feature_warm_up_rows == 1
     expected_slippage_targets = pd.DataFrame(
         {
             "AAA": [0.0, 0.4],
@@ -180,11 +254,14 @@ def test_local_csv_fixture_workflow_outputs_are_aligned() -> None:
     assert result.alpha_012_factor.notna().sum().sum() == 2
     assert result.alpha_012_factor.loc[pd.Timestamp("2024-01-03"), "AAA"] == pytest.approx(-0.75)
     assert result.alpha_012_factor.loc[pd.Timestamp("2024-01-03"), "BBB"] == pytest.approx(-0.50)
-    assert result.alpha_012_information_coefficient.notna().sum() == 1
-    assert result.alpha_012_rank_information_coefficient.notna().sum() == 1
+    assert result.alpha_012_information_coefficient.notna().sum() == 0
+    assert result.alpha_012_rank_information_coefficient.notna().sum() == 0
     assert result.alpha_012_quantile_spread["top_minus_bottom_spread"].notna().sum() == 0
-    assert result.forward_returns.notna().sum().sum() == 9
-    assert result.benchmark_forward_returns.notna().sum() == 3
+    assert result.forward_returns.notna().sum().sum() == 0
+    assert result.benchmark_forward_returns.notna().sum() == 0
+    assert result.split_summary["eligible_date_count"].eq(0).all()
+    assert result.split_summary["invalid_reason"].eq("no_eligible_labels").all()
+    assert result.split_summary["status"].eq("INVALID").all()
     assert result.liquidity_volume_panel.notna().sum(axis=1).to_dict() == {
         pd.Timestamp("2024-01-02"): 2,
         pd.Timestamp("2024-01-03"): 2,
@@ -274,11 +351,250 @@ def test_local_csv_fixture_workflow_outputs_are_aligned() -> None:
     assert result.split_summary["date_count"].to_dict() == {
         "train": 1,
         "validation": 1,
-        "test": 2,
+        "test": 1,
     }
-    assert result.split_summary.loc["train", "factor_valid_observations"] == 0
+    assert result.split_summary.loc["train", "factor_valid_observations"] == 3
     assert result.split_summary.loc["validation", "factor_valid_observations"] == 3
-    assert result.split_summary.loc["test", "forward_return_valid_observations"] == 3
+    assert result.split_summary.loc["test", "forward_return_valid_observations"] == 0
+
+
+def test_local_consumer_post_test_asset_and_benchmark_mutation_is_invariant(
+    monkeypatch,
+) -> None:
+    state = _install_extended_fixture_loaders(monkeypatch)
+    config = _extended_split_config()
+    baseline = run_local_csv_fixture_workflow_demo(
+        config=config,
+        write_outputs=False,
+    )
+
+    state["asset"] = "post_test"
+    asset_changed = run_local_csv_fixture_workflow_demo(
+        config=config,
+        write_outputs=False,
+    )
+    state["asset"] = "base"
+    state["benchmark"] = "post_test"
+    benchmark_changed = run_local_csv_fixture_workflow_demo(
+        config=config,
+        write_outputs=False,
+    )
+
+    assert_frame_equal(baseline.forward_returns, asset_changed.forward_returns)
+    assert_frame_equal(baseline.split_summary, asset_changed.split_summary)
+    assert_frame_equal(
+        baseline.label_availability,
+        asset_changed.label_availability,
+    )
+    assert_series_equal(
+        baseline.benchmark_forward_returns,
+        benchmark_changed.benchmark_forward_returns,
+    )
+    assert_frame_equal(
+        baseline.benchmark_label_availability,
+        benchmark_changed.benchmark_label_availability,
+    )
+    assert baseline.split.metadata_as_dict() == (
+        asset_changed.split.metadata_as_dict()
+    )
+
+
+def test_local_consumer_cross_edge_mutation_is_invariant(monkeypatch) -> None:
+    state = _install_extended_fixture_loaders(monkeypatch)
+    config = _extended_split_config()
+    baseline = run_local_csv_fixture_workflow_demo(
+        config=config,
+        write_outputs=False,
+    )
+    state["asset"] = "validation"
+    validation_changed = run_local_csv_fixture_workflow_demo(
+        config=config,
+        write_outputs=False,
+    )
+    state["asset"] = "test"
+    test_changed = run_local_csv_fixture_workflow_demo(
+        config=config,
+        write_outputs=False,
+    )
+
+    train_dates = baseline.split.window_metadata["train"].eligible_dates
+    validation_dates = baseline.split.window_metadata[
+        "validation"
+    ].eligible_dates
+    assert_frame_equal(
+        baseline.forward_returns.loc[train_dates],
+        validation_changed.forward_returns.loc[train_dates],
+    )
+    assert_frame_equal(
+        baseline.forward_returns.loc[validation_dates],
+        test_changed.forward_returns.loc[validation_dates],
+    )
+    assert_series_equal(
+        baseline.information_coefficient_by_split["train"],
+        validation_changed.information_coefficient_by_split["train"],
+    )
+    assert_series_equal(
+        baseline.information_coefficient_by_split["validation"],
+        test_changed.information_coefficient_by_split["validation"],
+    )
+    series_attributes = (
+        "rank_information_coefficient_by_split",
+        "alpha_012_information_coefficient_by_split",
+        "alpha_012_rank_information_coefficient_by_split",
+    )
+    frame_attributes = (
+        "quantile_spread_by_split",
+        "alpha_012_quantile_spread_by_split",
+    )
+    for attribute in series_attributes:
+        assert_series_equal(
+            getattr(baseline, attribute)["train"],
+            getattr(validation_changed, attribute)["train"],
+        )
+        assert_series_equal(
+            getattr(baseline, attribute)["validation"],
+            getattr(test_changed, attribute)["validation"],
+        )
+    for attribute in frame_attributes:
+        assert_frame_equal(
+            getattr(baseline, attribute)["train"],
+            getattr(validation_changed, attribute)["train"],
+        )
+        assert_frame_equal(
+            getattr(baseline, attribute)["validation"],
+            getattr(test_changed, attribute)["validation"],
+        )
+    assert_frame_equal(
+        baseline.split_summary.loc[["train"]],
+        validation_changed.split_summary.loc[["train"]],
+    )
+    assert_frame_equal(
+        baseline.split_summary.loc[["validation"]],
+        test_changed.split_summary.loc[["validation"]],
+    )
+
+
+def test_local_consumer_retains_zero_eligible_windows_as_invalid() -> None:
+    result = run_local_csv_fixture_workflow_demo(write_outputs=False)
+
+    assert result.forward_returns.loc[result.split.all_dates].isna().all().all()
+    assert result.split_summary["eligible_date_count"].eq(0).all()
+    assert result.split_summary["invalid_reason"].eq(
+        "no_eligible_labels"
+    ).all()
+    assert result.split_summary["status"].eq("INVALID").all()
+    assert result.split_summary["ic_valid_dates"].eq(0).all()
+
+
+def test_local_consumer_marks_metric_empty_split_invalid(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    _install_extended_fixture_loaders(monkeypatch)
+    config = replace(
+        _extended_split_config(),
+        ic_min_periods=4,
+        min_assets_per_quantile=2,
+    )
+    report_path = tmp_path / "metric_empty.md"
+    log_path = tmp_path / "metric_empty.json"
+
+    result = run_local_csv_fixture_workflow_demo(
+        config=config,
+        report_path=report_path,
+        experiment_log_path=log_path,
+        update_registry=False,
+        include_configured_case_summary=True,
+    )
+
+    train = result.split_summary.loc["train"]
+    alpha_train_availability = result.label_availability.loc["train"]
+    assert isinstance(alpha_train_availability, pd.DataFrame)
+    alpha_train_availability = alpha_train_availability.loc[
+        alpha_train_availability["factor"].eq("alpha_009")
+    ].iloc[0]
+    assert pd.isna(alpha_train_availability["invalid_reason"])
+    assert alpha_train_availability["status"] == "DIAGNOSTIC_ONLY"
+    assert train["eligible_date_count"] == 1
+    assert train["usable_factor_label_pairs"] == 3
+    assert train["ic_valid_dates"] == 0
+    assert train["rank_ic_valid_dates"] == 0
+    assert train["quantile_spread_valid_dates"] == 0
+    assert train["invalid_reason"] == "no_valid_factor_diagnostic_dates"
+    assert train["status"] == "INVALID"
+
+    configured_summary = result.configured_case_summary
+    assert configured_summary is not None
+    configured_train = configured_summary[
+        configured_summary["case_id"].eq("alpha_009")
+        & configured_summary["split"].eq("train")
+    ].iloc[0]
+    assert configured_train["invalid_reason"] == (
+        "no_valid_factor_diagnostic_dates"
+    )
+    assert configured_train["status"] == "INVALID"
+
+    payload = json.loads(log_path.read_text(encoding="utf-8"))
+    logged_train = payload["diagnostics"]["split_summary"]["train"]
+    logged_configured_train = next(
+        row
+        for row in payload["diagnostics"]["configured_fixture_case_summary"]
+        if row["case_id"] == "alpha_009" and row["split"] == "train"
+    )
+    assert logged_train["invalid_reason"] == "no_valid_factor_diagnostic_dates"
+    assert logged_train["status"] == "INVALID"
+    assert logged_configured_train["invalid_reason"] == (
+        logged_train["invalid_reason"]
+    )
+    assert logged_configured_train["status"] == logged_train["status"]
+
+
+def test_local_consumer_audits_partial_and_all_missing_targets(
+    monkeypatch,
+) -> None:
+    _install_extended_fixture_loaders(monkeypatch)
+    config = _extended_split_config()
+    original = demo.make_price_forward_return_labels
+
+    def partial_labels(values, split, **kwargs):
+        labels = original(values, split, **kwargs)
+        if isinstance(labels, pd.DataFrame):
+            date = split.window_metadata["train"].eligible_dates[0]
+            labels.loc[date, labels.columns[0]] = np.nan
+        return labels
+
+    monkeypatch.setattr(
+        demo,
+        "make_price_forward_return_labels",
+        partial_labels,
+    )
+    partial = run_local_csv_fixture_workflow_demo(
+        config=config,
+        write_outputs=False,
+    )
+    train_availability = partial.label_availability.loc["train"]
+    assert train_availability["missing_eligible_target_cells"].eq(1).all()
+
+    def all_missing_labels(values, split, **kwargs):
+        labels = original(values, split, **kwargs)
+        if isinstance(labels, pd.DataFrame):
+            for metadata in split.window_metadata.values():
+                labels.loc[metadata.eligible_dates] = np.nan
+        return labels
+
+    monkeypatch.setattr(
+        demo,
+        "make_price_forward_return_labels",
+        all_missing_labels,
+    )
+    missing = run_local_csv_fixture_workflow_demo(
+        config=config,
+        write_outputs=False,
+    )
+    assert set(missing.label_availability["invalid_reason"]) == {
+        "no_usable_label_pairs"
+    }
+    assert set(missing.label_availability["status"]) == {"INVALID"}
 
 
 def test_configured_fixture_case_summary_preserves_all_case_split_rows() -> None:
@@ -331,6 +647,12 @@ def test_configured_fixture_case_summary_preserves_all_case_split_rows() -> None
         "split",
         "valid",
         "invalid_reason",
+        "status",
+        "eligible_date_count",
+        "valid_eligible_target_cells",
+        "missing_eligible_target_cells",
+        "usable_factor_label_pairs",
+        "has_usable_label_pairs",
         "coverage",
         "ic_valid_dates",
         "rank_ic_valid_dates",
@@ -346,6 +668,8 @@ def test_configured_fixture_case_summary_preserves_all_case_split_rows() -> None
         (summary["case_id"] == "alpha_009") & (summary["split"] == "validation")
     ].iloc[0]
     assert alpha_validation["valid"]
+    assert alpha_validation["status"] == "DIAGNOSTIC_ONLY"
+    assert alpha_validation["eligible_date_count"] is None
     assert alpha_validation["coverage"] == pytest.approx(1.0)
     assert alpha_validation["ic_valid_dates"] == 1
     assert alpha_validation["transaction_cost_bps"] == pytest.approx(0.0)
@@ -361,6 +685,7 @@ def test_configured_fixture_case_summary_preserves_all_case_split_rows() -> None
     ].iloc[0]
     assert not missing_test["valid"]
     assert missing_test["invalid_reason"] == "missing_split_result"
+    assert missing_test["status"] == "INVALID"
 
     invalid_case = summary[
         (summary["case_id"] == "stale_volume") & (summary["split"] == "train")
@@ -499,8 +824,8 @@ def test_workflow_report_and_experiment_log_are_created_with_caveats(tmp_path: P
     assert "## Split Coverage" in report_text
     assert "## Alpha#012 Diagnostic Coverage" in report_text
     assert "## Alpha#012 Information Coefficient Diagnostics" in report_text
-    assert "| 2024-01-03 | 1.0000 |" in report_text
-    assert "| train | 1 | 3 | 0 | 3 | 0 | 0 | 0 | NaN | NaN |" in report_text
+    assert "no_eligible_labels" in report_text
+    assert "zero eligible horizon-one labels" in report_text
     assert "| Total return |" not in report_text
     assert "Sharpe" not in report_text
 
@@ -544,13 +869,19 @@ def test_workflow_report_and_experiment_log_are_created_with_caveats(tmp_path: P
         "not applied to returns",
     )
     assert payload["assumptions"]["live_trading"] is False
-    assert payload["assumptions"]["split_policy"].startswith("chronological")
-    assert payload["assumptions"]["split_timing"].startswith("split labels")
+    assert payload["assumptions"]["split_policy"].startswith("six explicit")
+    assert payload["assumptions"]["split_timing"].startswith("each candidate")
     assert payload["assumptions"]["split_boundaries"] == {
-        "train_end": "2024-01-02",
-        "validation_end": "2024-01-03",
+        "train_start": "2024-01-03",
+        "train_end": "2024-01-03",
+        "validation_start": "2024-01-04",
+        "validation_end": "2024-01-04",
+        "test_start": "2024-01-05",
         "test_end": "2024-01-05",
     }
+    assert payload["diagnostics"]["split_contract"]["label_kind"] == (
+        "price_forward_return"
+    )
     assert payload["outputs"]["split_names"] == ["train", "validation", "test"]
     assert payload["outputs"]["ohlcv_rows"] == 4
     assert payload["outputs"]["inventory_input_count"] == 3
@@ -699,12 +1030,12 @@ def test_workflow_report_and_experiment_log_are_created_with_caveats(tmp_path: P
     ]
     assert alpha_012_ic_by_date == {
         "2024-01-02": None,
-        "2024-01-03": 1.0,
+        "2024-01-03": None,
         "2024-01-04": None,
         "2024-01-05": None,
     }
     assert alpha_012_rank_ic_by_date["2024-01-02"] is None
-    assert alpha_012_rank_ic_by_date["2024-01-03"] == pytest.approx(1.0)
+    assert alpha_012_rank_ic_by_date["2024-01-03"] is None
     assert alpha_012_rank_ic_by_date["2024-01-04"] is None
     assert alpha_012_rank_ic_by_date["2024-01-05"] is None
     assert payload["diagnostics"]["alpha_012_quantile_spread_valid_dates"] == 0
@@ -714,10 +1045,10 @@ def test_workflow_report_and_experiment_log_are_created_with_caveats(tmp_path: P
         "test": 0,
     }
     assert payload["diagnostics"]["split_summary"]["train"]["date_count"] == 1
-    assert payload["diagnostics"]["split_summary"]["validation"]["ic_valid_dates"] == 1
+    assert payload["diagnostics"]["split_summary"]["validation"]["ic_valid_dates"] == 0
     assert payload["diagnostics"]["quantile_spread_valid_dates_by_split"] == {
         "train": 0,
-        "validation": 1,
+        "validation": 0,
         "test": 0,
     }
     assert "split-aware wiring check only" in payload["caveats"]
@@ -759,30 +1090,32 @@ def test_opt_in_configured_fixture_case_summary_is_reported_and_logged(
         ("alpha_012", "validation"),
         ("alpha_012", "test"),
     ]
-    assert summary["valid"].tolist() == [False, True, True, False, True, False]
-    assert summary.loc[4, "coverage"] == pytest.approx(2 / 3)
+    assert summary["valid"].tolist() == [False] * 6
+    assert summary.loc[3, "coverage"] == pytest.approx(2 / 3)
     assert "## Configured Case Summary" in report_text
     assert "Invalid or insufficient rows stay visible with reasons" in report_text
-    assert (
-        "| alpha_012 | Alpha#012 local fixture | validation | true |  | 0.6667 | "
-        "1 | 1 | 0 | NaN | NaN | absent | false | committed synthetic fixture "
-        "only; diagnostic metrics only; not profitability evidence |"
-    ) in report_text
+    assert "alpha_012" in report_text
     assert payload["outputs"]["configured_fixture_case_count"] == 2
     assert payload["outputs"]["configured_fixture_case_split_row_count"] == 6
-    assert payload["diagnostics"]["configured_fixture_invalid_case_split_count"] == 3
+    assert payload["diagnostics"]["configured_fixture_invalid_case_split_count"] == 6
     assert payload["diagnostics"]["configured_fixture_invalid_case_reasons"] == [
-        "insufficient_metric_observations",
+        "no_eligible_labels",
     ]
-    assert payload["diagnostics"]["configured_fixture_case_summary"][4] == {
+    assert payload["diagnostics"]["configured_fixture_case_summary"][3] == {
         "case_id": "alpha_012",
         "case_label": "Alpha#012 local fixture",
-        "split": "validation",
-        "valid": True,
-        "invalid_reason": "",
+        "split": "train",
+        "valid": False,
+        "invalid_reason": "no_eligible_labels",
+        "status": "INVALID",
+        "eligible_date_count": 0,
+        "valid_eligible_target_cells": 0,
+        "missing_eligible_target_cells": 0,
+        "usable_factor_label_pairs": 0,
+        "has_usable_label_pairs": False,
         "coverage": pytest.approx(2 / 3),
-        "ic_valid_dates": 1,
-        "rank_ic_valid_dates": 1,
+        "ic_valid_dates": 0,
+        "rank_ic_valid_dates": 0,
         "quantile_spread_valid_dates": 0,
         "transaction_cost_bps": None,
         "slippage_bps": None,
@@ -953,7 +1286,7 @@ def test_workflow_uses_existing_loader_feature_and_diagnostic_helpers(
         "alpha_009": 1,
         "alpha_012": 1,
         "make_split": 1,
-        "split_panel": 3,
+        "split_panel": 2,
         "ic": 8,
         "rank_ic": 8,
         "quantile_spread": 8,

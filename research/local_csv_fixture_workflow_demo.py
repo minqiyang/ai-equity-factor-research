@@ -34,8 +34,12 @@ from features.diagnostics import (
 )
 from features.validation import (
     TrainValidationTestSplit,
+    make_price_forward_return_labels,
     make_train_validation_test_split,
+    resolve_diagnostic_classification,
+    split_label_panel_by_train_validation_test,
     split_panel_by_train_validation_test,
+    summarize_label_availability,
 )
 from features.liquidity import (
     apply_universe_mask_to_signals,
@@ -77,9 +81,14 @@ class LocalCSVFixtureWorkflowConfig:
     ic_min_periods: int = 2
     quantiles: int = 3
     min_assets_per_quantile: int = 1
-    train_end: str = "2024-01-02"
-    validation_end: str = "2024-01-03"
-    test_end: str | None = None
+    train_start: str = "2024-01-03"
+    train_end: str = "2024-01-03"
+    validation_start: str = "2024-01-04"
+    validation_end: str = "2024-01-04"
+    test_start: str = "2024-01-05"
+    test_end: str = "2024-01-05"
+    embargo_rows: int = 0
+    feature_warm_up_rows: int = 1
     liquidity_window: int = 2
     min_average_volume: float = 100_000.0
     min_average_dollar_volume: float = 11_000_000.0
@@ -134,6 +143,8 @@ class LocalCSVFixtureWorkflowResult:
     alpha_012_information_coefficient_by_split: dict[str, pd.Series]
     alpha_012_rank_information_coefficient_by_split: dict[str, pd.Series]
     alpha_012_quantile_spread_by_split: dict[str, pd.DataFrame]
+    label_availability: pd.DataFrame
+    benchmark_label_availability: pd.DataFrame
     split_summary: pd.DataFrame
     configured_case_summary: pd.DataFrame | None
     report_path: Path
@@ -239,31 +250,61 @@ def run_local_csv_fixture_workflow_demo(
         volume_aware_slippage_diagnostics,
     )
     alpha_012_factor = alpha_012(liquidity_price_panel, liquidity_volume_panel)
-    forward_returns = _future_returns(prices, periods=config.forward_return_horizon_rows)
-    benchmark_forward_returns = _future_returns(
-        benchmark_prices,
-        periods=config.forward_return_horizon_rows,
-    )
     split = make_train_validation_test_split(
         prices.index,
+        train_start=config.train_start,
         train_end=config.train_end,
+        validation_start=config.validation_start,
         validation_end=config.validation_end,
+        test_start=config.test_start,
         test_end=config.test_end,
+        label_kind="price_forward_return",
+        label_derivation="adjusted_close_row_forward_return_v1",
+        label_horizon_rows=config.forward_return_horizon_rows,
+        embargo_rows=config.embargo_rows,
+        feature_warm_up_rows=config.feature_warm_up_rows,
     )
+    forward_returns = make_price_forward_return_labels(
+        prices,
+        split,
+        name="adjusted_close_prices",
+    )
+    benchmark_forward_returns = make_price_forward_return_labels(
+        benchmark_prices,
+        split,
+        name="benchmark_adjusted_close",
+    )
+    assert isinstance(forward_returns, pd.DataFrame)
+    assert isinstance(benchmark_forward_returns, pd.Series)
     alpha_factor_by_split = split_panel_by_train_validation_test(
         alpha_factor,
         split,
+        panel_role="feature",
         name="alpha_009_factor",
     )
     alpha_012_factor_by_split = split_panel_by_train_validation_test(
         alpha_012_factor,
         split,
+        panel_role="feature",
         name="alpha_012_factor",
     )
-    forward_returns_by_split = split_panel_by_train_validation_test(
+    forward_returns_by_split = split_label_panel_by_train_validation_test(
         forward_returns,
         split,
         name="forward_returns",
+    )
+    label_availability = summarize_label_availability(
+        forward_returns,
+        split,
+        factors={
+            "alpha_009": alpha_factor,
+            "alpha_012": alpha_012_factor,
+        },
+        name="forward_returns",
+    )
+    benchmark_label_availability = _summarize_benchmark_label_availability(
+        benchmark_forward_returns,
+        split,
     )
 
     information_coefficient = factor_information_coefficient(
@@ -354,6 +395,8 @@ def run_local_csv_fixture_workflow_demo(
         information_coefficient_by_split=information_coefficient_by_split,
         rank_information_coefficient_by_split=rank_information_coefficient_by_split,
         quantile_spread_by_split=quantile_spread_by_split,
+        label_availability=label_availability,
+        factor_name="alpha_009",
     )
     configured_case_summary = (
         summarize_default_configured_fixture_cases(
@@ -367,6 +410,7 @@ def run_local_csv_fixture_workflow_demo(
                 alpha_012_rank_information_coefficient_by_split
             ),
             alpha_012_quantile_spread_by_split=alpha_012_quantile_spread_by_split,
+            label_availability=label_availability,
         )
         if include_configured_case_summary
         else None
@@ -414,6 +458,8 @@ def run_local_csv_fixture_workflow_demo(
             alpha_012_rank_information_coefficient_by_split
         ),
         alpha_012_quantile_spread_by_split=alpha_012_quantile_spread_by_split,
+        label_availability=label_availability,
+        benchmark_label_availability=benchmark_label_availability,
         split_summary=split_summary,
         configured_case_summary=configured_case_summary,
         report_path=Path(report_path),
@@ -527,6 +573,8 @@ def summarize_split_diagnostics(
     information_coefficient_by_split: dict[str, pd.Series],
     rank_information_coefficient_by_split: dict[str, pd.Series],
     quantile_spread_by_split: dict[str, pd.DataFrame],
+    label_availability: pd.DataFrame,
+    factor_name: str,
 ) -> pd.DataFrame:
     """Build per-split diagnostic coverage for the local CSV fixture workflow."""
 
@@ -539,6 +587,26 @@ def summarize_split_diagnostics(
             split_name
         ]
         quantile_spread = quantile_spread_by_split[split_name]
+        availability = label_availability.loc[split_name]
+        if isinstance(availability, pd.DataFrame):
+            availability = availability.loc[
+                availability["factor"].eq(factor_name)
+            ].iloc[0]
+        ic_valid_dates = int(information_coefficient.notna().sum())
+        rank_ic_valid_dates = int(
+            rank_information_coefficient.notna().sum()
+        )
+        quantile_spread_valid_dates = int(
+            quantile_spread["top_minus_bottom_spread"].notna().sum()
+        )
+        invalid_reason, status = resolve_diagnostic_classification(
+            availability_invalid_reason=availability["invalid_reason"],
+            metric_valid_date_counts={
+                "ic": ic_valid_dates,
+                "rank_ic": rank_ic_valid_dates,
+                "quantile_spread": quantile_spread_valid_dates,
+            },
+        )
         rows.append(
             {
                 "split": split_name,
@@ -548,19 +616,67 @@ def summarize_split_diagnostics(
                 "forward_return_valid_observations": int(
                     forward_returns.notna().sum().sum()
                 ),
-                "ic_valid_dates": int(information_coefficient.notna().sum()),
-                "rank_ic_valid_dates": int(
-                    rank_information_coefficient.notna().sum()
-                ),
-                "quantile_spread_valid_dates": int(
-                    quantile_spread["top_minus_bottom_spread"].notna().sum()
-                ),
+                "ic_valid_dates": ic_valid_dates,
+                "rank_ic_valid_dates": rank_ic_valid_dates,
+                "quantile_spread_valid_dates": quantile_spread_valid_dates,
                 "mean_ic": float(information_coefficient.mean()),
                 "mean_rank_ic": float(rank_information_coefficient.mean()),
+                "eligible_date_count": int(
+                    availability["eligible_date_count"]
+                ),
+                "valid_eligible_target_cells": int(
+                    availability["valid_eligible_target_cells"]
+                ),
+                "missing_eligible_target_cells": int(
+                    availability["missing_eligible_target_cells"]
+                ),
+                "usable_factor_label_pairs": int(
+                    availability["usable_factor_label_pairs"]
+                ),
+                "has_usable_label_pairs": bool(
+                    availability["has_usable_label_pairs"]
+                ),
+                "invalid_reason": invalid_reason,
+                "status": status,
             }
         )
 
     return pd.DataFrame.from_records(rows).set_index("split")
+
+
+def _summarize_benchmark_label_availability(
+    benchmark_forward_returns: pd.Series,
+    split: TrainValidationTestSplit,
+) -> pd.DataFrame:
+    records = []
+    for split_name in SPLIT_NAMES:
+        metadata = split.window_metadata[split_name]
+        eligible = benchmark_forward_returns.loc[metadata.eligible_dates]
+        valid_count = int(eligible.notna().sum())
+        if not metadata.has_eligible_labels:
+            invalid_reason = "no_eligible_labels"
+        elif valid_count == 0:
+            invalid_reason = "no_valid_eligible_targets"
+        else:
+            invalid_reason = None
+        records.append(
+            {
+                "split": split_name,
+                "eligible_date_count": metadata.eligible_date_count,
+                "total_eligible_target_cells": int(len(eligible)),
+                "valid_eligible_target_cells": valid_count,
+                "missing_eligible_target_cells": int(
+                    len(eligible) - valid_count
+                ),
+                "invalid_reason": invalid_reason,
+                "status": (
+                    "INVALID"
+                    if invalid_reason is not None
+                    else "DIAGNOSTIC_ONLY"
+                ),
+            }
+        )
+    return pd.DataFrame.from_records(records).set_index("split")
 
 
 def summarize_configured_fixture_cases(
@@ -601,6 +717,24 @@ def summarize_configured_fixture_cases(
                     "split": split_name,
                     "valid": valid,
                     "invalid_reason": invalid_reason,
+                    "status": (
+                        "DIAGNOSTIC_ONLY" if valid else "INVALID"
+                    ),
+                    "eligible_date_count": _optional_int(
+                        split_result.get("eligible_date_count")
+                    ),
+                    "valid_eligible_target_cells": _optional_int(
+                        split_result.get("valid_eligible_target_cells")
+                    ),
+                    "missing_eligible_target_cells": _optional_int(
+                        split_result.get("missing_eligible_target_cells")
+                    ),
+                    "usable_factor_label_pairs": _optional_int(
+                        split_result.get("usable_factor_label_pairs")
+                    ),
+                    "has_usable_label_pairs": split_result.get(
+                        "has_usable_label_pairs"
+                    ),
                     "coverage": split_result.get("coverage"),
                     "ic_valid_dates": int(split_result.get("ic_valid_dates", 0)),
                     "rank_ic_valid_dates": int(
@@ -632,6 +766,7 @@ def summarize_default_configured_fixture_cases(
     alpha_012_information_coefficient_by_split: dict[str, pd.Series],
     alpha_012_rank_information_coefficient_by_split: dict[str, pd.Series],
     alpha_012_quantile_spread_by_split: dict[str, pd.DataFrame],
+    label_availability: pd.DataFrame,
 ) -> pd.DataFrame:
     """Build the opt-in configured-case summary for fixture report/log output."""
 
@@ -643,6 +778,8 @@ def summarize_default_configured_fixture_cases(
             alpha_012_rank_information_coefficient_by_split
         ),
         quantile_spread_by_split=alpha_012_quantile_spread_by_split,
+        label_availability=label_availability,
+        factor_name="alpha_012",
     )
     return summarize_configured_fixture_cases(
         [
@@ -761,18 +898,19 @@ def write_workflow_experiment_log(
                 "defined in this demo"
             ),
             "forward_return_timing": (
-                "forward returns are computed after loading as evaluation "
-                "targets only; they are not feature inputs"
+                "eligible adjusted-close row-forward returns are calculated "
+                "only after explicit label intervals, purge, and embargo are "
+                "established; they are not feature inputs"
             ),
             "split_policy": (
-                "chronological train/validation/test date windows generated "
-                "from the committed fixture index with no overlap, no "
-                "reindexing, and no parameter selection"
+                "six explicit inclusive chronological bounds with a hard "
+                "test end, complete-interval ownership, raw-axis target "
+                "masking, no reindexing, and no parameter selection"
             ),
             "split_timing": (
-                "split labels are assigned by factor and evaluation-target "
-                "row date; one-row forward-return targets are diagnostics "
-                "only and are not used for parameter selection"
+                "each candidate records signal date, label start, and label "
+                "end; cross-boundary or unavailable labels are purged before "
+                "diagnostics"
             ),
             "split_boundaries": _split_boundary_dict(result.split),
             "benchmark": "synthetic local CSV benchmark fixture",
@@ -881,6 +1019,15 @@ def write_workflow_experiment_log(
                 result.volume_aware_slippage_diagnostics.caveats,
             ),
             "split_summary": result.split_summary.to_dict(orient="index"),
+            "split_contract": result.split.metadata_as_dict(),
+            "label_availability": result.label_availability.reset_index().to_dict(
+                orient="records"
+            ),
+            "benchmark_label_availability": (
+                result.benchmark_label_availability.reset_index().to_dict(
+                    orient="records"
+                )
+            ),
             "information_coefficient_by_date": _series_to_date_dict(
                 result.information_coefficient,
             ),
@@ -990,8 +1137,8 @@ Exercise the local CSV research path with a small committed fixture:
 7. Apply the universe mask to `alpha_009` as a signal-panel smoke check only.
 8. Compute `alpha_009` as a close-only research feature.
 9. Compute `alpha_012` as a volume + close research feature from the OHLCV fixture.
-10. Compute next-row forward returns as evaluation targets only.
-11. Apply chronological train/validation/test split metadata.
+10. Establish explicit split bounds, label intervals, purge, and embargo metadata.
+11. Compute and expose only structurally eligible next-row evaluation targets.
 12. Run IC, Rank IC, and quantile spread diagnostics.
 13. Run a synthetic volume-aware slippage participation/count smoke diagnostic.
 14. Write a caveated report and JSON experiment log.
@@ -1010,9 +1157,17 @@ Exercise the local CSV research path with a small committed fixture:
 | OHLCV rows | `{result.ohlcv_summary.source_row_count}` |
 | Asset columns | `{", ".join(result.price_summary.columns)}` |
 | Date range | `{result.prices.index.min().date()}` to `{result.prices.index.max().date()}` |
+| Train start | `{result.split.train_start.date()}` |
 | Train end | `{result.split.train_end.date()}` |
+| Validation start | `{result.split.validation_start.date()}` |
 | Validation end | `{result.split.validation_end.date()}` |
+| Test start | `{result.split.test_start.date()}` |
 | Test end | `{result.split.test_end.date()}` |
+| Label kind | `{result.split.label_kind}` |
+| Label derivation | `{result.split.label_derivation}` |
+| Label horizon rows | `{result.split.label_horizon_rows}` |
+| Embargo rows | `{result.split.embargo_rows}` |
+| Feature warm-up rows | `{result.split.feature_warm_up_rows}` |
 | Missing price values | `{result.price_summary.missing_value_count}` |
 | Missing benchmark values | `{result.benchmark_summary.missing_value_count}` |
 | Slippage smoke notional | `{_format_float(config.slippage_smoke_portfolio_notional)}` |
@@ -1034,9 +1189,9 @@ The workflow declares a small local CSV inventory for the committed synthetic fi
 
 ## Processing Summary
 
-The workflow preserves the loader output date index and asset columns, verifies that the benchmark dates match the price panel dates, computes `alpha_009` with `window={config.alpha_window}`, and computes `alpha_012` from the synthetic OHLCV `adjusted_close` and `volume` panels. Forward returns are aligned to the same date as the factor value for diagnostic evaluation only; they are not used as feature inputs.
+The workflow preserves the loader output date index and asset columns, verifies that the benchmark dates match the price panel dates, computes `alpha_009` with `window={config.alpha_window}`, and computes `alpha_012` from the synthetic OHLCV `adjusted_close` and `volume` panels. Eligible forward-return labels are aligned to their candidate signal dates for diagnostic evaluation only; they are not used as feature inputs.
 
-The train/validation/test metadata is a chronological fixture split by factor and evaluation-target row date only. The one-row forward returns are diagnostic labels, not feature inputs, and are not used for parameter selection. This tiny fixture split is not model selection, parameter tuning, strategy validation, or real-market evidence.
+The train/validation/test contract uses six explicit inclusive bounds and records every signal date, label start, and label end. A target is available to diagnostics only when its complete interval remains inside one window and it is not embargoed. Purged rows stay visible on the raw axis with all-`NaN` targets. The one-row forward returns are diagnostic labels, not feature inputs, and are not used for parameter selection. Because the tiny four-row fixture honestly reserves one feature warm-up row, each one-row evaluation window has zero eligible horizon-one labels and is retained as `INVALID`; no label is borrowed across a boundary.
 
 No missing values were filled. No dates or assets were reindexed. No strategy portfolio construction, execution timing, transaction cost model, or backtest is included.
 
@@ -1071,6 +1226,10 @@ The diagnostic uses `window={config.slippage_smoke_window}`, `volume_lag={config
 ## Split Coverage
 
 {_format_labeled_index_markdown_table(result.split_summary, index_label="split")}
+
+## Benchmark Label Availability
+
+{_format_labeled_index_markdown_table(result.benchmark_label_availability, index_label="split")}
 {_format_configured_case_summary_section(result.configured_case_summary)}
 
 ## Alpha#009 Diagnostic Coverage
@@ -1136,10 +1295,6 @@ The diagnostic uses `window={config.slippage_smoke_window}`, `volume_lag={config
 """
 
     result.report_path.write_text(content, encoding="utf-8")
-
-
-def _future_returns(values: pd.DataFrame | pd.Series, *, periods: int) -> pd.DataFrame | pd.Series:
-    return values.pct_change(periods=periods, fill_method=None).shift(-periods)
 
 
 def _build_volume_aware_slippage_smoke_inputs(
@@ -1220,6 +1375,18 @@ def _validate_config(config: LocalCSVFixtureWorkflowConfig) -> None:
         raise TypeError("forward_return_horizon_rows must be an integer")
     if config.forward_return_horizon_rows < 1:
         raise ValueError("forward_return_horizon_rows must be at least 1")
+    for value, name in (
+        (config.embargo_rows, "embargo_rows"),
+        (config.feature_warm_up_rows, "feature_warm_up_rows"),
+    ):
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise TypeError(f"{name} must be an integer")
+        if value < 0:
+            raise ValueError(f"{name} must be at least 0")
+    if config.feature_warm_up_rows < max(config.alpha_window, 1):
+        raise ValueError(
+            "feature_warm_up_rows must cover the maximum factor history"
+        )
     if isinstance(config.ic_min_periods, bool) or not isinstance(config.ic_min_periods, int):
         raise TypeError("ic_min_periods must be an integer")
     if config.ic_min_periods < 2:
@@ -1329,8 +1496,11 @@ def _pivot_ohlcv_panel(
 
 def _split_boundary_dict(split: TrainValidationTestSplit) -> dict[str, str]:
     return {
+        "train_start": split.train_start.date().isoformat(),
         "train_end": split.train_end.date().isoformat(),
+        "validation_start": split.validation_start.date().isoformat(),
         "validation_end": split.validation_end.date().isoformat(),
+        "test_start": split.test_start.date().isoformat(),
         "test_end": split.test_end.date().isoformat(),
     }
 
@@ -1339,6 +1509,10 @@ def _join_case_caveats(caveats: object) -> str:
     if isinstance(caveats, str):
         return caveats
     return "; ".join(str(caveat) for caveat in caveats)
+
+
+def _optional_int(value: object) -> int | None:
+    return None if value is None else int(value)
 
 
 def _configured_fixture_case(
@@ -1373,10 +1547,33 @@ def _configured_split_results(split_summary: pd.DataFrame) -> dict[str, dict[str
             + int(row["rank_ic_valid_dates"])
             + int(row["quantile_spread_valid_dates"])
         )
+        structural_invalid_reason = row["invalid_reason"]
+        if pd.isna(structural_invalid_reason):
+            structural_invalid_reason = None
+        metric_invalid_reason = (
+            None if metric_dates > 0 else "insufficient_metric_observations"
+        )
+        invalid_reason = structural_invalid_reason or metric_invalid_reason
         results[split_name] = {
-            "valid": metric_dates > 0,
-            "invalid_reason": (
-                "" if metric_dates > 0 else "insufficient_metric_observations"
+            "valid": invalid_reason is None,
+            "invalid_reason": invalid_reason or "",
+            "status": (
+                "DIAGNOSTIC_ONLY"
+                if invalid_reason is None
+                else "INVALID"
+            ),
+            "eligible_date_count": int(row["eligible_date_count"]),
+            "valid_eligible_target_cells": int(
+                row["valid_eligible_target_cells"]
+            ),
+            "missing_eligible_target_cells": int(
+                row["missing_eligible_target_cells"]
+            ),
+            "usable_factor_label_pairs": int(
+                row["usable_factor_label_pairs"]
+            ),
+            "has_usable_label_pairs": bool(
+                row["has_usable_label_pairs"]
             ),
             "coverage": (
                 float(row["factor_valid_observations"]) / denominator
@@ -1575,6 +1772,12 @@ def _format_configured_case_value(value: object) -> str:
 def _format_table_value(column: object, value: object) -> str:
     if pd.isna(value):
         return "NaN"
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (bool,)):
+        return str(value).lower()
+    if isinstance(value, pd.Timestamp):
+        return value.isoformat()
 
     column_name = str(column)
     if column_name == "low_coverage":

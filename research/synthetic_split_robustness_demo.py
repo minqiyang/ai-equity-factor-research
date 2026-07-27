@@ -23,12 +23,15 @@ from features.diagnostics import (
 from features.validation import (
     TrainValidationTestSplit,
     make_train_validation_test_split,
+    resolve_diagnostic_classification,
+    split_label_panel_by_train_validation_test,
     split_panel_by_train_validation_test,
+    summarize_label_availability,
 )
 from research.synthetic_split_ic_rank_ic_demo import (
     SyntheticSplitICRankICConfig,
     generate_synthetic_factor_panel,
-    generate_synthetic_forward_returns,
+    generate_synthetic_responses,
 )
 from reporting.experiment_log import (
     SYNTHETIC_RESEARCH_CAVEATS,
@@ -72,7 +75,7 @@ class SyntheticSplitRobustnessResult:
 
     config: SyntheticSplitRobustnessConfig
     base_factor: pd.DataFrame
-    forward_returns: pd.DataFrame
+    synthetic_responses: pd.DataFrame
     split: TrainValidationTestSplit
     factor_cases: dict[str, pd.DataFrame]
     summary: pd.DataFrame
@@ -115,18 +118,26 @@ def run_synthetic_split_robustness_demo(
     base_factor = generate_synthetic_factor_panel(config.base_config)
     split = make_train_validation_test_split(
         base_factor.index,
+        train_start=config.base_config.train_start,
         train_end=config.base_config.train_end,
+        validation_start=config.base_config.validation_start,
         validation_end=config.base_config.validation_end,
+        test_start=config.base_config.test_start,
         test_end=config.base_config.test_end,
+        label_kind="synthetic_same_row_response",
+        label_derivation="factor_scaled_same_row_response_v1",
+        label_horizon_rows=0,
+        embargo_rows=config.base_config.embargo_rows,
+        feature_warm_up_rows=config.base_config.feature_warm_up_rows,
     )
-    forward_returns = generate_synthetic_forward_returns(base_factor, split)
+    synthetic_responses = generate_synthetic_responses(base_factor, split)
     factor_cases = build_synthetic_robustness_cases(
         base_factor=base_factor,
         cases=config.cases,
     )
     summary = summarize_synthetic_split_robustness(
         factor_cases=factor_cases,
-        forward_returns=forward_returns,
+        synthetic_responses=synthetic_responses,
         split=split,
         min_periods=config.base_config.ic_min_periods,
     )
@@ -134,7 +145,7 @@ def run_synthetic_split_robustness_demo(
     result = SyntheticSplitRobustnessResult(
         config=config,
         base_factor=base_factor,
-        forward_returns=forward_returns,
+        synthetic_responses=synthetic_responses,
         split=split,
         factor_cases=factor_cases,
         summary=summary,
@@ -180,7 +191,7 @@ def build_synthetic_robustness_cases(
 def summarize_synthetic_split_robustness(
     *,
     factor_cases: dict[str, pd.DataFrame],
-    forward_returns: pd.DataFrame,
+    synthetic_responses: pd.DataFrame,
     split: TrainValidationTestSplit,
     min_periods: int,
 ) -> pd.DataFrame:
@@ -189,34 +200,41 @@ def summarize_synthetic_split_robustness(
     if not factor_cases:
         raise ValueError("factor_cases must not be empty")
 
-    forward_returns_by_split = split_panel_by_train_validation_test(
-        forward_returns,
+    responses_by_split = split_label_panel_by_train_validation_test(
+        synthetic_responses,
         split,
-        name="forward_returns",
+        name="synthetic_responses",
     )
     records: list[dict[str, object]] = []
     for case_order, (case_id, factor) in enumerate(factor_cases.items()):
         factor_by_split = split_panel_by_train_validation_test(
             factor,
             split,
+            panel_role="feature",
             name=f"factor_cases[{case_id!r}]",
+        )
+        availability = summarize_label_availability(
+            synthetic_responses,
+            split,
+            factors={case_id: factor},
+            name="synthetic_responses",
         )
         for split_order, split_name in enumerate(SPLIT_NAMES):
             split_factor = factor_by_split[split_name]
-            split_returns = forward_returns_by_split[split_name]
+            split_responses = responses_by_split[split_name]
             if _has_any_valid_cross_sectional_variation(
                 split_factor,
-                split_returns,
+                split_responses,
                 min_periods=min_periods,
             ):
                 information_coefficient = factor_information_coefficient(
                     split_factor,
-                    split_returns,
+                    split_responses,
                     min_periods=min_periods,
                 )
                 rank_information_coefficient = factor_rank_information_coefficient(
                     split_factor,
-                    split_returns,
+                    split_responses,
                     min_periods=min_periods,
                 )
             else:
@@ -230,6 +248,27 @@ def summarize_synthetic_split_robustness(
                 )
             ic_valid_dates = int(information_coefficient.notna().sum())
             rank_ic_valid_dates = int(rank_information_coefficient.notna().sum())
+            availability_row = availability.loc[split_name]
+            invalid_reason, status = resolve_diagnostic_classification(
+                availability_invalid_reason=availability_row["invalid_reason"],
+                metric_valid_date_counts={
+                    "ic": ic_valid_dates,
+                    "rank_ic": rank_ic_valid_dates,
+                },
+                all_metrics_empty_invalid_reason=(
+                    "no_valid_ic_or_rank_ic_dates"
+                ),
+            )
+            if invalid_reason is None:
+                invalid_reason = _invalid_reason(
+                    ic_valid_dates,
+                    rank_ic_valid_dates,
+                )
+                status = (
+                    "INVALID"
+                    if invalid_reason is not None
+                    else "DIAGNOSTIC_ONLY"
+                )
             records.append(
                 {
                     "case_id": case_id,
@@ -243,17 +282,30 @@ def summarize_synthetic_split_robustness(
                     "factor_valid_observations": int(
                         split_factor.notna().sum().sum()
                     ),
-                    "forward_return_valid_observations": int(
-                        split_returns.notna().sum().sum()
+                    "synthetic_response_valid_observations": int(
+                        split_responses.notna().sum().sum()
+                    ),
+                    "eligible_date_count": int(
+                        availability_row["eligible_date_count"]
+                    ),
+                    "valid_eligible_target_cells": int(
+                        availability_row["valid_eligible_target_cells"]
+                    ),
+                    "missing_eligible_target_cells": int(
+                        availability_row["missing_eligible_target_cells"]
+                    ),
+                    "usable_factor_label_pairs": int(
+                        availability_row["usable_factor_label_pairs"]
+                    ),
+                    "has_usable_label_pairs": bool(
+                        availability_row["has_usable_label_pairs"]
                     ),
                     "ic_valid_dates": ic_valid_dates,
                     "rank_ic_valid_dates": rank_ic_valid_dates,
                     "mean_ic": _mean_or_nan(information_coefficient),
                     "mean_rank_ic": _mean_or_nan(rank_information_coefficient),
-                    "invalid_reason": _invalid_reason(
-                        ic_valid_dates,
-                        rank_ic_valid_dates,
-                    ),
+                    "invalid_reason": invalid_reason,
+                    "status": status,
                 }
             )
 
@@ -272,12 +324,18 @@ def build_synthetic_robustness_assumptions(
         "data_scope": "synthetic only",
         "source_artifacts": ["research/synthetic_split_robustness_demo.py"],
         "synthetic_seed": "deterministic formula; no random seed",
-        "split_policy": "chronological train/validation/test windows",
+        "split_policy": (
+            "explicit inclusive chronological windows with typed label "
+            "intervals, purge, optional embargo, and no reindexing"
+        ),
         "parameter_grid": [
             {"case_id": case.case_id, "transform": case.transform}
             for case in config.cases
         ],
-        "target_return_definition": "synthetic forward-return evaluation target",
+        "target_response_definition": (
+            "synthetic_same_row_response, horizon 0, exact "
+            "[signal_date, signal_date] interval; not a realized price return"
+        ),
         "signal_lag": "not applicable; deterministic aligned diagnostic inputs",
         "benchmark_assumption": "not included",
         "rebalance_frequency": "not included",
@@ -322,6 +380,7 @@ def write_demo_experiment_log(
         metrics={},
         diagnostics={
             "split_windows": _split_window_records(result.split),
+            "split_contract": result.split.metadata_as_dict(),
             "all_case_summary": _summary_records(result.summary),
             "invalid_case_summary": _invalid_summary_records(result.summary),
         },
@@ -364,7 +423,7 @@ Report every configured synthetic signal case across chronological train, valida
 | Data scope | `{result.assumptions["data_scope"]}` |
 | Source artifacts | `{", ".join(result.assumptions["source_artifacts"])}` |
 | Synthetic seed | `{result.assumptions["synthetic_seed"]}` |
-| Target return definition | `{result.assumptions["target_return_definition"]}` |
+| Target response definition | `{result.assumptions["target_response_definition"]}` |
 | Signal lag | `{result.assumptions["signal_lag"]}` |
 
 ## Split Windows
@@ -453,19 +512,19 @@ def _mean_or_nan(series: pd.Series) -> float:
 
 def _has_any_valid_cross_sectional_variation(
     factor: pd.DataFrame,
-    forward_returns: pd.DataFrame,
+    synthetic_responses: pd.DataFrame,
     *,
     min_periods: int,
 ) -> bool:
     for date in factor.index:
         factor_row = factor.loc[date]
-        returns_row = forward_returns.loc[date]
-        valid_pair = factor_row.notna() & returns_row.notna()
+        response_row = synthetic_responses.loc[date]
+        valid_pair = factor_row.notna() & response_row.notna()
         if int(valid_pair.sum()) < min_periods:
             continue
         if (
             factor_row[valid_pair].nunique(dropna=True) >= 2
-            and returns_row[valid_pair].nunique(dropna=True) >= 2
+            and response_row[valid_pair].nunique(dropna=True) >= 2
         ):
             return True
     return False

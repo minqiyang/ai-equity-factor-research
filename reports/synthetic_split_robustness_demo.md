@@ -13,7 +13,7 @@ Report every configured synthetic signal case across chronological train, valida
 | Data scope | `synthetic only` |
 | Source artifacts | `research/synthetic_split_robustness_demo.py` |
 | Synthetic seed | `deterministic formula; no random seed` |
-| Target return definition | `synthetic forward-return evaluation target` |
+| Target response definition | `synthetic_same_row_response, horizon 0, exact [signal_date, signal_date] interval; not a realized price return` |
 | Signal lag | `not applicable; deterministic aligned diagnostic inputs` |
 
 ## Split Windows
@@ -34,17 +34,17 @@ Report every configured synthetic signal case across chronological train, valida
 
 ## All-Case Split Summary
 
-| case_id | split | split_start | split_end | date_count | asset_count | factor_valid_observations | forward_return_valid_observations | ic_valid_dates | rank_ic_valid_dates | mean_ic | mean_rank_ic | invalid_reason |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| base_signal | train | 2024-01-02 | 2024-01-05 | 4 | 6 | 24 | 24 | 4 | 4 | 1.0000 | 1.0000 |  |
-| base_signal | validation | 2024-01-08 | 2024-01-11 | 4 | 6 | 23 | 23 | 4 | 4 | -1.0000 | -1.0000 |  |
-| base_signal | test | 2024-01-12 | 2024-01-17 | 4 | 6 | 24 | 23 | 4 | 4 | 1.0000 | 1.0000 |  |
-| inverse_signal | train | 2024-01-02 | 2024-01-05 | 4 | 6 | 24 | 24 | 4 | 4 | -1.0000 | -1.0000 |  |
-| inverse_signal | validation | 2024-01-08 | 2024-01-11 | 4 | 6 | 23 | 23 | 4 | 4 | 1.0000 | 1.0000 |  |
-| inverse_signal | test | 2024-01-12 | 2024-01-17 | 4 | 6 | 24 | 23 | 4 | 4 | -1.0000 | -1.0000 |  |
-| constant_signal | train | 2024-01-02 | 2024-01-05 | 4 | 6 | 24 | 24 | 0 | 0 | NaN | NaN | no_valid_ic_or_rank_ic_dates |
-| constant_signal | validation | 2024-01-08 | 2024-01-11 | 4 | 6 | 23 | 23 | 0 | 0 | NaN | NaN | no_valid_ic_or_rank_ic_dates |
-| constant_signal | test | 2024-01-12 | 2024-01-17 | 4 | 6 | 24 | 23 | 0 | 0 | NaN | NaN | no_valid_ic_or_rank_ic_dates |
+| case_id | split | split_start | split_end | date_count | asset_count | factor_valid_observations | synthetic_response_valid_observations | eligible_date_count | valid_eligible_target_cells | missing_eligible_target_cells | usable_factor_label_pairs | has_usable_label_pairs | ic_valid_dates | rank_ic_valid_dates | mean_ic | mean_rank_ic | invalid_reason | status |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| base_signal | train | 2024-01-02 | 2024-01-05 | 4 | 6 | 24 | 24 | 4 | 24 | 0 | 24 | 1 | 4 | 4 | 1.0000 | 1.0000 |  | DIAGNOSTIC_ONLY |
+| base_signal | validation | 2024-01-08 | 2024-01-11 | 4 | 6 | 23 | 23 | 4 | 23 | 1 | 23 | 1 | 4 | 4 | -1.0000 | -1.0000 |  | DIAGNOSTIC_ONLY |
+| base_signal | test | 2024-01-12 | 2024-01-17 | 4 | 6 | 24 | 23 | 4 | 23 | 1 | 23 | 1 | 4 | 4 | 1.0000 | 1.0000 |  | DIAGNOSTIC_ONLY |
+| inverse_signal | train | 2024-01-02 | 2024-01-05 | 4 | 6 | 24 | 24 | 4 | 24 | 0 | 24 | 1 | 4 | 4 | -1.0000 | -1.0000 |  | DIAGNOSTIC_ONLY |
+| inverse_signal | validation | 2024-01-08 | 2024-01-11 | 4 | 6 | 23 | 23 | 4 | 23 | 1 | 23 | 1 | 4 | 4 | 1.0000 | 1.0000 |  | DIAGNOSTIC_ONLY |
+| inverse_signal | test | 2024-01-12 | 2024-01-17 | 4 | 6 | 24 | 23 | 4 | 23 | 1 | 23 | 1 | 4 | 4 | -1.0000 | -1.0000 |  | DIAGNOSTIC_ONLY |
+| constant_signal | train | 2024-01-02 | 2024-01-05 | 4 | 6 | 24 | 24 | 4 | 24 | 0 | 24 | 1 | 0 | 0 | NaN | NaN | no_valid_ic_or_rank_ic_dates | INVALID |
+| constant_signal | validation | 2024-01-08 | 2024-01-11 | 4 | 6 | 23 | 23 | 4 | 23 | 1 | 23 | 1 | 0 | 0 | NaN | NaN | no_valid_ic_or_rank_ic_dates | INVALID |
+| constant_signal | test | 2024-01-12 | 2024-01-17 | 4 | 6 | 24 | 23 | 4 | 23 | 1 | 23 | 1 | 0 | 0 | NaN | NaN | no_valid_ic_or_rank_ic_dates | INVALID |
 
 ## Invalid Or Insufficient Cases
 

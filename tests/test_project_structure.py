@@ -68,18 +68,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "Long-term evidence policy: `docs/research_program_charter.md`",
         "Active roadmap: `docs/current_roadmap.md`",
         "## Research Charter Decision",
-        "## Stage 1a Split Contract Decision",
+        "## Stage 1 Split Decision",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Stage 1b - Purged and bounded sample-split implementation",
+        "Stage 2a - Signal and execution timing contract",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "594 passing tests" in roadmap
-    assert "Starting validation: 594 tests passed" in handoff
+    assert "637 passing tests" in roadmap
+    assert "Starting validation: 595 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -182,8 +182,9 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
         assert contract.count(f"`SPLIT-{case_number:03d}`") == 1
 
     assert roadmap.count("| 1b. Purged/bounded split implementation |") == 1
-    assert "| 1b. Purged/bounded split implementation | Next" in roadmap
-    assert "Stage 1b - Purged and bounded sample-split implementation" in handoff
+    assert "| 1b. Purged/bounded split implementation | Complete" in roadmap
+    assert "| 2. Signal/execution timing | Next" in roadmap
+    assert "Stage 2a - Signal and execution timing contract" in handoff
 
 
 def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:

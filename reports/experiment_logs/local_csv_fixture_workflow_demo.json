@@ -14,7 +14,7 @@
     },
     "feature": "alpha_009 with window=1",
     "feature_timing": "alpha_009 at date t uses close[t] and earlier closes only; no trade timing is defined in this demo",
-    "forward_return_timing": "forward returns are computed after loading as evaluation targets only; they are not feature inputs",
+    "forward_return_timing": "eligible adjusted-close row-forward returns are calculated only after explicit label intervals, purge, and embargo are established; they are not feature inputs",
     "inventory_high_or_medium_issues": false,
     "inventory_review": "metadata-only dry-run review of declared committed synthetic fixture inputs before loading; raw local paths are not stored in the review result",
     "liquidity_check": "synthetic decision-date eligibility count smoke check only; not a tradeable universe-selection study",
@@ -41,11 +41,14 @@
     "slippage_smoke_window": 1,
     "split_boundaries": {
       "test_end": "2024-01-05",
-      "train_end": "2024-01-02",
-      "validation_end": "2024-01-03"
+      "test_start": "2024-01-05",
+      "train_end": "2024-01-03",
+      "train_start": "2024-01-03",
+      "validation_end": "2024-01-04",
+      "validation_start": "2024-01-04"
     },
-    "split_policy": "chronological train/validation/test date windows generated from the committed fixture index with no overlap, no reindexing, and no parameter selection",
-    "split_timing": "split labels are assigned by factor and evaluation-target row date; one-row forward-return targets are diagnostics only and are not used for parameter selection",
+    "split_policy": "six explicit inclusive chronological bounds with a hard test end, complete-interval ownership, raw-axis target masking, no reindexing, and no parameter selection",
+    "split_timing": "each candidate records signal date, label start, and label end; cross-boundary or unavailable labels are purged before diagnostics",
     "transaction_cost_model": "not applied; no backtest or net returns",
     "universe": "3 synthetic fixture assets",
     "volume_aware_slippage_smoke": "synthetic two-date target-weight smoke diagnostic only; reports participation and rejected/cap counts without applying slippage to returns"
@@ -73,6 +76,8 @@
   "config": {
     "alpha_window": 1,
     "benchmark_fixture": "tests/fixtures/local_csv_loader_smoke/synthetic_benchmark.csv",
+    "embargo_rows": 0,
+    "feature_warm_up_rows": 1,
     "forward_return_horizon_rows": 1,
     "ic_min_periods": 2,
     "liquidity_eligibility_lag": 1,
@@ -90,9 +95,12 @@
     "slippage_smoke_portfolio_notional": 100000.0,
     "slippage_smoke_volume_lag": 1,
     "slippage_smoke_window": 1,
-    "test_end": null,
-    "train_end": "2024-01-02",
-    "validation_end": "2024-01-03"
+    "test_end": "2024-01-05",
+    "test_start": "2024-01-05",
+    "train_end": "2024-01-03",
+    "train_start": "2024-01-03",
+    "validation_end": "2024-01-04",
+    "validation_start": "2024-01-04"
   },
   "diagnostics": {
     "adv_eligible_counts_by_date": {
@@ -105,20 +113,19 @@
     "alpha_012_factor_valid_observations": 2,
     "alpha_012_information_coefficient_by_date": {
       "2024-01-02": null,
-      "2024-01-03": 1.0,
+      "2024-01-03": null,
       "2024-01-04": null,
       "2024-01-05": null
     },
     "alpha_012_information_coefficient_by_split": {
       "test": {
-        "2024-01-04": null,
         "2024-01-05": null
       },
       "train": {
-        "2024-01-02": null
+        "2024-01-03": null
       },
       "validation": {
-        "2024-01-03": 1.0
+        "2024-01-04": null
       }
     },
     "alpha_012_quantile_spread_valid_dates": 0,
@@ -129,23 +136,51 @@
     },
     "alpha_012_rank_information_coefficient_by_date": {
       "2024-01-02": null,
-      "2024-01-03": 0.9999999999999999,
+      "2024-01-03": null,
       "2024-01-04": null,
       "2024-01-05": null
     },
     "alpha_012_rank_information_coefficient_by_split": {
       "test": {
-        "2024-01-04": null,
         "2024-01-05": null
       },
       "train": {
-        "2024-01-02": null
+        "2024-01-03": null
       },
       "validation": {
-        "2024-01-03": 0.9999999999999999
+        "2024-01-04": null
       }
     },
-    "benchmark_forward_return_valid_observations": 3,
+    "benchmark_forward_return_valid_observations": 0,
+    "benchmark_label_availability": [
+      {
+        "eligible_date_count": 0,
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
+        "split": "train",
+        "status": "INVALID",
+        "total_eligible_target_cells": 0,
+        "valid_eligible_target_cells": 0
+      },
+      {
+        "eligible_date_count": 0,
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
+        "split": "validation",
+        "status": "INVALID",
+        "total_eligible_target_cells": 0,
+        "valid_eligible_target_cells": 0
+      },
+      {
+        "eligible_date_count": 0,
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
+        "split": "test",
+        "status": "INVALID",
+        "total_eligible_target_cells": 0,
+        "valid_eligible_target_cells": 0
+      }
+    ],
     "both_liquidity_rules_eligible_counts_by_date": {
       "2024-01-02": 0.0,
       "2024-01-03": 0.0,
@@ -157,15 +192,21 @@
         "case_id": "alpha_009",
         "case_label": "Alpha#009 local fixture",
         "caveats": "committed synthetic fixture only; diagnostic metrics only; not profitability evidence",
-        "coverage": 0.0,
+        "coverage": 1.0,
+        "eligible_date_count": 0,
+        "has_usable_label_pairs": false,
         "ic_valid_dates": 0,
-        "invalid_reason": "insufficient_metric_observations",
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
         "quantile_spread_valid_dates": 0,
         "rank_ic_valid_dates": 0,
         "slippage_bps": null,
         "split": "train",
+        "status": "INVALID",
         "transaction_cost_bps": null,
+        "usable_factor_label_pairs": 0,
         "valid": false,
+        "valid_eligible_target_cells": 0,
         "volume_aware_slippage_mode": "absent",
         "zero_slippage_diagnostic": false
       },
@@ -174,14 +215,20 @@
         "case_label": "Alpha#009 local fixture",
         "caveats": "committed synthetic fixture only; diagnostic metrics only; not profitability evidence",
         "coverage": 1.0,
-        "ic_valid_dates": 1,
-        "invalid_reason": "",
-        "quantile_spread_valid_dates": 1,
-        "rank_ic_valid_dates": 1,
+        "eligible_date_count": 0,
+        "has_usable_label_pairs": false,
+        "ic_valid_dates": 0,
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
+        "quantile_spread_valid_dates": 0,
+        "rank_ic_valid_dates": 0,
         "slippage_bps": null,
         "split": "validation",
+        "status": "INVALID",
         "transaction_cost_bps": null,
-        "valid": true,
+        "usable_factor_label_pairs": 0,
+        "valid": false,
+        "valid_eligible_target_cells": 0,
         "volume_aware_slippage_mode": "absent",
         "zero_slippage_diagnostic": false
       },
@@ -190,30 +237,20 @@
         "case_label": "Alpha#009 local fixture",
         "caveats": "committed synthetic fixture only; diagnostic metrics only; not profitability evidence",
         "coverage": 1.0,
-        "ic_valid_dates": 1,
-        "invalid_reason": "",
-        "quantile_spread_valid_dates": 0,
-        "rank_ic_valid_dates": 1,
-        "slippage_bps": null,
-        "split": "test",
-        "transaction_cost_bps": null,
-        "valid": true,
-        "volume_aware_slippage_mode": "absent",
-        "zero_slippage_diagnostic": false
-      },
-      {
-        "case_id": "alpha_012",
-        "case_label": "Alpha#012 local fixture",
-        "caveats": "committed synthetic fixture only; diagnostic metrics only; not profitability evidence",
-        "coverage": 0.0,
+        "eligible_date_count": 0,
+        "has_usable_label_pairs": false,
         "ic_valid_dates": 0,
-        "invalid_reason": "insufficient_metric_observations",
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
         "quantile_spread_valid_dates": 0,
         "rank_ic_valid_dates": 0,
         "slippage_bps": null,
-        "split": "train",
+        "split": "test",
+        "status": "INVALID",
         "transaction_cost_bps": null,
+        "usable_factor_label_pairs": 0,
         "valid": false,
+        "valid_eligible_target_cells": 0,
         "volume_aware_slippage_mode": "absent",
         "zero_slippage_diagnostic": false
       },
@@ -222,14 +259,20 @@
         "case_label": "Alpha#012 local fixture",
         "caveats": "committed synthetic fixture only; diagnostic metrics only; not profitability evidence",
         "coverage": 0.6666666666666666,
-        "ic_valid_dates": 1,
-        "invalid_reason": "",
+        "eligible_date_count": 0,
+        "has_usable_label_pairs": false,
+        "ic_valid_dates": 0,
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
         "quantile_spread_valid_dates": 0,
-        "rank_ic_valid_dates": 1,
+        "rank_ic_valid_dates": 0,
         "slippage_bps": null,
-        "split": "validation",
+        "split": "train",
+        "status": "INVALID",
         "transaction_cost_bps": null,
-        "valid": true,
+        "usable_factor_label_pairs": 0,
+        "valid": false,
+        "valid_eligible_target_cells": 0,
         "volume_aware_slippage_mode": "absent",
         "zero_slippage_diagnostic": false
       },
@@ -238,22 +281,50 @@
         "case_label": "Alpha#012 local fixture",
         "caveats": "committed synthetic fixture only; diagnostic metrics only; not profitability evidence",
         "coverage": 0.0,
+        "eligible_date_count": 0,
+        "has_usable_label_pairs": false,
         "ic_valid_dates": 0,
-        "invalid_reason": "insufficient_metric_observations",
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
+        "quantile_spread_valid_dates": 0,
+        "rank_ic_valid_dates": 0,
+        "slippage_bps": null,
+        "split": "validation",
+        "status": "INVALID",
+        "transaction_cost_bps": null,
+        "usable_factor_label_pairs": 0,
+        "valid": false,
+        "valid_eligible_target_cells": 0,
+        "volume_aware_slippage_mode": "absent",
+        "zero_slippage_diagnostic": false
+      },
+      {
+        "case_id": "alpha_012",
+        "case_label": "Alpha#012 local fixture",
+        "caveats": "committed synthetic fixture only; diagnostic metrics only; not profitability evidence",
+        "coverage": 0.0,
+        "eligible_date_count": 0,
+        "has_usable_label_pairs": false,
+        "ic_valid_dates": 0,
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
         "quantile_spread_valid_dates": 0,
         "rank_ic_valid_dates": 0,
         "slippage_bps": null,
         "split": "test",
+        "status": "INVALID",
         "transaction_cost_bps": null,
+        "usable_factor_label_pairs": 0,
         "valid": false,
+        "valid_eligible_target_cells": 0,
         "volume_aware_slippage_mode": "absent",
         "zero_slippage_diagnostic": false
       }
     ],
     "configured_fixture_invalid_case_reasons": [
-      "insufficient_metric_observations"
+      "no_eligible_labels"
     ],
-    "configured_fixture_invalid_case_split_count": 3,
+    "configured_fixture_invalid_case_split_count": 6,
     "dollar_volume_eligible_counts_by_date": {
       "2024-01-02": 0.0,
       "2024-01-03": 0.0,
@@ -261,23 +332,22 @@
       "2024-01-05": 0.0
     },
     "factor_valid_observations": 9,
-    "forward_return_valid_observations": 9,
+    "forward_return_valid_observations": 0,
     "information_coefficient_by_date": {
       "2024-01-02": null,
-      "2024-01-03": -0.6216932354008934,
-      "2024-01-04": 0.9997019274994431,
+      "2024-01-03": null,
+      "2024-01-04": null,
       "2024-01-05": null
     },
     "information_coefficient_by_split": {
       "test": {
-        "2024-01-04": 0.9997019274994431,
         "2024-01-05": null
       },
       "train": {
-        "2024-01-02": null
+        "2024-01-03": null
       },
       "validation": {
-        "2024-01-03": -0.6216932354008934
+        "2024-01-04": null
       }
     },
     "inventory_issue_count_by_severity": {
@@ -318,6 +388,86 @@
         "schema": "ohlcv_long",
         "source_declared": true,
         "version_declared": true
+      }
+    ],
+    "label_availability": [
+      {
+        "candidate_date_count": 1,
+        "eligible_date_count": 0,
+        "factor": "alpha_009",
+        "has_usable_label_pairs": false,
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
+        "split": "train",
+        "status": "INVALID",
+        "total_eligible_target_cells": 0,
+        "usable_factor_label_pairs": 0,
+        "valid_eligible_target_cells": 0
+      },
+      {
+        "candidate_date_count": 1,
+        "eligible_date_count": 0,
+        "factor": "alpha_012",
+        "has_usable_label_pairs": false,
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
+        "split": "train",
+        "status": "INVALID",
+        "total_eligible_target_cells": 0,
+        "usable_factor_label_pairs": 0,
+        "valid_eligible_target_cells": 0
+      },
+      {
+        "candidate_date_count": 1,
+        "eligible_date_count": 0,
+        "factor": "alpha_009",
+        "has_usable_label_pairs": false,
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
+        "split": "validation",
+        "status": "INVALID",
+        "total_eligible_target_cells": 0,
+        "usable_factor_label_pairs": 0,
+        "valid_eligible_target_cells": 0
+      },
+      {
+        "candidate_date_count": 1,
+        "eligible_date_count": 0,
+        "factor": "alpha_012",
+        "has_usable_label_pairs": false,
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
+        "split": "validation",
+        "status": "INVALID",
+        "total_eligible_target_cells": 0,
+        "usable_factor_label_pairs": 0,
+        "valid_eligible_target_cells": 0
+      },
+      {
+        "candidate_date_count": 1,
+        "eligible_date_count": 0,
+        "factor": "alpha_009",
+        "has_usable_label_pairs": false,
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
+        "split": "test",
+        "status": "INVALID",
+        "total_eligible_target_cells": 0,
+        "usable_factor_label_pairs": 0,
+        "valid_eligible_target_cells": 0
+      },
+      {
+        "candidate_date_count": 1,
+        "eligible_date_count": 0,
+        "factor": "alpha_012",
+        "has_usable_label_pairs": false,
+        "invalid_reason": "no_eligible_labels",
+        "missing_eligible_target_cells": 0,
+        "split": "test",
+        "status": "INVALID",
+        "total_eligible_target_cells": 0,
+        "usable_factor_label_pairs": 0,
+        "valid_eligible_target_cells": 0
       }
     ],
     "liquidity_eligibility_summary": {
@@ -457,63 +607,292 @@
       }
     },
     "masked_alpha_009_signal_valid_observations": 1,
-    "quantile_spread_valid_dates": 1,
+    "quantile_spread_valid_dates": 0,
     "quantile_spread_valid_dates_by_split": {
       "test": 0,
       "train": 0,
-      "validation": 1
+      "validation": 0
     },
     "rank_information_coefficient_by_date": {
       "2024-01-02": null,
-      "2024-01-03": -0.5,
-      "2024-01-04": 0.8660254037844387,
+      "2024-01-03": null,
+      "2024-01-04": null,
       "2024-01-05": null
     },
     "rank_information_coefficient_by_split": {
       "test": {
-        "2024-01-04": 0.8660254037844387,
         "2024-01-05": null
       },
       "train": {
-        "2024-01-02": null
+        "2024-01-03": null
       },
       "validation": {
-        "2024-01-03": -0.5
+        "2024-01-04": null
+      }
+    },
+    "split_contract": {
+      "embargo_rows": 0,
+      "feature_warm_up_rows": 1,
+      "ignored_post_test_dates": [],
+      "ignored_pre_sample_dates": [],
+      "label_derivation": "adjusted_close_row_forward_return_v1",
+      "label_horizon_rows": 1,
+      "label_kind": "price_forward_return",
+      "label_ledger": [
+        {
+          "exclusion_reasons": [
+            "label_crosses_window_end"
+          ],
+          "is_eligible": false,
+          "is_embargoed": false,
+          "is_purged": true,
+          "label_derivation": "adjusted_close_row_forward_return_v1",
+          "label_end": "2024-01-04T00:00:00",
+          "label_kind": "price_forward_return",
+          "label_start": "2024-01-03T00:00:00",
+          "signal_date": "2024-01-03T00:00:00",
+          "split_name": "train"
+        },
+        {
+          "exclusion_reasons": [
+            "label_crosses_window_end"
+          ],
+          "is_eligible": false,
+          "is_embargoed": false,
+          "is_purged": true,
+          "label_derivation": "adjusted_close_row_forward_return_v1",
+          "label_end": "2024-01-05T00:00:00",
+          "label_kind": "price_forward_return",
+          "label_start": "2024-01-04T00:00:00",
+          "signal_date": "2024-01-04T00:00:00",
+          "split_name": "validation"
+        },
+        {
+          "exclusion_reasons": [
+            "label_end_unavailable"
+          ],
+          "is_eligible": false,
+          "is_embargoed": false,
+          "is_purged": true,
+          "label_derivation": "adjusted_close_row_forward_return_v1",
+          "label_end": null,
+          "label_kind": "price_forward_return",
+          "label_start": "2024-01-05T00:00:00",
+          "signal_date": "2024-01-05T00:00:00",
+          "split_name": "test"
+        }
+      ],
+      "schema_version": 1,
+      "source_index": {
+        "end": "2024-01-05T00:00:00",
+        "row_count": 4,
+        "start": "2024-01-02T00:00:00",
+        "timezone": null
+      },
+      "transitions": {
+        "train_to_validation": {
+          "downstream_embargoed_date_count": 0,
+          "downstream_embargoed_dates": [],
+          "downstream_split": "validation",
+          "gap_dates_consuming_embargo": [],
+          "gap_dates_consuming_embargo_count": 0,
+          "inter_window_gap_date_count": 0,
+          "inter_window_gap_dates": [],
+          "transition_name": "train_to_validation",
+          "upstream_split": "train"
+        },
+        "validation_to_test": {
+          "downstream_embargoed_date_count": 0,
+          "downstream_embargoed_dates": [],
+          "downstream_split": "test",
+          "gap_dates_consuming_embargo": [],
+          "gap_dates_consuming_embargo_count": 0,
+          "inter_window_gap_date_count": 0,
+          "inter_window_gap_dates": [],
+          "transition_name": "validation_to_test",
+          "upstream_split": "validation"
+        }
+      },
+      "windows": {
+        "test": {
+          "candidate_signal_date_count": 1,
+          "candidate_signal_dates": [
+            "2024-01-05T00:00:00"
+          ],
+          "configured_end": "2024-01-05T00:00:00",
+          "configured_start": "2024-01-05T00:00:00",
+          "eligible_signal_date_count": 0,
+          "eligible_signal_dates": [],
+          "embargo_rows_requested": 0,
+          "embargo_rows_satisfied_by_gap": 0,
+          "embargoed_signal_date_count": 0,
+          "embargoed_signal_dates": [],
+          "excluded_signal_date_count": 1,
+          "excluded_signal_dates": [
+            "2024-01-05T00:00:00"
+          ],
+          "feature_warm_up_dates": [
+            "2024-01-04T00:00:00"
+          ],
+          "feature_warm_up_rows_available": 1,
+          "feature_warm_up_rows_requested": 1,
+          "gap_dates_consuming_embargo": [],
+          "has_eligible_labels": false,
+          "inter_window_gap_date_count": 0,
+          "inter_window_gap_dates": [],
+          "invalid_reason": "no_eligible_labels",
+          "label_horizon_rows": 1,
+          "label_warm_down_date_count": 1,
+          "label_warm_down_dates": [
+            "2024-01-05T00:00:00"
+          ],
+          "purged_signal_date_count": 1,
+          "purged_signal_dates": [
+            "2024-01-05T00:00:00"
+          ],
+          "realized_end": "2024-01-05T00:00:00",
+          "realized_start": "2024-01-05T00:00:00",
+          "split_name": "test",
+          "status": "INVALID"
+        },
+        "train": {
+          "candidate_signal_date_count": 1,
+          "candidate_signal_dates": [
+            "2024-01-03T00:00:00"
+          ],
+          "configured_end": "2024-01-03T00:00:00",
+          "configured_start": "2024-01-03T00:00:00",
+          "eligible_signal_date_count": 0,
+          "eligible_signal_dates": [],
+          "embargo_rows_requested": 0,
+          "embargo_rows_satisfied_by_gap": 0,
+          "embargoed_signal_date_count": 0,
+          "embargoed_signal_dates": [],
+          "excluded_signal_date_count": 1,
+          "excluded_signal_dates": [
+            "2024-01-03T00:00:00"
+          ],
+          "feature_warm_up_dates": [
+            "2024-01-02T00:00:00"
+          ],
+          "feature_warm_up_rows_available": 1,
+          "feature_warm_up_rows_requested": 1,
+          "gap_dates_consuming_embargo": [],
+          "has_eligible_labels": false,
+          "inter_window_gap_date_count": 0,
+          "inter_window_gap_dates": [],
+          "invalid_reason": "no_eligible_labels",
+          "label_horizon_rows": 1,
+          "label_warm_down_date_count": 1,
+          "label_warm_down_dates": [
+            "2024-01-03T00:00:00"
+          ],
+          "purged_signal_date_count": 1,
+          "purged_signal_dates": [
+            "2024-01-03T00:00:00"
+          ],
+          "realized_end": "2024-01-03T00:00:00",
+          "realized_start": "2024-01-03T00:00:00",
+          "split_name": "train",
+          "status": "INVALID"
+        },
+        "validation": {
+          "candidate_signal_date_count": 1,
+          "candidate_signal_dates": [
+            "2024-01-04T00:00:00"
+          ],
+          "configured_end": "2024-01-04T00:00:00",
+          "configured_start": "2024-01-04T00:00:00",
+          "eligible_signal_date_count": 0,
+          "eligible_signal_dates": [],
+          "embargo_rows_requested": 0,
+          "embargo_rows_satisfied_by_gap": 0,
+          "embargoed_signal_date_count": 0,
+          "embargoed_signal_dates": [],
+          "excluded_signal_date_count": 1,
+          "excluded_signal_dates": [
+            "2024-01-04T00:00:00"
+          ],
+          "feature_warm_up_dates": [
+            "2024-01-03T00:00:00"
+          ],
+          "feature_warm_up_rows_available": 1,
+          "feature_warm_up_rows_requested": 1,
+          "gap_dates_consuming_embargo": [],
+          "has_eligible_labels": false,
+          "inter_window_gap_date_count": 0,
+          "inter_window_gap_dates": [],
+          "invalid_reason": "no_eligible_labels",
+          "label_horizon_rows": 1,
+          "label_warm_down_date_count": 1,
+          "label_warm_down_dates": [
+            "2024-01-04T00:00:00"
+          ],
+          "purged_signal_date_count": 1,
+          "purged_signal_dates": [
+            "2024-01-04T00:00:00"
+          ],
+          "realized_end": "2024-01-04T00:00:00",
+          "realized_start": "2024-01-04T00:00:00",
+          "split_name": "validation",
+          "status": "INVALID"
+        }
       }
     },
     "split_summary": {
       "test": {
         "asset_count": 3,
-        "date_count": 2,
-        "factor_valid_observations": 6,
-        "forward_return_valid_observations": 3,
-        "ic_valid_dates": 1,
-        "mean_ic": 0.9997019274994431,
-        "mean_rank_ic": 0.8660254037844387,
+        "date_count": 1,
+        "eligible_date_count": 0,
+        "factor_valid_observations": 3,
+        "forward_return_valid_observations": 0,
+        "has_usable_label_pairs": false,
+        "ic_valid_dates": 0,
+        "invalid_reason": "no_eligible_labels",
+        "mean_ic": null,
+        "mean_rank_ic": null,
+        "missing_eligible_target_cells": 0,
         "quantile_spread_valid_dates": 0,
-        "rank_ic_valid_dates": 1
+        "rank_ic_valid_dates": 0,
+        "status": "INVALID",
+        "usable_factor_label_pairs": 0,
+        "valid_eligible_target_cells": 0
       },
       "train": {
         "asset_count": 3,
         "date_count": 1,
-        "factor_valid_observations": 0,
-        "forward_return_valid_observations": 3,
+        "eligible_date_count": 0,
+        "factor_valid_observations": 3,
+        "forward_return_valid_observations": 0,
+        "has_usable_label_pairs": false,
         "ic_valid_dates": 0,
+        "invalid_reason": "no_eligible_labels",
         "mean_ic": null,
         "mean_rank_ic": null,
+        "missing_eligible_target_cells": 0,
         "quantile_spread_valid_dates": 0,
-        "rank_ic_valid_dates": 0
+        "rank_ic_valid_dates": 0,
+        "status": "INVALID",
+        "usable_factor_label_pairs": 0,
+        "valid_eligible_target_cells": 0
       },
       "validation": {
         "asset_count": 3,
         "date_count": 1,
+        "eligible_date_count": 0,
         "factor_valid_observations": 3,
-        "forward_return_valid_observations": 3,
-        "ic_valid_dates": 1,
-        "mean_ic": -0.6216932354008934,
-        "mean_rank_ic": -0.5,
-        "quantile_spread_valid_dates": 1,
-        "rank_ic_valid_dates": 1
+        "forward_return_valid_observations": 0,
+        "has_usable_label_pairs": false,
+        "ic_valid_dates": 0,
+        "invalid_reason": "no_eligible_labels",
+        "mean_ic": null,
+        "mean_rank_ic": null,
+        "missing_eligible_target_cells": 0,
+        "quantile_spread_valid_dates": 0,
+        "rank_ic_valid_dates": 0,
+        "status": "INVALID",
+        "usable_factor_label_pairs": 0,
+        "valid_eligible_target_cells": 0
       }
     },
     "volume_aware_slippage_cap_breach_counts_by_date": {

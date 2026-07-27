@@ -1,7 +1,7 @@
 """Synthetic split-aware IC / Rank IC diagnostic demo.
 
 This script applies the train/validation/test split helper to deterministic
-synthetic factor and forward-return panels. It does not use real market data,
+synthetic factor and same-row response panels. It does not use real market data,
 fetch data, select factors, train models, run a backtest, place orders, support
 live trading, or make a profitability claim.
 """
@@ -21,7 +21,11 @@ from features.diagnostics import (
 from features.validation import (
     TrainValidationTestSplit,
     make_train_validation_test_split,
+    mask_label_panel_by_train_validation_test,
+    resolve_diagnostic_classification,
+    split_label_panel_by_train_validation_test,
     split_panel_by_train_validation_test,
+    summarize_label_availability,
 )
 from reporting.experiment_log import (
     SYNTHETIC_RESEARCH_CAVEATS,
@@ -45,9 +49,14 @@ class SyntheticSplitICRankICConfig:
     asset_count: int = 6
     periods: int = 12
     start_date: str = "2024-01-02"
+    train_start: str = "2024-01-02"
     train_end: str = "2024-01-05"
+    validation_start: str = "2024-01-08"
     validation_end: str = "2024-01-11"
-    test_end: str | None = None
+    test_start: str = "2024-01-12"
+    test_end: str = "2024-01-17"
+    embargo_rows: int = 0
+    feature_warm_up_rows: int = 0
     ic_min_periods: int = 3
 
 
@@ -56,12 +65,13 @@ class SyntheticSplitICRankICResult:
     """Container for synthetic split-aware diagnostic outputs."""
 
     factor: pd.DataFrame
-    forward_returns: pd.DataFrame
+    synthetic_responses: pd.DataFrame
     split: TrainValidationTestSplit
     factor_by_split: dict[str, pd.DataFrame]
-    forward_returns_by_split: dict[str, pd.DataFrame]
+    synthetic_responses_by_split: dict[str, pd.DataFrame]
     information_coefficient_by_split: dict[str, pd.Series]
     rank_information_coefficient_by_split: dict[str, pd.Series]
+    label_availability: pd.DataFrame
     summary: pd.DataFrame
     report_path: Path
     experiment_log_path: Path
@@ -90,26 +100,35 @@ def run_synthetic_split_ic_rank_ic_demo(
     factor = generate_synthetic_factor_panel(config)
     split = make_train_validation_test_split(
         factor.index,
+        train_start=config.train_start,
         train_end=config.train_end,
+        validation_start=config.validation_start,
         validation_end=config.validation_end,
+        test_start=config.test_start,
         test_end=config.test_end,
+        label_kind="synthetic_same_row_response",
+        label_derivation="factor_scaled_same_row_response_v1",
+        label_horizon_rows=0,
+        embargo_rows=config.embargo_rows,
+        feature_warm_up_rows=config.feature_warm_up_rows,
     )
-    forward_returns = generate_synthetic_forward_returns(factor, split)
+    synthetic_responses = generate_synthetic_responses(factor, split)
 
     factor_by_split = split_panel_by_train_validation_test(
         factor,
         split,
+        panel_role="feature",
         name="synthetic_factor",
     )
-    forward_returns_by_split = split_panel_by_train_validation_test(
-        forward_returns,
+    synthetic_responses_by_split = split_label_panel_by_train_validation_test(
+        synthetic_responses,
         split,
-        name="synthetic_forward_returns",
+        name="synthetic_responses",
     )
     information_coefficient_by_split = {
         split_name: factor_information_coefficient(
             factor_by_split[split_name],
-            forward_returns_by_split[split_name],
+            synthetic_responses_by_split[split_name],
             min_periods=config.ic_min_periods,
         )
         for split_name in SPLIT_NAMES
@@ -117,26 +136,34 @@ def run_synthetic_split_ic_rank_ic_demo(
     rank_information_coefficient_by_split = {
         split_name: factor_rank_information_coefficient(
             factor_by_split[split_name],
-            forward_returns_by_split[split_name],
+            synthetic_responses_by_split[split_name],
             min_periods=config.ic_min_periods,
         )
         for split_name in SPLIT_NAMES
     }
+    label_availability = summarize_label_availability(
+        synthetic_responses,
+        split,
+        factors={"synthetic_factor": factor},
+        name="synthetic_responses",
+    )
     summary = summarize_split_diagnostics(
         factor_by_split=factor_by_split,
-        forward_returns_by_split=forward_returns_by_split,
+        synthetic_responses_by_split=synthetic_responses_by_split,
         information_coefficient_by_split=information_coefficient_by_split,
         rank_information_coefficient_by_split=rank_information_coefficient_by_split,
+        label_availability=label_availability,
     )
 
     result = SyntheticSplitICRankICResult(
         factor=factor,
-        forward_returns=forward_returns,
+        synthetic_responses=synthetic_responses,
         split=split,
         factor_by_split=factor_by_split,
-        forward_returns_by_split=forward_returns_by_split,
+        synthetic_responses_by_split=synthetic_responses_by_split,
         information_coefficient_by_split=information_coefficient_by_split,
         rank_information_coefficient_by_split=rank_information_coefficient_by_split,
+        label_availability=label_availability,
         summary=summary,
         report_path=Path(report_path),
         experiment_log_path=Path(experiment_log_path),
@@ -168,59 +195,97 @@ def generate_synthetic_factor_panel(
     return factor
 
 
-def generate_synthetic_forward_returns(
+def generate_synthetic_responses(
     factor: pd.DataFrame,
     split: TrainValidationTestSplit,
 ) -> pd.DataFrame:
-    """Create deterministic synthetic forward-return targets by split."""
+    """Create deterministic same-row synthetic responses by split."""
+
+    if split.label_kind != "synthetic_same_row_response":
+        raise ValueError(
+            "split label_kind must be synthetic_same_row_response"
+        )
 
     coefficients = {
         "train": 0.010,
         "validation": -0.010,
         "test": 0.006,
     }
-    forward_returns = factor.copy()
+    responses = factor.copy()
     for split_name, dates in split.as_dict().items():
-        forward_returns.loc[dates] = factor.loc[dates] * coefficients[split_name]
+        responses.loc[dates] = factor.loc[dates] * coefficients[split_name]
 
-    if forward_returns.shape[0] >= 11 and forward_returns.shape[1] >= 4:
-        forward_returns.iloc[-2, 3] = np.nan
+    if responses.shape[0] >= 11 and responses.shape[1] >= 4:
+        responses.iloc[-2, 3] = np.nan
 
-    return forward_returns
+    masked = mask_label_panel_by_train_validation_test(
+        responses,
+        split,
+        name="synthetic_responses",
+    )
+    assert isinstance(masked, pd.DataFrame)
+    return masked
 
 
 def summarize_split_diagnostics(
     *,
     factor_by_split: dict[str, pd.DataFrame],
-    forward_returns_by_split: dict[str, pd.DataFrame],
+    synthetic_responses_by_split: dict[str, pd.DataFrame],
     information_coefficient_by_split: dict[str, pd.Series],
     rank_information_coefficient_by_split: dict[str, pd.Series],
+    label_availability: pd.DataFrame,
 ) -> pd.DataFrame:
     """Build a compact per-split diagnostic coverage summary."""
 
     rows = []
     for split_name in SPLIT_NAMES:
         factor = factor_by_split[split_name]
-        forward_returns = forward_returns_by_split[split_name]
+        synthetic_responses = synthetic_responses_by_split[split_name]
         information_coefficient = information_coefficient_by_split[split_name]
         rank_information_coefficient = rank_information_coefficient_by_split[
             split_name
         ]
+        ic_valid_dates = int(information_coefficient.notna().sum())
+        rank_ic_valid_dates = int(
+            rank_information_coefficient.notna().sum()
+        )
+        invalid_reason, status = resolve_diagnostic_classification(
+            availability_invalid_reason=label_availability.loc[
+                split_name, "invalid_reason"
+            ],
+            metric_valid_date_counts={
+                "ic": ic_valid_dates,
+                "rank_ic": rank_ic_valid_dates,
+            },
+        )
         rows.append(
             {
                 "split": split_name,
                 "date_count": int(len(factor.index)),
                 "asset_count": int(factor.shape[1]),
                 "factor_valid_observations": int(factor.notna().sum().sum()),
-                "forward_return_valid_observations": int(
-                    forward_returns.notna().sum().sum()
+                "synthetic_response_valid_observations": int(
+                    synthetic_responses.notna().sum().sum()
                 ),
-                "ic_valid_dates": int(information_coefficient.notna().sum()),
-                "rank_ic_valid_dates": int(
-                    rank_information_coefficient.notna().sum()
-                ),
+                "ic_valid_dates": ic_valid_dates,
+                "rank_ic_valid_dates": rank_ic_valid_dates,
                 "mean_ic": float(information_coefficient.mean()),
                 "mean_rank_ic": float(rank_information_coefficient.mean()),
+                "eligible_date_count": int(
+                    label_availability.loc[split_name, "eligible_date_count"]
+                ),
+                "usable_factor_label_pairs": int(
+                    label_availability.loc[
+                        split_name, "usable_factor_label_pairs"
+                    ]
+                ),
+                "has_usable_label_pairs": bool(
+                    label_availability.loc[
+                        split_name, "has_usable_label_pairs"
+                    ]
+                ),
+                "invalid_reason": invalid_reason,
+                "status": status,
             }
         )
 
@@ -241,7 +306,7 @@ def write_demo_experiment_log(
         experiment_type="synthetic_split_diagnostic_demo",
         summary=(
             "Deterministic synthetic demo that applies train/validation/test "
-            "splits to factor and forward-return panels before computing IC "
+            "splits to factor and explicit same-row response panels before computing IC "
             "and Rank IC diagnostics."
         ),
         config=config,
@@ -254,12 +319,12 @@ def write_demo_experiment_log(
                 "end": result.factor.index.max().date(),
             },
             "split_policy": (
-                "chronological train/validation/test date windows with no "
-                "overlap and no reindexing"
+                "explicit inclusive chronological windows with typed label "
+                "intervals, purge, optional embargo, and no reindexing"
             ),
-            "forward_return_timing": (
-                "forward returns are synthetic evaluation targets only and "
-                "are not feature inputs"
+            "synthetic_response_timing": (
+                "synthetic_same_row_response with horizon 0 and exact "
+                "[signal_date, signal_date] intervals; not a realized price return"
             ),
             "missing_value_policy": (
                 "missing values are preserved; no fill, forward-fill, "
@@ -280,6 +345,10 @@ def write_demo_experiment_log(
         metrics={},
         diagnostics={
             "summary": result.summary.to_dict(orient="index"),
+            "split_contract": result.split.metadata_as_dict(),
+            "label_availability": result.label_availability.reset_index().to_dict(
+                orient="records"
+            ),
             "information_coefficient_by_split": {
                 split_name: _series_to_date_dict(series)
                 for split_name, series in result.information_coefficient_by_split.items()
@@ -318,7 +387,7 @@ This report uses deterministic synthetic panels only. It is not real-market evid
 
 ## Purpose
 
-Apply the train/validation/test split helper to already-prepared synthetic factor and forward-return panels before running diagnostic IC and Rank IC calculations.
+Apply the train/validation/test split helper to already-prepared synthetic factor and explicitly typed same-row response panels before running diagnostic IC and Rank IC calculations.
 
 ## Configuration
 
@@ -327,9 +396,16 @@ Apply the train/validation/test split helper to already-prepared synthetic facto
 | Asset count | `{config.asset_count}` |
 | Periods | `{config.periods}` |
 | Date range | `{result.factor.index.min().date()}` to `{result.factor.index.max().date()}` |
+| Train start | `{result.split.train_start.date()}` |
 | Train end | `{result.split.train_end.date()}` |
+| Validation start | `{result.split.validation_start.date()}` |
 | Validation end | `{result.split.validation_end.date()}` |
+| Test start | `{result.split.test_start.date()}` |
 | Test end | `{result.split.test_end.date()}` |
+| Label kind | `{result.split.label_kind}` |
+| Label derivation | `{result.split.label_derivation}` |
+| Label horizon rows | `{result.split.label_horizon_rows}` |
+| Embargo rows | `{result.split.embargo_rows}` |
 | IC min periods | `{config.ic_min_periods}` |
 
 ## Split Coverage
@@ -346,8 +422,9 @@ Apply the train/validation/test split helper to already-prepared synthetic facto
 
 ## Limitations
 
-- The factor and forward-return panels are synthetic and deterministic.
-- Forward returns are evaluation targets only; they are never used as feature inputs.
+- The factor and same-row response panels are synthetic and deterministic.
+- Responses use exact `[signal_date, signal_date]` intervals and are not realized or forward price returns.
+- Synthetic responses are evaluation targets only; they are never used as feature inputs.
 - The split summary is a diagnostic wiring check, not model selection.
 - No portfolio construction, transaction costs, slippage, benchmark, or backtest is included.
 - This report is not evidence that any factor works on real market data.
@@ -409,6 +486,10 @@ def _format_markdown_table(frame: pd.DataFrame) -> str:
 def _format_table_value(value: object) -> str:
     if pd.isna(value):
         return "NaN"
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (bool, np.bool_)):
+        return str(bool(value)).lower()
     if isinstance(value, (int, np.integer)):
         return str(int(value))
     return f"{float(value):.4f}"

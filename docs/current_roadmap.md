@@ -1,15 +1,15 @@
 # Current Roadmap
 
-Updated: 2026-07-26 for the Purged and Bounded Split Contract.
+Updated: 2026-07-26 for the Purged and Bounded Split Implementation.
 
-Protected-main baseline verified before this stage: `57f3db3`, the merge of PR
-#158.
+Protected-main baseline verified before this stage: `12e0e86`, the merge of PR
+#159.
 
 This is the canonical roadmap. `docs/research_program_charter.md` defines the
 long-term evidence policy. Older checkpoints, gap refreshes, plans, and audits
 remain historical evidence and must not be used as active task queues.
-`docs/purged_bounded_split_contract.md` is the accepted Stage 1a design for the
-next implementation stage.
+`docs/purged_bounded_split_contract.md` is the accepted and implemented Stage 1
+split contract.
 
 ## Objective
 
@@ -29,7 +29,7 @@ authorized.
 | --- | --- |
 | Data | Strict local wide, long, benchmark, and OHLCV CSV validation; metadata inventory; no downloader. |
 | Factors | 12-1 momentum, short-term reversal, realized volatility, liquidity helpers, Alpha #009/#012, normalization, combination, and reusable panel operators. |
-| Diagnostics | Correlation, IC, Rank IC, top-minus-bottom quantile spread, coverage, and basic chronological train/validation/test slicing. |
+| Diagnostics | Correlation, IC, Rank IC, top-minus-bottom quantile spread, coverage, and explicit purged/bounded train/validation/test slicing with typed label intervals, optional embargo, raw-axis masking, consumer missingness audits, and metric-empty split invalidation. |
 | Portfolio | One long-only equal-weight ranking engine with default one-row lag, drift-aware holdings, signed trades, turnover, fixed costs/slippage, optional position clipping, residual cash, and benchmark accounting. Target construction currently lives in `src/backtest/portfolio.py`; `src/strategies/` is placeholder-only. |
 | Metrics | Return, volatility, unadjusted Sharpe-style ratio, drawdown, turnover/cost totals, benchmark/excess return, holdings count, normalized HHI, exact-date tracking error, and completed holding-episode metrics. |
 | Volume impact | Lagged dollar-volume participation diagnostics and optional precomputed return impact; not a calibrated fill, capacity, or market-impact model. |
@@ -37,37 +37,32 @@ authorized.
 | Private diagnostics | Local-only EODHD validation and factor diagnostics on a fixed cohort; not accepted point-in-time real-data interpretation. |
 | LEAN | Non-executing metadata/signal scaffold only; no algorithm runtime, parity evidence, brokerage, orders, paper, or live path. |
 
-The verified software baseline has 594 passing tests plus Ruff, compilation,
-package-build, and exact-head CI evidence. Those checks establish software
-behavior, not empirical research validity.
+The Stage 1b branch has 637 passing tests plus Ruff, compilation, and
+package-build evidence. Current-head GitHub CI and final-head review remain PR
+gates. These checks establish software behavior, not empirical research
+validity.
 
 ## Current Research-Validity Findings
 
 ### High
 
-1. Forward returns are calculated on the full panel before split slicing in
-   `research/eodhd_factor_diagnostics_dry_run.py` and
-   `research/local_csv_fixture_workflow_demo.py`. Labels at train/validation
-   edges can use prices from the next split.
-2. `make_train_validation_test_split()` rejects a bounded `test_end` earlier
-   than the final input date, so a frozen evaluation window cannot exclude
-   later available data.
-3. `run_long_only_backtest()` documents signals as known after close but
+1. `run_long_only_backtest()` documents signals as known after close but
    accepts `signal_lag_periods=0`, allowing ambiguous same-close target setting.
-4. The private EODHD workflow calculated and reviewed test diagnostics through
+2. The private EODHD workflow calculated and reviewed test diagnostics through
    2026-06-26. The 2025-05-01 through 2026-05-31 interval is historical
    evaluation or pseudo-holdout evidence, not presumed pristine holdout data.
-5. The fixed EODHD cohort lacks point-in-time membership, delisting/symbol
+3. The fixed EODHD cohort lacks point-in-time membership, delisting/symbol
    history, resolved corporate-action and adjusted price/volume semantics, and
    complete provenance/license evidence.
 
-Stage 1a has accepted the design for findings 1 and 2 without changing their
-current implementation. `docs/purged_bounded_split_contract.md` freezes six
-explicit inclusive boundaries, complete label-interval ownership, a hard
-bounded test cutoff, horizon-aware purge, optional embargo, raw-axis target
-masking, warm-up/down metadata, and deterministic mutation-invariance tests.
-Until Stage 1b passes, current diagnostic outputs remain subject to the
-implementation defects above.
+Stage 1 resolves the former cross-split-label and unbounded-test defects.
+`src/features/validation.py` now enforces six explicit inclusive boundaries,
+complete label-interval ownership, a hard bounded test cutoff,
+horizon-aware purge, optional embargo, raw-axis target masking,
+warm-up/down metadata, and consumer missingness accounting. All four current
+split consumers use the typed contract. Deterministic tests cover post-test,
+asset/benchmark mutation, cross-edge asset mutation, zero-eligible,
+partial-missing, all-missing, and usable-label but metric-empty cases.
 
 ### Medium
 
@@ -102,9 +97,9 @@ timing, holdout, statistical, or public-documentation findings above.
 | Stage | Status | Scope | Completion gate |
 | --- | --- | --- | --- |
 | 0. Research Charter Reset | Complete on protected main via PR #158 | Add the charter and reconcile specification, roadmap, handoff, controller, workflow Skill, and documentation contracts without changing research behavior. | Documentation tests, Skill audit, repo-map refresh, full baseline validation, CI, and final current-head review passed. |
-| 1a. Purged/bounded split contract | Complete on this head | Freeze explicit split starts/ends, bounded test semantics, label start/end ownership, horizon purge, optional embargo, raw-axis target masking, and warm-up/down metadata. | `docs/purged_bounded_split_contract.md`, its hand-calculated boundary matrix, documentation contracts, full gates, and independent read-only review pass. |
-| 1b. Purged/bounded split implementation | Next after Stage 1a merge | Implement the accepted split contract and remove cross-split labels from every current future-return workflow. | Focused tests prove later prices cannot alter earlier split labels or metrics; raw axes retain masked exclusions; full gates pass. |
-| 2. Signal/execution timing | Blocked by Stage 1 | Freeze feature, availability, decision, execution, and return timestamps; resolve zero-lag and metric-window contracts. | Close-derived signals cannot receive ambiguous same-close fills; timing and anchor tests pass. |
+| 1a. Purged/bounded split contract | Complete on protected main via PR #159 | Freeze explicit split starts/ends, bounded test semantics, label start/end ownership, horizon purge, optional embargo, raw-axis target masking, and warm-up/down metadata. | `docs/purged_bounded_split_contract.md`, its hand-calculated boundary matrix, documentation contracts, full gates, and independent read-only review passed. |
+| 1b. Purged/bounded split implementation | Complete on this head | Implement the accepted split contract and remove cross-split labels from every current future-return workflow. | Focused tests prove later prices cannot alter earlier split labels or metrics; raw axes retain masked exclusions; missingness is audited; full local gates pass. |
+| 2. Signal/execution timing | Next after Stage 1b merge | Freeze feature, availability, decision, execution, and return timestamps; resolve zero-lag and metric-window contracts. | Close-derived signals cannot receive ambiguous same-close fills; timing and anchor tests pass. |
 | 3. Point-in-time data methodology | Blocked by Stages 1-2 | Define provider-agnostic provenance, universe, delisting/corporate-action, field, benchmark, missing-data, privacy, and holdout-ledger contracts. | Every required methodology field is accepted before formal interpretation; no vendor download is implied. |
 | 4. Experiment/trial ledger | Blocked by Stage 3 design dependencies | Allocate immutable IDs before execution and retain every attempted, failed, invalid, aborted, and excluded trial plus hashes and access records. | Append-only and completeness tests pass; no silent overwrite or failed-before-write loss. |
 | 5. Statistical validation | Blocked by Stage 4 | Add descriptive, dependence-aware, bootstrap, placebo, multiplicity, DSR, PBO, and stability controls in design-first increments. | Registered inference policy and deterministic synthetic/golden tests pass. |

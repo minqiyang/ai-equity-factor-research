@@ -1,5 +1,108 @@
 # Engineering Log
 
+## 2026-07-26 - Purged And Bounded Split Implementation
+
+- Started from protected `main` merge `12e0e86` in the isolated
+  `codex/purged-bounded-split-implementation` worktree. The unrelated local
+  checkout remained untouched.
+- Verified the exact merge SHA, successful post-merge GitHub CI, and a clean
+  595-test/Ruff/compilation baseline before editing.
+- Implemented the accepted six-bound contract in
+  `src/features/validation.py`: exact source-index retention, typed label
+  kinds, deterministic per-candidate ledger, row-horizon endpoints,
+  per-window purge, gap-aware embargo, feature warm-up, in-window label
+  warm-down, hard bounded test suffix, JSON-ready metadata, and raw-axis target
+  masking.
+- Added a label-aware slicer that rejects unmasked structurally excluded
+  values. Price labels are calculated only for eligible intervals; no raw
+  cross-boundary or post-test label value is exposed to diagnostics.
+- Added consumer availability accounting for eligible target cells,
+  valid/missing target cells, usable factor-label pairs,
+  `no_eligible_labels`, and `no_usable_label_pairs`.
+- Migrated all four current split consumers. EODHD and local-fixture paths use
+  the same price-label mask for assets and benchmark. Both synthetic consumers
+  now declare `synthetic_same_row_response`, horizon zero, exact `[t, t]`
+  intervals, and no forward-price-return wording.
+- The tiny four-row local fixture now records one feature warm-up row and three
+  one-row horizon-one windows. All are honestly retained as `INVALID` with
+  zero eligible labels instead of borrowing values across split boundaries.
+- Added deterministic post-test append/mutation, cross-edge mutation,
+  asset/benchmark parity, zero-eligible, partial-missing, all-missing,
+  irregular-calendar, purge/embargo-overlap, and strict-alignment tests. The
+  full suite currently passes with 637 tests.
+- Independent review found and the integration owner fixed three P2
+  hardening gaps: canonical revalidation now rejects mutated ledgers and
+  window schedules, the raw feature slicer requires an explicit feature role,
+  and configured-case evidence preserves structural label invalidity instead
+  of replacing it with a generic metric-observation reason.
+- Regenerated only the affected synthetic local-fixture and robustness
+  Markdown/JSON evidence, then regenerated the experiment registry. JSON
+  parsing and secret/private-path scans passed; the registry was
+  semantically unchanged.
+- Built the sdist and wheel successfully. The build tool created disposable
+  isolated environments and installed `setuptools==83.0.0`, `wheel==0.47.0`,
+  and transitive `packaging==26.2`; these were not installed into the project
+  environment, and no dependency or lock file changed.
+- PR #160 CI run `30234375203` exposed one pandas-version-sensitive test
+  expectation: pandas 3.0.5 constructs an empty literal `DatetimeIndex` at
+  second precision while the implementation correctly preserves the source
+  index's microsecond precision. The test now derives its expected empty set
+  from the source index and passes under both local pandas 2.2.3 and CI-matched
+  pandas 3.0.5 without changing implementation behavior.
+- The CI reproduction used a disposable `uv run` Python 3.11 environment with
+  `numpy==2.4.6`, `pandas==3.0.5`, `scipy==1.17.1`, `pytest==9.1.1`,
+  `python-dateutil==2.9.0.post0`, `six==1.17.0`, `iniconfig==2.3.0`,
+  `packaging==26.2`, `pluggy==1.6.0`, and `pygments==2.20.0`. Nothing was
+  installed into the project environment, and no dependency or lock file
+  changed.
+- The final Codex review on commit `b0269a1` found one P2 classification gap:
+  an EODHD split with usable pairs but no valid IC, Rank IC, or quantile-spread
+  dates remained `DIAGNOSTIC_ONLY`. The split summary now preserves structural
+  invalid reasons first and otherwise records
+  `no_valid_factor_diagnostic_dates` / `INVALID` when every diagnostic is
+  empty. A one-asset sparse-universe regression test covers the case.
+- The next Codex review on commit `60d7b7f` found the same P2 classification
+  gap in the synthetic IC/Rank-IC consumer and local CSV fixture consumer.
+  Classification is now centralized in `features.validation`; EODHD,
+  synthetic split, and local fixture summaries preserve availability failures
+  first and otherwise mark all-metric-empty splits
+  `no_valid_factor_diagnostic_dates` / `INVALID`. Two deterministic sparse
+  coverage tests reproduce the findings and also verify that the local
+  configured-case JSON summary agrees with its split summary. A shared-helper
+  contract test preserves availability precedence and confirms that one
+  non-empty diagnostic remains `DIAGNOSTIC_ONLY`.
+- Independent review then found a pandas 3 compatibility P2 in the robustness
+  consumer: a missing availability reason can materialize as `NaN`, so an
+  `is not None` check marked valid train rows `INVALID`. The robustness path
+  now uses the shared classifier for missing-reason normalization and
+  structural precedence while preserving its stricter one-metric failure
+  reasons. A CI-aligned pandas 3 regression keeps valid train rows
+  `DIAGNOSTIC_ONLY`, constant-signal rows invalid for absent metrics, and
+  zero-eligible validation/test rows structurally invalid.
+- Regenerating the scoped local-fixture and robustness Markdown/JSON outputs
+  plus the experiment registry after the classification fixes reproduced
+  their exact prior SHA-256 hashes; no generated evidence changed.
+- The review-fix package rebuild reused a disposable `uvx`
+  `build==1.5.0` frontend. Its isolated sdist and wheel environments each
+  installed `setuptools==83.0.0`, `wheel==0.47.0`, and transitive
+  `packaging==26.2`; no project environment, dependency declaration, or lock
+  file changed.
+- The first narrowed pandas 3 review-fix check omitted the declared SciPy
+  runtime dependency and stopped at pandas' Spearman import. The same
+  disposable Python 3.11 check passed all six EODHD tests after adding
+  `scipy==1.17.1`; no repository environment or dependency file changed.
+- The first direct generator invocation could not import `backtest` because a
+  one-off Python process did not include the repository `src` directory. The
+  same reviewed generator functions succeeded after explicitly placing the
+  worktree `src` directory first on that process's import path. No dependency
+  was installed and no dependency file changed.
+- Assumption: the private EODHD default bounded test ends on 2025-04-30, before
+  the already-exposed 2025-05-01 onward interval. No private file, output, or
+  performance value was opened or interpreted.
+- No factor formula, strategy, portfolio, cost, execution, data-provider, or
+  LEAN behavior changed. Trial-count impact is zero because this stage changes
+  validation plumbing and deterministic diagnostic evidence only.
+
 ## 2026-07-26 - Purged And Bounded Split Contract
 
 - Started from protected `main` merge `57f3db3` in the isolated

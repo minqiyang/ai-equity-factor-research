@@ -82,7 +82,7 @@ def test_synthetic_split_robustness_preserves_missing_values() -> None:
 
     assert pd.isna(result.base_factor.loc[pd.Timestamp("2024-01-09"), "ASSET_02"])
     assert pd.isna(
-        result.forward_returns.loc[pd.Timestamp("2024-01-16"), "ASSET_04"],
+        result.synthetic_responses.loc[pd.Timestamp("2024-01-16"), "ASSET_04"],
     )
     assert result.summary.loc[
         ("base_signal", "validation"),
@@ -90,12 +90,16 @@ def test_synthetic_split_robustness_preserves_missing_values() -> None:
     ] == 23
     assert result.summary.loc[
         ("base_signal", "test"),
-        "forward_return_valid_observations",
+        "synthetic_response_valid_observations",
     ] == 23
     assert result.summary.loc[
         ("constant_signal", "validation"),
         "factor_valid_observations",
     ] == 23
+    assert result.summary.loc[
+        ("base_signal", "test"),
+        "missing_eligible_target_cells",
+    ] == 1
 
 
 def test_synthetic_split_robustness_is_deterministic() -> None:
@@ -103,7 +107,7 @@ def test_synthetic_split_robustness_is_deterministic() -> None:
     second = run_synthetic_split_robustness_demo()
 
     assert_frame_equal(first.base_factor, second.base_factor)
-    assert_frame_equal(first.forward_returns, second.forward_returns)
+    assert_frame_equal(first.synthetic_responses, second.synthetic_responses)
     assert_frame_equal(first.summary, second.summary)
     for case_id in first.factor_cases:
         assert_frame_equal(first.factor_cases[case_id], second.factor_cases[case_id])
@@ -123,6 +127,59 @@ def test_synthetic_split_robustness_assumptions_keep_costs_separate() -> None:
     assert result.assumptions["brokerage_integration"] is False
     assert result.assumptions["order_execution"] is False
     assert result.assumptions["profitability_claim"] is False
+    assert "synthetic_same_row_response" in result.assumptions[
+        "target_response_definition"
+    ]
+
+
+def test_synthetic_robustness_classifies_train_and_zero_eligible_windows() -> None:
+    config = SyntheticSplitRobustnessConfig(
+        base_config=demo.SyntheticSplitICRankICConfig(embargo_rows=4),
+    )
+    result = run_synthetic_split_robustness_demo(config)
+
+    for case_id in ("base_signal", "inverse_signal"):
+        train = result.summary.loc[(case_id, "train")]
+        assert train["eligible_date_count"] == 4
+        assert pd.isna(train["invalid_reason"])
+        assert train["status"] == "DIAGNOSTIC_ONLY"
+
+    constant_train = result.summary.loc[("constant_signal", "train")]
+    assert constant_train["eligible_date_count"] == 4
+    assert constant_train["invalid_reason"] == "no_valid_ic_or_rank_ic_dates"
+    assert constant_train["status"] == "INVALID"
+
+    for case_id in ("base_signal", "inverse_signal", "constant_signal"):
+        for split_name in ("validation", "test"):
+            row = result.summary.loc[(case_id, split_name)]
+            assert row["eligible_date_count"] == 0
+            assert row["invalid_reason"] == "no_eligible_labels"
+            assert row["status"] == "INVALID"
+
+
+def test_synthetic_robustness_audits_all_missing_eligible_targets(
+    monkeypatch,
+) -> None:
+    original_generator = demo.generate_synthetic_responses
+
+    def all_missing_test_responses(factor, split):
+        responses = original_generator(factor, split)
+        responses.loc[split.window_metadata["test"].eligible_dates] = pd.NA
+        return responses
+
+    monkeypatch.setattr(
+        demo,
+        "generate_synthetic_responses",
+        all_missing_test_responses,
+    )
+    result = run_synthetic_split_robustness_demo()
+
+    for case_id in ("base_signal", "inverse_signal", "constant_signal"):
+        row = result.summary.loc[(case_id, "test")]
+        assert row["eligible_date_count"] == 4
+        assert row["usable_factor_label_pairs"] == 0
+        assert row["invalid_reason"] == "no_usable_label_pairs"
+        assert row["status"] == "INVALID"
 
 
 def test_synthetic_split_robustness_can_skip_outputs(tmp_path: Path) -> None:
@@ -176,6 +233,27 @@ def test_synthetic_split_robustness_writes_caveated_report_and_log(
     assert "all configured cases reported" in payload["caveats"]
     assert "not parameter selection" in payload["caveats"]
     assert payload["assumptions"]["volume_aware_slippage_mode"] == "absent"
+    split_contract = payload["diagnostics"]["split_contract"]
+    assert split_contract["label_kind"] == "synthetic_same_row_response"
+    assert split_contract["label_horizon_rows"] == 0
+    assert split_contract["label_derivation"] == (
+        "factor_scaled_same_row_response_v1"
+    )
+    assert result.split.label_horizon_rows == 0
+    assert result.split.label_derivation == "factor_scaled_same_row_response_v1"
+    assert (
+        result.split.label_ledger["signal_date"]
+        == result.split.label_ledger["label_start"]
+    ).all()
+    assert (
+        result.split.label_ledger["signal_date"]
+        == result.split.label_ledger["label_end"]
+    ).all()
+    assert all(
+        row["signal_date"] == row["label_start"] == row["label_end"]
+        for row in split_contract["label_ledger"]
+    )
+    assert "forward return" not in report_text.lower()
 
 
 def test_synthetic_split_robustness_main_writes_requested_report(

@@ -15,8 +15,8 @@ Exercise the local CSV research path with a small committed fixture:
 7. Apply the universe mask to `alpha_009` as a signal-panel smoke check only.
 8. Compute `alpha_009` as a close-only research feature.
 9. Compute `alpha_012` as a volume + close research feature from the OHLCV fixture.
-10. Compute next-row forward returns as evaluation targets only.
-11. Apply chronological train/validation/test split metadata.
+10. Establish explicit split bounds, label intervals, purge, and embargo metadata.
+11. Compute and expose only structurally eligible next-row evaluation targets.
 12. Run IC, Rank IC, and quantile spread diagnostics.
 13. Run a synthetic volume-aware slippage participation/count smoke diagnostic.
 14. Write a caveated report and JSON experiment log.
@@ -35,9 +35,17 @@ Exercise the local CSV research path with a small committed fixture:
 | OHLCV rows | `4` |
 | Asset columns | `AAA, BBB, CCC` |
 | Date range | `2024-01-02` to `2024-01-05` |
-| Train end | `2024-01-02` |
-| Validation end | `2024-01-03` |
+| Train start | `2024-01-03` |
+| Train end | `2024-01-03` |
+| Validation start | `2024-01-04` |
+| Validation end | `2024-01-04` |
+| Test start | `2024-01-05` |
 | Test end | `2024-01-05` |
+| Label kind | `price_forward_return` |
+| Label derivation | `adjusted_close_row_forward_return_v1` |
+| Label horizon rows | `1` |
+| Embargo rows | `0` |
+| Feature warm-up rows | `1` |
 | Missing price values | `0` |
 | Missing benchmark values | `0` |
 | Slippage smoke notional | `100000.0000` |
@@ -63,9 +71,9 @@ The workflow declares a small local CSV inventory for the committed synthetic fi
 
 ## Processing Summary
 
-The workflow preserves the loader output date index and asset columns, verifies that the benchmark dates match the price panel dates, computes `alpha_009` with `window=1`, and computes `alpha_012` from the synthetic OHLCV `adjusted_close` and `volume` panels. Forward returns are aligned to the same date as the factor value for diagnostic evaluation only; they are not used as feature inputs.
+The workflow preserves the loader output date index and asset columns, verifies that the benchmark dates match the price panel dates, computes `alpha_009` with `window=1`, and computes `alpha_012` from the synthetic OHLCV `adjusted_close` and `volume` panels. Eligible forward-return labels are aligned to their candidate signal dates for diagnostic evaluation only; they are not used as feature inputs.
 
-The train/validation/test metadata is a chronological fixture split by factor and evaluation-target row date only. The one-row forward returns are diagnostic labels, not feature inputs, and are not used for parameter selection. This tiny fixture split is not model selection, parameter tuning, strategy validation, or real-market evidence.
+The train/validation/test contract uses six explicit inclusive bounds and records every signal date, label start, and label end. A target is available to diagnostics only when its complete interval remains inside one window and it is not embargoed. Purged rows stay visible on the raw axis with all-`NaN` targets. The one-row forward returns are diagnostic labels, not feature inputs, and are not used for parameter selection. Because the tiny four-row fixture honestly reserves one feature warm-up row, each one-row evaluation window has zero eligible horizon-one labels and is retained as `INVALID`; no label is borrowed across a boundary.
 
 No missing values were filled. No dates or assets were reindexed. No strategy portfolio construction, execution timing, transaction cost model, or backtest is included.
 
@@ -117,25 +125,33 @@ The diagnostic uses `window=1`, `volume_lag=1`, `portfolio_notional=100000.0000`
 
 ## Split Coverage
 
-| split | date_count | asset_count | factor_valid_observations | forward_return_valid_observations | ic_valid_dates | rank_ic_valid_dates | quantile_spread_valid_dates | mean_ic | mean_rank_ic |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| train | 1 | 3 | 0 | 3 | 0 | 0 | 0 | NaN | NaN |
-| validation | 1 | 3 | 3 | 3 | 1 | 1 | 1 | -0.6217 | -0.5000 |
-| test | 2 | 3 | 6 | 3 | 1 | 1 | 0 | 0.9997 | 0.8660 |
+| split | date_count | asset_count | factor_valid_observations | forward_return_valid_observations | ic_valid_dates | rank_ic_valid_dates | quantile_spread_valid_dates | mean_ic | mean_rank_ic | eligible_date_count | valid_eligible_target_cells | missing_eligible_target_cells | usable_factor_label_pairs | has_usable_label_pairs | invalid_reason | status |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| train | 1 | 3 | 3 | 0 | 0 | 0 | 0 | NaN | NaN | 0 | 0.0000 | 0.0000 | 0.0000 | false | no_eligible_labels | INVALID |
+| validation | 1 | 3 | 3 | 0 | 0 | 0 | 0 | NaN | NaN | 0 | 0.0000 | 0.0000 | 0.0000 | false | no_eligible_labels | INVALID |
+| test | 1 | 3 | 3 | 0 | 0 | 0 | 0 | NaN | NaN | 0 | 0.0000 | 0.0000 | 0.0000 | false | no_eligible_labels | INVALID |
+
+## Benchmark Label Availability
+
+| split | eligible_date_count | total_eligible_target_cells | valid_eligible_target_cells | missing_eligible_target_cells | invalid_reason | status |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| train | 0 | 0.0000 | 0.0000 | 0.0000 | no_eligible_labels | INVALID |
+| validation | 0 | 0.0000 | 0.0000 | 0.0000 | no_eligible_labels | INVALID |
+| test | 0 | 0.0000 | 0.0000 | 0.0000 | no_eligible_labels | INVALID |
 
 
 ## Configured Case Summary
 
 This opt-in table reports every configured fixture case across every split. Invalid or insufficient rows stay visible with reasons. Transaction cost, fixed-bps slippage, and volume-aware slippage fields are separate diagnostic fields only; no cost or slippage model is applied to returns.
 
-| case_id | case_label | split | valid | invalid_reason | coverage | ic_valid_dates | rank_ic_valid_dates | quantile_spread_valid_dates | transaction_cost_bps | slippage_bps | volume_aware_slippage_mode | zero_slippage_diagnostic | caveats |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| alpha_009 | Alpha#009 local fixture | train | false | insufficient_metric_observations | 0.0000 | 0 | 0 | 0 | NaN | NaN | absent | false | committed synthetic fixture only; diagnostic metrics only; not profitability evidence |
-| alpha_009 | Alpha#009 local fixture | validation | true |  | 1.0000 | 1 | 1 | 1 | NaN | NaN | absent | false | committed synthetic fixture only; diagnostic metrics only; not profitability evidence |
-| alpha_009 | Alpha#009 local fixture | test | true |  | 1.0000 | 1 | 1 | 0 | NaN | NaN | absent | false | committed synthetic fixture only; diagnostic metrics only; not profitability evidence |
-| alpha_012 | Alpha#012 local fixture | train | false | insufficient_metric_observations | 0.0000 | 0 | 0 | 0 | NaN | NaN | absent | false | committed synthetic fixture only; diagnostic metrics only; not profitability evidence |
-| alpha_012 | Alpha#012 local fixture | validation | true |  | 0.6667 | 1 | 1 | 0 | NaN | NaN | absent | false | committed synthetic fixture only; diagnostic metrics only; not profitability evidence |
-| alpha_012 | Alpha#012 local fixture | test | false | insufficient_metric_observations | 0.0000 | 0 | 0 | 0 | NaN | NaN | absent | false | committed synthetic fixture only; diagnostic metrics only; not profitability evidence |
+| case_id | case_label | split | valid | invalid_reason | status | eligible_date_count | valid_eligible_target_cells | missing_eligible_target_cells | usable_factor_label_pairs | has_usable_label_pairs | coverage | ic_valid_dates | rank_ic_valid_dates | quantile_spread_valid_dates | transaction_cost_bps | slippage_bps | volume_aware_slippage_mode | zero_slippage_diagnostic | caveats |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| alpha_009 | Alpha#009 local fixture | train | false | no_eligible_labels | INVALID | 0 | 0 | 0 | 0 | false | 1.0000 | 0 | 0 | 0 | NaN | NaN | absent | false | committed synthetic fixture only; diagnostic metrics only; not profitability evidence |
+| alpha_009 | Alpha#009 local fixture | validation | false | no_eligible_labels | INVALID | 0 | 0 | 0 | 0 | false | 1.0000 | 0 | 0 | 0 | NaN | NaN | absent | false | committed synthetic fixture only; diagnostic metrics only; not profitability evidence |
+| alpha_009 | Alpha#009 local fixture | test | false | no_eligible_labels | INVALID | 0 | 0 | 0 | 0 | false | 1.0000 | 0 | 0 | 0 | NaN | NaN | absent | false | committed synthetic fixture only; diagnostic metrics only; not profitability evidence |
+| alpha_012 | Alpha#012 local fixture | train | false | no_eligible_labels | INVALID | 0 | 0 | 0 | 0 | false | 0.6667 | 0 | 0 | 0 | NaN | NaN | absent | false | committed synthetic fixture only; diagnostic metrics only; not profitability evidence |
+| alpha_012 | Alpha#012 local fixture | validation | false | no_eligible_labels | INVALID | 0 | 0 | 0 | 0 | false | 0.0000 | 0 | 0 | 0 | NaN | NaN | absent | false | committed synthetic fixture only; diagnostic metrics only; not profitability evidence |
+| alpha_012 | Alpha#012 local fixture | test | false | no_eligible_labels | INVALID | 0 | 0 | 0 | 0 | false | 0.0000 | 0 | 0 | 0 | NaN | NaN | absent | false | committed synthetic fixture only; diagnostic metrics only; not profitability evidence |
 
 
 ## Alpha#009 Diagnostic Coverage
@@ -143,19 +159,19 @@ This opt-in table reports every configured fixture case across every split. Inva
 | Diagnostic | Value |
 | --- | ---: |
 | Factor valid observations | `9` |
-| Forward-return valid observations | `9` |
-| Benchmark forward-return valid observations | `3` |
-| IC valid dates | `2` |
-| Rank IC valid dates | `2` |
-| Quantile spread valid dates | `1` |
+| Forward-return valid observations | `0` |
+| Benchmark forward-return valid observations | `0` |
+| IC valid dates | `0` |
+| Rank IC valid dates | `0` |
+| Quantile spread valid dates | `0` |
 
 ## Alpha#009 Information Coefficient Diagnostics
 
 | Date | information_coefficient |
 | --- | ---: |
 | 2024-01-02 | NaN |
-| 2024-01-03 | -0.6217 |
-| 2024-01-04 | 0.9997 |
+| 2024-01-03 | NaN |
+| 2024-01-04 | NaN |
 | 2024-01-05 | NaN |
 
 ## Alpha#009 Rank Information Coefficient Diagnostics
@@ -163,8 +179,8 @@ This opt-in table reports every configured fixture case across every split. Inva
 | Date | rank_information_coefficient |
 | --- | ---: |
 | 2024-01-02 | NaN |
-| 2024-01-03 | -0.5000 |
-| 2024-01-04 | 0.8660 |
+| 2024-01-03 | NaN |
+| 2024-01-04 | NaN |
 | 2024-01-05 | NaN |
 
 ## Alpha#009 Quantile Spread Diagnostics
@@ -172,8 +188,8 @@ This opt-in table reports every configured fixture case across every split. Inva
 | Date | bottom_quantile_mean_return | top_quantile_mean_return | top_minus_bottom_spread | valid_asset_count | bottom_quantile_count | top_quantile_count |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 2024-01-02 | NaN | NaN | NaN | 0 | 0 | 0 |
-| 2024-01-03 | 0.0151 | 0.0074 | -0.0077 | 3 | 1 | 1 |
-| 2024-01-04 | NaN | NaN | NaN | 3 | 0 | 0 |
+| 2024-01-03 | NaN | NaN | NaN | 0 | 0 | 0 |
+| 2024-01-04 | NaN | NaN | NaN | 0 | 0 | 0 |
 | 2024-01-05 | NaN | NaN | NaN | 0 | 0 | 0 |
 
 ## Alpha#012 Diagnostic Coverage
@@ -183,9 +199,9 @@ This opt-in table reports every configured fixture case across every split. Inva
 | Diagnostic | Value |
 | --- | ---: |
 | Factor valid observations | `2` |
-| Forward-return valid observations | `9` |
-| IC valid dates | `1` |
-| Rank IC valid dates | `1` |
+| Forward-return valid observations | `0` |
+| IC valid dates | `0` |
+| Rank IC valid dates | `0` |
 | Quantile spread valid dates | `0` |
 
 ## Alpha#012 Information Coefficient Diagnostics
@@ -193,7 +209,7 @@ This opt-in table reports every configured fixture case across every split. Inva
 | Date | information_coefficient |
 | --- | ---: |
 | 2024-01-02 | NaN |
-| 2024-01-03 | 1.0000 |
+| 2024-01-03 | NaN |
 | 2024-01-04 | NaN |
 | 2024-01-05 | NaN |
 
@@ -202,7 +218,7 @@ This opt-in table reports every configured fixture case across every split. Inva
 | Date | rank_information_coefficient |
 | --- | ---: |
 | 2024-01-02 | NaN |
-| 2024-01-03 | 1.0000 |
+| 2024-01-03 | NaN |
 | 2024-01-04 | NaN |
 | 2024-01-05 | NaN |
 
@@ -211,7 +227,7 @@ This opt-in table reports every configured fixture case across every split. Inva
 | Date | bottom_quantile_mean_return | top_quantile_mean_return | top_minus_bottom_spread | valid_asset_count | bottom_quantile_count | top_quantile_count |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | 2024-01-02 | NaN | NaN | NaN | 0 | 0 | 0 |
-| 2024-01-03 | NaN | NaN | NaN | 2 | 0 | 0 |
+| 2024-01-03 | NaN | NaN | NaN | 0 | 0 | 0 |
 | 2024-01-04 | NaN | NaN | NaN | 0 | 0 | 0 |
 | 2024-01-05 | NaN | NaN | NaN | 0 | 0 | 0 |
 
