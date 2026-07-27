@@ -18,11 +18,12 @@ Updated: 2026-07-27 for the Point-in-Time Data Methodology Contract.
 - Stage 1 split isolation and Stage 2 signal/execution timing are complete on
   protected main. Stage 3 defines methodology only; it does not accept a
   provider, dataset, license, universe, field, benchmark, or historical claim.
-- Stage 3 local validation has 852 passing tests with the same two
+- Stage 3 post-review-fix local validation has 854 passing tests with the same two
   platform-conditional skips. Ruff, compilation, build, Skill, repo-map,
-  privacy/Unicode/diff gates, and independent read-only re-review passed with
-  no remaining actionable P1/P2; GitHub CI and final current-head Codex review
-  remain pending.
+  privacy/Unicode/diff gates, and two independent digest re-reviews passed with
+  no remaining actionable P1/P2. Initial PR CI passed; the final current-head
+  review found and drove the digest fix. New-head CI and the required
+  current-head re-review remain pending.
 - Current phase: research-only. No vendor download, credentials, brokerage,
   orders, paper deployment, live deployment, or real-money execution.
 

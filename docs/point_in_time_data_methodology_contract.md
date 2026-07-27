@@ -117,7 +117,7 @@ identity is a tuple, not a filename or free-text label.
 | `environment_id` | Immutable interpreter, platform, library, calendar, locale, and timezone environment reference used for transformation or validation. |
 | `environment_lock_sha256` | Hash of the reviewed lock, container, or equivalent complete environment manifest. |
 | `canonicalization_id` | Versioned canonical-serialization and identity-projection specification. |
-| `ordered_manifest_sha256` | Hash of the ordered component inventory. |
+| `ordered_manifest_sha256` | SHA-256 of the exact `ordered_component_inventory_v1` canonical preimage defined below. |
 | `canonical_manifest_sha256` | Hash of canonical manifest serialization excluding this field itself. |
 
 ### Per-input fields
@@ -126,8 +126,11 @@ Every input records:
 
 - stable `input_id` and role;
 - schema name and version;
-- actual `raw_byte_sha256`, byte size, row count, exact inclusive data range,
-  and approved hash-publication classification;
+- a nonempty `physical_components` collection in which every record has exactly
+  `input_id`, `component_ordinal`, `raw_byte_sha256`, and `byte_size`, and the
+  child `input_id` equals the parent input ID;
+- row count, exact inclusive data range, and approved hash-publication
+  classification;
 - raw, vendor-cleaned, hand-cleaned, normalized, or derived status;
 - parent input IDs and hashes, transformation ID, code SHA, and config hash;
 - transformation `environment_id` and environment-lock digest;
@@ -172,9 +175,7 @@ constructs a typed identity projection:
   non-identity presentation notes;
 - set-like arrays are sorted by their declared stable IDs before
   canonicalization; semantically ordered arrays retain their schema-required
-  stable ordinal; and
-- the component inventory is sorted by `(input_id, component_ordinal)` before
-  `ordered_manifest_sha256` is calculated.
+  stable ordinal.
 
 The resulting I-JSON value is serialized exactly under
 [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785): no inter-token
@@ -185,15 +186,67 @@ profile fails instead of being coerced. These rules, including the referenced
 RFC version, are part of `pit_canonical_json_v1`; a change requires a new
 canonicalization ID.
 
+#### Ordered component inventory digest
+
+The value hashed for `ordered_manifest_sha256` is exactly one
+`ordered_component_inventory_v1` object:
+
+```json
+{
+  "schema_version": "ordered_component_inventory_v1",
+  "canonicalization_id": "pit_canonical_json_v1",
+  "components": [
+    {
+      "input_id": "<stable-input-id>",
+      "component_ordinal": 0,
+      "raw_byte_sha256": "<lowercase-sha256>",
+      "byte_size": 0
+    }
+  ]
+}
+```
+
+The top-level object and each component have exactly the keys shown; missing or
+unknown keys fail validation. `input_id` is a nonempty NFC-normalized string.
+`component_ordinal` and `byte_size` are non-Boolean, nonnegative I-JSON-safe
+integers. `raw_byte_sha256` is exactly 64 lowercase hexadecimal characters.
+Every `(input_id, component_ordinal)` tuple is unique, and ordinals for each
+`input_id` are zero-based and contiguous.
+
+The digest projection is the all-and-only, one-to-one flattening of every
+`physical_components` record from every manifest input. It may not omit,
+duplicate, merge, split, or repartition components after the immutable manifest
+version is created. The projected fields must equal their retained manifest
+values exactly.
+
+After typed preprocessing, components are sorted by NFC-normalized `input_id`
+using the raw UTF-16 code-unit order required by JCS and then by
+`component_ordinal`. Source-array order is not identity-bearing. The resulting
+object alone is serialized with `pit_canonical_json_v1`; no envelope,
+delimiter, byte-order mark, or trailing newline is added.
+`ordered_manifest_sha256` is the lowercase hexadecimal SHA-256 of those exact
+UTF-8 bytes. The stored digest is outside the preimage, and no field is
+implicitly ignored.
+
+This secondary digest binds physical component identity and order only.
+Per-input roles, schemas, lineage, transformations, environments, calendars,
+and policy semantics remain identity-bearing fields of the full manifest and
+therefore of `canonical_manifest_sha256`. An ordered inventory digest alone
+cannot verify a dataset or satisfy any gate. It remains private unless its
+publication is explicitly approved.
+
 `canonical_manifest_sha256` is SHA-256 over the UTF-8 bytes of that canonical
 identity projection. Reordering object keys or non-semantic input inventory
 rows must not change it; changing an identity-bearing semantic field must
 change it.
 
-`tests/fixtures/pit_canonical_json_v1_golden.json` freezes a tiny synthetic
-semantic input, exact canonical UTF-8 text, and SHA-256. Its test proves compact
-literal encoding, property order, byte identity, and digest consistency without
-representing a private dataset or implementing a production manifest service.
+`tests/fixtures/pit_canonical_json_v1_golden.json` freezes a tiny preprocessed
+ASCII-only I-JSON/JCS smoke vector plus exact base, source-reorder, and
+identity-mutation byte/hash vectors for both secondary projections. The tests
+independently construct and sort each schema projection before comparing exact
+canonical UTF-8 text and SHA-256. They do not represent a private dataset,
+claim exhaustive typed-preprocessing coverage, or implement a production
+manifest service.
 
 Every validation or derived-data step records `environment_id`,
 `environment_lock_sha256`, interpreter/platform, locale, process timezone, and
@@ -499,9 +552,65 @@ restricted query/config details, actual paths, approved hashes, and sensitive
 quality artifacts stay outside the repository.
 
 Tracked records use a schema-versioned `public_redacted_projection` built by
-allowlist. It may contain logical IDs, declared roles, non-sensitive policy
-states, the safe dataset-review decision reference, redacted evidence
-references, and only hashes whose publication is explicitly permitted.
+allowlist. The value hashed for `public_projection_sha256` is exactly one
+`public_redacted_projection_v1` object:
+
+```json
+{
+  "schema_version": "public_redacted_projection_v1",
+  "public_projection_id": "<stable-public-projection-id>",
+  "canonicalization_id": "pit_canonical_json_v1",
+  "manifest_id": "<safe-logical-manifest-id>",
+  "dataset_roles": ["<declared-role>"],
+  "policy_states": [
+    {
+      "policy_id": "<stable-policy-id>",
+      "state": "<non-sensitive-reviewed-state>"
+    }
+  ],
+  "redacted_evidence_refs": [
+    {
+      "evidence_ref_id": "<safe-redacted-evidence-id>"
+    }
+  ],
+  "published_hashes": [
+    {
+      "hash_id": "<stable-public-hash-id>",
+      "sha256": "<publication-approved-lowercase-sha256>",
+      "publication_approval_ref_id": "<safe-approval-reference-id>"
+    }
+  ]
+}
+```
+
+The top-level object and every nested record have exactly the keys shown; every
+top-level key is required, with an empty array rather than omission when a
+collection has no entries. Unknown keys fail closed. Every public ID,
+reference, role, and policy ID is an opaque `safe_public_id`: 1-128 lowercase
+ASCII characters matching
+`[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?`. It is never a locator, path, URI,
+query, username, raw value, title, or free-text field. The grammar therefore
+prohibits slashes, backslashes, URI/query delimiters, whitespace, percent
+escapes, and `@`. Syntactic acceptance never replaces the separate
+publication-approval and privacy review. `state` is exactly `accepted`,
+`diagnostic_only`, or `blocked`. Published digests are exactly 64 lowercase
+hexadecimal characters and require a safe approval reference.
+
+`dataset_roles` is unique and sorted by normalized value.
+`policy_states`, `redacted_evidence_refs`, and `published_hashes` are unique and
+sorted by `policy_id`, `evidence_ref_id`, and `hash_id`, respectively, using
+the JCS UTF-16 order. After those schema-defined sorts, the exact object is
+serialized with `pit_canonical_json_v1`.
+`public_projection_sha256` is the lowercase hexadecimal SHA-256 of the
+resulting UTF-8 bytes with no envelope, delimiter, byte-order mark, or trailing
+newline. The stored digest, signatures, presentation notes, and later review
+decision are outside the preimage; no other field is ignored.
+
+The public projection cannot contain its dataset-review decision because the
+review decision binds the already-computed `public_projection_sha256`.
+The separate tracked decision projection may later carry the safe decision
+reference defined above. Changing any identity-bearing public field requires a
+new public projection ID, digest, and dataset-review decision.
 
 Tracked records must not contain private absolute paths, usernames/home
 directories, account or contract IDs, license documents, credentials, tokens,
@@ -591,7 +700,7 @@ be disclosed to record this access fact.
 | --- | --- | --- |
 | `PIT-001` | License is merely asserted or unknown. | Formal use is blocked; automated checks do not claim legal verification. |
 | `PIT-002` | A mutable file has only a timestamp, hash plan, placeholder, or malformed digest. | It is not an immutable dataset version. |
-| `PIT-003` | Manifest/decision object keys or non-semantic rows are reordered, or identical bytes arrive through different extraction, transformation, or environment lineage. | `pit_canonical_json_v1` reordering preserves the applicable hash; changed identity-bearing lineage/environment/decision fields create a distinct version and hash. |
+| `PIT-003` | Manifest/decision keys, component rows, or public set-like records are reordered; or an ordered component, public policy state, extraction, transformation, environment, or decision identity field changes. | Source reordering preserves exact canonical bytes and the applicable digest. Any identity-bearing field change alters the canonical preimage and requires digest recomputation; the frozen raw-digest and policy-state mutation vectors produce their separately specified hashes. |
 | `PIT-004` | Membership or another time-varying record is historically effective or publicly released but its conservative `known_at` is after the signal date. | It is unavailable to that signal. |
 | `PIT-005` | One ticker is reused by two permanent securities or crosses listing episodes. | No identity join or return stitching occurs. |
 | `PIT-006` | A held security delists or merges without accepted terminal evidence. | The affected window blocks; the position never silently disappears or becomes zero return. |

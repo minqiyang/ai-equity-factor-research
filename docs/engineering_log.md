@@ -53,23 +53,50 @@
 - This stage adds no research trial, factor, strategy, provider, data download,
   private-data artifact, dependency, generated performance evidence, paper/live
   trading path, brokerage connection, order behavior, or credential handling.
-- Final Python 3.12/pandas 2 local validation passed 852 tests with the same two
-  platform-conditional wide-`longdouble` skips. Focused documentation tests
-  passed 17 cases; Ruff, compilation, PEP 517 sdist/wheel build, Skill audit,
-  deterministic repo-map equality, privacy/path/digest, Markdown-table,
-  Unicode/control-character, and diff checks passed.
+- The initial PR head passed GitHub CI, but its required final current-head
+  Codex review found one P1: `ordered_manifest_sha256` and
+  `public_projection_sha256` named digests without freezing their exact
+  projection fields and canonical byte preimages. The integration owner
+  defined exact versioned projections, JCS/UTF-8 byte envelopes, ordering,
+  duplicate/unknown-field rejection, and noncircular decision binding, then
+  added synthetic base, reorder, and exact identity-mutation byte/hash vectors.
+- First-round fix re-review found that allowed public fields could still carry
+  path/URI values, physical component splitting was not tied one-to-one to the
+  manifest, and `PIT-003` overstated hash mutation behavior. The second-round
+  fix added a bounded opaque `safe_public_id` grammar plus allowed-key privacy
+  negatives, made `physical_components` an all-and-only retained manifest
+  projection, and limited the mutation claim to canonical-preimage change,
+  recomputation, and the frozen golden cases. Two independent read-only
+  re-reviewers reported no remaining actionable P1/P2 and did not edit their
+  own findings.
+- The first focused run after the review fix passed 18 tests and failed one
+  direct Markdown phrase assertion because a normative sentence wrapped across
+  lines. The test now evaluates normalized document text; the semantics and
+  golden hashes were unchanged. Focused documentation tests then passed all 19
+  cases.
+- The first final full run passed 853 tests and failed one stale Stage 2
+  documentation assertion that still expected the pre-fix Stage 3 roadmap
+  status. The assertion now requires the accurate new-head GitHub-gate status;
+  no research behavior or evidence classification changed.
+- Final Python 3.12/pandas 2 local validation passed 854 tests with the same two
+  platform-conditional wide-`longdouble` skips. Ruff, compilation, PEP 517
+  sdist/wheel build, Skill audit, deterministic repo-map equality,
+  privacy/path/digest, Markdown-table, Unicode/control-character, and diff
+  checks passed.
 - A Python 3.11/pandas 3 CI-aligned run reused the isolated Stage 2 environment
-  and cached pytest overlay and also passed 852 tests with the same two
+  and cached pytest overlay and also passed 854 tests with the same two
   platform-conditional skips. No repository dependency or lock file changed.
-- Four independent, non-overlapping read-only re-reviews reported no remaining
-  actionable P1/P2 after the integration-owner fixes. No reviewer edited its
-  own finding, and no review opened private data, generated performance values,
-  vendor APIs, credentials, or network data.
+- Four pre-PR independent, non-overlapping read-only re-reviews and the two
+  post-review digest re-reviews were separated from integration-owner edits.
+  No review opened private data, generated performance values, vendor APIs,
+  credentials, or network data.
 - The existing project environment lacked repository gate tools, so the owner-
   authorized isolated install added Ruff 0.16.0 and build 1.5.0 plus packaging
   26.2 and pyproject-hooks 1.2.0. The PEP 517 build used a disposable
-  setuptools/wheel environment. These installs changed no tracked dependency
-  declaration or lock file.
+  setuptools/wheel environment. Its first post-review run failed because the
+  sandbox could not resolve the package index; the same isolated build
+  succeeded with approved network access. These installs changed no tracked
+  dependency declaration or lock file.
 
 ## 2026-07-26 - Signal, Execution, And Metric Timing Implementation
 

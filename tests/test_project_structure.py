@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 import runpy
 import tomllib
+import unicodedata
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -336,7 +337,7 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 3. Point-in-time data methodology | "
-        "Local validation/review complete; GitHub gates pending"
+        "Final-review digest fix validated; new-head GitHub gates pending"
     ) in roadmap
     assert (
         "| 4. Experiment/trial ledger | Next after Stage 3 protected merge "
@@ -390,17 +391,23 @@ def test_point_in_time_data_methodology_contract_freezes_stage_three_design() ->
         "`canonical_manifest_sha256`",
         "`raw_byte_sha256`",
         "`ordered_manifest_sha256`",
+        "`ordered_component_inventory_v1`",
+        "`physical_components`",
+        "all-and-only, one-to-one flattening",
         "`canonicalization_id`",
         "`environment_id`",
         "`environment_lock_sha256`",
         "`review_decision_id`",
         "`public_projection_sha256`",
+        "`public_redacted_projection_v1`",
+        "`safe_public_id`",
         "`contract_content_sha256`",
         "`contract_protected_merge_sha`",
         "`decision_canonicalization_id`",
         "`decision_record_sha256`",
         "`pit_canonical_json_v1`",
         "RFC 8785 JCS",
+        "The public projection cannot contain its dataset-review decision",
         "tests/fixtures/pit_canonical_json_v1_golden.json",
         "`permanent_security_id`",
         "`listing_id`",
@@ -448,7 +455,7 @@ def test_point_in_time_data_methodology_contract_freezes_stage_three_design() ->
         assert contract.count(f"`PIT-{case_number:03d}`") == 1
 
     for case_id, decision_fragment in {
-        "PIT-003": "changed identity-bearing lineage/environment/decision fields",
+        "PIT-003": "requires digest recomputation",
         "PIT-004": "It is unavailable to that signal",
         "PIT-011": "Serialization fails closed through the allowlist",
         "PIT-012": "cannot retain or establish holdout status and is downgraded",
@@ -475,6 +482,9 @@ def test_point_in_time_data_methodology_contract_freezes_stage_three_design() ->
         assert "docs/point_in_time_data_methodology_contract.md" in canonical_doc
 
     normalized_contract = " ".join(contract.split())
+    assert "no envelope, delimiter, byte-order mark, or trailing newline" in (
+        normalized_contract
+    )
     assert "Classification moves only toward greater exposure" in normalized_contract
     assert "An existing window is never upgraded" in normalized_contract
     assert (
@@ -527,6 +537,291 @@ def test_point_in_time_data_methodology_contract_freezes_stage_three_design() ->
         ) in normalized_intake
 
 
+def _ascii_jcs_golden_bytes(value: object) -> bytes:
+    """Serialize a preprocessed ASCII-only golden vector under the JCS subset."""
+
+    def validate(item: object) -> None:
+        if item is None or isinstance(item, bool):
+            return
+        if isinstance(item, int):
+            if not (-(2**53) + 1 <= item <= (2**53) - 1):
+                raise ValueError("integer is outside the I-JSON safe range")
+            return
+        if isinstance(item, float):
+            raise ValueError("raw floats are outside the frozen preprocessing profile")
+        if isinstance(item, str):
+            item.encode("ascii")
+            if unicodedata.normalize("NFC", item) != item:
+                raise ValueError("golden string is not NFC-normalized")
+            return
+        if isinstance(item, list):
+            for member in item:
+                validate(member)
+            return
+        if isinstance(item, dict):
+            for key, member in item.items():
+                if not isinstance(key, str):
+                    raise ValueError("JSON object keys must be strings")
+                validate(key)
+                validate(member)
+            return
+        raise ValueError(f"unsupported golden value type: {type(item).__name__}")
+
+    validate(value)
+    return json.dumps(
+        value,
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+
+
+def _require_exact_keys(
+    value: object,
+    expected_keys: set[str],
+    *,
+    context: str,
+) -> dict[str, object]:
+    if not isinstance(value, dict) or set(value) != expected_keys:
+        raise ValueError(f"{context} must contain exactly {sorted(expected_keys)}")
+    return value
+
+
+def _require_stable_id(value: object, *, context: str) -> str:
+    if (
+        not isinstance(value, str)
+        or not value
+        or unicodedata.normalize("NFC", value) != value
+    ):
+        raise ValueError(f"{context} must be a nonempty NFC-normalized string")
+    return value
+
+
+def _require_safe_public_id(value: object, *, context: str) -> str:
+    if (
+        not isinstance(value, str)
+        or re.fullmatch(
+            r"[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?",
+            value,
+        )
+        is None
+    ):
+        raise ValueError(f"{context} must be an opaque safe_public_id")
+    return value
+
+
+def _utf16_sort_key(value: str) -> bytes:
+    return value.encode("utf-16-be")
+
+
+def _ordered_component_inventory_projection(source: object) -> dict[str, object]:
+    projection = _require_exact_keys(
+        source,
+        {"schema_version", "canonicalization_id", "components"},
+        context="ordered component inventory",
+    )
+    if projection["schema_version"] != "ordered_component_inventory_v1":
+        raise ValueError("unexpected ordered inventory schema")
+    if projection["canonicalization_id"] != "pit_canonical_json_v1":
+        raise ValueError("unexpected ordered inventory canonicalization")
+    if not isinstance(projection["components"], list):
+        raise ValueError("ordered inventory components must be a list")
+
+    normalized_components: list[dict[str, object]] = []
+    seen_keys: set[tuple[str, int]] = set()
+    ordinals_by_input: dict[str, set[int]] = {}
+    for raw_component in projection["components"]:
+        component = _require_exact_keys(
+            raw_component,
+            {"input_id", "component_ordinal", "raw_byte_sha256", "byte_size"},
+            context="ordered component",
+        )
+        input_id = _require_stable_id(
+            component["input_id"],
+            context="component input_id",
+        )
+        component_ordinal = component["component_ordinal"]
+        byte_size = component["byte_size"]
+        if (
+            not isinstance(component_ordinal, int)
+            or isinstance(component_ordinal, bool)
+            or not 0 <= component_ordinal <= (2**53) - 1
+        ):
+            raise ValueError("component ordinal must be a nonnegative safe integer")
+        if (
+            not isinstance(byte_size, int)
+            or isinstance(byte_size, bool)
+            or not 0 <= byte_size <= (2**53) - 1
+        ):
+            raise ValueError("byte size must be a nonnegative safe integer")
+        raw_digest = component["raw_byte_sha256"]
+        if (
+            not isinstance(raw_digest, str)
+            or re.fullmatch(r"[0-9a-f]{64}", raw_digest) is None
+        ):
+            raise ValueError("raw component digest must be lowercase SHA-256")
+        component_key = (input_id, component_ordinal)
+        if component_key in seen_keys:
+            raise ValueError("duplicate component identity")
+        seen_keys.add(component_key)
+        ordinals_by_input.setdefault(input_id, set()).add(component_ordinal)
+        normalized_components.append(dict(component))
+
+    for input_id, ordinals in ordinals_by_input.items():
+        if ordinals != set(range(len(ordinals))):
+            raise ValueError(f"noncontiguous component ordinals for {input_id}")
+
+    normalized_components.sort(
+        key=lambda component: (
+            _utf16_sort_key(str(component["input_id"])),
+            int(component["component_ordinal"]),
+        )
+    )
+    return {
+        "schema_version": projection["schema_version"],
+        "canonicalization_id": projection["canonicalization_id"],
+        "components": normalized_components,
+    }
+
+
+def _public_redacted_projection(source: object) -> dict[str, object]:
+    projection = _require_exact_keys(
+        source,
+        {
+            "schema_version",
+            "public_projection_id",
+            "canonicalization_id",
+            "manifest_id",
+            "dataset_roles",
+            "policy_states",
+            "redacted_evidence_refs",
+            "published_hashes",
+        },
+        context="public redacted projection",
+    )
+    if projection["schema_version"] != "public_redacted_projection_v1":
+        raise ValueError("unexpected public projection schema")
+    if projection["canonicalization_id"] != "pit_canonical_json_v1":
+        raise ValueError("unexpected public projection canonicalization")
+    public_projection_id = _require_safe_public_id(
+        projection["public_projection_id"],
+        context="public projection ID",
+    )
+    manifest_id = _require_safe_public_id(
+        projection["manifest_id"],
+        context="public manifest ID",
+    )
+
+    raw_roles = projection["dataset_roles"]
+    if not isinstance(raw_roles, list):
+        raise ValueError("dataset roles must be a list")
+    roles = [
+        _require_safe_public_id(role, context="dataset role")
+        for role in raw_roles
+    ]
+    if len(roles) != len(set(roles)):
+        raise ValueError("duplicate dataset role")
+    roles.sort(key=_utf16_sort_key)
+
+    raw_policy_states = projection["policy_states"]
+    if not isinstance(raw_policy_states, list):
+        raise ValueError("policy states must be a list")
+    policy_states: list[dict[str, object]] = []
+    policy_ids: set[str] = set()
+    for raw_policy in raw_policy_states:
+        policy = _require_exact_keys(
+            raw_policy,
+            {"policy_id", "state"},
+            context="public policy state",
+        )
+        policy_id = _require_safe_public_id(
+            policy["policy_id"],
+            context="public policy ID",
+        )
+        if policy_id in policy_ids:
+            raise ValueError("duplicate public policy ID")
+        policy_ids.add(policy_id)
+        if policy["state"] not in {"accepted", "diagnostic_only", "blocked"}:
+            raise ValueError("invalid public policy state")
+        policy_states.append(dict(policy))
+    policy_states.sort(key=lambda item: _utf16_sort_key(str(item["policy_id"])))
+
+    raw_evidence_refs = projection["redacted_evidence_refs"]
+    if not isinstance(raw_evidence_refs, list):
+        raise ValueError("redacted evidence references must be a list")
+    evidence_refs: list[dict[str, object]] = []
+    evidence_ids: set[str] = set()
+    for raw_evidence in raw_evidence_refs:
+        evidence = _require_exact_keys(
+            raw_evidence,
+            {"evidence_ref_id"},
+            context="redacted evidence reference",
+        )
+        evidence_id = _require_safe_public_id(
+            evidence["evidence_ref_id"],
+            context="redacted evidence ID",
+        )
+        if evidence_id in evidence_ids:
+            raise ValueError("duplicate redacted evidence ID")
+        evidence_ids.add(evidence_id)
+        evidence_refs.append(dict(evidence))
+    evidence_refs.sort(
+        key=lambda item: _utf16_sort_key(str(item["evidence_ref_id"]))
+    )
+
+    raw_hashes = projection["published_hashes"]
+    if not isinstance(raw_hashes, list):
+        raise ValueError("published hashes must be a list")
+    published_hashes: list[dict[str, object]] = []
+    hash_ids: set[str] = set()
+    for raw_hash in raw_hashes:
+        published_hash = _require_exact_keys(
+            raw_hash,
+            {"hash_id", "sha256", "publication_approval_ref_id"},
+            context="publication-approved hash",
+        )
+        hash_id = _require_safe_public_id(
+            published_hash["hash_id"],
+            context="published hash ID",
+        )
+        if hash_id in hash_ids:
+            raise ValueError("duplicate published hash ID")
+        hash_ids.add(hash_id)
+        digest = published_hash["sha256"]
+        if not isinstance(digest, str) or re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+            raise ValueError("published digest must be lowercase SHA-256")
+        _require_safe_public_id(
+            published_hash["publication_approval_ref_id"],
+            context="hash publication approval reference",
+        )
+        published_hashes.append(dict(published_hash))
+    published_hashes.sort(
+        key=lambda item: _utf16_sort_key(str(item["hash_id"]))
+    )
+
+    return {
+        "schema_version": projection["schema_version"],
+        "public_projection_id": public_projection_id,
+        "canonicalization_id": projection["canonicalization_id"],
+        "manifest_id": manifest_id,
+        "dataset_roles": roles,
+        "policy_states": policy_states,
+        "redacted_evidence_refs": evidence_refs,
+        "published_hashes": published_hashes,
+    }
+
+
+def _assert_value_error(operation: object) -> None:
+    if not callable(operation):
+        raise AssertionError("operation must be callable")
+    try:
+        operation()
+    except ValueError:
+        return
+    raise AssertionError("operation did not fail closed")
+
+
 def test_pit_canonical_json_v1_golden_bytes_and_digest() -> None:
     fixture = json.loads(
         (
@@ -534,20 +829,111 @@ def test_pit_canonical_json_v1_golden_bytes_and_digest() -> None:
             / "tests/fixtures/pit_canonical_json_v1_golden.json"
         ).read_text(encoding="utf-8")
     )
-    canonical_text = json.dumps(
-        fixture["semantic_input"],
-        allow_nan=False,
-        ensure_ascii=False,
-        separators=(",", ":"),
-        sort_keys=True,
-    )
+    canonical_text = _ascii_jcs_golden_bytes(fixture["semantic_input"]).decode()
 
-    assert fixture["schema_version"] == "pit_canonical_json_v1_golden_v1"
+    assert fixture["schema_version"] == "pit_canonical_json_v1_golden_v2"
     assert canonical_text == fixture["canonical_utf8"]
     assert " " not in canonical_text
     assert (
         hashlib.sha256(canonical_text.encode("utf-8")).hexdigest()
         == fixture["sha256"]
+    )
+
+
+def test_ordered_manifest_sha256_golden_reorder_and_mutation_vectors() -> None:
+    fixture = json.loads(
+        (
+            PROJECT_ROOT
+            / "tests/fixtures/pit_canonical_json_v1_golden.json"
+        ).read_text(encoding="utf-8")
+    )["ordered_manifest_sha256_vectors"]
+
+    base_bytes = _ascii_jcs_golden_bytes(
+        _ordered_component_inventory_projection(fixture["semantic_input"])
+    )
+    reordered_bytes = _ascii_jcs_golden_bytes(
+        _ordered_component_inventory_projection(
+            fixture["reordered_semantic_input"]
+        )
+    )
+    mutated_bytes = _ascii_jcs_golden_bytes(
+        _ordered_component_inventory_projection(
+            fixture["mutated_semantic_input"]
+        )
+    )
+
+    assert base_bytes.decode() == fixture["canonical_utf8"]
+    assert reordered_bytes == base_bytes
+    assert hashlib.sha256(base_bytes).hexdigest() == fixture["sha256"]
+    assert hashlib.sha256(reordered_bytes).hexdigest() == fixture["sha256"]
+    assert mutated_bytes.decode() == fixture["mutated_canonical_utf8"]
+    assert hashlib.sha256(mutated_bytes).hexdigest() == fixture["mutated_sha256"]
+    assert fixture["mutated_sha256"] != fixture["sha256"]
+
+    duplicate_component = json.loads(json.dumps(fixture["semantic_input"]))
+    duplicate_component["components"].append(
+        dict(duplicate_component["components"][0])
+    )
+    _assert_value_error(
+        lambda: _ordered_component_inventory_projection(duplicate_component)
+    )
+    unknown_component_key = json.loads(json.dumps(fixture["semantic_input"]))
+    unknown_component_key["components"][0]["path"] = "private.csv"
+    _assert_value_error(
+        lambda: _ordered_component_inventory_projection(unknown_component_key)
+    )
+
+
+def test_public_projection_sha256_golden_reorder_and_mutation_vectors() -> None:
+    fixture = json.loads(
+        (
+            PROJECT_ROOT
+            / "tests/fixtures/pit_canonical_json_v1_golden.json"
+        ).read_text(encoding="utf-8")
+    )["public_projection_sha256_vectors"]
+
+    base_bytes = _ascii_jcs_golden_bytes(
+        _public_redacted_projection(fixture["semantic_input"])
+    )
+    reordered_bytes = _ascii_jcs_golden_bytes(
+        _public_redacted_projection(fixture["reordered_semantic_input"])
+    )
+    mutated_bytes = _ascii_jcs_golden_bytes(
+        _public_redacted_projection(fixture["mutated_semantic_input"])
+    )
+
+    assert base_bytes.decode() == fixture["canonical_utf8"]
+    assert reordered_bytes == base_bytes
+    assert hashlib.sha256(base_bytes).hexdigest() == fixture["sha256"]
+    assert hashlib.sha256(reordered_bytes).hexdigest() == fixture["sha256"]
+    assert mutated_bytes.decode() == fixture["mutated_canonical_utf8"]
+    assert hashlib.sha256(mutated_bytes).hexdigest() == fixture["mutated_sha256"]
+    assert fixture["mutated_sha256"] != fixture["sha256"]
+
+    duplicate_policy = json.loads(json.dumps(fixture["semantic_input"]))
+    duplicate_policy["policy_states"].append(
+        dict(duplicate_policy["policy_states"][0])
+    )
+    _assert_value_error(lambda: _public_redacted_projection(duplicate_policy))
+    unknown_public_key = dict(fixture["semantic_input"])
+    unknown_public_key["private_path"] = "/private/data.csv"
+    _assert_value_error(lambda: _public_redacted_projection(unknown_public_key))
+    private_manifest_locator = json.loads(json.dumps(fixture["semantic_input"]))
+    private_manifest_locator["manifest_id"] = "/private/data.csv"
+    _assert_value_error(
+        lambda: _public_redacted_projection(private_manifest_locator)
+    )
+    private_evidence_uri = json.loads(json.dumps(fixture["semantic_input"]))
+    private_evidence_uri["redacted_evidence_refs"][0]["evidence_ref_id"] = (
+        "file://private/data.csv"
+    )
+    _assert_value_error(lambda: _public_redacted_projection(private_evidence_uri))
+    private_approval_identity = json.loads(json.dumps(fixture["semantic_input"]))
+    private_approval_identity["published_hashes"][0][
+        "publication_approval_ref_id"
+    ] = "owner@example.com"
+    _assert_value_error(
+        lambda: _public_redacted_projection(private_approval_identity)
     )
 
 
