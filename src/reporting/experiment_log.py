@@ -8,7 +8,7 @@ profitability claims.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import asdict, is_dataclass
+from dataclasses import fields, is_dataclass
 from datetime import date, datetime
 import json
 import math
@@ -93,8 +93,15 @@ def write_experiment_log(
 
 
 def _to_json_value(value: Any) -> Any:
+    if getattr(value, "__experiment_log_private__", False):
+        raise TypeError(
+            "private backtest source provenance must not be serialized",
+        )
     if is_dataclass(value) and not isinstance(value, type):
-        return _to_json_value(asdict(value))
+        return {
+            field.name: _to_json_value(getattr(value, field.name))
+            for field in fields(value)
+        }
 
     if isinstance(value, Mapping):
         return {str(key): _to_json_value(nested) for key, nested in value.items()}

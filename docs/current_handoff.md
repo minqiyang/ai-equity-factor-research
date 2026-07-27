@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-26 for the Signal, Execution, and Metric Timing Contract.
+Updated: 2026-07-27 for the Signal, Execution, and Metric Timing Implementation.
 
 ## Canonical State
 
@@ -10,14 +10,34 @@ Updated: 2026-07-26 for the Signal, Execution, and Metric Timing Contract.
   `docs/signal_execution_timing_contract.md`.
 - Active roadmap: `docs/current_roadmap.md`.
 - Short operational controller: `docs/codex_long_running_controller.md`.
-- Verified starting `origin/main`: `202273b`, the protected merge of PR #160.
-- Starting validation: 637 tests passed; Ruff, compilation, and exact-head
+- Verified starting `origin/main`: `275982f`, the protected merge of PR #161.
+- Starting validation: 638 tests passed; Ruff, compilation, and exact-merge
   GitHub CI passed.
-- Stage 2a changes documentation, repo-map index tooling, and structure tests
-  only. It does not change backtest behavior.
-- Stage 2a branch validation has 638 passing tests plus Ruff, compilation,
-  package-build, repo-map regeneration, diff, and independent read-only review
-  evidence.
+- Stage 2b implements the accepted timing contract across the portfolio engine,
+  metrics, callers, deterministic tests, and affected synthetic evidence.
+- The owner selected required source provenance. Every runtime call now
+  supplies a role-bound immutable caller-declared baseline. Enforcement begins
+  at capture and cannot infer source history already erased before capture.
+  Later writes must use the controlled coordinate ledger; arbitrary pandas
+  writes, stale handles, role swaps, and replay inconsistencies fail with
+  `source_provenance_invalid`.
+- The ledger distinguishes even the pandas counterexample where a pre-start
+  `1+0j` write and a bounded `1+0j` write produce identical `complex128`
+  frames. Only tracked out-of-window dtype propagation may recover untouched
+  bounded real/IEEE-NaN cells; native or bounded complex values remain invalid
+  at their declared signal or price boundary.
+- Current Stage 2b branch validation has 849 passing tests in both the reused
+  local project environment and a disposable Python 3.11/pandas 3
+  CI-aligned environment. Two Linux-oriented wide-`longdouble` provenance
+  regressions skip locally because macOS arm64 `longdouble` has no precision
+  beyond float64; they must execute on Ubuntu CI. Deterministic generated
+  evidence, local validation, and independent read-only review are complete.
+  The first stable-head Codex review and follow-up independent review found two
+  P2 sequence gaps. The fixes make the latest controlled bounded real/complex
+  assignment authoritative after an outside complex upcast and preserve
+  bounded recovery when a later outside non-real write changes the column to
+  object. New-head GitHub CI and Codex re-review remain required before
+  protected merge.
 - Current phase: research-only. No vendor download, credentials, brokerage,
   orders, paper deployment, live deployment, or real-money execution.
 
@@ -78,7 +98,7 @@ visible as `INVALID`; no cross-window label is borrowed.
 
 ## Stage 2 Timing Decision
 
-The accepted Stage 2a policy is
+The implemented Stage 2 policy is
 `after_close_signal_next_observed_close_v1`:
 
 - the full source index is `s[0..M]`, while the exact bounded accounting slice
@@ -130,27 +150,35 @@ capacity, brokerage, or LEAN evidence. Current Stage 1 one-row forward labels
 and same-row synthetic responses remain diagnostic targets, not executable
 strategy returns under this timing policy.
 
-Stage 2a changes documentation, repo-map index tooling, and structure tests
-only. It does not change backtest behavior.
-
-`run_long_only_backtest()` still accepts `signal_lag_periods=0`, and basic
-volatility/Sharpe still include the initialization row; these remain Stage 2b
-gaps. Silent signal reindexing, execution-close target filtering, missing
-explicit evaluation bounds, drawdown anchoring, and typed timing metadata are
-also pending Stage 2b. Runtime pretrade/post-cost insolvency checks, strict
-signal/incoming/execution-price validation, direct-equity/return validation,
-and the explicit common-window tracking-error formula are likewise not yet
-implemented.
+Stage 2b now requires explicit exact evaluation bounds and exact full-source
+price/signal axes plus exact source provenance whose caller-declared baseline
+is captured before later mutation. It
+validates bounded signal cells after slicing, rejects
+zero/Boolean/fractional lag, freezes targets before execution-price
+feasibility, calculates only held-asset incoming returns, and separates
+incoming-price, execution-price, pretrade-gross, and post-cost-equity failures.
+The initialization anchor is all cash with zero return/trade/cost. All period
+metrics use the shared post-anchor window; drawdown seeds from initial capital.
+Formal benchmark prices use the exact accounting axis. Every result exposes
+typed timing metadata and an anchor/schedule-union ledger, and every committed
+synthetic backtest log serializes only the allowlisted provenance policy/status.
+Direct or nested provenance objects are rejected by the log serializer, and
+committed logs are scanned for internal field names; extracted primitive values
+remain a caller responsibility. The existing explicit zero-return price
+policies remain diagnostic-only and are marked ineligible for formal timing
+evidence.
 
 ## Verified Implementation Baseline
 
 - Strict local CSV validation and metadata inventory; no downloader.
 - Momentum, reversal, volatility, liquidity helpers, Alpha #009/#012,
   preprocessing, combination, and basic diagnostics.
-- One long-only equal-weight ranking engine with drift-aware accounting,
-  default one-row lag, signed trades, turnover, fixed costs/slippage, optional
-  position clipping, residual cash, and benchmark accounting.
-- Tracking error, holdings/concentration, and completed holding-episode metrics.
+- One bounded long-only equal-weight ranking engine with enforced nonzero
+  observed-row lag, frozen targets, drift-aware accounting, signed trades,
+  turnover, fixed costs/slippage, optional position clipping, residual cash,
+  exact benchmark accounting, and a typed timing ledger.
+- Common-window return/benchmark metrics, initial-capital drawdown, tracking
+  error, holdings/concentration, and completed holding-episode metrics.
 - Deterministic synthetic/fixture reports and a registry of existing JSON logs.
 - Private-output-only EODHD diagnostics on a fixed cohort.
 - Non-executing LEAN metadata/signal scaffold.
@@ -163,23 +191,20 @@ validation package, LEAN runtime, or empirical factor/strategy validity.
 
 Remaining high-priority methodology blockers:
 
-1. The accepted timing contract is not implemented: after-close signals still
-   permit `signal_lag_periods=0`, signals are silently reindexed, and
-   execution-close price availability can change target membership.
-2. Private test diagnostics were calculated and reviewed through 2026-06-26.
+1. Private test diagnostics were calculated and reviewed through 2026-06-26.
    The 2025-05-01 through 2026-05-31 interval is historical evaluation or
    pseudo-holdout evidence, not presumed pristine.
-3. Static-universe, delisting, corporate-action, adjusted price/volume,
+2. Static-universe, delisting, corporate-action, adjusted price/volume,
    provenance/license, and benchmark methodology gaps block formal real-data
    interpretation.
 
 Stage 1 resolves the prior cross-split-label and unbounded-test defects in the
-current consumers. Stage 2a resolves the design ambiguity only; runtime
-zero-lag, target-freeze, evaluation-window, metric-anchor, benchmark-window,
-capital-validity, and metadata enforcement remain open. Additional blockers
-include incomplete trial retention, absent dependence/multiplicity/overfit
-controls, and diagnostic-only cost/capacity assumptions. See
-`docs/current_roadmap.md` for the prioritized list.
+current consumers. Stage 2 resolves the close-only runtime timing, target,
+evaluation-window, metric-anchor, benchmark-window, capital-validity, and
+metadata contract. Additional blockers include point-in-time data methodology,
+incomplete trial retention, absent dependence/multiplicity/overfit controls,
+and diagnostic-only cost/capacity assumptions. See `docs/current_roadmap.md`
+for the prioritized list.
 
 The 2026-07-11 conformance audit remains historical evidence at its audited
 SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
@@ -188,27 +213,25 @@ SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
 
 At the charter-stage verification, PR #148 was an independent Draft governance
 PR from an older base that changed only `AGENTS.md`. It was not a predecessor
-for PR #158, #159, or #160. Stage 2a neither edits `AGENTS.md` nor changes that
-external PR or its policy.
+for PR #158, #159, #160, or #161. Stage 2b neither edits `AGENTS.md` nor changes
+that external PR or its policy.
 
 ## Next Safe Stage
 
-After the Stage 2a PR is merged, begin only:
+After the Stage 2b PR is protected-merged and exact merge-head CI succeeds,
+begin:
 
 ```text
-Stage 2b - Signal, execution, and metric timing implementation.
+Stage 3 - Point-in-time data methodology.
 ```
 
-Implement `docs/signal_execution_timing_contract.md` test-first. Enforce lag
-types and bounds, exact axes, bounded evaluation anchors, decision-time target
-freezing, common strategy/benchmark metric rows, initial-capital drawdown, and
-typed timing metadata across every current caller. Enforce measured-date
-tracking error, strict signal and price-leg inputs, pretrade gross solvency,
-post-cost net/equity solvency, and direct metric equity/return validation
-before any successful result or geometric metric. Regenerate only
-deterministically affected synthetic evidence. Do not interpret historical
-diagnostics, add data providers or factors, build a strategy factory, or start
-LEAN work in Stage 2b.
+Create a provider-agnostic methodology package covering provenance/license,
+data version/hash, historical universe membership, delistings and identifier
+changes, corporate actions, raw/adjusted field semantics, filing availability,
+revision/missing/stale/calendar policies, benchmark/risk-free policy, private
+data boundaries, and a holdout exposure ledger. Do not download vendor data,
+open private performance values, add factors, interpret historical diagnostics,
+or start LEAN/paper/live work in Stage 3.
 
 ## Freshness Checklist
 

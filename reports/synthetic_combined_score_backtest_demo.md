@@ -24,7 +24,8 @@ Exercise the integration path from existing factor research helpers into the exi
 | Price seed | `20260529` |
 | Asset count | `12` |
 | Price rows | `160` |
-| Date range | `2024-01-02` to `2024-08-12` |
+| Source date range | `2024-01-02` to `2024-08-12` |
+| Evaluation date range | `2024-01-02` to `2024-08-12` |
 | Factor names | `synthetic_momentum, synthetic_quality, synthetic_reversal` |
 | Combination weights | `synthetic_momentum=0.50, synthetic_quality=0.30, synthetic_reversal=0.20` |
 | Rebalance frequency | `ME` |
@@ -43,6 +44,7 @@ Exercise the integration path from existing factor research helpers into the exi
 | Tracking-error missing policy | `raise` |
 | Tracking-error terminal-row policy | `include_terminal_close_to_close_window` |
 | Benchmark cost basis | `cost_free_price_return` |
+| Sharpe convention | `net_after_applied_costs`, risk-free `zero`, `ddof=0`, `252` periods/year, `exclude_initialization_anchor` |
 | Holding-episode contract | `continuous_positive_weight_v1` |
 | Holding-episode return basis | `net_contribution_over_cumulative_deployed_weight` |
 | Holding-episode cost allocation | `pro_rata_absolute_signed_trade_weight` |
@@ -66,16 +68,16 @@ These values are deterministic diagnostics from synthetic data. They are not evi
 | --- | ---: |
 | Total return | `8.59%` |
 | Annualized return | `13.95%` |
-| Annualized volatility | `10.57%` |
+| Annualized volatility | `10.60%` |
 | Tracking error vs synthetic benchmark | `7.03%` |
 | Episode hit rate | `60.00%` |
 | Average holding-period return | `2.42%` |
-| Sharpe ratio | `1.2811` |
+| Sharpe ratio | `1.2851` |
 | Max drawdown | `-5.19%` |
 | Average holding count | `4.0000` |
 | Average position concentration HHI | `0.2502` |
 | Max position concentration HHI | `0.2510` |
-| Average turnover | `5.34%` |
+| Average turnover | `5.38%` |
 | Total turnover | `8.5479` |
 | Total transaction cost impact | `0.86%` |
 | Total slippage cost impact | `0.00%` |

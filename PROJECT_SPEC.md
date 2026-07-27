@@ -15,8 +15,11 @@ results.
 
 `docs/research_program_charter.md` is the canonical long-term evidence policy.
 `docs/current_roadmap.md` is the active staged delivery plan.
-`docs/signal_execution_timing_contract.md` is the accepted Stage 2a timing
-design; behavioral conformance remains pending Stage 2b.
+`docs/signal_execution_timing_contract.md` is the accepted Stage 2 timing
+authority. Stage 2b implements it with required, role-bound, immutable source
+provenance whose caller-declared baseline is captured before later mutation,
+plus a controlled coordinate ledger for any later source write. Enforcement
+begins at capture and cannot reconstruct pre-capture history.
 
 ## Current Phase and Boundary
 
@@ -113,11 +116,21 @@ strategy or profitability claim.
   revisions, future corporate actions, or same-period target returns as
   features.
 
-These timing rules are normative. The current backtester still accepts zero
-lag, silently reindexes signals, consults execution-close price availability
-during target construction, and does not give every return metric one common
-evaluation anchor. Stage 2b must close those implementation gaps before the
-project can claim timing-contract conformance.
+These timing rules are normative. The Stage 2b backtester rejects zero and
+invalid lag types, requires exact full-source axes and exact inclusive
+evaluation bounds, requires source provenance captured after final panel
+construction as the caller-declared baseline before later mutation, validates
+only bounded final-signal values,
+freezes targets without execution-close reranking, validates held endpoints
+and frozen trade legs in their declared order, and gives period metrics one
+common post-anchor window. Untracked source writes fail closed. Typed metadata
+and a deterministic timing ledger expose the resolved schedule and
+signal/holding intervals. Direct/nested provenance objects are rejected by the
+experiment-log serializer, while current committed logs contain only the
+allowlisted provenance policy/status; extracted primitives remain a caller
+responsibility. This implementation conformance is software evidence only;
+exchange-calendar, point-in-time data, cost-capacity, and empirical-validity
+gates remain open.
 
 Every protected-sample access must enter the holdout exposure ledger. Previously
 examined data is `historical_evaluation` or `pseudo_holdout`, not an untouched

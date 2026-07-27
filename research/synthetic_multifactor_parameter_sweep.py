@@ -84,6 +84,7 @@ class SyntheticParameterSweepResult:
     """Container for synthetic parameter sweep outputs."""
 
     results: pd.DataFrame
+    timing_evidence: dict[str, dict[str, object]]
     report_path: Path
     experiment_log_path: Path
 
@@ -105,6 +106,7 @@ def run_synthetic_multifactor_parameter_sweep(
     ) if experiment_log_path is None else experiment_log_path
 
     rows = []
+    timing_evidence: dict[str, dict[str, object]] = {}
     for weight_set_name in sorted(config.weight_sets):
         weights = config.weight_sets[weight_set_name]
         for top_n in sorted(config.top_n_values):
@@ -118,6 +120,15 @@ def run_synthetic_multifactor_parameter_sweep(
                 write_outputs=False,
             )
             metrics = case_result.backtest_result.metrics
+            timing_evidence[case_id] = {
+                "metadata": case_result.backtest_result.timing_metadata,
+                "ledger": case_result.backtest_result.timing_ledger,
+                "sharpe_metadata": {
+                    key: case_result.backtest_result.assumptions[key]
+                    for key in case_result.backtest_result.assumptions
+                    if key.startswith("sharpe_")
+                },
+            }
             rows.append(
                 {
                     "case_id": case_id,
@@ -168,6 +179,7 @@ def run_synthetic_multifactor_parameter_sweep(
     results = pd.DataFrame(rows).sort_values(["weight_set", "top_n"]).reset_index(drop=True)
     sweep_result = SyntheticParameterSweepResult(
         results=results,
+        timing_evidence=timing_evidence,
         report_path=report_path,
         experiment_log_path=experiment_log_path,
     )
@@ -186,6 +198,8 @@ def write_report(
     """Write a Markdown report containing every synthetic sweep case."""
 
     result.report_path.parent.mkdir(parents=True, exist_ok=True)
+    first_case_id = sorted(result.timing_evidence)[0]
+    sharpe_metadata = result.timing_evidence[first_case_id]["sharpe_metadata"]
     content = f"""# Synthetic Multi-Factor Parameter Sweep
 
 This report uses synthetic data only. It is not real-market evidence, not financial advice, and not a profitability claim. All parameter cases are shown to avoid cherry-picking.
@@ -226,6 +240,7 @@ Run a small deterministic sensitivity check over synthetic combined-score config
 | Tracking-error missing policy | `raise` |
 | Tracking-error terminal-row policy | `include_terminal_close_to_close_window` |
 | Benchmark cost basis | `cost_free_price_return` |
+| Sharpe convention | `{sharpe_metadata["sharpe_return_basis"]}`, risk-free `{sharpe_metadata["sharpe_risk_free_policy"]}`, `ddof={sharpe_metadata["sharpe_ddof"]}`, `{sharpe_metadata["sharpe_periods_per_year"]}` periods/year, `{sharpe_metadata["sharpe_measured_row_policy"]}` |
 | Holding-episode contract | `continuous_positive_weight_v1` |
 | Holding-episode return basis | `net_contribution_over_cumulative_deployed_weight` |
 | Holding-episode cost allocation | `pro_rata_absolute_signed_trade_weight` |
@@ -264,6 +279,12 @@ def write_sweep_experiment_log(
 ) -> dict[str, object]:
     """Write a deterministic JSON log for the full synthetic sweep."""
 
+    first_case_id = sorted(result.timing_evidence)[0]
+    common_timing_metadata = result.timing_evidence[first_case_id]["metadata"]
+    common_sharpe_metadata = result.timing_evidence[first_case_id][
+        "sharpe_metadata"
+    ]
+
     return write_experiment_log(
         log_path=result.experiment_log_path,
         experiment_id="synthetic-multifactor-parameter-sweep",
@@ -295,12 +316,21 @@ def write_sweep_experiment_log(
             "data_source": "local deterministic price and factor generators; no external data fetch",
             "universe": f"{config.asset_count} synthetic assets",
             "date_range": {
+                "start": common_timing_metadata["evaluation_start"].date(),
+                "end": common_timing_metadata["evaluation_end"].date(),
+            },
+            "source_date_range": {
                 "start": config.start_date,
-                "end": pd.bdate_range(config.start_date, periods=config.periods).max().date(),
+                "end": pd.bdate_range(
+                    config.start_date,
+                    periods=config.periods,
+                ).max().date(),
             },
             "parameter_policy": "all configured cases are reported; no best-only filtering",
             "feature_timing": "synthetic factor values are aligned to price dates before lagged backtest use",
-            "execution_timing": "signals known after close; trades on rebalance dates using lagged signals; holdings affect next price row",
+            "execution_timing": common_timing_metadata["timing_contract"],
+            "timing_metadata": common_timing_metadata,
+            **common_sharpe_metadata,
             "rebalance_frequency": config.rebalance_frequency,
             "benchmark": "synthetic equal-weight universe benchmark",
             "transaction_cost_model": (
@@ -361,6 +391,12 @@ def write_sweep_experiment_log(
         metrics={},
         diagnostics={
             "cases": result.results.to_dict(orient="records"),
+            "timing_metadata_common": common_timing_metadata,
+            "timing_metadata_applies_to_cases": sorted(result.timing_evidence),
+            "timing_ledger_by_case": {
+                case_id: evidence["ledger"]
+                for case_id, evidence in sorted(result.timing_evidence.items())
+            },
             "weakest_total_return_case": _case_id_at_extreme(result.results, "total_return", "min"),
             "strongest_total_return_case": _case_id_at_extreme(result.results, "total_return", "max"),
         },
@@ -408,6 +444,20 @@ def _validate_config(config: SyntheticParameterSweepConfig) -> None:
         raise ValueError("weight_sets must not be empty")
     if not config.top_n_values:
         raise ValueError("top_n_values must not be empty")
+    if (
+        isinstance(config.signal_lag_periods, bool)
+        or not isinstance(config.signal_lag_periods, int)
+        or config.signal_lag_periods < 1
+    ):
+        raise ValueError(
+            "signal_lag_periods must be a non-boolean integer of at least one"
+        )
+    if (
+        isinstance(config.periods_per_year, bool)
+        or not isinstance(config.periods_per_year, int)
+        or config.periods_per_year != 252
+    ):
+        raise ValueError("parameter sweep requires integer periods_per_year=252")
 
     for name, weights in config.weight_sets.items():
         if set(weights) != set(FACTOR_NAMES):

@@ -13,7 +13,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from backtest.portfolio import BacktestResult, run_long_only_backtest
+from backtest.portfolio import (
+    BacktestResult,
+    capture_backtest_source_provenance,
+    run_long_only_backtest,
+)
 from features.momentum import calculate_12_1_momentum
 from reporting.experiment_log import (
     SYNTHETIC_RESEARCH_CAVEATS,
@@ -82,6 +86,19 @@ def run_synthetic_momentum_demo(
 ) -> BacktestResult:
     """Run the synthetic 12-1 momentum workflow and write a Markdown report."""
 
+    if (
+        isinstance(config.periods_per_year, bool)
+        or not isinstance(config.periods_per_year, int)
+        or config.periods_per_year != 252
+    ):
+        raise ValueError("synthetic momentum requires integer periods_per_year=252")
+    if (
+        isinstance(config.lookback_periods, bool)
+        or not isinstance(config.lookback_periods, int)
+        or config.lookback_periods < 1
+    ):
+        raise ValueError("lookback_periods must be a positive non-boolean integer")
+
     experiment_log_path = resolve_experiment_log_path(
         report_path,
         default_report_path=DEFAULT_REPORT_PATH,
@@ -94,16 +111,29 @@ def run_synthetic_momentum_demo(
         lookback_periods=config.lookback_periods,
         skip_periods=config.skip_periods,
     )
+    source_provenance = capture_backtest_source_provenance(prices, momentum)
     benchmark = build_equal_weight_benchmark(prices, starting_price=config.starting_price)
+    evaluation_start_position = config.lookback_periods
+    if evaluation_start_position >= len(prices) - 1:
+        raise ValueError(
+            "synthetic momentum evaluation requires the configured feature "
+            "warm-up anchor plus at least one measured row"
+        )
+    evaluation_start = prices.index[evaluation_start_position]
+    evaluation_end = prices.index[-1]
+    accounting_benchmark = benchmark.iloc[evaluation_start_position:]
 
     result = run_long_only_backtest(
         prices,
         momentum,
+        source_provenance=source_provenance,
+        evaluation_start=evaluation_start,
+        evaluation_end=evaluation_end,
         rebalance_frequency=config.rebalance_frequency,
         top_n=config.top_n,
         transaction_cost_bps=config.transaction_cost_bps,
         slippage_bps=config.slippage_bps,
-        benchmark_prices=benchmark,
+        benchmark_prices=accounting_benchmark,
         signal_lag_periods=1,
         periods_per_year=config.periods_per_year,
     )
@@ -151,6 +181,10 @@ def write_demo_experiment_log(
             "data_source": "local deterministic generator; no external data fetch",
             "universe": f"{config.asset_count} synthetic assets",
             "date_range": {
+                "start": result.timing_metadata["evaluation_start"].date(),
+                "end": result.timing_metadata["evaluation_end"].date(),
+            },
+            "source_date_range": {
                 "start": prices.index.min().date(),
                 "end": prices.index.max().date(),
             },
@@ -206,6 +240,12 @@ def write_demo_experiment_log(
                 "tracking_error_terminal_row_policy"
             ],
             "benchmark_cost_basis": result.assumptions["benchmark_cost_basis"],
+            "timing_metadata": result.timing_metadata,
+            **{
+                key: result.assumptions[key]
+                for key in result.assumptions
+                if key.startswith("sharpe_")
+            },
             **{
                 key: result.assumptions[key]
                 for key in result.assumptions
@@ -221,6 +261,9 @@ def write_demo_experiment_log(
             "holdings_assets": result.holdings.shape[1],
         },
         metrics=result.metrics,
+        diagnostics={
+            "timing_ledger": result.timing_ledger,
+        },
         caveats=(
             *SYNTHETIC_RESEARCH_CAVEATS,
             "workflow diagnostics only",
@@ -266,7 +309,8 @@ Demonstrate the local research workflow:
 - Random seed: `{config.seed}`
 - Asset count: `{config.asset_count}`
 - Price rows: `{len(prices)}`
-- Date range: `{prices.index.min().date()}` to `{prices.index.max().date()}`
+- Source date range: `{prices.index.min().date()}` to `{prices.index.max().date()}`
+- Evaluation date range: `{result.timing_metadata["evaluation_start"].date()}` to `{result.timing_metadata["evaluation_end"].date()}`
 - Momentum lookback periods: `{config.lookback_periods}`
 - Momentum skipped recent periods: `{config.skip_periods}`
 - Rebalance frequency: `{config.rebalance_frequency}`
@@ -282,6 +326,7 @@ Demonstrate the local research workflow:
 - Tracking-error missing policy: `{result.assumptions["tracking_error_missing_policy"]}`
 - Tracking-error terminal-row policy: `{result.assumptions["tracking_error_terminal_row_policy"]}`
 - Benchmark cost basis: `{result.assumptions["benchmark_cost_basis"]}`
+- Sharpe convention: `{result.assumptions["sharpe_return_basis"]}`, risk-free `{result.assumptions["sharpe_risk_free_policy"]}`, `ddof={result.assumptions["sharpe_ddof"]}`, `{result.assumptions["sharpe_periods_per_year"]}` periods/year, `{result.assumptions["sharpe_measured_row_policy"]}`
 - Holding-episode contract: `{result.assumptions["holding_episode_contract"]}`
 - Holding-episode return/cost basis: `{result.assumptions["holding_episode_return_basis"]}`, `{result.assumptions["holding_episode_cost_allocation"]}`
 - Holding-episode terminal policy: `{result.assumptions["holding_episode_terminal_policy"]}`

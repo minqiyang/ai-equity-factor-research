@@ -180,7 +180,36 @@ def test_combined_score_demo_writes_experiment_log(tmp_path: Path) -> None:
         "total_trading_cost_impact"
     ]
     assert payload["diagnostics"]["aligned_signal_coverage"] == 1.0
+    assert payload["assumptions"]["timing_metadata"]["timing_contract"] == (
+        "after_close_signal_next_observed_close_v1"
+    )
+    assert payload["assumptions"]["timing_metadata"][
+        "backtest_source_provenance_policy"
+    ] == "tracked_pre_mutation_source_snapshot_v1"
+    assert payload["assumptions"]["timing_metadata"][
+        "backtest_source_provenance_status"
+    ] == "validated_without_recovery"
+    assert payload["assumptions"]["sharpe_risk_free_policy"] == "zero"
+    assert len(payload["diagnostics"]["timing_ledger"]) == len(
+        result.backtest_result.timing_ledger
+    )
+    assert payload["diagnostics"]["timing_ledger"][-1][
+        "is_terminal_scheduled_row"
+    ] is True
     assert "not strategy validation" in payload["caveats"]
+    serialized = json.dumps(payload, sort_keys=True)
+    for private_field in [
+        "axis_fingerprint",
+        "original_cells",
+        "original_dtype_names",
+        "original_state_digest",
+        "current_state_digest",
+        "mutations",
+        "record_digest",
+        "_source_identity",
+        "_lineage_token",
+    ]:
+        assert f'"{private_field}"' not in serialized
 
 
 def test_combined_score_demo_can_skip_report_and_log_outputs(tmp_path: Path) -> None:

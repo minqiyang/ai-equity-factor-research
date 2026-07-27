@@ -60,6 +60,7 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "1b. Purged/bounded split implementation",
         "2a. Signal/execution timing contract",
         "2b. Signal/execution timing implementation",
+        "3. Point-in-time data methodology",
         "Target construction currently lives in `src/backtest/portfolio.py`",
         "pseudo-holdout evidence",
         "request `@codex review` once on the",
@@ -77,14 +78,14 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Stage 2b - Signal, execution, and metric timing implementation",
+        "Stage 3 - Point-in-time data methodology",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "637 passing tests" in roadmap
-    assert "Starting validation: 637 tests passed" in handoff
+    assert "638 passing tests" in roadmap
+    assert "Starting validation: 638 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -189,9 +190,12 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
     assert roadmap.count("| 1b. Purged/bounded split implementation |") == 1
     assert "| 1b. Purged/bounded split implementation | Complete" in roadmap
     assert "| 2a. Signal/execution timing contract | Complete" in roadmap
-    assert "| 2b. Signal/execution timing implementation | Next" in roadmap
     assert (
-        "Stage 2b - Signal, execution, and metric timing implementation"
+        "| 2b. Signal/execution timing implementation | "
+        "Local validation/review complete; GitHub gates pending"
+    ) in roadmap
+    assert (
+        "Stage 3 - Point-in-time data methodology"
         in handoff
     )
 
@@ -212,8 +216,8 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
 
     for phrase in [
-        "Status: accepted Stage 2a design target; implementation is deferred to Stage",
-        "This is a documentation and methodology contract, not implemented behavior.",
+        "Status: accepted Stage 2a design; Stage 2b runtime implementation complete on",
+        "This is the normative documentation and methodology target for the current",
         "after_close_signal_next_observed_close_v1",
         "A close-derived signal stamped at row `t` becomes available only after",
         "The earliest supported execution is `close[t+1]`, the next observed source",
@@ -236,6 +240,21 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
         "net_return.loc[measured_return_dates]",
         "`initial_capital_invalid`",
         "`signal_value_invalid`",
+        "`source_provenance_invalid`",
+        "`source_provenance` with no default or",
+        "`tracked_pre_mutation_source_snapshot_v1`",
+        "pre-start `1+0j` write",
+        "controlled API",
+        "enforcement begins at capture",
+        "cannot infer or",
+        "latest tracked assignment",
+        "latest controlled bounded assignment determines recovery",
+        "changes the promoted column",
+        "container from complex to object",
+        "wider NumPy scalar such as x86 `longdouble`",
+        "raises `source_provenance_invalid` at capture before any Python",
+        "Direct and nested provenance objects are rejected",
+        "extracted primitives",
         "bounded_final_signals = final_signals.iloc",
         "Only after that exact bounded slice exists",
         "Signal values strictly before `evaluation_start` or after `evaluation_end`",
@@ -284,6 +303,8 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
         "`insolvency_failure_policy`",
         "`equity_curve_failure_policy`",
         "`benchmark_return_window`",
+        "`backtest_source_provenance_policy`",
+        "`backtest_source_provenance_status`",
     ]:
         assert field in contract
 
@@ -294,14 +315,19 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
         assert "docs/signal_execution_timing_contract.md" in canonical_doc
 
     assert (
-        "Stage 2a changes documentation, repo-map index tooling, and structure "
-        "tests only. It does not change backtest behavior."
+        "Stage 2b now requires explicit exact evaluation bounds and exact "
+        "full-source price/signal axes plus exact source provenance whose "
+        "caller-declared baseline is captured before later mutation."
     ) in " ".join(handoff.split())
-    assert "`run_long_only_backtest()` still accepts `signal_lag_periods=0`" in handoff
-    assert "behavioral conformance remains pending Stage 2b" in specification
+    assert "rejects zero and invalid lag types" in " ".join(
+        specification.split()
+    )
     assert "| 2a. Signal/execution timing contract | Complete" in roadmap
-    assert "| 2b. Signal/execution timing implementation | Next" in roadmap
-    assert "| 3. Point-in-time data methodology | Blocked by Stage 2b" in roadmap
+    assert (
+        "| 2b. Signal/execution timing implementation | "
+        "Local validation/review complete; GitHub gates pending"
+    ) in roadmap
+    assert "| 3. Point-in-time data methodology | Next" in roadmap
 
 
 def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:

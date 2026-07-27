@@ -1,5 +1,163 @@
 # Engineering Log
 
+## 2026-07-26 - Signal, Execution, And Metric Timing Implementation
+
+- Started from protected `main` merge `275982f` (PR #161) in the isolated
+  `codex/signal-execution-timing-implementation` worktree. Verified the exact
+  merge, successful merge-head GitHub CI, clean 638-test/Ruff/compilation
+  baseline, current roadmap, and the unrelated Draft PR #148 before editing.
+- Five non-overlapping read-only audits mapped portfolio timing/leakage,
+  metric anchors, caller and serialization scope, deterministic tests, and
+  adversarial contract risks. No private report or holdout value was opened.
+- Changed `run_long_only_backtest` to require exact inclusive
+  `evaluation_start`/`evaluation_end` timestamps. Full-source price/signal axes
+  are validated without silent repair; bounded signals are then validated
+  cell-by-cell and lagged only inside the accounting slice. Lag is a
+  non-Boolean integer of at least one.
+- Removed execution-close price filtering from selection. Targets are frozen
+  from the bounded lagged final-signal matrix, while held incoming-price
+  endpoints and intended nonzero buy/sell legs are validated later with
+  distinct stable reasons and precedence.
+- Replaced full-panel `pct_change` with row-aware held-asset accounting. Each
+  row now advances incoming return, gross solvency, drift, frozen target
+  feasibility, trade/turnover, cost, net/equity solvency, and post-trade
+  holdings in the accepted order. The initialization anchor cannot trade or
+  incur cost; the terminal observed bucket may trade and incur cost without
+  inventing a future return.
+- Formal benchmark input now uses the exact accounting axis. Explicit
+  zero-return price and benchmark policies remain diagnostic-only; diagnostic
+  benchmark output does not create formal benchmark-relative metrics.
+- Added typed timing metadata and a deterministic dataclass ledger over the
+  initialization-anchor/resolved-rebalance union. Current synthetic momentum,
+  combined-score, and all eight sweep cases serialize their timing metadata
+  and ledger with ISO timestamps and explicit null endpoints.
+- Unified annualized return, volatility, zero-risk-free unadjusted Sharpe,
+  benchmark total/excess return, tracking error, and average turnover on the
+  common post-anchor measured dates. Total return, total turnover, and costs
+  retain every accounting row. Drawdown now seeds its running peak with
+  validated initial capital.
+- Added deterministic TIMING-001 through TIMING-014 behavior coverage,
+  including the hand-calculated four-row case, irregular and monthly lag,
+  exact axes/bounds, signal mutation isolation, held/trade price precedence,
+  mid-bucket anchor ledger, gross/post-cost failure reasons, strict benchmark,
+  terminal execution, and serialized evidence. Legacy zero-lag fixtures now
+  assert a zero initialization anchor and first legal post-anchor execution.
+- The owner selected mandatory source provenance after independent review
+  demonstrated that snapshot-only provenance cannot distinguish a pre-start
+  `1+0j` write from a bounded `1+0j` write when pandas produces identical
+  `complex128` frames. Every backtest caller now declares a role-bound,
+  immutable baseline at capture. Enforcement begins there and does not prove
+  pre-capture history. A controlled coordinate ledger chains later
+  before/after state; untracked post-capture writes, stale source
+  identity/axes, role swaps, malformed records, and replay inconsistency fail
+  closed.
+- Lossless recovery is limited to bounded cells in originally real columns
+  with a tracked complex write outside the current bounds. Untouched
+  coordinates must match their original snapshot; controlled bounded
+  coordinates must match their latest tracked semantic assignment. A latest
+  real assignment may recover, while a latest complex assignment remains
+  invalid. Native complex inputs, lossy large-integer conversion, and
+  moved-bound evidence are not recovered. Direct and nested provenance objects
+  are rejected by experiment-log serialization; current committed logs are
+  scanned for private field names and contain only the allowlisted policy/status
+  strings. Extracted primitive values remain a caller responsibility.
+- Generated outputs are refreshed in dependency order for momentum,
+  combined-score, and the eight-case sweep, followed by the registry and repo
+  map. The current implementation checkpoint has 849 passing tests in both
+  the local project environment and a Python 3.11/pandas 3 CI-aligned
+  environment. Two wide-`longdouble` provenance regressions skip on macOS
+  arm64 because its `longdouble` mantissa is not wider than float64; they are
+  retained to execute on Ubuntu CI. Two final dependency-order regenerations
+  were byte-identical. Full Ruff, compilation, build, Skill, JSON, privacy,
+  Unicode/control-character, and diff gates passed.
+- Independent review exposed and the implementation fixed four final boundary
+  classes: out-of-window complex dtype propagation, gross-solvency ordering,
+  benchmark equity/return anchor and per-period multiplier consistency, and
+  numeric conversion overflow. TIMING-012/014 now also reconcile terminal
+  cost/turnover and the complete typed metadata/ledger against accounting
+  arrays.
+- A later adversarial re-review found that custom subclasses of otherwise
+  accepted numeric types could hide mutable conversion behavior, and that
+  control scalars could be converted again after validation. Source cells and
+  backtest controls now use exact immutable built-in/NumPy/Fraction type
+  allowlists; numeric subclasses fail before conversion. Position-cap input is
+  canonicalized once. Stateful regression fixtures prove that provenance,
+  capital, selection, costs, lags, annualization, and position constraints do
+  not call attacker-controlled numeric conversions.
+- The same review found a Linux-specific provenance collision risk: NumPy
+  `longdouble` and `clongdouble` may contain more precision than Python
+  `float`, so downcasting them could make distinct sources share a digest or
+  falsely label recovery as lossless. Provenance now rejects exact NumPy
+  floating/complex scalar types whose mantissa exceeds float64 before
+  conversion. Conditional `nextafter` regressions execute only on platforms
+  where that wider precision exists.
+- Pre-PR independent read-only review reported no remaining actionable P1/P2
+  finding after the scalar, metric-helper, wide-precision, and canonical
+  documentation fixes. Its focused review suite passed 310 tests with the same
+  two expected macOS precision skips; the initial full local suite passed 847
+  tests with those two skips.
+- Final JSON SHA-256 hashes are
+  `8213abbad4dcebaf76cbb0e5e4b2335b65c89ff752a1776131b3b62d4b4beb70`
+  (momentum),
+  `efd0482d4e28509d94a2fcd903ce4b4dc0790a6cb8bca6389af28517db5d229c`
+  (combined score), and
+  `f07238493562e6c56445e1f00298d5303cc98eed4f7883de4815236cfbcf0c3a`
+  (eight-case sweep).
+  Removing only the two allowlisted provenance policy/status keys reconstructs
+  the pre-provenance Stage 2b JSON hashes exactly, so the provenance addition
+  did not alter numerical, holding, cost, or date evidence. JSON parsing and
+  scans found no internal provenance cells, axes, identities, mutation
+  ledgers, or digests in committed evidence.
+- After the first GitHub CI passed on commit `8611e54`, the required
+  stable-head Codex review found one P2 sequence gap. An outside complex write
+  can upcast a column; a later controlled bounded real write is then stored as
+  `x+0j`. Recovery incorrectly compared that coordinate only with its original
+  snapshot and rejected the new valid real value. Extraction now derives the
+  latest tracked semantic assignment per bounded coordinate: latest real
+  assignments recover only when the stored value matches, and latest complex
+  assignments remain invalid. A deterministic complex-to-real-to-complex
+  sequence protects both outcomes.
+- The first focused run of that new regression failed because the test tried
+  to inspect a non-public `target_weights` result attribute. The backtest had
+  already completed successfully; the test was corrected to assert the public
+  post-trade `holdings` evidence. Both local and pandas 3 focused reruns then
+  passed 214 tests with the two expected macOS precision skips.
+- Follow-up independent review then found a second P2 in the same chain. An
+  outside complex upcast followed by an outside string write changes the
+  current column to object while untouched bounded values remain `x+0j`;
+  recovery had required a currently complex dtype and rejected those bounded
+  cells. A real-origin column with a tracked outside complex write may now
+  recover matching bounded semantics from either a complex or object
+  container. Latest bounded non-real/complex assignments remain invalid. The
+  mixed outside-write regression passes in both local and pandas 3 focused
+  suites, which now pass 215 tests with two expected macOS precision skips.
+- Final independent re-review exercised 777 mutation sequences spanning real,
+  integer, Fraction, IEEE `NaN`, complex, Boolean, string, missing, and object
+  promotion cases and reported no remaining actionable P1/P2 finding. The full
+  local and Python 3.11/pandas 3 suites each pass 849 tests with the same two
+  expected macOS precision skips. Ruff, compilation, build, Skill audit, JSON
+  parsing, privacy/path scanning, hidden-Unicode scanning, and diff checks
+  pass; new-head GitHub CI and Codex re-review remain protected-merge gates.
+- The default `python` alias remains absent and alternate system interpreters
+  lack the repository test stack. Local tests reused the existing project
+  `.venv` with `PYTHONPATH=src`. A disposable, ignored worktree `.venv` was
+  created through `uv` solely for CI-aligned compatibility checks. It contains
+  Python 3.11.15, project 0.1.0, NumPy 2.4.6, pandas 3.0.5, SciPy 1.17.1,
+  pytest 9.1.1, python-dateutil 2.9.0.post0, six 1.17.0, iniconfig 2.3.0,
+  packaging 26.2, pluggy 1.6.0, and Pygments 2.20.0. The environment and uv
+  cache are not project artifacts; no dependency declaration or lockfile is
+  changed.
+- The existing project environment did not contain the `build` frontend. A
+  separate transient `uv --no-project` build environment installed build
+  1.3.0, packaging 26.2, and pyproject-hooks 1.2.0; its disposable PEP 517
+  environments installed setuptools 83.0.0, wheel 0.47.0, and packaging
+  26.2. They existed only in the uv cache and operating-system temporary
+  directories. The successful sdist/wheel outputs are ignored validation
+  artifacts; project dependency declarations and lockfiles remain unchanged.
+- Trial-count impact is zero. All changed reports are deterministic synthetic
+  implementation evidence. No factor formula, private diagnostic, provider,
+  credential, LEAN runtime, brokerage, order, paper, or live behavior changed.
+
 ## 2026-07-26 - Signal, Execution, And Metric Timing Contract
 
 - Started from protected `main` merge `202273b` (PR #160) in the isolated

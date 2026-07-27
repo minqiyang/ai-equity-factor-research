@@ -84,5 +84,38 @@ def test_synthetic_demo_writes_experiment_log(tmp_path: Path) -> None:
     assert payload["metrics"]["total_trading_cost_impact"] == result.metrics[
         "total_trading_cost_impact"
     ]
+    assert payload["assumptions"]["timing_metadata"]["timing_contract"] == (
+        "after_close_signal_next_observed_close_v1"
+    )
+    assert payload["assumptions"]["timing_metadata"][
+        "backtest_source_provenance_policy"
+    ] == "tracked_pre_mutation_source_snapshot_v1"
+    assert payload["assumptions"]["timing_metadata"][
+        "backtest_source_provenance_status"
+    ] == "validated_without_recovery"
+    assert payload["assumptions"]["sharpe_risk_free_policy"] == "zero"
+    assert payload["assumptions"]["sharpe_measured_row_policy"] == (
+        "exclude_initialization_anchor"
+    )
+    assert payload["assumptions"]["date_range"]["start"] == (
+        result.timing_metadata["evaluation_start"].date().isoformat()
+    )
+    assert len(payload["diagnostics"]["timing_ledger"]) == len(result.timing_ledger)
+    assert payload["diagnostics"]["timing_ledger"][0]["event_status"] == (
+        "initialization_anchor_no_execution"
+    )
     assert "not a profitability claim" in payload["caveats"]
     assert "not evidence of real-world strategy performance" in payload["caveats"]
+    serialized = json.dumps(payload, sort_keys=True)
+    for private_field in [
+        "axis_fingerprint",
+        "original_cells",
+        "original_dtype_names",
+        "original_state_digest",
+        "current_state_digest",
+        "mutations",
+        "record_digest",
+        "_source_identity",
+        "_lineage_token",
+    ]:
+        assert f'"{private_field}"' not in serialized

@@ -15,6 +15,70 @@ investment performance.
 
 ---
 
+## 2026-07-27 - Require Tracked Pre-Mutation Backtest Source Provenance
+
+Context:
+
+- Pandas may promote an entire homogeneous real column to `complex128` after
+  one complex assignment.
+- Assigning `1+0j` before the evaluation window and assigning the same value
+  inside it can produce byte-equivalent final frames. A post-hoc dtype or cell
+  snapshot cannot identify which coordinate was written.
+- Stage 2 requires both strict bounded-complex rejection and invariance to
+  values that are provably outside the bounded accounting window.
+
+Decision:
+
+- Require `source_provenance` on every `run_long_only_backtest` call; provide no
+  default or compatibility bypass.
+- Treat capture as a caller-declared baseline after final panel construction.
+  Enforcement begins at that call and cannot infer mutation/type history
+  already erased beforehand.
+- Bind each library-issued handle to its role, exact axes, original semantic
+  cell/dtype state, current source identity/state, and an immutable chained
+  mutation ledger.
+- Require any later source write to use the controlled coordinate API.
+  Untracked writes, copied/replaced source objects, stale axes, swapped roles,
+  malformed records, or replay-inconsistent state fail with
+  `source_provenance_invalid`.
+- Recover an originally real column promoted to complex only when the ledger
+  records a complex write outside the current bounds and each recovered bounded
+  cell matches its original real or IEEE-NaN semantics losslessly. Native
+  complex sources, bounded complex writes, and lossy conversions retain their
+  signal or price domain failure.
+- Emit only the allowlisted provenance policy/status strings in result
+  metadata. Reject direct and nested provenance objects at the experiment-log
+  serializer and scan current committed logs for private field names. Extracted
+  primitive values or reconstructed plain mappings remain caller-controlled.
+
+Rationale:
+
+- Mutation-time coordinates are the minimum evidence that distinguishes the
+  identical-frame counterexample; dtype-only or snapshot-only provenance is
+  information-theoretically insufficient.
+- Required provenance avoids a permissive legacy path and makes every current
+  caller state its source-construction boundary.
+- Internal snapshots are software-control evidence, not vendor lineage,
+  point-in-time proof, or research validity.
+- The contract proves controlled post-capture history only; it cannot establish
+  what happened before the caller-declared baseline.
+
+Consequences:
+
+- The backtest API is intentionally breaking for callers that omit
+  provenance.
+- Arbitrary pandas mutation after capture invalidates the handle; callers that
+  need a controlled test mutation must use the tracked API.
+- This closes the Stage 2b provenance decision without adding a dependency,
+  changing a factor, reading private results, or creating a research trial.
+- The trust boundary is an in-process library-issued handle, not cryptographic
+  proof against a malicious caller.
+
+Follow-up:
+
+- Complete the Stage 2b local gates, independent read-only review, GitHub CI,
+  and final stable-head Codex review before any protected merge.
+
 ## 2026-07-26 - Freeze Signal, Execution, and Metric Timing
 
 Context:

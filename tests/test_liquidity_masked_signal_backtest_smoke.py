@@ -3,7 +3,10 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
-from backtest.portfolio import run_long_only_backtest
+from backtest.portfolio import (
+    capture_backtest_source_provenance,
+    run_long_only_backtest,
+)
 from features.liquidity import (
     apply_universe_mask_to_signals,
     average_daily_volume_eligibility,
@@ -64,6 +67,12 @@ def test_synthetic_masked_signals_feed_existing_backtester_with_lag() -> None:
     result = run_long_only_backtest(
         prices,
         masked.signals,
+        source_provenance=capture_backtest_source_provenance(
+            prices,
+            masked.signals,
+        ),
+        evaluation_start=prices.index[0],
+        evaluation_end=prices.index[-1],
         rebalance_frequency="D",
         top_n=2,
         transaction_cost_bps=10.0,
@@ -124,6 +133,12 @@ def test_synthetic_masked_backtest_uses_prior_masked_signal_row() -> None:
     result = run_long_only_backtest(
         prices,
         masked.signals,
+        source_provenance=capture_backtest_source_provenance(
+            prices,
+            masked.signals,
+        ),
+        evaluation_start=prices.index[0],
+        evaluation_end=prices.index[-1],
         rebalance_frequency="D",
         top_n=1,
         signal_lag_periods=1,
