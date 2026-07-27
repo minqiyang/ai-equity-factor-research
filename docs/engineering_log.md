@@ -90,6 +90,24 @@
   post-review digest re-reviews were separated from integration-owner edits.
   No review opened private data, generated performance values, vendor APIs,
   credentials, or network data.
+- The digest-fix head passed its complete GitHub CI cycle before the permitted
+  re-review. That current-head review found one further P2: the bitemporal
+  predicate did not define a currently active listing or membership whose end
+  was not known in the frozen dataset version.
+- The integration-owner fix made `effective_to` always present and paired it
+  with `FINITE` or `OPEN_IN_VINTAGE`, separated the manifest knowledge cutoff
+  from per-role coverage, rejected sentinel/end substitutions, selected only a
+  unique decision-time-knowable vintage, prohibited later closure
+  back-propagation, and added the dated `PIT-015` boundary case. A follow-up
+  read-only review caught and removed one remaining ambiguity between nullable
+  schema values and absent required properties. Two independent reviewers then
+  reported no actionable P1/P2; neither edited the fix.
+- Workflow continuity correction: returning control while the asynchronous
+  re-review was pending made the task appear stopped. The owner clarified that
+  pending CI/review/merge gates must retain a five-minute scheduled heartbeat.
+  The active task automation now persists through review, protected merge,
+  exact merge-head CI, and automatic startup of the next roadmap stage without
+  weakening any gate.
 - The existing project environment lacked repository gate tools, so the owner-
   authorized isolated install added Ruff 0.16.0 and build 1.5.0 plus packaging
   26.2 and pyproject-hooks 1.2.0. The PEP 517 build used a disposable

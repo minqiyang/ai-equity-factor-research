@@ -109,7 +109,7 @@ identity is a tuple, not a filename or free-text label.
 | `provider_label` | Provider/source label without credentials or account metadata. |
 | `provider_product_release` | Product, release, snapshot, or as-of identifier. |
 | `retrieved_at_utc` | Actual retrieval or receipt time. |
-| `as_of_cutoff` | Latest information the extraction was allowed to contain. |
+| `as_of_cutoff` | Exact inclusive knowledge cutoff: the latest information the extraction was allowed to contain. It does not prove or extend any input's declared coverage. |
 | `extraction_identity` | Query/config identity, coverage, filters, and requested fields; sensitive details remain private. |
 | `privacy_classification` | `public`, `private`, or `restricted`. |
 | `code_sha` | Code used for a derived or normalized version. |
@@ -168,8 +168,9 @@ constructs a typed identity projection:
   quantity become schema-typed decimal strings matching
   `-?(0|[1-9][0-9]*)(\.[0-9]*[1-9])?`, with no plus sign, exponent, leading
   zero, trailing fractional zero, or negative zero;
-- booleans remain JSON `true`/`false`, missing values are JSON `null`, and raw
-  floating-point values, NaN, and infinity are prohibited;
+- booleans remain JSON `true`/`false`; schema-declared nullable values remain
+  JSON `null`; an absent required property is rejected and is never synthesized
+  as null; and raw floating-point values, NaN, and infinity are prohibited;
 - the identity projection includes schema/canonicalization versions and
   excludes only `canonical_manifest_sha256`, signatures, and explicitly
   non-identity presentation notes;
@@ -329,7 +330,8 @@ review decision.
 Every time-varying record distinguishes when it describes the world from when
 the information was knowable. Required fields include:
 
-- `effective_from` and `effective_to`;
+- `effective_from`, always-present `effective_to`, and
+  `effective_to_state`;
 - `known_at`;
 - `source_published_at` and `public_available_at`;
 - `provider_available_at` when provider delivery lag matters;
@@ -342,10 +344,45 @@ eligible for the declared research actor. It must be no earlier than every
 applicable public, provider-delivery, revision, and parent availability time
 and must never be backdated from later evidence.
 
-For a decision at time `t`, a value is usable only when:
+All effective intervals are half-open. `effective_to_state` is exactly
+`FINITE` or `OPEN_IN_VINTAGE`. `FINITE` requires an exact exclusive timestamp
+in `effective_to`; `OPEN_IN_VINTAGE` requires JSON `null`. Every other pairing,
+an omitted field, or an untyped null fails closed. `OPEN_IN_VINTAGE` means only
+that no terminating event was knowable in the selected immutable vintage; it
+never means valid forever.
+
+`as_of_cutoff` is an exact inclusive UTC knowledge timestamp or a schema-typed
+session boundary with frozen calendar/timezone semantics. It is
+identity-bearing but neither fabricates an economic end nor proves or extends
+the exact inclusive coverage range of any required input. The decision time
+must lie inside both the manifest knowledge cutoff and every required role's
+declared coverage; a sample tail beyond either bound blocks instead of being
+silently truncated or inheriting an open state.
+
+Sentinel future timestamps such as `9999-12-31`, the current wall-clock time,
+and the evaluation end are prohibited substitutes for an open end. A query
+after `as_of_cutoff` is unsupported by that manifest version and blocks formal
+use until a later immutable version supplies coverage. When an ending event
+becomes known, a new revision/manifest records its exact exclusive
+`effective_to`, availability, and supersession evidence without modifying the
+earlier version.
+
+For a decision at time `t`, first select the unique unsuperseded vintage using
+only records whose knowability and other availability timestamps are no later
+than `t`. A missing or ambiguous vintage blocks. A later-known closure never
+back-propagates into an earlier decision. The selected value is usable only
+when:
 
 ```text
-effective_from <= t < effective_to
+effective_from <= t
+and (
+    (effective_to_state = FINITE and effective_to is a timestamp
+     and t < effective_to)
+    or
+    (effective_to_state = OPEN_IN_VINTAGE and effective_to is null)
+)
+and t <= as_of_cutoff
+and t is inside every required role/input coverage range
 and known_at <= t
 and public_available_at <= t
 and provider_available_at <= t when provider delivery lag applies
@@ -688,6 +725,7 @@ be disclosed to record this access fact.
 | Listing, delisting, terminal value, or material corporate-action terms are unresolved | `blocked` for affected windows |
 | Field adjustment, dividend, volume, currency, unit, or revision semantics are unknown/incompatible | `blocked` |
 | Filing/classification knowledge time or vintage cannot be reconstructed | `diagnostic_only` |
+| An interval omits/mismatches `effective_to_state`, uses a sentinel/end substitution, lacks an exact cutoff/required-role coverage, or is queried beyond either bound | `blocked` |
 | Missing/stale/suspension state is unexplained or silently filled | `blocked` |
 | Calendar/session/timezone or benchmark compatibility is unresolved | `blocked` |
 | Public artifact may reveal restricted metadata, paths, raw values, or performance | `blocked` |
@@ -712,6 +750,7 @@ be disclosed to record this access fact.
 | `PIT-012` | Outcome-reconstructible price/benchmark/corporate-action data is viewed, or protected-sample access is recorded after the fact or has unknown actor/time/impact. | It cannot retain or establish holdout status and is downgraded. |
 | `PIT-013` | An exposed interval overlaps a nominally sealed window. | Atomic intervals are split; uncertain overlap downgrades the nominal window. |
 | `PIT-014` | This contract is accepted but no exact manifest/projection/contract-bound, non-self-issued dataset-review decision or later program gates have passed. | The methodology contract exists, while a missing/stale/contract-mismatched decision leaves dataset verification and formal interpretation blocked. |
+| `PIT-015` | An active listing or membership has `effective_from = 2024-01-02T14:30:00Z`, `effective_to_state = OPEN_IN_VINTAGE`, `effective_to = null`, `known_at = 2023-12-20T21:00:00Z`, inclusive cutoff `C = 2024-06-28T21:00:00Z`, and required-role coverage through `C`; evaluate `t_in = 2024-06-28T20:00:00Z` and `t_after = 2024-07-01T14:30:00Z`. | `t_in` may pass the interval/cutoff predicates only if every other availability, listing, tradability, and coverage rule passes. `t_after` is unsupported until a new immutable vintage provides coverage. Null without the matching state, a sentinel future end, or later closure back-propagation is invalid. |
 
 ## Accepted Decisions and Deferred Implementation
 

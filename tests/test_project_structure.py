@@ -337,7 +337,7 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 3. Point-in-time data methodology | "
-        "Final-review digest fix validated; new-head GitHub gates pending"
+        "Open-interval re-review fix validated; new-head GitHub gates pending"
     ) in roadmap
     assert (
         "| 4. Experiment/trial ledger | Next after Stage 3 protected merge "
@@ -407,6 +407,7 @@ def test_point_in_time_data_methodology_contract_freezes_stage_three_design() ->
         "`decision_record_sha256`",
         "`pit_canonical_json_v1`",
         "RFC 8785 JCS",
+        "an absent required property is rejected and is never synthesized",
         "The public projection cannot contain its dataset-review decision",
         "tests/fixtures/pit_canonical_json_v1_golden.json",
         "`permanent_security_id`",
@@ -414,6 +415,9 @@ def test_point_in_time_data_methodology_contract_freezes_stage_three_design() ->
         "`ticker_alias`",
         "`effective_from`",
         "`effective_to`",
+        "`effective_to_state`",
+        "`FINITE`",
+        "`OPEN_IN_VINTAGE`",
         "`known_at`",
         "`public_available_at`",
         "`provider_available_at`",
@@ -444,6 +448,9 @@ def test_point_in_time_data_methodology_contract_freezes_stage_three_design() ->
         "2025-05-01 through 2026-05-31",
         "Stage 4 owns append-only enforcement",
         "and known_at <= t",
+        "and t <= as_of_cutoff",
+        "inside every required role/input coverage range",
+        "A later-known closure never",
         "Neither a manifest author nor a checklist can self-certify",
         "No provider selection, download, credentials, or remote data access",
         "## Deterministic Stage 3 Test Matrix",
@@ -451,7 +458,7 @@ def test_point_in_time_data_methodology_contract_freezes_stage_three_design() ->
     ]:
         assert phrase in contract
 
-    for case_number in range(1, 15):
+    for case_number in range(1, 16):
         assert contract.count(f"`PIT-{case_number:03d}`") == 1
 
     for case_id, decision_fragment in {
@@ -461,11 +468,24 @@ def test_point_in_time_data_methodology_contract_freezes_stage_three_design() ->
         "PIT-012": "cannot retain or establish holdout status and is downgraded",
         "PIT-013": "uncertain overlap downgrades the nominal window",
         "PIT-014": "dataset verification and formal interpretation blocked",
+        "PIT-015": "`t_after` is unsupported",
     }.items():
         case_row = next(
             line for line in contract.splitlines() if f"`{case_id}`" in line
         )
         assert decision_fragment in case_row
+
+    pit_015_row = next(
+        line for line in contract.splitlines() if "`PIT-015`" in line
+    )
+    for boundary_token in [
+        "`effective_to_state = OPEN_IN_VINTAGE`",
+        "`effective_to = null`",
+        "`C = 2024-06-28T21:00:00Z`",
+        "`t_in = 2024-06-28T20:00:00Z`",
+        "`t_after = 2024-07-01T14:30:00Z`",
+    ]:
+        assert boundary_token in pit_015_row
 
     for canonical_doc in [
         roadmap,
