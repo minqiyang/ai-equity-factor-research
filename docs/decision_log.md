@@ -15,6 +15,76 @@ investment performance.
 
 ---
 
+## 2026-07-27 - Separate Data Methodology, Dataset, And Interpretation Gates
+
+Context:
+
+- Protected `main` at `8a352d3` implements the purged split and explicit
+  signal/execution timing contracts, but the repository has no accepted
+  provider-agnostic authority for deciding whether a historical dataset is
+  point-in-time, licensed, reproducible, privacy-safe, or suitable for formal
+  interpretation.
+- Existing local-CSV loaders and diagnostics validate selected shapes and
+  calculations only. They do not prove historical membership, permanent
+  identifiers, delistings, corporate actions, field availability/revisions,
+  calendar alignment, benchmark/risk-free suitability, or immutable lineage.
+- Private diagnostics previously calculated and reviewed the interval
+  2025-05-01 through 2026-05-31.
+
+Decision:
+
+- Adopt `docs/point_in_time_data_methodology_contract.md` as the proposed Stage
+  3 provider-agnostic contract.
+- Keep `methodology_contract_accepted`, `dataset_manifest_reviewed`, and
+  `formal_interpretation_eligible` as separate review decisions. The first
+  never implies the second, and the second never implies the third.
+- Require immutable content and ordered-manifest hashes, evidence-backed
+  license state, versioned canonicalization and environment identity,
+  transformation lineage, permanent/listing identifiers, bitemporal membership
+  and field availability, corporate-action and delisting treatment, compatible
+  price/volume semantics, typed missingness, versioned calendars,
+  benchmark/risk-free policy, private/public projections, and an immutable
+  exact-version review decision from an authorized non-producing reviewer
+  before a dataset-specific review can pass.
+- Define `pit_canonical_json_v1` as typed NFC/timestamp/decimal preprocessing
+  followed by exact RFC 8785/JCS serialization, with contract and review
+  decisions bound to reproducible content/protected-merge identities.
+- Classify 2025-05-01 through 2026-05-31 as
+  `historical_evaluation`. It cannot later be upgraded to a pristine holdout.
+- Assign append-only trial and protected-sample access enforcement to Stage 4.
+  Stage 3 defines the record schema and anti-backfill rules but does not claim
+  to implement them.
+- Treat access to asset/benchmark paths and other inputs capable of
+  reconstructing protected outcomes as exposure. Public records carry only
+  allowlisted policy states, publication-approved hashes or redacted evidence
+  references, and never restricted license evidence or private metric values.
+
+Rationale:
+
+- A general methodology can be reviewed without selecting a vendor or reading
+  private values, while a concrete dataset and run still require independent
+  evidence.
+- Separate gates prevent a loader check, hash, license assertion, static
+  cohort, or completed checklist from being mistaken for historical validity.
+- Conservative sample classification preserves falsifiability after prior
+  exposure.
+
+Consequences:
+
+- Stage 3 is documentation and workflow-control only. It adds no provider,
+  downloader, credential, source-data artifact, factor, research result,
+  dependency, or trading capability.
+- Existing static-universe EODHD work remains `DIAGNOSTIC_ONLY`; no current
+  dataset becomes `formal_ready`.
+- Formal real-data interpretation remains blocked until a dataset manifest,
+  Stage 4 all-trial/access ledger, Stage 5 statistical protocol, and every
+  applicable downstream gate pass.
+
+Follow-up:
+
+- Complete Stage 4 as a small reviewable experiment/trial-ledger stage after
+  the Stage 3 PR is protected-merged and its exact merge-head CI passes.
+
 ## 2026-07-27 - Require Tracked Pre-Mutation Backtest Source Provenance
 
 Context:

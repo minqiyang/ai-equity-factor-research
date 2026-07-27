@@ -67,6 +67,10 @@ IMPORTANT_FILES = [
         "docs/signal_execution_timing_contract.md",
         "Accepted Stage 2a signal, execution, and metric timing design.",
     ),
+    (
+        "docs/point_in_time_data_methodology_contract.md",
+        "Proposed Stage 3 point-in-time data and holdout-evidence methodology.",
+    ),
     ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),
     ("docs/codex_long_running_controller.md", "Continuation and stop-condition controller."),

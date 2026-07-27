@@ -1,5 +1,137 @@
 # Engineering Log
 
+## 2026-07-27 - Point-In-Time Data Methodology Contract
+
+- Started from protected `main` merge `8a352d3` (PR #162) in the isolated
+  `codex/point-in-time-data-methodology-contract` worktree. The clean starting
+  baseline had 849 passing tests, two platform-conditional skips, successful
+  compilation, and successful exact merge-head GitHub CI.
+- Five non-overlapping read-only audits covered canonical documentation,
+  point-in-time universe and corporate actions, field/calendar/benchmark
+  semantics, provenance/privacy/holdout exposure, and adversarial contract
+  failure modes. No private source file, private performance value, vendor API,
+  credential, or holdout result was opened.
+- The audits confirmed that current loaders, inventory metadata, and EODHD
+  diagnostics support only scope-limited intake and static-cohort diagnostics.
+  They do not prove permanent identity, historical membership, delistings,
+  corporate actions, field availability or revisions, license entitlement,
+  immutable lineage, calendar alignment, or formal benchmark/risk-free
+  suitability.
+- Added a provider-agnostic Stage 3 contract that separates
+  `methodology_contract_accepted`, `dataset_manifest_reviewed`, and
+  `formal_interpretation_eligible`; specifies immutable provenance/license,
+  canonicalization/environment, non-self-issued dataset review, bitemporal
+  identity/universe/field, adjustment, calendar, missingness,
+  benchmark/risk-free, privacy, and exposure-ledger records; and freezes
+  deterministic `PIT-001` through `PIT-014` documentation cases.
+- Classified the previously examined 2025-05-01 through 2026-05-31 interval as
+  `historical_evaluation`, never a pristine holdout. Stage 4 owns append-only
+  enforcement; Stage 3 does not backfill or claim that enforcement.
+- Reconciled the canonical roadmap, handoff, project specification, README,
+  readiness audit and Skill, local-CSV checklist/report, legacy experiment
+  template, changelog, decision log, and generated repo map. The new contract
+  and updated forward-looking templates require private-manifest IDs and
+  redacted public logical IDs rather than private absolute paths; legacy
+  diagnostic scripts and historical records still require separate path
+  hardening.
+- Added documentation-contract tests before implementation. The focused suite
+  initially failed seven assertions for the intentionally missing contract and
+  stale canonical status, then served as the acceptance gate for the docs-only
+  implementation.
+- Initial independent review found that general `known_at` was absent from the
+  usability predicate, outcome-reconstructible raw inputs were absent from
+  exposure downgrade rules, dataset review could be self-declared, tracked
+  templates could solicit restricted hashes/license evidence/private metrics,
+  environment/canonicalization identity was underspecified, and several
+  canonical/test assertions were incomplete. The main integration owner fixed
+  those findings; the reviewers did not edit their own findings.
+- Final canonicalization review found that the named scheme still omitted
+  complete JSON byte rules. The contract now applies exact RFC 8785/JCS after
+  typed preprocessing, rejects ambiguous inputs, and carries a tiny synthetic
+  canonical-text/SHA-256 golden fixture. This is contract evidence, not a
+  production manifest implementation or private data fingerprint.
+- This stage adds no research trial, factor, strategy, provider, data download,
+  private-data artifact, dependency, generated performance evidence, paper/live
+  trading path, brokerage connection, order behavior, or credential handling.
+- The initial PR head passed GitHub CI, but its required final current-head
+  Codex review found one P1: `ordered_manifest_sha256` and
+  `public_projection_sha256` named digests without freezing their exact
+  projection fields and canonical byte preimages. The integration owner
+  defined exact versioned projections, JCS/UTF-8 byte envelopes, ordering,
+  duplicate/unknown-field rejection, and noncircular decision binding, then
+  added synthetic base, reorder, and exact identity-mutation byte/hash vectors.
+- First-round fix re-review found that allowed public fields could still carry
+  path/URI values, physical component splitting was not tied one-to-one to the
+  manifest, and `PIT-003` overstated hash mutation behavior. The second-round
+  fix added a bounded opaque `safe_public_id` grammar plus allowed-key privacy
+  negatives, made `physical_components` an all-and-only retained manifest
+  projection, and limited the mutation claim to canonical-preimage change,
+  recomputation, and the frozen golden cases. Two independent read-only
+  re-reviewers reported no remaining actionable P1/P2 and did not edit their
+  own findings.
+- The first focused run after the review fix passed 18 tests and failed one
+  direct Markdown phrase assertion because a normative sentence wrapped across
+  lines. The test now evaluates normalized document text; the semantics and
+  golden hashes were unchanged. Focused documentation tests then passed all 19
+  cases.
+- The first final full run passed 853 tests and failed one stale Stage 2
+  documentation assertion that still expected the pre-fix Stage 3 roadmap
+  status. The assertion now requires the accurate new-head GitHub-gate status;
+  no research behavior or evidence classification changed.
+- Final Python 3.12/pandas 2 local validation passed 854 tests with the same two
+  platform-conditional wide-`longdouble` skips. Ruff, compilation, PEP 517
+  sdist/wheel build, Skill audit, deterministic repo-map equality,
+  privacy/path/digest, Markdown-table, Unicode/control-character, and diff
+  checks passed.
+- A Python 3.11/pandas 3 CI-aligned run reused the isolated Stage 2 environment
+  and cached pytest overlay and also passed 854 tests with the same two
+  platform-conditional skips. No repository dependency or lock file changed.
+- Four pre-PR independent, non-overlapping read-only re-reviews and the two
+  post-review digest re-reviews were separated from integration-owner edits.
+  No review opened private data, generated performance values, vendor APIs,
+  credentials, or network data.
+- The digest-fix head passed its complete GitHub CI cycle before the permitted
+  re-review. That current-head review found one further P2: the bitemporal
+  predicate did not define a currently active listing or membership whose end
+  was not known in the frozen dataset version.
+- The integration-owner fix made `effective_to` always present and paired it
+  with `FINITE` or `OPEN_IN_VINTAGE`, separated the manifest knowledge cutoff
+  from per-role coverage, rejected sentinel/end substitutions, selected only a
+  unique decision-time-knowable vintage, prohibited later closure
+  back-propagation, and added the dated `PIT-015` boundary case. A follow-up
+  read-only review caught and removed one remaining ambiguity between nullable
+  schema values and absent required properties. Two independent reviewers then
+  reported no actionable P1/P2; neither edited the fix.
+- The open-interval fix head passed its complete GitHub CI cycle before the
+  required current-head re-review. That review found one further P2: the
+  readiness Skill treated an absent dataset-review decision as an
+  unconditional stop even though the Stage 3 scope matrix permits a bounded
+  `diagnostic_ready` outcome without formal dataset acceptance.
+- The integration owner scoped the dataset-review decision identity, reviewer,
+  and finding-disposition requirements to formal interpretation across the
+  readiness Skill, audit, legacy experiment log, and both local-CSV forms.
+  Diagnostic scope now records `dataset_manifest_reviewed = false`,
+  `formal_interpretation_eligible = false`, and the limitation without
+  fabricating formal decision fields. Protected-sample access-record and
+  exposure-decision requirements remain scope-applicable so diagnostic access
+  still downgrades classification and remains auditable. Documentation tests
+  positively require that split and reject the old unconditional wording. Two
+  independent read-only re-reviewers found no remaining actionable P1/P2 and
+  did not edit their own findings.
+- Workflow continuity correction: returning control while the asynchronous
+  re-review was pending made the task appear stopped. The owner clarified that
+  pending CI/review/merge gates must retain a five-minute scheduled heartbeat.
+  The active task automation now persists through review, protected merge,
+  exact merge-head CI, and automatic startup of the next roadmap stage without
+  weakening any gate.
+- The existing project environment lacked repository gate tools, so the owner-
+  authorized isolated install added Ruff 0.16.0 and build 1.5.0 plus packaging
+  26.2 and pyproject-hooks 1.2.0. The PEP 517 build used a disposable
+  setuptools/wheel environment. Its first post-review run failed because the
+  sandbox could not resolve the package index; the same isolated build
+  succeeded with approved network access. These installs changed no tracked
+  dependency declaration or lock file.
+
 ## 2026-07-26 - Signal, Execution, And Metric Timing Implementation
 
 - Started from protected `main` merge `275982f` (PR #161) in the isolated

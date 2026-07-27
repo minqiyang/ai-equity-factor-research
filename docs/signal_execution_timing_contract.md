@@ -1,10 +1,11 @@
 # Signal, Execution, and Metric Timing Contract
 
-Status: accepted Stage 2a design; Stage 2b runtime implementation complete on
-the branch and awaiting final validation/review gates.
+Status: accepted Stage 2 design; Stage 2b runtime implementation complete on
+protected main via PR #162.
 
-Implementation baseline: protected `main` merge `275982f` (PR #161), with 638
-tests passing before Stage 2b changes.
+Implementation baseline: protected `main` merge `8a352d3` (PR #162). The
+post-merge local baseline has 849 passing tests with two platform-conditional
+wide-`longdouble` skips; exact merge-head GitHub CI passed.
 
 This is the normative documentation and methodology target for the current
 close-only backtester and deterministic tests. Implementation conformance is

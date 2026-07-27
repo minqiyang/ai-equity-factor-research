@@ -1,0 +1,203 @@
+{
+  "schema_version": "pit_canonical_json_v1_golden_v2",
+  "semantic_input": {
+    "z": null,
+    "timestamp": "2026-07-27T00:00:00Z",
+    "decimal": "1.23",
+    "a": [
+      true,
+      false
+    ]
+  },
+  "canonical_utf8": "{\"a\":[true,false],\"decimal\":\"1.23\",\"timestamp\":\"2026-07-27T00:00:00Z\",\"z\":null}",
+  "sha256": "05efd6eb1bbdaf7f3d51beef89d0f7266afdc30abdf4ebd71777ad00e7d3a81d",
+  "ordered_manifest_sha256_vectors": {
+    "semantic_input": {
+      "schema_version": "ordered_component_inventory_v1",
+      "canonicalization_id": "pit_canonical_json_v1",
+      "components": [
+        {
+          "input_id": "prices",
+          "component_ordinal": 1,
+          "raw_byte_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "byte_size": 13
+        },
+        {
+          "input_id": "benchmark",
+          "component_ordinal": 0,
+          "raw_byte_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "byte_size": 7
+        },
+        {
+          "input_id": "prices",
+          "component_ordinal": 0,
+          "raw_byte_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "byte_size": 11
+        }
+      ]
+    },
+    "reordered_semantic_input": {
+      "components": [
+        {
+          "byte_size": 11,
+          "raw_byte_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "component_ordinal": 0,
+          "input_id": "prices"
+        },
+        {
+          "byte_size": 13,
+          "raw_byte_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "component_ordinal": 1,
+          "input_id": "prices"
+        },
+        {
+          "byte_size": 7,
+          "raw_byte_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "component_ordinal": 0,
+          "input_id": "benchmark"
+        }
+      ],
+      "canonicalization_id": "pit_canonical_json_v1",
+      "schema_version": "ordered_component_inventory_v1"
+    },
+    "mutated_semantic_input": {
+      "schema_version": "ordered_component_inventory_v1",
+      "canonicalization_id": "pit_canonical_json_v1",
+      "components": [
+        {
+          "input_id": "prices",
+          "component_ordinal": 1,
+          "raw_byte_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "byte_size": 13
+        },
+        {
+          "input_id": "benchmark",
+          "component_ordinal": 0,
+          "raw_byte_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+          "byte_size": 7
+        },
+        {
+          "input_id": "prices",
+          "component_ordinal": 0,
+          "raw_byte_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "byte_size": 11
+        }
+      ]
+    },
+    "canonical_utf8": "{\"canonicalization_id\":\"pit_canonical_json_v1\",\"components\":[{\"byte_size\":7,\"component_ordinal\":0,\"input_id\":\"benchmark\",\"raw_byte_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\"},{\"byte_size\":11,\"component_ordinal\":0,\"input_id\":\"prices\",\"raw_byte_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"byte_size\":13,\"component_ordinal\":1,\"input_id\":\"prices\",\"raw_byte_sha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}],\"schema_version\":\"ordered_component_inventory_v1\"}",
+    "sha256": "4bd691df0048c1de05a26b48e736566d5f3a88fad759d2c9114404b8c65b342b",
+    "mutated_canonical_utf8": "{\"canonicalization_id\":\"pit_canonical_json_v1\",\"components\":[{\"byte_size\":7,\"component_ordinal\":0,\"input_id\":\"benchmark\",\"raw_byte_sha256\":\"1111111111111111111111111111111111111111111111111111111111111111\"},{\"byte_size\":11,\"component_ordinal\":0,\"input_id\":\"prices\",\"raw_byte_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},{\"byte_size\":13,\"component_ordinal\":1,\"input_id\":\"prices\",\"raw_byte_sha256\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\"}],\"schema_version\":\"ordered_component_inventory_v1\"}",
+    "mutated_sha256": "2b50c0006862378e4f7c79f4eb4d57f47f6cc060374650d2389f322936240db0"
+  },
+  "public_projection_sha256_vectors": {
+    "semantic_input": {
+      "schema_version": "public_redacted_projection_v1",
+      "public_projection_id": "projection-001",
+      "canonicalization_id": "pit_canonical_json_v1",
+      "manifest_id": "manifest-001",
+      "dataset_roles": [
+        "benchmark",
+        "asset_prices"
+      ],
+      "policy_states": [
+        {
+          "policy_id": "license_entitlement",
+          "state": "accepted"
+        },
+        {
+          "policy_id": "historical_universe",
+          "state": "diagnostic_only"
+        }
+      ],
+      "redacted_evidence_refs": [
+        {
+          "evidence_ref_id": "evidence-universe-001"
+        },
+        {
+          "evidence_ref_id": "evidence-license-001"
+        }
+      ],
+      "published_hashes": [
+        {
+          "hash_id": "input-prices",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "publication_approval_ref_id": "approval-001"
+        }
+      ]
+    },
+    "reordered_semantic_input": {
+      "published_hashes": [
+        {
+          "publication_approval_ref_id": "approval-001",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "hash_id": "input-prices"
+        }
+      ],
+      "redacted_evidence_refs": [
+        {
+          "evidence_ref_id": "evidence-license-001"
+        },
+        {
+          "evidence_ref_id": "evidence-universe-001"
+        }
+      ],
+      "policy_states": [
+        {
+          "state": "diagnostic_only",
+          "policy_id": "historical_universe"
+        },
+        {
+          "state": "accepted",
+          "policy_id": "license_entitlement"
+        }
+      ],
+      "dataset_roles": [
+        "asset_prices",
+        "benchmark"
+      ],
+      "manifest_id": "manifest-001",
+      "canonicalization_id": "pit_canonical_json_v1",
+      "public_projection_id": "projection-001",
+      "schema_version": "public_redacted_projection_v1"
+    },
+    "mutated_semantic_input": {
+      "schema_version": "public_redacted_projection_v1",
+      "public_projection_id": "projection-001",
+      "canonicalization_id": "pit_canonical_json_v1",
+      "manifest_id": "manifest-001",
+      "dataset_roles": [
+        "benchmark",
+        "asset_prices"
+      ],
+      "policy_states": [
+        {
+          "policy_id": "license_entitlement",
+          "state": "accepted"
+        },
+        {
+          "policy_id": "historical_universe",
+          "state": "blocked"
+        }
+      ],
+      "redacted_evidence_refs": [
+        {
+          "evidence_ref_id": "evidence-universe-001"
+        },
+        {
+          "evidence_ref_id": "evidence-license-001"
+        }
+      ],
+      "published_hashes": [
+        {
+          "hash_id": "input-prices",
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "publication_approval_ref_id": "approval-001"
+        }
+      ]
+    },
+    "canonical_utf8": "{\"canonicalization_id\":\"pit_canonical_json_v1\",\"dataset_roles\":[\"asset_prices\",\"benchmark\"],\"manifest_id\":\"manifest-001\",\"policy_states\":[{\"policy_id\":\"historical_universe\",\"state\":\"diagnostic_only\"},{\"policy_id\":\"license_entitlement\",\"state\":\"accepted\"}],\"public_projection_id\":\"projection-001\",\"published_hashes\":[{\"hash_id\":\"input-prices\",\"publication_approval_ref_id\":\"approval-001\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}],\"redacted_evidence_refs\":[{\"evidence_ref_id\":\"evidence-license-001\"},{\"evidence_ref_id\":\"evidence-universe-001\"}],\"schema_version\":\"public_redacted_projection_v1\"}",
+    "sha256": "e59d403016301cbeeeafb452eda94dfacdff7a565f305747b7a2a951adff3b15",
+    "mutated_canonical_utf8": "{\"canonicalization_id\":\"pit_canonical_json_v1\",\"dataset_roles\":[\"asset_prices\",\"benchmark\"],\"manifest_id\":\"manifest-001\",\"policy_states\":[{\"policy_id\":\"historical_universe\",\"state\":\"blocked\"},{\"policy_id\":\"license_entitlement\",\"state\":\"accepted\"}],\"public_projection_id\":\"projection-001\",\"published_hashes\":[{\"hash_id\":\"input-prices\",\"publication_approval_ref_id\":\"approval-001\",\"sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}],\"redacted_evidence_refs\":[{\"evidence_ref_id\":\"evidence-license-001\"},{\"evidence_ref_id\":\"evidence-universe-001\"}],\"schema_version\":\"public_redacted_projection_v1\"}",
+    "mutated_sha256": "ead1d486a37d870914623c971d53810f57c2c187e5ec9aacf1c45ea67de15f91"
+  }
+}

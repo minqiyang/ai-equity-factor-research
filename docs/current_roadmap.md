@@ -1,9 +1,9 @@
 # Current Roadmap
 
-Updated: 2026-07-27 for the Signal, Execution, and Metric Timing Implementation.
+Updated: 2026-07-27 for the Point-in-Time Data Methodology Contract.
 
-Protected-main baseline verified before this stage: `275982f`, the protected
-merge of PR #161.
+Protected-main baseline verified before this stage: `8a352d3`, the protected
+merge of PR #162, with successful exact merge-head CI.
 
 This is the canonical roadmap. `docs/research_program_charter.md` defines the
 long-term evidence policy. Older checkpoints, gap refreshes, plans, and audits
@@ -13,6 +13,10 @@ split contract.
 `docs/signal_execution_timing_contract.md` is the accepted Stage 2 authority
 implemented by the Stage 2b runtime, including the owner-selected required
 caller-declared source baseline and controlled post-capture mutation ledger.
+`docs/point_in_time_data_methodology_contract.md` is the proposed Stage 3
+provider-agnostic authority. It distinguishes accepting a methodology contract,
+reviewing one immutable dataset manifest, and becoming eligible for formal
+interpretation.
 
 ## Objective
 
@@ -40,26 +44,20 @@ authorized.
 | Private diagnostics | Local-only EODHD validation and factor diagnostics on a fixed cohort; not accepted point-in-time real-data interpretation. |
 | LEAN | Non-executing metadata/signal scaffold only; no algorithm runtime, parity evidence, brokerage, orders, paper, or live path. |
 
-Protected main has 638 passing tests plus successful exact-merge CI. The Stage
-2b branch has 849 passing tests in both the reused local project environment
-and a disposable Python 3.11/pandas 3 CI-aligned environment after
-implementing the selected provenance contract. Two wide-`longdouble`
-provenance regressions skip on macOS arm64, where `longdouble` has no precision
-beyond float64, and must execute on Ubuntu CI. Deterministic generated
-evidence, local validation, and independent read-only review are complete. The
-first stable-head Codex review and follow-up independent review found two P2
-tracked-mutation sequence gaps. Their fixes make the latest controlled bounded
-assignment authoritative and preserve bounded recovery after a later outside
-non-real/object promotion. New-head GitHub CI and Codex re-review remain gates.
-These checks establish software behavior, not empirical research validity.
+Protected main has a local baseline of 849 passing tests with two
+platform-conditional wide-`longdouble` skips, plus successful PR and exact
+merge-head CI for PR #162. Stage 2b is complete. Stage 3 changes methodology
+documentation, the readiness workflow-control Skill, repo-map index tooling,
+and documentation-contract tests only; it does not inspect data, alter
+research runtime behavior, or establish empirical validity.
 
 ## Current Research-Validity Findings
 
 ### High
 
-1. The private EODHD workflow calculated and reviewed test diagnostics through
-   2026-06-26. The 2025-05-01 through 2026-05-31 interval is historical
-   evaluation or pseudo-holdout evidence, not presumed pristine holdout data.
+1. The private EODHD workflow calculated and reviewed diagnostics through
+   2026-06-26. The 2025-05-01 through 2026-05-31 interval is confirmed
+   `historical_evaluation`, not a pristine holdout, and cannot be upgraded.
 2. The fixed EODHD cohort lacks point-in-time membership, delisting/symbol
    history, resolved corporate-action and adjusted price/volume semantics, and
    complete provenance/license evidence.
@@ -73,6 +71,14 @@ split consumers use the typed contract. Deterministic tests cover post-test,
 asset/benchmark mutation, cross-edge asset mutation, zero-eligible,
 partial-missing, all-missing, and usable-label but metric-empty cases.
 
+Stage 3 defines the missing provider-agnostic contract: immutable dataset
+identity, canonicalization, environment, and lineage; evidence-backed
+entitlement; exact-version non-self-issued dataset review; bitemporal
+availability; permanent security/listing identity; historical membership;
+corporate actions and terminal value; field, missingness, calendar, benchmark,
+risk-free, privacy, and exposure-ledger semantics. Contract acceptance does
+not verify any current dataset or make the EODHD cohort formally usable.
+
 ### Medium
 
 1. Existing logging covers configured successful demos but cannot guarantee
@@ -82,15 +88,15 @@ partial-missing, all-missing, and usable-label but metric-empty cases.
    partial.
 3. Applied volume-impact metadata is caller-asserted rather than a calibrated,
    fully validated capacity contract.
-4. Benchmark purpose, investability, calendar compatibility, and risk-free
-   policy remain incomplete
-   for formal historical inference.
+4. No current dataset has passed the new benchmark purpose, investability,
+   calendar compatibility, or risk-free evidence contract.
 
 ### Low and process hardening
 
-1. Provider-specific absolute private paths are embedded in tracked scripts and
-   docs; no raw private rows are tracked, but the boundary needs a later
-   redacted-manifest and path-hardening design.
+1. Provider-specific absolute private paths remain in legacy diagnostic
+   scripts and historical docs. The Stage 3 contract prohibits them in new
+   tracked methodology records; runtime path hardening remains a separate
+   implementation task.
 2. No dependency/environment lock is tracked for independent reproduction.
 3. Some historical docs still lack concise successor pointers.
 
@@ -106,9 +112,9 @@ timing, holdout, statistical, or public-documentation findings above.
 | 1a. Purged/bounded split contract | Complete on protected main via PR #159 | Freeze explicit split starts/ends, bounded test semantics, label start/end ownership, horizon purge, optional embargo, raw-axis target masking, and warm-up/down metadata. | `docs/purged_bounded_split_contract.md`, its hand-calculated boundary matrix, documentation contracts, full gates, and independent read-only review passed. |
 | 1b. Purged/bounded split implementation | Complete on protected main via PR #160 | Implement the accepted split contract and remove cross-split labels from every current future-return workflow. | Focused tests prove later prices cannot alter earlier split labels or metrics; raw axes retain masked exclusions; missingness is audited; full local, CI, and final-head review gates passed. |
 | 2a. Signal/execution timing contract | Complete on protected main via PR #161 | Freeze the after-close/next-observed-close timeline, signal-lag types, signal/price-value gates, target-freeze rule, accounting order, bounded metric anchors, measured-date tracking error, capital-validity boundaries, benchmark window, terminal policy, metadata, and deterministic Stage 2b matrix. | `docs/signal_execution_timing_contract.md`, documentation contracts, full local/CI gates, and final current-head review passed. |
-| 2b. Signal/execution timing implementation | Local validation/review complete; GitHub gates pending | Enforce the accepted timing contract across backtest inputs, targets, accounting metadata, metrics, callers, and affected synthetic evidence. Require role-bound immutable provenance captured as a caller-declared baseline; enforcement begins there, and only controlled, coordinate-logged later out-of-window complex writes may authorize lossless bounded dtype recovery. | Zero lag and invalid lag types fail; invalid signal and held/execution-price values fail before their declared boundary; targets use decision-time information; warm-up is excluded; strategy and benchmark share measured rows; invalid initial/gross/net/equity and direct metric inputs fail at their declared boundary; stale/untracked/tampered post-capture state fails closed; identical outside-versus-bounded `1+0j` frames are distinguished; the pre-capture-history limitation is explicit; all `TIMING-*` behavior tests, full local gates, independent review, CI, and final stable-head review pass. |
-| 3. Point-in-time data methodology | Next after Stage 2b protected merge | Define provider-agnostic provenance, universe, delisting/corporate-action, field, benchmark, missing-data, privacy, and holdout-ledger contracts. | Every required methodology field is accepted before formal interpretation; no vendor download is implied. |
-| 4. Experiment/trial ledger | Blocked by Stage 3 design dependencies | Allocate immutable IDs before execution and retain every attempted, failed, invalid, aborted, and excluded trial plus hashes and access records. | Append-only and completeness tests pass; no silent overwrite or failed-before-write loss. |
+| 2b. Signal/execution timing implementation | Complete on protected main via PR #162 | Enforce the accepted timing contract across backtest inputs, targets, accounting metadata, metrics, callers, and affected synthetic evidence. Require role-bound immutable provenance captured as a caller-declared baseline; enforcement begins there, and only controlled, coordinate-logged later out-of-window complex writes may authorize lossless bounded dtype recovery. | Zero lag and invalid lag types fail; invalid signal and held/execution-price values fail before their declared boundary; targets use decision-time information; warm-up is excluded; strategy and benchmark share measured rows; invalid initial/gross/net/equity and direct metric inputs fail at their declared boundary; stale/untracked/tampered post-capture state fails closed; identical outside-versus-bounded `1+0j` frames are distinguished; the pre-capture-history limitation is explicit; all `TIMING-*` behavior tests, full local gates, independent review, CI, and final stable-head review passed. |
+| 3. Point-in-time data methodology | Readiness-scope re-review fix validated; new-head GitHub gates pending | Accept `docs/point_in_time_data_methodology_contract.md` as the provider-agnostic provenance, canonicalization/environment, immutable dataset-review, universe, corporate-action, field, benchmark, missing-data, privacy, and exposure-ledger contract. | The three gates remain separate; all `PIT-*` documentation cases and full gates pass; no dataset, vendor, or formal interpretation is accepted. |
+| 4. Experiment/trial ledger | Next after Stage 3 protected merge and successful exact merge-head CI | Allocate immutable IDs before execution and retain every attempted, failed, invalid, aborted, and excluded trial plus hashes and protected-sample access records. | Append-only and completeness tests pass; no silent overwrite, backfilled holdout laundering, or failed-before-write loss. |
 | 5. Statistical validation | Blocked by Stage 4 | Add descriptive, dependence-aware, bootstrap, placebo, multiplicity, DSR, PBO, and stability controls in design-first increments. | Registered inference policy and deterministic synthetic/golden tests pass. |
 | 6. Canonical factor registry | Blocked by Stages 3-5 | Register interpretable price/volume baselines first; fundamentals wait for filing-availability support. | Formula, direction, source, fields, lag, parameters, fixture, tests, limitations, and trial family are complete. |
 | 7. WorldQuant batches | Blocked by Stage 6 | Add 5-10 formulas per compatible data family after operator contracts are ready. | Formula transcription/parity, missing/warm-up, timing, and traceability tests pass; no strategy claim. |
