@@ -63,6 +63,10 @@ IMPORTANT_FILES = [
         "docs/purged_bounded_split_contract.md",
         "Accepted Stage 1a timing and sample-isolation design.",
     ),
+    (
+        "docs/signal_execution_timing_contract.md",
+        "Accepted Stage 2a signal, execution, and metric timing design.",
+    ),
     ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),
     ("docs/codex_long_running_controller.md", "Continuation and stop-condition controller."),

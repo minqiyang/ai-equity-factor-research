@@ -1,5 +1,61 @@
 # Engineering Log
 
+## 2026-07-26 - Signal, Execution, And Metric Timing Contract
+
+- Started from protected `main` merge `202273b` (PR #160) in the isolated
+  `codex/signal-execution-timing-contract` worktree. Verified the exact merge,
+  successful post-merge GitHub CI, and a clean 637-test/Ruff/compilation/build
+  baseline before editing; the unrelated local checkout remained untouched.
+- Four non-overlapping read-only audits mapped backtest timing, metric anchors,
+  callers, canonical documentation, and adversarial leakage risks. No private
+  result or holdout value was opened.
+- Confirmed that each scheduled execution row `d[j]` uses source signal
+  `d[j-L]`. Under daily rebalancing, lag one maps a signal stamped at `d0` to a
+  target reset after the return ending at `d1`, with the target's first earned
+  return ending at `d2`. The existing Stage 1 `d0`-to-`d1` label is therefore
+  diagnostic and not that strategy return.
+- Recorded three high-risk Stage 2b gaps: zero lag is accepted even though
+  signals are declared available after close; signals are silently reindexed;
+  and execution-close price validity can change target membership.
+- Recorded metric-anchor gaps: full feature warm-up can enter reported
+  strategy/benchmark metrics, volatility and Sharpe include the initialization
+  row while tracking error excludes it, and drawdown does not seed its peak
+  from initial capital.
+- Added `docs/signal_execution_timing_contract.md` with the sole current policy
+  `after_close_signal_next_observed_close_v1`, exact row/event ordering,
+  non-Boolean integer lag of at least one, decision-time target freezing,
+  bounded evaluation anchors, common metric dates, benchmark and terminal
+  rules, typed metadata, a hand-calculated accounting case, and a 14-case
+  Stage 2b behavior matrix.
+- Kept the close-reset model explicitly idealized. Next-open, same-close,
+  auction, intraday, exchange-calendar, partial-fill, capacity, LEAN, real-data,
+  and empirical interpretation decisions remain deferred.
+- Reconciled the specification, roadmap, handoff, decision record, historical
+  metric design wording, changelog, repository map, and documentation-contract
+  tests. The repo-map generator only adds the new canonical document to its
+  important-file index; no source, research script, LEAN file, generated
+  evidence, workflow Skill, or `AGENTS.md` changed.
+- Independent semantic and canonical-document reviewers found one P1 and
+  several P2 contract gaps in the first draft. The integration owner fixed
+  decision-time ambiguity, scheduled-row mapping, buy/sell feasibility,
+  annualization, no-op and terminal ledger states, mutation tests, and the
+  repo-map scope wording. Both reviewers then reported no remaining P1/P2.
+- Final local validation passes with 638 tests, Ruff, compilation of
+  `src`, `research`, `tests`, and `lean`, sdist and wheel build, reproducible
+  repo-map generation, Unicode/control scan, and branch diff checks.
+- The default `python` alias was absent, Homebrew Python 3.14 lacked pytest,
+  and the standalone pytest used Python 3.9 without `tomllib`. Tests therefore
+  reused the existing repository `.venv` with the current worktree `src` first
+  on the import path; no test dependency was installed.
+- Package validation used a disposable `/private/tmp` uv environment with
+  `build==1.5.0`, `pyproject-hooks==1.2.0`, `packaging==26.2`,
+  `setuptools==83.0.0`, and `wheel==0.47.0`. These packages were not installed
+  into the project environment, and no dependency declaration or lock file
+  changed.
+- Trial-count impact is zero. This design stage changes no factor, label,
+  strategy, portfolio, cost, benchmark, execution, report, or research result
+  and authorizes no paper or live behavior.
+
 ## 2026-07-26 - Purged And Bounded Split Implementation
 
 - Started from protected `main` merge `12e0e86` in the isolated

@@ -16,8 +16,10 @@ Implement metrics in four separate stages:
 4. Holding-episode metrics only after position episodes can be attributed.
 
 The Stage 1 code PR implemented only holdings-state metrics and did not modify
-portfolio selection, target weights, trades, costs, or returns. The Stage 2 code
-PR must implement only the tracking-error contract below.
+portfolio selection, target weights, trades, costs, or returns. The historical
+Stage 2 code PR implemented only the tracking-error contract below. The later
+`docs/signal_execution_timing_contract.md` governs the common evaluation anchor
+that Stage 2b must apply across basic and benchmark-relative metrics.
 
 ## Stage 1: Holdings-State Metrics
 
@@ -167,9 +169,11 @@ The implementation is limited to daily close-to-close observations:
   intersection, forward-fill, or calendar conversion is allowed.
 
 Weekly, monthly, intraday, irregular-observation, and mixed-frequency tracking
-error require a separate reviewed contract. Weekend and holiday gaps are
-allowed as ordinary gaps in a daily trading-session index when both series
-share the exact same dates.
+error require a separate reviewed contract. The implementation rejects a
+non-daily `return_frequency` declaration but does not infer or validate actual
+calendar cadence from the index. Weekend and holiday gaps are allowed as
+ordinary gaps in a caller-declared daily trading-session index when both
+series share the exact same dates.
 
 ### First-Row And Terminal-Window Semantics
 
@@ -265,24 +269,26 @@ Focused deterministic tests cover:
 - missing benchmark data failing rather than using the backtest's diagnostic
   zero-return fallback;
 - fewer than two measured windows failing;
-- rejection of weekly, monthly, intraday, or mixed-frequency inputs;
+- rejection of non-daily frequency declarations; actual calendar-cadence
+  validation remains unimplemented;
 - a regression proving tracking error is not computed from the difference of
   two annualized returns;
 - no changes to holdings, gross returns, net returns, turnover, or cost
   calculations from adding the metric.
 
-## Deferred Metrics
+## Formerly Deferred Metrics
 
 ### Hit Rate
 
-Deferred. "Positive return dates" is not an acceptable substitute for trade or
-holding-episode hit rate. The current engine does not identify complete entry,
-partial resize, exit, and re-entry episodes.
+Implemented under the Stage 4 contract below. "Positive return dates" is not an
+acceptable substitute for completed holding-episode hit rate. The current
+engine now identifies continuous positive-weight entry, resize, exit, and
+re-entry episodes from signed trades and post-trade holdings.
 
 ### Average Holding-Period Return
 
-Implemented only after the Stage 4 contract below. Daily positive-return
-frequency is not a substitute.
+Implemented under the Stage 4 contract below. Daily positive-return frequency
+is not a substitute.
 
 ## Stage 3: Long-Only Position-Cap Constraint
 

@@ -15,6 +15,8 @@ results.
 
 `docs/research_program_charter.md` is the canonical long-term evidence policy.
 `docs/current_roadmap.md` is the active staged delivery plan.
+`docs/signal_execution_timing_contract.md` is the accepted Stage 2a timing
+design; behavioral conformance remains pending Stage 2b.
 
 ## Current Phase and Boundary
 
@@ -94,8 +96,13 @@ strategy or profitability claim.
 - Record feature time, signal availability, decision, execution, label start,
   label end, and return measurement end.
 - Signal inputs must be known before the declared execution time.
-- Close-derived daily signals require at least one row of lag unless an
-  explicit reviewed execution model supports another timestamp contract.
+- Under the accepted close-only contract, a close-derived signal becomes
+  available strictly after its stamped close, the earliest supported idealized
+  target reset is the next observed source-row close, and the target first
+  earns the following close-to-close return.
+- Close-derived daily signals require a non-boolean integer lag of at least one
+  observed source row. Lag zero requires a different typed and reviewed
+  execution model and is not authorized implicitly.
 - Use bounded development, validation, and evaluation windows.
 - Purge labels that cross split boundaries; add embargo when overlapping
   labels or the accepted dependence model requires it.
@@ -105,6 +112,12 @@ strategy or profitability claim.
 - Never use future prices, future membership, future fundamentals, later
   revisions, future corporate actions, or same-period target returns as
   features.
+
+These timing rules are normative. The current backtester still accepts zero
+lag, silently reindexes signals, consults execution-close price availability
+during target construction, and does not give every return metric one common
+evaluation anchor. Stage 2b must close those implementation gaps before the
+project can claim timing-contract conformance.
 
 Every protected-sample access must enter the holdout exposure ledger. Previously
 examined data is `historical_evaluation` or `pseudo_holdout`, not an untouched
