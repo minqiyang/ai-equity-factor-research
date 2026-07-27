@@ -9,6 +9,12 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the accepted signal, execution, and metric timing contract for an
+  after-close signal and next-observed-close idealized target reset. It freezes
+  nonzero source-row lag, decision-time target intent, return/trade/cost
+  ordering, bounded evaluation anchors, common strategy/benchmark metric rows,
+  terminal behavior, typed metadata, and a 14-case Stage 2b test matrix.
+  Runtime behavior remains unchanged until Stage 2b.
 - Added the accepted purged and bounded chronological split contract with six
   explicit inclusive boundaries, complete label-interval ownership, a hard
   bounded test cutoff, horizon-aware purge, optional embargo, raw-axis target

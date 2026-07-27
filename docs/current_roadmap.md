@@ -1,15 +1,17 @@
 # Current Roadmap
 
-Updated: 2026-07-26 for the Purged and Bounded Split Implementation.
+Updated: 2026-07-26 for the Signal, Execution, and Metric Timing Contract.
 
-Protected-main baseline verified before this stage: `12e0e86`, the merge of PR
-#159.
+Protected-main baseline verified before this stage: `202273b`, the merge of PR
+#160.
 
 This is the canonical roadmap. `docs/research_program_charter.md` defines the
 long-term evidence policy. Older checkpoints, gap refreshes, plans, and audits
 remain historical evidence and must not be used as active task queues.
 `docs/purged_bounded_split_contract.md` is the accepted and implemented Stage 1
 split contract.
+`docs/signal_execution_timing_contract.md` is the accepted Stage 2a design
+target; code conformance is deferred to Stage 2b.
 
 ## Objective
 
@@ -37,17 +39,25 @@ authorized.
 | Private diagnostics | Local-only EODHD validation and factor diagnostics on a fixed cohort; not accepted point-in-time real-data interpretation. |
 | LEAN | Non-executing metadata/signal scaffold only; no algorithm runtime, parity evidence, brokerage, orders, paper, or live path. |
 
-The Stage 1b branch has 637 passing tests plus Ruff, compilation, and
-package-build evidence. Current-head GitHub CI and final-head review remain PR
-gates. These checks establish software behavior, not empirical research
-validity.
+Protected main has 637 passing tests plus successful post-merge CI. The Stage
+2a branch changes documentation, repo-map index tooling, and a
+documentation-contract test only and has 638 passing tests plus Ruff,
+compilation, and package-build evidence. Its current-head GitHub CI and
+final-head review remain PR gates. These checks establish software or
+documentation behavior, not empirical research validity.
 
 ## Current Research-Validity Findings
 
 ### High
 
-1. `run_long_only_backtest()` documents signals as known after close but
-   accepts `signal_lag_periods=0`, allowing ambiguous same-close target setting.
+1. The accepted Stage 2a contract requires a non-boolean integer lag of at
+   least one, exact axes, decision-time target freezing, and common metric
+   anchors. `run_long_only_backtest()` does not yet enforce those rules: it
+   accepts `signal_lag_periods=0`, silently reindexes signals, and lets
+   execution-close price availability affect target membership. It also lacks
+   the accepted signal-value, held incoming-price, typed execution-price,
+   initial-capital, pretrade gross-solvency, post-cost net/equity-solvency, and
+   direct metric equity/return failure boundaries.
 2. The private EODHD workflow calculated and reviewed test diagnostics through
    2026-06-26. The 2025-05-01 through 2026-05-31 interval is historical
    evaluation or pseudo-holdout evidence, not presumed pristine holdout data.
@@ -68,8 +78,9 @@ partial-missing, all-missing, and usable-label but metric-empty cases.
 
 1. Feature warm-up and evaluation windows are not consistently separated in
    synthetic momentum metrics.
-2. Basic risk metrics do not enforce one common timestamp/anchor contract, and
-   Sharpe assumptions are not fully recorded.
+2. Basic volatility and Sharpe still include the initialization row while
+   tracking error excludes it; maximum drawdown lacks an initial-capital
+   anchor, and Sharpe assumptions are not fully recorded.
 3. Existing logging covers configured successful demos but cannot guarantee
    append-only records for failed-before-write, abandoned, or invalid trials.
 4. ICIR, HAC, bootstrap, full quantile monotonicity, factor decay, FDR, DSR,
@@ -98,9 +109,10 @@ timing, holdout, statistical, or public-documentation findings above.
 | --- | --- | --- | --- |
 | 0. Research Charter Reset | Complete on protected main via PR #158 | Add the charter and reconcile specification, roadmap, handoff, controller, workflow Skill, and documentation contracts without changing research behavior. | Documentation tests, Skill audit, repo-map refresh, full baseline validation, CI, and final current-head review passed. |
 | 1a. Purged/bounded split contract | Complete on protected main via PR #159 | Freeze explicit split starts/ends, bounded test semantics, label start/end ownership, horizon purge, optional embargo, raw-axis target masking, and warm-up/down metadata. | `docs/purged_bounded_split_contract.md`, its hand-calculated boundary matrix, documentation contracts, full gates, and independent read-only review passed. |
-| 1b. Purged/bounded split implementation | Complete on this head | Implement the accepted split contract and remove cross-split labels from every current future-return workflow. | Focused tests prove later prices cannot alter earlier split labels or metrics; raw axes retain masked exclusions; missingness is audited; full local gates pass. |
-| 2. Signal/execution timing | Next after Stage 1b merge | Freeze feature, availability, decision, execution, and return timestamps; resolve zero-lag and metric-window contracts. | Close-derived signals cannot receive ambiguous same-close fills; timing and anchor tests pass. |
-| 3. Point-in-time data methodology | Blocked by Stages 1-2 | Define provider-agnostic provenance, universe, delisting/corporate-action, field, benchmark, missing-data, privacy, and holdout-ledger contracts. | Every required methodology field is accepted before formal interpretation; no vendor download is implied. |
+| 1b. Purged/bounded split implementation | Complete on protected main via PR #160 | Implement the accepted split contract and remove cross-split labels from every current future-return workflow. | Focused tests prove later prices cannot alter earlier split labels or metrics; raw axes retain masked exclusions; missingness is audited; full local, CI, and final-head review gates passed. |
+| 2a. Signal/execution timing contract | Complete on this head; behavior not implemented | Freeze the after-close/next-observed-close timeline, signal-lag types, signal/price-value gates, target-freeze rule, accounting order, bounded metric anchors, measured-date tracking error, capital-validity boundaries, benchmark window, terminal policy, metadata, and deterministic Stage 2b matrix. | `docs/signal_execution_timing_contract.md` and documentation contracts pass without changing runtime behavior. |
+| 2b. Signal/execution timing implementation | Next after Stage 2a merge | Enforce the accepted timing contract across backtest inputs, targets, accounting metadata, metrics, callers, and affected synthetic evidence. | Zero lag and invalid lag types fail; invalid signal and held/execution-price values fail before their declared boundary; targets use decision-time information; warm-up is excluded; strategy and benchmark share measured rows; invalid initial/gross/net/equity and direct metric inputs fail at their declared boundary; all `TIMING-*` behavior tests and full gates pass. |
+| 3. Point-in-time data methodology | Blocked by Stage 2b | Define provider-agnostic provenance, universe, delisting/corporate-action, field, benchmark, missing-data, privacy, and holdout-ledger contracts. | Every required methodology field is accepted before formal interpretation; no vendor download is implied. |
 | 4. Experiment/trial ledger | Blocked by Stage 3 design dependencies | Allocate immutable IDs before execution and retain every attempted, failed, invalid, aborted, and excluded trial plus hashes and access records. | Append-only and completeness tests pass; no silent overwrite or failed-before-write loss. |
 | 5. Statistical validation | Blocked by Stage 4 | Add descriptive, dependence-aware, bootstrap, placebo, multiplicity, DSR, PBO, and stability controls in design-first increments. | Registered inference policy and deterministic synthetic/golden tests pass. |
 | 6. Canonical factor registry | Blocked by Stages 3-5 | Register interpretable price/volume baselines first; fundamentals wait for filing-availability support. | Formula, direction, source, fields, lag, parameters, fixture, tests, limitations, and trial family are complete. |

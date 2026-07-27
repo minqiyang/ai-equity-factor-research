@@ -32,6 +32,7 @@ def test_required_governance_files_exist() -> None:
         "pyproject.toml",
         "docs/research_program_charter.md",
         "docs/purged_bounded_split_contract.md",
+        "docs/signal_execution_timing_contract.md",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
@@ -57,10 +58,13 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "0. Research Charter Reset",
         "1a. Purged/bounded split contract",
         "1b. Purged/bounded split implementation",
+        "2a. Signal/execution timing contract",
+        "2b. Signal/execution timing implementation",
         "Target construction currently lives in `src/backtest/portfolio.py`",
         "pseudo-holdout evidence",
         "request `@codex review` once on the",
         "`docs/purged_bounded_split_contract.md`",
+        "`docs/signal_execution_timing_contract.md`",
     ]:
         assert phrase in roadmap
 
@@ -69,17 +73,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "Active roadmap: `docs/current_roadmap.md`",
         "## Research Charter Decision",
         "## Stage 1 Split Decision",
+        "## Stage 2 Timing Decision",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Stage 2a - Signal and execution timing contract",
+        "Stage 2b - Signal, execution, and metric timing implementation",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
     assert "637 passing tests" in roadmap
-    assert "Starting validation: 595 tests passed" in handoff
+    assert "Starting validation: 637 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -91,7 +96,7 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "average_position_concentration_hhi",
         "max_position_concentration_hhi",
         "## Stage 2: Tracking Error",
-        "## Deferred Metrics",
+        "## Formerly Deferred Metrics",
         "## PR Sequence",
     ]:
         assert phrase in design
@@ -183,8 +188,120 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
 
     assert roadmap.count("| 1b. Purged/bounded split implementation |") == 1
     assert "| 1b. Purged/bounded split implementation | Complete" in roadmap
-    assert "| 2. Signal/execution timing | Next" in roadmap
-    assert "Stage 2a - Signal and execution timing contract" in handoff
+    assert "| 2a. Signal/execution timing contract | Complete" in roadmap
+    assert "| 2b. Signal/execution timing implementation | Next" in roadmap
+    assert (
+        "Stage 2b - Signal, execution, and metric timing implementation"
+        in handoff
+    )
+
+
+def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
+    contract = (
+        PROJECT_ROOT / "docs/signal_execution_timing_contract.md"
+    ).read_text(encoding="utf-8")
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
+        encoding="utf-8"
+    )
+    repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
+
+    for phrase in [
+        "Status: accepted Stage 2a design target; implementation is deferred to Stage",
+        "This is a documentation and methodology contract, not implemented behavior.",
+        "after_close_signal_next_observed_close_v1",
+        "A close-derived signal stamped at row `t` becomes available only after",
+        "The earliest supported execution is `close[t+1]`, the next observed source",
+        "It does not constrain source rows after execution",
+        "execution_time < holding_effective_start",
+        "first_return_end    = missing",
+        "It must not construct or infer `a[N+1]`",
+        "`signal_lag_periods=0` is invalid for close-derived signals.",
+        "Row lag counts observed source rows within the exact bounded accounting slice",
+        "Rows in the full source index before `a[0]` never satisfy lag",
+        "A target executed at close `t` does not earn the return stamped `t`",
+        "Both bounds must be exact scalar timestamp labels in the validated price index",
+        "price_index.get_loc(evaluation_start)",
+        "partial-date strings such as `2024-01`",
+        "measured_return_dates = accounting_dates[1:]",
+        "timing_ledger_dates =",
+        "`is_scheduled_rebalance` is false",
+        "`incoming_return_start = a[j-1]`",
+        "`first_holding_return_start = a[N]`",
+        "net_return.loc[measured_return_dates]",
+        "`initial_capital_invalid`",
+        "`signal_value_invalid`",
+        "bounded_final_signals = final_signals.iloc",
+        "Only after that exact bounded slice exists",
+        "Signal values strictly before `evaluation_start` or after `evaluation_end`",
+        "`incoming_price_invalid`",
+        "`execution_price_invalid`",
+        "`returns_invalid`",
+        "`portfolio_insolvent_or_non_finite_before_trade`",
+        "`portfolio_insolvent_or_non_finite_after_costs`",
+        "`equity_curve_invalid`",
+        "calculate_max_drawdown(equity_curve, *, initial_capital)",
+        "It has no external index-equality requirement",
+        "`DatetimeIndex` values, timezone, and order",
+        "raise_before_successful_result_on_invalid_or_insolvent_capital",
+        "validate_bounded_scores_after_exact_slice_raise_on_invalid_available_score",
+        "decision_information_only_no_execution_close_rerank",
+        "execution_price_failure_policy",
+        "include_return_trade_cost_open_holdings_no_future_return",
+        "Same-row synthetic response diagnostics are not executable strategy returns",
+        "The model is an idealized full target reset at an observed close.",
+        "## Required Metadata",
+        "## Hand-Calculated Reference Case",
+        "## Deterministic Stage 2b Test Matrix",
+        "## Stage 2b Implementation Boundary",
+        "## Accepted Decisions and Deferred Choices",
+    ]:
+        assert phrase in contract
+
+    for field in [
+        "`timing_contract`",
+        "`feature_time`",
+        "`signal_availability_time`",
+        "`decision_time`",
+        "`execution_time`",
+        "`signal_lag_rows`",
+        "`return_frequency`",
+        "`periods_per_year`",
+        "`return_interval`",
+        "`holding_effective_interval`",
+        "`cost_application_time`",
+        "`metric_anchor_policy`",
+        "`terminal_row_policy`",
+        "`signal_value_failure_policy`",
+        "`incoming_price_failure_policy`",
+        "`returns_failure_policy`",
+        "`gross_insolvency_failure_policy`",
+        "`insolvency_failure_policy`",
+        "`equity_curve_failure_policy`",
+        "`benchmark_return_window`",
+    ]:
+        assert field in contract
+
+    for case_number in range(1, 15):
+        assert contract.count(f"`TIMING-{case_number:03d}`") == 1
+
+    for canonical_doc in [roadmap, handoff, specification, repo_map]:
+        assert "docs/signal_execution_timing_contract.md" in canonical_doc
+
+    assert (
+        "Stage 2a changes documentation, repo-map index tooling, and structure "
+        "tests only. It does not change backtest behavior."
+    ) in " ".join(handoff.split())
+    assert "`run_long_only_backtest()` still accepts `signal_lag_periods=0`" in handoff
+    assert "behavioral conformance remains pending Stage 2b" in specification
+    assert "| 2a. Signal/execution timing contract | Complete" in roadmap
+    assert "| 2b. Signal/execution timing implementation | Next" in roadmap
+    assert "| 3. Point-in-time data methodology | Blocked by Stage 2b" in roadmap
 
 
 def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:

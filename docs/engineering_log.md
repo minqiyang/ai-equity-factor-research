@@ -1,5 +1,82 @@
 # Engineering Log
 
+## 2026-07-26 - Signal, Execution, And Metric Timing Contract
+
+- Started from protected `main` merge `202273b` (PR #160) in the isolated
+  `codex/signal-execution-timing-contract` worktree. Verified the exact merge,
+  successful post-merge GitHub CI, and a clean 637-test/Ruff/compilation/build
+  baseline before editing; the unrelated local checkout remained untouched.
+- Four non-overlapping read-only audits mapped backtest timing, metric anchors,
+  callers, canonical documentation, and adversarial leakage risks. No private
+  result or holdout value was opened.
+- Distinguished the full source index `s[0..M]` from bounded accounting dates
+  `a[0..N]`. Each scheduled execution row `a[j]` uses source signal `a[j-L]`;
+  pre-anchor history may support feature calculation but cannot satisfy
+  execution lag. Under daily rebalancing, lag one maps fixture `d0`/`a[0]` to a
+  target reset after the return ending at `d1`/`a[1]`, with the target's first
+  earned return ending at `d2`/`a[2]`. The existing Stage 1 `d0`-to-`d1` label
+  is therefore diagnostic and not that strategy return.
+- Recorded three high-risk Stage 2b gaps: zero lag is accepted even though
+  signals are declared available after close; signals are silently reindexed;
+  and execution-close price validity can change target membership.
+- Recorded metric-anchor gaps: full feature warm-up can enter reported
+  strategy/benchmark metrics, volatility and Sharpe include the initialization
+  row while tracking error excludes it, and drawdown does not seed its peak
+  from initial capital.
+- Added `docs/signal_execution_timing_contract.md` with the sole current policy
+  `after_close_signal_next_observed_close_v1`, exact row/event ordering,
+  non-Boolean integer lag of at least one, decision-time target freezing,
+  bounded evaluation anchors, common metric dates, benchmark and terminal
+  rules, typed metadata, a hand-calculated accounting case, and a 14-case
+  Stage 2b behavior matrix.
+- Kept the close-reset model explicitly idealized. Next-open, same-close,
+  auction, intraday, exchange-calendar, partial-fill, capacity, LEAN, real-data,
+  and empirical interpretation decisions remain deferred.
+- Reconciled the specification, roadmap, handoff, decision record, historical
+  metric design wording, changelog, repository map, and documentation-contract
+  tests. The repo-map generator only adds the new canonical document to its
+  important-file index; no source, research script, LEAN file, generated
+  evidence, workflow Skill, or `AGENTS.md` changed.
+- Independent semantic and canonical-document reviewers found one P1 and
+  several P2 contract gaps in the first draft. The integration owner fixed
+  decision-time ambiguity, scheduled-row mapping, buy/sell feasibility,
+  annualization, no-op and terminal ledger states, mutation tests, and the
+  repo-map scope wording.
+- The first stable-head GitHub review then found three P2 ambiguities in the
+  intervening-close invariant, non-daily anchor ledger cardinality, and
+  evaluation-bound test matrix. A separate executor fixed them. A fresh
+  read-only review caught the remaining full-source-versus-accounting lag
+  ambiguity, non-executable pandas boundary pseudocode, and no-op incoming
+  interval distinction; those were also corrected before the next stable head.
+- The first repair-head GitHub re-review found a P1 measured-date omission in
+  the displayed tracking-error formula and a P2 missing insolvency policy.
+  A separate executor corrected the formula and added typed failure policy.
+  Adversarial read-only follow-up then separated gross failure before pretrade
+  division from post-cost net/equity failure, preserved the public helper's
+  zero benchmark anchor, closed signal, held-price, execution-price, benchmark,
+  and direct-return Boolean/complex/string type holes, and added direct
+  metric-equity safeguards.
+- The next stable-head review caught signal-value validation occurring before
+  the exact accounting slice. The contract now validates full-source axes
+  structurally, selects exact bounded rows, and only then validates signal
+  values; deterministic mutations prove pre-start and post-end bad values
+  cannot change bounded results or exceptions.
+- Final local validation passes with 638 tests, Ruff, compilation of
+  `src`, `research`, `tests`, and `lean`, sdist and wheel build, reproducible
+  repo-map generation, Unicode/control scan, and branch diff checks.
+- The default `python` alias was absent, Homebrew Python 3.14 lacked pytest,
+  and the standalone pytest used Python 3.9 without `tomllib`. Tests therefore
+  reused the existing repository `.venv` with the current worktree `src` first
+  on the import path; no test dependency was installed.
+- Package validation used a disposable `/private/tmp` uv environment with
+  `build==1.5.0`, `pyproject-hooks==1.2.0`, `packaging==26.2`,
+  `setuptools==83.0.0`, and `wheel==0.47.0`. These packages were not installed
+  into the project environment, and no dependency declaration or lock file
+  changed.
+- Trial-count impact is zero. This design stage changes no factor, label,
+  strategy, portfolio, cost, benchmark, execution, report, or research result
+  and authorizes no paper or live behavior.
+
 ## 2026-07-26 - Purged And Bounded Split Implementation
 
 - Started from protected `main` merge `12e0e86` in the isolated

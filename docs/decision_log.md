@@ -15,6 +15,110 @@ investment performance.
 
 ---
 
+## 2026-07-26 - Freeze Signal, Execution, and Metric Timing
+
+Context:
+
+- Protected `main` at `202273b` contains the Stage 1 implementation and a
+  637-test software baseline.
+- `run_long_only_backtest()` describes every signal as available after its
+  timestamp's close but accepts zero lag, silently reindexes signals, and uses
+  execution-close price validity while forming target membership.
+- A lag-one target set on row `t` is installed only after the return ending on
+  `t`; it first earns the return ending on the next source row.
+- Annualized return, volatility, Sharpe, tracking error, drawdown, benchmark,
+  and warm-up handling do not yet share one declared evaluation anchor.
+
+Decision:
+
+- Adopt `after_close_signal_next_observed_close_v1` as the only timing policy
+  for the current close-only backtester.
+- Conservatively treat every generic final signal as available strictly after
+  its stamped close. Require a non-boolean integer accounting-row lag of at
+  least one; lag zero is not a hidden same-close or next-open model.
+- Distinguish the full source index `s[0..M]` from the exact bounded accounting
+  slice `a[0..N]`. For every scheduled execution `a[j]`, map lag `L` to source
+  signal `a[j-L]` and freeze the target immediately after that signal becomes
+  available. Pre-anchor `s` rows may support feature calculation but cannot
+  satisfy execution lag. Under daily rebalancing, fixture `d0` as `a[0]` maps
+  to an idealized target reset at `d1`/`a[1]` close and its first earned return
+  over `(d1,d2]`.
+- Require exact signal/price axes and timezone compatibility. Freeze ranking,
+  selection, constraints, and intended weights from decision-time
+  information; execution-close feasibility cannot rerank or redistribute, and
+  available signals must be real numeric, non-Boolean, and finite, with only
+  IEEE `NaN` denoting an unavailable score. Every held incoming-price endpoint
+  and nonzero buy or sell execution leg requires a real numeric, non-Boolean,
+  finite, strictly positive price without coercion.
+- Preserve the drift-aware order: prior holdings earn the incoming return,
+  drift to pre-trade weights, trade to the frozen target, incur close-time
+  costs, and become post-trade holdings for the next return.
+- Require explicit bounded `evaluation_start` and `evaluation_end`.
+  `evaluation_start` is a zero initialization anchor; all period-return metrics
+  and benchmark-relative metrics use the same later rows. Bounds must be exact
+  scalar timestamps resolved to unique integer positions; partial-label
+  strings, implicit rounding, timezone conversion, and non-inclusive slicing
+  are invalid.
+- Fix daily annualization at a non-boolean integer 252 so basic and
+  benchmark-relative metrics cannot use conflicting annualizers.
+- Include initial capital in drawdown, keep the benchmark cost-free on the
+  identical measured window, and retain the observed-bucket terminal target,
+  cost, open-holdings, and no-future-return convention.
+- Compute tracking error only from strategy net and cost-free benchmark returns
+  selected by exact `measured_return_dates`. Preserve the public helper's zero
+  benchmark anchor; a nonzero strategy-anchor sentinel may appear only in a
+  direct helper test proving that the anchor is excluded.
+- Require initial capital to be a real numeric, non-Boolean, finite positive
+  scalar. Validate finite gross return and a finite positive gross multiplier
+  before pretrade division, drift, trades, or costs; validate finite net return,
+  a finite positive net multiplier, and finite positive resulting equity after
+  costs but before equity update, metrics, or a successful result. Direct
+  metric helpers independently reject invalid equity curves and return series
+  before annualization or drawdown. Failures retain distinct stable evidence
+  reasons for the later immutable trial ledger.
+- Require typed timing metadata and a Stage 2b event ledger over the sorted
+  de-duplicated union of the initialization anchor and resolved rebalance dates.
+  The anchor has no incoming interval; later insufficient-lag rows retain their
+  measured all-cash incoming interval but have no execution or first-holding
+  interval.
+
+Rationale:
+
+- A close-derived signal cannot use that same close as both its final input and
+  its fill without a separately defined pre-close or auction information
+  model.
+- Close-only inputs can support a transparent next-observed-close simulation;
+  next-open would require open prices and overnight/intraday decomposition.
+- Separating frozen intent from execution feasibility prevents the execution
+  close from silently changing portfolio membership.
+- Explicit bounds and a shared anchor keep feature warm-up and synthetic
+  initialization rows from contaminating strategy-versus-benchmark metrics.
+- Separating pretrade gross failure, post-cost net/equity failure, and
+  downstream metric-input validation prevents invalid division, complex
+  annualization, and misleading successful evidence.
+
+Consequences:
+
+- `docs/signal_execution_timing_contract.md` is the implementation authority
+  for Stage 2b.
+- Stage 2a does not fix runtime behavior. Zero lag, silent alignment,
+  execution-close target filtering, inconsistent metric anchors, and untyped
+  metadata remain visible implementation gaps until Stage 2b. The accepted
+  signal/incoming/execution-price, capital-validity, and direct metric
+  equity/return failure boundaries are also pending.
+- Existing Stage 1 one-row price labels and same-row synthetic responses remain
+  diagnostic targets, not strategy returns under this execution policy.
+- The local model remains idealized close-reset accounting, not MOC, order,
+  fill, capacity, brokerage, or LEAN evidence.
+- This stage creates zero research trials, changes no factor or result, opens
+  no private data, and authorizes no paper or live behavior.
+
+Follow-up:
+
+- Implement the 14-case deterministic timing matrix test-first in Stage 2b,
+  migrate every current backtest caller, regenerate only changed synthetic
+  artifacts, and pass full CI and final current-head review before merge.
+
 ## 2026-07-26 - Freeze The Purged And Bounded Split Contract
 
 Context:
