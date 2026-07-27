@@ -1,5 +1,48 @@
 # Engineering Log
 
+## 2026-07-26 - Research Charter Reset
+
+- Verified `origin/main` at `a1486ea`, latest merged PR #157, successful
+  exact-head GitHub CI, and a local 591-test baseline with Ruff, compilation,
+  and package build passing.
+- Preserved a dirty, 47-commit-behind local checkout by creating the isolated
+  `codex/research-program-charter-reset` worktree from `origin/main`.
+- Ran six non-overlapping read-only audits covering repository state,
+  timing/leakage, data/universe, statistical validation,
+  factor/strategy/portfolio scope, and adversarial program risks.
+- Confirmed two high-priority timing defects: forward labels can cross split
+  boundaries, and after-close signals still permit zero lag. Also confirmed
+  that the proposed 2025-05-01 through 2026-05-31 interval is inside an
+  already-calculated and reviewed diagnostic test tail.
+- Added `docs/research_program_charter.md` and reconciled the specification,
+  canonical roadmap/handoff, controller, staged workflow Skill, public method
+  routing, documentation contracts, and generated repo map.
+- Reconciled the active real-data readiness Skill/checklist so static or
+  otherwise unverified historical membership can support diagnostics only,
+  and marked `EXPERIMENT_LOG.md` as a diagnostic/legacy record rather than the
+  future immutable all-trial ledger.
+- Fixed a post-publication CI toolchain drift: the unbounded development
+  requirement installed Ruff 0.16.0, whose expanded defaults surfaced 95
+  repository-wide findings after local Ruff 0.15.18 passed. Added an explicit
+  `E4`, `E7`, `E9`, and `F` rule baseline and a configuration contract test;
+  both Ruff versions pass without changing unrelated source or tests.
+- Addressed the final-head Codex review P1 that auto-merge eligibility could
+  precede the required review. Controller, workflow Skill, roadmap, and tests
+  now require stable checks and a completed current-head Codex review with no
+  unresolved actionable findings before either merge path is eligible.
+- An independent documentation review found and then verified fixes for the
+  readiness bypass, experiment-log authority, and broad unrelated-PR stop
+  clauses. The final contract suite covers those cross-document constraints.
+- Final local validation reached 594 passing tests; Ruff, both compilation
+  gates, package build, generated repo-map determinism, the equivalent two-Skill
+  audit, Unicode/control-character scan, and diff checks passed. PowerShell was
+  unavailable for the official Skill-audit entrypoint.
+- Kept this stage documentation/workflow-control only. No feature, backtest,
+  data loader, statistical calculation, generated research evidence, private
+  result, or LEAN behavior changed. Trial-count impact is zero.
+- Classified Draft PR #148 as an independent older governance PR that changes
+  only `AGENTS.md`; this stage avoids that file and does not alter the PR.
+
 ## 2026-07-11 - Full Conformance Audit Closure
 
 - Merged the read-only full repository audit at

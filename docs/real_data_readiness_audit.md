@@ -11,6 +11,28 @@ Passing this checklist does not make a strategy validated. It only records
 that the local data and experiment setup have enough documented context for a
 reviewable research run.
 
+This checklist is subordinate to `docs/research_program_charter.md` and the
+active gates in `docs/current_roadmap.md`. A passing diagnostic audit cannot
+authorize formal historical interpretation while timing, point-in-time data,
+all-trial ledger, statistical, cost, privacy, or holdout-classification gates
+remain blocked.
+
+## Readiness Classification
+
+Every decision must state one of these scope-qualified outcomes:
+
+- `diagnostic_ready`: the declared metadata, loader, or fixed-cohort diagnostic
+  has no unresolved high or medium issue.
+- `diagnostic_ready_with_low_caveats`: only low limitations remain and they do
+  not affect the stated diagnostic interpretation.
+- `formal_ready`: every applicable charter and roadmap prerequisite is
+  implemented, reviewed, tested, and supported by the data contract.
+- `blocked`: required evidence is absent or unresolved.
+
+Until the active roadmap accepts bounded/purged splits, the timing contract,
+point-in-time methodology, immutable all-trial ledger, and statistical
+validation package, the highest possible outcome is diagnostic readiness.
+
 ## Required Scope Statement
 
 Before running any local CSV experiment, write a short scope statement that
@@ -96,10 +118,13 @@ Required:
 - Minimum history requirements.
 - Inclusion and exclusion rules.
 - How delisted, merged, stale, suspended, or missing symbols are handled.
-- Whether universe membership is point-in-time or a static current list.
+- Verified point-in-time membership for each formal evidence window, or an
+  explicit static/unverified label for a diagnostic-only cohort.
 - Survivorship-bias risk statement.
 
 Future universe membership must not be used for earlier dates.
+A static current list or otherwise unverified historical membership blocks
+formal interpretation even when its survivorship-bias caveat is documented.
 
 ## Benchmark Choice
 
@@ -141,6 +166,8 @@ Before evaluating parameter choices, define:
 - In-sample period.
 - Validation period.
 - Test or holdout period.
+- Explicit start and end dates for every split.
+- Label horizon, boundary purge, optional embargo, and excluded-row metadata.
 - Any warm-up period excluded from evaluation.
 - Parameter grid or fixed parameter policy.
 - Whether parameter choices were made before or after looking at results.
@@ -182,7 +209,12 @@ Before committing any real-data experiment output, add or prepare an
 - Next action.
 
 Synthetic demo JSON logs are not substitutes for this real-data experiment
-record.
+record. The current `EXPERIMENT_LOG.md` template remains a diagnostic/legacy
+record, not the immutable all-trial ledger required by Stage 4. A formal run
+must allocate experiment, campaign, trial-family, and trial identifiers before
+execution and retain every attempted, failed, invalid, aborted, and excluded
+trial plus configuration, code/data lineage, output hashes, review outcome, and
+protected-sample access.
 
 ## Stop Conditions
 
@@ -190,22 +222,30 @@ Stop the run before interpreting any result if:
 
 - Required data provenance is missing.
 - Price adjustment policy is unknown.
-- The universe is a static current list and survivorship bias is not documented.
+- Formal interpretation is proposed with a static current list or otherwise
+  unverified historical membership; documenting survivorship bias permits only
+  diagnostic use.
 - Benchmark coverage or adjustment is incompatible with the asset data.
 - Missing values are silently filled.
 - Dates or date-symbol rows are duplicated without reviewed resolution.
 - Feature timing cannot be shown to precede execution timing.
 - Sample splits are not defined for parameter selection.
 - Costs, slippage, or execution assumptions are absent.
+- A required timing, point-in-time methodology, all-trial ledger, statistical,
+  cost, privacy, or holdout-classification program gate lacks accepted
+  implementation evidence for the proposed formal claim.
 - The result would require a profitability or investment-performance claim.
 
 ## Approval Gate
 
-A real-data experiment may proceed only after this audit identifies no
-unresolved high or medium issues. Low issues may proceed only when they are
-documented as limitations and do not affect date alignment, data availability,
-or interpretation of results.
+A diagnostic real-data experiment may proceed only after this audit identifies
+no unresolved high or medium issues within its stated diagnostic scope. Low
+issues may proceed only when they are documented as limitations and do not
+affect date alignment, data availability, privacy, or the diagnostic
+interpretation.
 
-The first use of local CSV data should still be treated as a smoke test unless
-a separate reviewed PR adds the full experiment record, validation split, and
-result interpretation.
+`formal_ready` additionally requires every applicable charter and active
+roadmap gate to have accepted implementation evidence. The first use of local
+CSV data remains a smoke test unless later reviewed stages establish the full
+point-in-time methodology, trial ledger, validation protocol, and interpretation
+policy.

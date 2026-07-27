@@ -1,6 +1,22 @@
 # Experiment Log
 
-Use this file to record every meaningful experiment, including failed or inconclusive runs. Do not delete weak results to make the project look better.
+Use this file to record every meaningful experiment, including failed or
+inconclusive runs. Do not delete weak results to make the project look better.
+
+## Current Authority And Limitation
+
+This file is the repository's diagnostic/legacy experiment record. It preserves
+the current synthetic and local-CSV documentation workflow, but it is not the
+immutable all-trial ledger required by Stage 4 of
+`docs/research_program_charter.md` and `docs/current_roadmap.md`.
+
+Until that ledger allocates experiment, campaign, trial-family, and trial
+identifiers before execution and retains every attempt, failure, invalid or
+aborted run, full configuration, code/data lineage, output hash, review
+outcome, and protected-sample access, entries here may support only
+appropriately caveated diagnostics. They must not support formal historical
+interpretation, factor promotion, a `RESEARCH_PASS`, or a holdout-independence
+claim. "Every configured case" is not evidence of complete trial accounting.
 
 ## Automated Synthetic Demo Logs
 
@@ -33,7 +49,10 @@ full experiment candidates.
 This requirement does not authorize data downloads, remote data access, vendor
 APIs, credentials, live trading, brokerage integration, order execution, or
 profitability claims. Local CSV runs remain research-only and must pass the
-real-data readiness audit before being treated as evidence.
+real-data readiness audit before being treated as diagnostic evidence. A
+completed entry does not by itself satisfy the point-in-time methodology,
+purged-split, timing, all-trial ledger, statistical, privacy, cost, or holdout
+gates required for formal evidence.
 
 At minimum, a local CSV experiment record must include:
 
@@ -69,8 +88,9 @@ At minimum, a local CSV experiment record must include:
 
 If required provenance, adjustment policy, date alignment, benchmark coverage,
 sample splits, cost/slippage assumptions, or missing-data evidence is absent,
-stop before interpreting metrics. Synthetic JSON sidecar logs are not
-substitutes for local CSV experiment records.
+stop before interpreting even diagnostic metrics. Synthetic JSON sidecar logs
+are not substitutes for local CSV experiment records, and neither record type
+is the future immutable all-trial ledger.
 
 ## Template
 

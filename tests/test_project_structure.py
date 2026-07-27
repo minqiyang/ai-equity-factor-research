@@ -30,6 +30,9 @@ def test_required_governance_files_exist() -> None:
         "AGENTS.md",
         "EXPERIMENT_LOG.md",
         "pyproject.toml",
+        "docs/research_program_charter.md",
+        "docs/current_roadmap.md",
+        "docs/current_handoff.md",
     ]
 
     for file_name in required_files:
@@ -48,30 +51,31 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
     for phrase in [
         "This is the canonical roadmap",
         "## Implemented Baseline",
-        "## Open Gaps",
+        "## Current Research-Validity Findings",
         "## Delivery Sequence",
-        "Require CI and current-head Codex review before merge",
-        "Reporting plots are not implemented",
-        "LEAN execution remains out of scope",
+        "0. Research Charter Reset",
+        "Target construction currently lives in `src/backtest/portfolio.py`",
+        "pseudo-holdout evidence",
+        "request `@codex review` once on the",
     ]:
         assert phrase in roadmap
 
     for phrase in [
+        "Long-term evidence policy: `docs/research_program_charter.md`",
         "Active roadmap: `docs/current_roadmap.md`",
-        "## Completed",
-        "## Active Stage",
-        "## Do Not Infer",
-        "## Next Safe Actions",
+        "## Research Charter Decision",
+        "## Audited Findings",
+        "## PR #148 Interaction",
+        "## Next Safe Stage",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    baseline_marker = "Baseline stage: full repository conformance audit."
-    assert baseline_marker in roadmap
-    assert baseline_marker in handoff
-    assert "Episode metric implementation | Complete" in roadmap
-    assert "average holdings, and exposure concentration remain unimplemented" not in roadmap
+    assert "591 passing tests" in roadmap
+    assert "Starting validation: 591 tests passed" in handoff
+    assert "completed holding-episode metrics" in roadmap
+    assert "no actionable P1/P2 findings" not in roadmap
     design = (
         PROJECT_ROOT / "docs/risk_evaluation_metrics_design.md"
     ).read_text(encoding="utf-8")
@@ -85,6 +89,120 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## PR Sequence",
     ]:
         assert phrase in design
+
+
+def test_research_program_charter_defines_evidence_and_authorization_gates() -> None:
+    charter = (PROJECT_ROOT / "docs/research_program_charter.md").read_text(
+        encoding="utf-8"
+    )
+    specification = " ".join(
+        (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(encoding="utf-8").split()
+    )
+
+    for phrase in [
+        "## Current Authorization",
+        "## Evidence Layers",
+        "Factor | A date-by-asset score",
+        "Strategy | A frozen signal policy",
+        "Portfolio | One or more strategies",
+        "Execution | The translation from frozen targets",
+        "### Complete trial accounting",
+        "## Sample Classification and Holdout Access",
+        "historical evaluation or pseudo-holdout",
+        "## Candidate States",
+        "`PAPER_CANDIDATE`",
+        "Controlled live execution is not a stage authorized by this charter",
+    ]:
+        assert phrase in charter
+
+    for phrase in [
+        "The current phase is research-only",
+        "Passing deterministic tests proves implementation behavior",
+        "not historical validity",
+        "Every protected-sample access",
+        "holdout exposure ledger",
+        "A candidate label is not",
+        "authorization to paper trade or trade live",
+    ]:
+        assert phrase in specification
+
+
+def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:
+    readiness_skill = (
+        PROJECT_ROOT / ".agents/skills/real-data-readiness-audit/SKILL.md"
+    ).read_text(encoding="utf-8")
+    readiness_audit = (
+        PROJECT_ROOT / "docs/real_data_readiness_audit.md"
+    ).read_text(encoding="utf-8")
+    experiment_log = (PROJECT_ROOT / "EXPERIMENT_LOG.md").read_text(
+        encoding="utf-8"
+    )
+    controller = (
+        PROJECT_ROOT / "docs/codex_long_running_controller.md"
+    ).read_text(encoding="utf-8")
+
+    for text in [readiness_skill, readiness_audit]:
+        normalized_text = " ".join(text.split())
+        assert "docs/research_program_charter.md" in normalized_text
+        assert "docs/current_roadmap.md" in normalized_text
+        assert "`diagnostic_ready`" in normalized_text
+        assert "`formal_ready`" in normalized_text
+        assert "static current" in normalized_text
+        assert "blocks formal interpretation" in normalized_text
+        assert "immutable all-trial ledger" in normalized_text
+
+    for phrase in [
+        "diagnostic/legacy experiment record",
+        "not the immutable all-trial ledger",
+        "must not support formal historical interpretation",
+        "Every configured case",
+    ]:
+        assert phrase in " ".join(experiment_log.split())
+
+    assert "the required predecessor or current-stage PR" in controller
+    assert "the current-stage PR has been opened" in controller
+    assert "- an open PR requires human review" not in controller
+    assert "- a previous PR is not verified merged" not in controller
+    assert "- a PR has been opened but is not eligible" not in controller
+
+
+def test_review_required_prs_complete_current_head_review_before_merge() -> None:
+    controller = " ".join(
+        (PROJECT_ROOT / "docs/codex_long_running_controller.md")
+        .read_text(encoding="utf-8")
+        .split()
+    )
+    workflow_skill = " ".join(
+        (PROJECT_ROOT / ".agents/skills/staged-quant-workflow/SKILL.md")
+        .read_text(encoding="utf-8")
+        .split()
+    )
+    roadmap = " ".join(
+        (PROJECT_ROOT / "docs/current_roadmap.md")
+        .read_text(encoding="utf-8")
+        .split()
+    )
+
+    for text in [controller, workflow_skill]:
+        assert (
+            "Do not enable auto-merge or attempt a merge while required checks "
+            "or an applicable current-head Codex review is pending."
+        ) in text
+        assert (
+            "completed on the current head with no unresolved actionable "
+            "findings"
+        ) in text
+        assert text.index("post `@codex review` once") < text.index(
+            "Do not enable auto-merge or attempt a merge"
+        )
+        assert "required checks pass, or auto-merge" not in text
+        assert "required checks pass or auto-merge" not in text
+
+    assert (
+        "Do not enable auto-merge or merge a review-required PR until Codex "
+        "review has completed on the current head with no unresolved actionable "
+        "findings."
+    ) in roadmap
 
 
 def test_tracking_error_design_freezes_stage_two_contract() -> None:
@@ -173,13 +291,16 @@ def test_holding_episode_design_matches_implementation_contract() -> None:
 
 def test_public_metadata_and_readme_match_implemented_scope() -> None:
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
-    metadata = tomllib.loads(
+    configuration = tomllib.loads(
         (PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
-    )["project"]
+    )
+    metadata = configuration["project"]
 
     assert "docs/current_roadmap.md" in readme
+    assert "docs/research_program_charter.md" in readme
     assert "plotting remains unimplemented" in readme
     assert "No market-data downloader" in readme
+    assert "POINT-IN-TIME FEATURES" not in readme
     assert "private_data" not in readme
     assert metadata["license"] == "Apache-2.0"
     assert metadata["urls"]["Repository"].endswith("equity-factor-research")
@@ -187,6 +308,12 @@ def test_public_metadata_and_readme_match_implemented_scope() -> None:
         "numpy>=1.26",
         "pandas>=2.1",
         "scipy>=1.11",
+    ]
+    assert configuration["tool"]["ruff"]["lint"]["select"] == [
+        "E4",
+        "E7",
+        "E9",
+        "F",
     ]
 
 

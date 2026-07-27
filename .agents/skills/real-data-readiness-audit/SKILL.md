@@ -27,11 +27,15 @@ claims.
 
 ## Desired outcome
 
-Produce a clear readiness decision before result interpretation:
+Produce a scope-qualified readiness decision before result interpretation:
 
-- `ready` only when no high or medium issues remain.
-- `ready with low caveats` only when limitations are documented and do not
-  affect provenance, schema validity, date alignment, or interpretation.
+- `diagnostic_ready` only when the approved diagnostic scope has no unresolved
+  high or medium issues.
+- `diagnostic_ready_with_low_caveats` only when limitations are documented and
+  do not affect provenance, schema validity, date alignment, privacy, or the
+  stated diagnostic interpretation.
+- `formal_ready` only when no high or medium issues remain and every active
+  program gate listed below is implemented and evidenced.
 - `blocked` when any required evidence is missing or unresolved.
 
 The audit should make assumptions, caveats, and stop conditions visible before
@@ -44,6 +48,8 @@ Inspect the current project rules and readiness references:
 - `AGENTS.md`
 - `PROJECT_SPEC.md`
 - `README.md`
+- `docs/research_program_charter.md`
+- `docs/current_roadmap.md`
 - `docs/real_data_readiness_audit.md`
 - `docs/csv_data_interface_plan.md`
 - `docs/volume_ohlcv_schema_plan.md`
@@ -54,6 +60,33 @@ Inspect the current project rules and readiness references:
 Inspect user-provided CSV paths only after the user explicitly approves each
 path for metadata inspection or hashing. Do not inspect `.env`, credentials,
 tokens, private keys, account files, or credential-like paths.
+
+## Evidence classification and program gates
+
+This audit can approve metadata inspection, loader checks, and explicitly
+caveated fixed-cohort diagnostics. It cannot supersede
+`docs/research_program_charter.md` or promote a run to formal historical
+evidence while a prerequisite remains blocked in `docs/current_roadmap.md`.
+
+`formal_ready` requires implemented, reviewed, and tested evidence for all of
+the following:
+
+- bounded, horizon-purged sample splits and an explicit timing contract.
+- provider-agnostic point-in-time membership, delisting, corporate-action,
+  field-semantics, provenance/license, benchmark, and missing-data contracts.
+- immutable experiment, campaign, trial-family, and trial identifiers allocated
+  before execution, including failed and invalid trials.
+- the registered statistical and multiple-testing protocol required for the
+  claim.
+- explicit cost, slippage, turnover, capacity, and execution assumptions
+  appropriate to the evidence layer.
+- private-data handling and a holdout-exposure classification that does not
+  overstate previously examined samples.
+
+Roadmap intent is not implementation evidence. Until these gates are accepted,
+the highest possible decision is diagnostic readiness. A static current
+constituent list or otherwise unverified historical membership can support only
+an explicitly survivorship-biased diagnostic, never `formal_ready`.
 
 ## Read-only checks
 
@@ -132,15 +165,18 @@ Unresolved date-alignment or leakage risk blocks interpretation.
 Record universe and benchmark assumptions before metrics are interpreted:
 
 - universe definition and eligibility rules.
-- point-in-time membership status, or a survivorship-bias caveat for static
-  lists.
+- verified point-in-time membership for every formal evidence window.
+- an explicit survivorship-bias label when a static or otherwise unverified
+  cohort is retained for diagnostics only.
 - liquidity, dollar-volume, price, stale-data, zero-volume, and minimum-history
   rules when used.
 - benchmark symbol or file, date range, adjustment convention, missing dates,
   and reason it matches the intended universe.
 
 Incompatible benchmark coverage, unknown benchmark adjustment, or undocumented
-survivorship risk blocks interpretation.
+survivorship risk blocks any interpretation. Static or otherwise unverified
+historical membership blocks formal interpretation even when its survivorship
+caveat is documented.
 
 ## Missing data and adjustment policy checks
 
@@ -189,7 +225,11 @@ entry or approved research note with:
 - metrics, missing-data summary, limitations, failure modes, and next action.
 
 Synthetic JSON sidecar logs are not substitutes for the real-data experiment
-record.
+record. The current `EXPERIMENT_LOG.md` template is a diagnostic/legacy record,
+not the immutable all-trial ledger required by Stage 4. It cannot satisfy
+`formal_ready` until the ledger allocates identifiers before execution and
+retains every attempted, failed, invalid, aborted, and excluded trial plus
+lineage, hashes, review outcomes, and protected-sample access.
 
 ## Stop conditions
 
@@ -203,10 +243,15 @@ these are true:
   values, or OHLCV checks remain unresolved.
 - adjustment policy is unknown or incompatible with the intended calculation.
 - date alignment, signal lag, execution timing, or leakage risk is unresolved.
-- universe membership is static without survivorship caveats.
+- universe membership is static, current-list-based, or otherwise unverified
+  for the intended historical dates when formal interpretation is proposed; a
+  survivorship caveat permits diagnostics only.
 - benchmark coverage or adjustment is incompatible.
 - costs, slippage, or diagnostic-only language are absent for a backtest-like
   result.
+- any required timing, point-in-time methodology, all-trial ledger,
+  statistical, privacy, or holdout-classification program gate lacks accepted
+  implementation evidence when formal interpretation is proposed.
 - any high or medium readiness issue remains unresolved.
 - the result would require real data fetching, vendor APIs, credentials,
   live or paper trading, broker integration, order execution, or profitability
@@ -215,6 +260,7 @@ these are true:
 ## Mistakes to avoid
 
 - Treating a local CSV loader success as research validation.
+- Treating a survivorship caveat as a substitute for point-in-time membership.
 - Treating unknown adjustment policy as acceptable evidence.
 - Silently filling missing prices, volumes, benchmark rows, or universe data.
 - Using future membership, future returns, or same-period targets as features.

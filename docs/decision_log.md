@@ -15,6 +15,60 @@ investment performance.
 
 ---
 
+## 2026-07-26 - Reset The Research Program Around Evidence Gates
+
+Context:
+
+- The verified `a1486ea` baseline is a strong deterministic simulated research
+  toolkit, but its prior objective and roadmap do not cover a research-grade
+  factor-to-portfolio validation program.
+- Read-only audits confirmed cross-split forward labels, ambiguous zero-lag
+  after-close execution, fixed-cohort data limitations, incomplete
+  all-trial/statistical controls, and prior diagnostic access to the proposed
+  2025-05-01 through 2026-05-31 evaluation interval.
+
+Decision:
+
+- Adopt `docs/research_program_charter.md` as the canonical long-term evidence
+  policy and keep `docs/current_roadmap.md` as the active stage sequence.
+- Separate factor, strategy, portfolio, and execution evidence.
+- Require point-in-time data methodology, bounded/purged samples, immutable
+  trial accounting, dependence/multiple-testing controls, frozen evaluation,
+  and independent reproduction before later LEAN parity candidacy.
+- Treat a static or otherwise unverified historical universe as diagnostic
+  only, even when its survivorship caveat is documented.
+- Keep `EXPERIMENT_LOG.md` as a diagnostic/legacy record until Stage 4 provides
+  immutable pre-execution identifiers and complete all-trial retention.
+- Require any applicable Codex review to complete on the current head with no
+  unresolved actionable findings before auto-merge or normal protected merge;
+  an actionable fix requires stable CI and re-review on the new head.
+- Classify previously examined data as historical evaluation or pseudo-holdout
+  unless a holdout exposure ledger proves a narrower claim.
+- Keep the current phase research-only. Paper runtime, live trading, brokerage,
+  credentials, and orders remain unauthorized.
+
+Rationale:
+
+- Software reproducibility does not by itself establish empirical validity.
+- Adding factors or parameters before timing, data, trial, and inference
+  controls would increase hidden research degrees of freedom.
+- A precise evidence taxonomy prevents diagnostic calculations from being
+  promoted as strategy, portfolio, or deployment evidence.
+
+Consequences:
+
+- The next stage is the purged and bounded split contract, not factor
+  expansion, data interpretation, or LEAN work.
+- PR #148 remains an independent Draft because it changes only `AGENTS.md`;
+  this charter stage avoids that file and does not alter the PR.
+- This decision creates no research trial and reads no private performance
+  values.
+
+Follow-up:
+
+- Complete Stage 1a design for split boundaries, label ownership, purge,
+  optional embargo, and warm-up/down metadata before timing implementation.
+
 ## 2026-07-11 - Attribute Episode Returns From Signed Trades
 
 Context:
