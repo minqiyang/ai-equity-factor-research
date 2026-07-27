@@ -43,6 +43,18 @@
   isolated environments and installed `setuptools==83.0.0`, `wheel==0.47.0`,
   and transitive `packaging==26.2`; these were not installed into the project
   environment, and no dependency or lock file changed.
+- PR #160 CI run `30234375203` exposed one pandas-version-sensitive test
+  expectation: pandas 3.0.5 constructs an empty literal `DatetimeIndex` at
+  second precision while the implementation correctly preserves the source
+  index's microsecond precision. The test now derives its expected empty set
+  from the source index and passes under both local pandas 2.2.3 and CI-matched
+  pandas 3.0.5 without changing implementation behavior.
+- The CI reproduction used a disposable `uv run` Python 3.11 environment with
+  `numpy==2.4.6`, `pandas==3.0.5`, `pytest==9.1.1`,
+  `python-dateutil==2.9.0.post0`, `six==1.17.0`, `iniconfig==2.3.0`,
+  `packaging==26.2`, `pluggy==1.6.0`, and `pygments==2.20.0`. Nothing was
+  installed into the project environment, and no dependency or lock file
+  changed.
 - The first direct generator invocation could not import `backtest` because a
   one-off Python process did not include the repository `src` directory. The
   same reviewed generator functions succeeded after explicitly placing the

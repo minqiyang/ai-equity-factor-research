@@ -313,14 +313,20 @@ def test_split_009_embargo_zero_and_two(
     expected_test: list[str],
 ) -> None:
     split = _reference_split(horizon=1, embargo=embargo)
+    expected_validation_dates = split.source_dates[
+        split.source_dates.isin(pd.DatetimeIndex(expected_validation))
+    ]
+    expected_test_dates = split.source_dates[
+        split.source_dates.isin(pd.DatetimeIndex(expected_test))
+    ]
 
     assert_index_equal(
         split.window_metadata["validation"].embargoed_dates,
-        pd.DatetimeIndex(expected_validation),
+        expected_validation_dates,
     )
     assert_index_equal(
         split.window_metadata["test"].embargoed_dates,
-        pd.DatetimeIndex(expected_test),
+        expected_test_dates,
     )
 
 
