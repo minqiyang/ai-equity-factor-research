@@ -264,6 +264,21 @@ def _summarize_split_diagnostics(
                 availability = availability.loc[
                     availability["factor"].eq(factor_name)
                 ].iloc[0]
+            ic_valid_dates = int(ic_by_split[split_name].notna().sum())
+            rank_ic_valid_dates = int(
+                rank_ic_by_split[split_name].notna().sum()
+            )
+            quantile_spread_valid_dates = int(
+                spread_by_split[split_name][
+                    "top_minus_bottom_spread"
+                ].notna().sum()
+            )
+            invalid_reason, status = _resolve_split_diagnostic_classification(
+                availability_invalid_reason=availability["invalid_reason"],
+                ic_valid_dates=ic_valid_dates,
+                rank_ic_valid_dates=rank_ic_valid_dates,
+                quantile_spread_valid_dates=quantile_spread_valid_dates,
+            )
             rows.append(
                 {
                     "factor": factor_name,
@@ -288,22 +303,40 @@ def _summarize_split_diagnostics(
                     "has_usable_label_pairs": bool(
                         availability["has_usable_label_pairs"]
                     ),
-                    "ic_valid_dates": int(ic_by_split[split_name].notna().sum()),
-                    "rank_ic_valid_dates": int(rank_ic_by_split[split_name].notna().sum()),
-                    "quantile_spread_valid_dates": int(
-                        spread_by_split[split_name]["top_minus_bottom_spread"].notna().sum()
+                    "ic_valid_dates": ic_valid_dates,
+                    "rank_ic_valid_dates": rank_ic_valid_dates,
+                    "quantile_spread_valid_dates": (
+                        quantile_spread_valid_dates
                     ),
                     "mean_ic": float(ic_by_split[split_name].mean()),
                     "mean_rank_ic": float(rank_ic_by_split[split_name].mean()),
                     "mean_quantile_spread": float(
                         spread_by_split[split_name]["top_minus_bottom_spread"].mean()
                     ),
-                    "invalid_reason": availability["invalid_reason"],
-                    "status": availability["status"],
+                    "invalid_reason": invalid_reason,
+                    "status": status,
                 }
             )
 
     return pd.DataFrame.from_records(rows)
+
+
+def _resolve_split_diagnostic_classification(
+    *,
+    availability_invalid_reason: object,
+    ic_valid_dates: int,
+    rank_ic_valid_dates: int,
+    quantile_spread_valid_dates: int,
+) -> tuple[str | None, str]:
+    if not pd.isna(availability_invalid_reason):
+        return str(availability_invalid_reason), "INVALID"
+    if (
+        ic_valid_dates == 0
+        and rank_ic_valid_dates == 0
+        and quantile_spread_valid_dates == 0
+    ):
+        return "no_valid_factor_diagnostic_dates", "INVALID"
+    return None, "DIAGNOSTIC_ONLY"
 
 
 def _summarize_benchmark_label_availability(

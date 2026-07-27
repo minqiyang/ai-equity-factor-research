@@ -11,7 +11,7 @@ Updated: 2026-07-26 for the Purged and Bounded Split Implementation.
 - Verified starting `origin/main`: `12e0e86`, the protected merge of PR #159.
 - Starting validation: 595 tests passed; Ruff, compilation, and exact-head
   GitHub CI passed.
-- Stage 1b branch validation currently has 633 passing tests plus Ruff,
+- Stage 1b branch validation currently has 634 passing tests plus Ruff,
   compilation, and package-build evidence.
 - Current phase: research-only. No vendor download, credentials, brokerage,
   orders, paper deployment, live deployment, or real-money execution.

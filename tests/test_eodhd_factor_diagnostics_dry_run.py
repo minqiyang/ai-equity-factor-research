@@ -297,6 +297,39 @@ def test_eodhd_consumer_retains_zero_eligible_windows_as_invalid(
     assert result.split_summary["ic_valid_dates"].eq(0).all()
 
 
+def test_eodhd_consumer_marks_metric_empty_sparse_universe_invalid(
+    tmp_path: Path,
+) -> None:
+    dates = pd.date_range("2024-01-02", periods=12, freq="D")
+    assets = _write_ohlcv(
+        tmp_path / "sparse_assets.csv",
+        ["AAA"],
+        dates,
+    )
+    benchmark = _write_ohlcv(
+        tmp_path / "sparse_benchmark.csv",
+        ["SPY"],
+        dates,
+    )
+    result = demo.run_eodhd_factor_diagnostics_dry_run(
+        _bounded_config(
+            asset_path=assets,
+            benchmark_path=benchmark,
+            output_path=tmp_path / "sparse.md",
+        )
+    )
+
+    assert result.label_availability["has_usable_label_pairs"].all()
+    assert result.label_availability["invalid_reason"].isna().all()
+    assert result.split_summary["ic_valid_dates"].eq(0).all()
+    assert result.split_summary["rank_ic_valid_dates"].eq(0).all()
+    assert result.split_summary["quantile_spread_valid_dates"].eq(0).all()
+    assert set(result.split_summary["invalid_reason"]) == {
+        "no_valid_factor_diagnostic_dates"
+    }
+    assert set(result.split_summary["status"]) == {"INVALID"}
+
+
 def test_eodhd_consumer_audits_partial_and_all_missing_targets(
     tmp_path: Path,
     monkeypatch,

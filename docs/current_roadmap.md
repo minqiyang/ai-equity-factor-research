@@ -37,7 +37,7 @@ authorized.
 | Private diagnostics | Local-only EODHD validation and factor diagnostics on a fixed cohort; not accepted point-in-time real-data interpretation. |
 | LEAN | Non-executing metadata/signal scaffold only; no algorithm runtime, parity evidence, brokerage, orders, paper, or live path. |
 
-The Stage 1b branch has 633 passing tests plus Ruff, compilation, and
+The Stage 1b branch has 634 passing tests plus Ruff, compilation, and
 package-build evidence. Current-head GitHub CI and final-head review remain PR
 gates. These checks establish software behavior, not empirical research
 validity.

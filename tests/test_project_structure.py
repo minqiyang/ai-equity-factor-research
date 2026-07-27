@@ -78,7 +78,7 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "633 passing tests" in roadmap
+    assert "634 passing tests" in roadmap
     assert "Starting validation: 595 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
