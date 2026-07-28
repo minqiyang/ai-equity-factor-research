@@ -1,5 +1,55 @@
 # Engineering Log
 
+## 2026-07-28 - Stage 4B-R0 Ledger Schema Registry Foundation
+
+- Started from protected `main` merge `27f0497` (PR #164) in the isolated
+  `codex/experiment-trial-ledger-schema-registry` worktree. The clean starting
+  baseline had 863 passing tests and two platform-conditional skips.
+- Six non-overlapping read-only audits covered canonical state, all 37 event
+  semantics, registry format/dependencies, deterministic vectors, adversarial
+  schema risks, and owner-architecture boundaries. They did not edit files,
+  access GitHub/private data, install dependencies, or run research.
+- The audits agreed that only the common envelope and
+  `LEDGER_EPOCH_CREATED` are exact enough to validate. Promoting synthetic
+  checkpoint facts, the rejected trial stub, generic objects, or free strings
+  would launder incomplete semantics into false schema coverage.
+- Added a separate standard-library `ledger` namespace with a packaged,
+  self-contained ASCII canonical JSON registry. Its closed meta-contract
+  validates the exact 37-event vocabulary, unique version/event keys, disjoint
+  supported/incomplete partitions, schema nodes, type references, local
+  constraints, and digest-bound vectors.
+- Added duplicate-aware raw JSON parsing before mapping, I-JSON safe-integer
+  enforcement, deterministic canonical registry bytes and external SHA-256
+  verification, exact epoch validation, and fail-closed rejection of every
+  incomplete or unknown event before action.
+- The registry remains `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`: epoch is the sole
+  `FROZEN_SUPPORTED` event and the other 36 event types are explicitly
+  incomplete. No append, storage, lifecycle, access, closure, checkpoint,
+  review, promotion, private-data, or trading behavior was added.
+- Added a dedicated registry test module with an independent literal
+  37-event oracle, fixed digest, reorder/mutation checks, duplicate-key raw
+  vectors, meta-contract attacks, non-I-JSON number attacks, and epoch
+  missing/unknown/null/type/timing/scope/subject failures. Independent
+  post-edit reviewers then identified an unpublished-registry authority
+  bypass, an unhandled oversized-integer parser exception, a canonical
+  int/string object-key alias, a chronology error, and one confounded
+  ledger-ID-prefix test. The integration owner bound event execution to the
+  packaged sidecar, made integer/key failures stable, added direct killing
+  attacks, corrected the dates, and isolated the ID-prefix mutation.
+- Final focused validation passed 49 registry tests and 28 structure tests.
+  The full suite passed 912 tests with two platform-conditional skips; Ruff,
+  compilation, deterministic repo-map generation, package-resource inspection,
+  Unicode/privacy, cleanup, and diff checks passed. Independent security and
+  evidence and documentation/package re-reviews reported no remaining
+  actionable P1/P2.
+- No project dependency was installed or added. Validation reused the existing
+  project environment. The final PEP 517 build installed
+  `setuptools==83.0.0`, `wheel==0.47.0`, and transitive `packaging==26.2` only
+  inside automatically removed `build-env-*` directories under the operating
+  system temporary directory; the first sandboxed attempt failed DNS and the
+  identical approved-network retry succeeded. No dependency declaration, lock
+  file, project environment, or persistent environment changed.
+
 ## 2026-07-27 - Experiment And Trial Ledger Contract
 
 - Started from protected `main` merge `a6c147e` (PR #163) in the isolated

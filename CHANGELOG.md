@@ -9,6 +9,14 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the Stage 4B-R0 fail-closed ledger schema-registry foundation in a
+  separate `ledger` namespace. It packages a self-contained canonical JSON
+  registry and digest, rejects duplicate raw JSON properties and unsafe
+  numbers before mapping, freezes the closed 37-event vocabulary, validates
+  the exact accepted epoch schema, and rejects the other 36 known events as
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`. This is not complete payload-registry
+  acceptance or a ledger runtime and adds no backend, data access, research
+  trial, dependency, or trading behavior.
 - Added the Stage 4a experiment and trial ledger design contract. It separates
   semantic trials from execution attempts; freezes durable preallocation,
   campaign inventory/closure, failure and artifact retention, protected-access

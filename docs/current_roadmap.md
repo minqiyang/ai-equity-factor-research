@@ -1,9 +1,9 @@
 # Current Roadmap
 
-Updated: 2026-07-27 for the Experiment and Trial Ledger Contract.
+Updated: 2026-07-28 for the Stage 4B-R0 schema-registry foundation.
 
-Protected-main baseline verified before this stage: `a6c147e`, the protected
-merge of PR #163, with successful exact merge-head CI.
+Protected-main baseline verified before this stage: `27f0497`, the protected
+merge of PR #164, with successful exact merge-head CI.
 
 This is the canonical roadmap. `docs/research_program_charter.md` defines the
 long-term evidence policy. Older checkpoints, gap refreshes, plans, and audits
@@ -17,12 +17,13 @@ caller-declared source baseline and controlled post-capture mutation ledger.
 provider-agnostic authority. It distinguishes accepting a methodology contract,
 reviewing one immutable dataset manifest, and becoming eligible for formal
 interpretation.
-`docs/experiment_trial_ledger_contract.md` is the proposed Stage 4a design
-authority. Its local candidate freezes semantic-trial and execution-attempt identity,
+`docs/experiment_trial_ledger_contract.md` is the accepted Stage 4a design
+authority. It freezes semantic-trial and execution-attempt identity,
 allocation-before-action, campaign completeness, protected-access,
-canonical-event, checkpoint, and private/public projection semantics. Stage 4b
-runtime enforcement remains blocked until the contract completes review,
-protected merge, and exact merge-head CI.
+canonical-event, checkpoint, and private/public projection semantics.
+`docs/experiment_trial_ledger_schema_registry_contract.md` is the active
+Stage 4B-R0 authority for a fail-closed registry foundation; it is not a
+complete 37-event payload registry or ledger runtime.
 
 ## Objective
 
@@ -50,10 +51,11 @@ authorized.
 | Private diagnostics | Local-only EODHD validation and factor diagnostics on a fixed cohort; not accepted point-in-time real-data interpretation. |
 | LEAN | Non-executing metadata/signal scaffold only; no algorithm runtime, parity evidence, brokerage, orders, paper, or live path. |
 
-Protected main has a local baseline of 854 passing tests with two
+Protected main has a local baseline of 863 passing tests with two
 platform-conditional wide-`longdouble` skips, plus successful PR and exact
-merge-head CI for PR #163. Stages 1-3 are complete. Stage 4a defines the ledger
-contract candidate and deterministic synthetic event fixture only; it does not implement
+merge-head CI for PR #164. Stages 1-3 and Stage 4a are complete. Stage 4a
+defines the accepted ledger contract and deterministic synthetic event fixture
+only; it does not implement
 append-only storage, inspect data, alter research runtime behavior, migrate
 legacy logs, or establish empirical validity.
 
@@ -129,8 +131,9 @@ timing, holdout, statistical, or public-documentation findings above.
 | 2a. Signal/execution timing contract | Complete on protected main via PR #161 | Freeze the after-close/next-observed-close timeline, signal-lag types, signal/price-value gates, target-freeze rule, accounting order, bounded metric anchors, measured-date tracking error, capital-validity boundaries, benchmark window, terminal policy, metadata, and deterministic Stage 2b matrix. | `docs/signal_execution_timing_contract.md`, documentation contracts, full local/CI gates, and final current-head review passed. |
 | 2b. Signal/execution timing implementation | Complete on protected main via PR #162 | Enforce the accepted timing contract across backtest inputs, targets, accounting metadata, metrics, callers, and affected synthetic evidence. Require role-bound immutable provenance captured as a caller-declared baseline; enforcement begins there, and only controlled, coordinate-logged later out-of-window complex writes may authorize lossless bounded dtype recovery. | Zero lag and invalid lag types fail; invalid signal and held/execution-price values fail before their declared boundary; targets use decision-time information; warm-up is excluded; strategy and benchmark share measured rows; invalid initial/gross/net/equity and direct metric inputs fail at their declared boundary; stale/untracked/tampered post-capture state fails closed; identical outside-versus-bounded `1+0j` frames are distinguished; the pre-capture-history limitation is explicit; all `TIMING-*` behavior tests, full local gates, independent review, CI, and final stable-head review passed. |
 | 3. Point-in-time data methodology | Complete on protected main via PR #163 | Accept `docs/point_in_time_data_methodology_contract.md` as the provider-agnostic provenance, canonicalization/environment, immutable dataset-review, universe, corporate-action, field, benchmark, missing-data, privacy, and exposure-ledger contract. | The three gates remain separate; all `PIT-*` documentation cases, local/full gates, final current-head review, protected merge, and exact merge-head CI passed; no dataset, vendor, or formal interpretation was accepted. |
-| 4a. Experiment/trial ledger contract | Local P1/P2-remediation gates passed; exact-current-head CI/final re-review, protected merge, and exact merge-head CI required | Freeze semantic trial versus attempt identity, ledger-owned preallocation/reference rules, lifecycle, campaign inventory/accounting closure and adjudication, protected access, canonical request/event chain, exact evidence-prefix/closure checkpoint, version-linked adjudication checkpoint, review binding, and exact private/public projection contracts without selecting a backend or identity architecture. The ledger timestamp profile rejects leap seconds because no immutable table is pinned. Exact event-payload coverage remains limited to the common envelope plus `LEDGER_EPOCH_CREATED`; the epoch atomically introduces `ledger_id`, while `actor_id` is external claimed attribution that grants no permission and authority-dependent behavior remains fail closed pending a Stage 4b owner decision. An initial inventory seal binds an atomically checked, nonrecursive pre-seal stream-head ordering anchor. Trial-parent, entity-allocation/reference, and fixed checkpoint semantic vectors are non-runtime contract facts. | `docs/experiment_trial_ledger_contract.md`, its synthetic epoch/checkpoint goldens and rejection/semantic vectors, all `LEDGER-*` documentation cases, local/full gates, final current-head review, protected merge, and exact merge-head CI pass; complete per-event schemas, runtime currentness, and research trials remain deferred. |
-| 4b. Experiment/trial ledger implementation | Blocked by Stage 4a protected merge and exact merge-head CI | First freeze a complete machine-readable exact payload-schema registry for every closed-vocabulary event with deterministic vectors/digest. Then implement the accepted contract in a separate namespace with atomic allocation, append-only events, restart/concurrency/tamper tests, protected-access capability enforcement, campaign completeness, and safe projection. Material backend/private-location/recovery/checkpoint-currentness architecture choices require a separately recorded owner decision. | Registry coverage rejects every missing, unknown, or incompletely specified event before append. Later behavioral tests prove no silent overwrite, backfilled holdout laundering, failed-before-write loss, retry hiding, prefix/tail truncation, currentness rollback, checkpoint fork, or private projection leak. |
+| 4a. Experiment/trial ledger contract | Complete on protected main via PR #164 | Freeze semantic trial versus attempt identity, ledger-owned preallocation/reference rules, lifecycle, campaign inventory/accounting closure and adjudication, protected access, canonical request/event chain, exact evidence-prefix/closure checkpoint, version-linked adjudication checkpoint, review binding, and exact private/public projection contracts without selecting a backend or identity architecture. The ledger timestamp profile rejects leap seconds because no immutable table is pinned. Exact event-payload coverage remains limited to the common envelope plus `LEDGER_EPOCH_CREATED`; the epoch atomically introduces `ledger_id`, while `actor_id` is external claimed attribution that grants no permission and authority-dependent behavior remains fail closed pending a Stage 4b owner decision. An initial inventory seal binds an atomically checked, nonrecursive pre-seal stream-head ordering anchor. Trial-parent, entity-allocation/reference, and fixed checkpoint semantic vectors are non-runtime contract facts. | `docs/experiment_trial_ledger_contract.md`, its synthetic epoch/checkpoint goldens and rejection/semantic vectors, all `LEDGER-*` documentation cases, local/full gates, final current-head review, protected merge, and exact merge-head CI passed; complete per-event schemas, runtime currentness, and research trials remain deferred. |
+| 4b-R0. Payload-schema registry foundation | Active in the current tree; incomplete diagnostic support only | Freeze a self-contained registry meta-contract, exact 37-event vocabulary, deterministic digest, duplicate-safe parser, the accepted epoch schema, and fail-closed dispatch. Keep all other known events `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`; do not use placeholders or synthetic checkpoint facts as wire schemas. | Registry vocabulary, supported/incomplete partitions, digest, parser, exact epoch vectors, and known-incomplete/unknown rejection pass. This gate does not accept a complete registry or Stage 4b runtime. |
+| 4b. Experiment/trial ledger implementation | Blocked by complete 37-event payload-registry acceptance and owner architecture decisions | Freeze exact schemas in separately reviewed event-family batches, then close 37-of-37 coverage without incomplete, wildcard, open-object, or free-string stand-ins. Only afterward implement the accepted contract in a separate namespace with atomic allocation, append-only events, restart/concurrency/tamper tests, protected-access capability enforcement, campaign completeness, and safe projection. Material backend/private-location/recovery/checkpoint-currentness architecture choices require a separately recorded owner decision. | Complete registry coverage rejects every missing, unknown, or incompletely specified event before append. Later behavioral tests prove no silent overwrite, backfilled holdout laundering, failed-before-write loss, retry hiding, prefix/tail truncation, currentness rollback, checkpoint fork, or private projection leak. |
 | 5. Statistical validation | Blocked by Stage 4b | Add descriptive, dependence-aware, bootstrap, placebo, multiplicity, DSR, PBO, and stability controls in design-first increments. | Registered inference policy and deterministic synthetic/golden tests pass. |
 | 6. Canonical factor registry | Blocked by Stages 3-5 | Register interpretable price/volume baselines first; fundamentals wait for filing-availability support. | Formula, direction, source, fields, lag, parameters, fixture, tests, limitations, and trial family are complete. |
 | 7. WorldQuant batches | Blocked by Stage 6 | Add 5-10 formulas per compatible data family after operator contracts are ready. | Formula transcription/parity, missing/warm-up, timing, and traceability tests pass; no strategy claim. |

@@ -1,14 +1,13 @@
 # Experiment and Trial Ledger Contract
 
-Status: proposed Stage 4a design contract; acceptance requires final
-current-head review, protected merge, and successful exact merge-head CI.
+Status: accepted Stage 4a design contract on protected main via PR #164.
 Stage 4b runtime enforcement is not implemented by this document.
 
 Contract ID: `experiment_trial_ledger_contract_v1`.
 
 Contract version: `1.0.0`.
 
-This document is the normative Stage 4a design under
+This document is the accepted normative Stage 4a design under
 `docs/research_program_charter.md`, the accepted Stage 3
 `docs/point_in_time_data_methodology_contract.md`, and
 `docs/current_roadmap.md`. It freezes the evidence model required before the
@@ -1077,9 +1076,9 @@ Documentation-token tests for this matrix are not runtime append-only evidence.
 Stage 4b must implement fault injection, restart, concurrency, tamper,
 protected-reader, closure, and privacy behavior before claiming conformance.
 
-## Proposed Decisions and Deferred Implementation
+## Accepted Decisions and Deferred Implementation
 
-Frozen in this Stage 4a proposal for v1:
+Frozen in the accepted Stage 4a contract for v1:
 
 - semantic trials and execution attempts are separate and both fully counted;
 - IDs and protected-access intent are durable before action;
@@ -1099,9 +1098,12 @@ Frozen in this Stage 4a proposal for v1:
 
 Deferred to Stage 4b or later:
 
-- the separately reviewed machine-readable exact payload schema registry for
-  every event in the closed vocabulary, which is a prerequisite to full
-  Stage 4b conformance rather than a claim supplied by this narrative;
+- complete machine-readable exact payload schemas for every event in the
+  closed vocabulary. The Stage 4B-R0 foundation in
+  `docs/experiment_trial_ledger_schema_registry_contract.md` supplies the
+  registry meta-contract, digest, duplicate-safe parser, and exact epoch
+  schema only; its other 36 events remain
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`;
 - physical storage backend (`sqlite3`, a deliberately single-writer event
   store, or another reviewed option);
 - transaction, locking, journaling, `fsync`, migration, backup, and recovery
@@ -1113,9 +1115,9 @@ Deferred to Stage 4b or later:
   callers in separate reviewable slices; and
 - any private-provider adapter or formal campaign.
 
-The next implementation PR must not retrofit the legacy reporter in place.
-It must introduce a separate ledger namespace, use only caller-supplied
-temporary storage in tests until the private location is approved, add no
-heavyweight dependency without a separate decision, and preserve every
-failure. Formal interpretation remains blocked by Stage 4b, Stage 5, and all
-later applicable gates.
+Later implementation must not retrofit the legacy reporter in place. It must
+continue in the separate ledger namespace, use only caller-supplied temporary
+storage in tests until the private location is approved, add no heavyweight
+dependency without a separate decision, and preserve every failure. Formal
+interpretation remains blocked by Stage 4b, Stage 5, and all later applicable
+gates.

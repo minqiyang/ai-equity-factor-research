@@ -24,12 +24,16 @@ begins at capture and cannot reconstruct pre-capture history.
 provider-agnostic data authority. It separates acceptance of the methodology
 contract from review of a particular immutable dataset manifest and from
 eligibility for formal interpretation.
-`docs/experiment_trial_ledger_contract.md` is the proposed Stage 4a design
+`docs/experiment_trial_ledger_contract.md` is the accepted Stage 4a design
 authority. It separates semantic trials from execution attempts, freezes
 allocation-before-action and access-intent-before-read semantics, and requires
-append-only completeness plus an independently retained checkpoint. Acceptance
-still requires final current-head review, protected merge, and successful exact
-merge-head CI; Stage 4b runtime enforcement remains unimplemented.
+append-only completeness plus independently retained evidence and adjudication
+checkpoints.
+`docs/experiment_trial_ledger_schema_registry_contract.md` defines the active
+Stage 4B-R0 fail-closed registry foundation. R0 supports only the exact epoch
+schema, rejects the other 36 known events as
+`SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`, and does not claim a complete payload
+registry or Stage 4b runtime enforcement.
 
 ## Current Phase and Boundary
 

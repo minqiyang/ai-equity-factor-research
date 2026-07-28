@@ -42,6 +42,10 @@ MAJOR_DIRS = [
     ("src/backtest", "Simulated long-only backtester and metrics helpers."),
     ("src/data", "Strict local CSV loaders and metadata review helpers."),
     (
+        "src/ledger",
+        "Fail-closed Stage 4B schema-registry helpers; no append or storage runtime.",
+    ),
+    (
         "src/reporting",
         "Experiment log and registry helpers; plotting helpers are placeholder-only future work.",
     ),
@@ -73,7 +77,11 @@ IMPORTANT_FILES = [
     ),
     (
         "docs/experiment_trial_ledger_contract.md",
-        "Proposed Stage 4a experiment/trial identity, lifecycle, completeness, access, and integrity design.",
+        "Accepted Stage 4a experiment/trial identity, lifecycle, completeness, access, and integrity design.",
+    ),
+    (
+        "docs/experiment_trial_ledger_schema_registry_contract.md",
+        "Active Stage 4B-R0 fail-closed schema-registry foundation.",
     ),
     ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),
