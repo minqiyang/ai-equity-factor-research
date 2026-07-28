@@ -19,6 +19,7 @@ def test_required_directories_exist() -> None:
         "src/backtest",
         "src/risk",
         "src/reporting",
+        "src/ledger",
         "src/utils",
         "tests",
         "research",
@@ -41,6 +42,7 @@ def test_required_governance_files_exist() -> None:
         "docs/signal_execution_timing_contract.md",
         "docs/point_in_time_data_methodology_contract.md",
         "docs/experiment_trial_ledger_contract.md",
+        "docs/experiment_trial_ledger_schema_registry_contract.md",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
@@ -85,18 +87,19 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Stage 1 Split Decision",
         "## Stage 2 Timing Decision",
         "## Stage 3 Data Methodology Decision",
-        "## Proposed Stage 4a Experiment and Trial Ledger Decision",
+        "## Accepted Stage 4a Experiment and Trial Ledger Decision",
+        "## Active Stage 4B-R0 Schema Registry Decision",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Stage 4b - Experiment/trial ledger implementation",
+        "Stage 4B-R0 registry-foundation slice",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "854 passing tests" in roadmap
-    assert "Starting validation: 854 tests passed" in handoff
+    assert "863 passing tests" in roadmap
+    assert "Starting validation: 863 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -205,7 +208,7 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
         "| 2b. Signal/execution timing implementation | "
         "Complete on protected main via PR #162"
     ) in roadmap
-    assert "Stage 4b - Experiment/trial ledger implementation" in handoff
+    assert "Stage 4B-R0 registry-foundation slice" in handoff
 
 
 def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
@@ -341,11 +344,11 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 4a. Experiment/trial ledger contract | "
-        "Local P1/P2-remediation gates passed"
+        "Complete on protected main via PR #164"
     ) in roadmap
     assert (
-        "| 4b. Experiment/trial ledger implementation | "
-        "Blocked by Stage 4a protected merge and exact merge-head CI"
+        "| 4b-R0. Payload-schema registry foundation | "
+        "Active in the current tree; incomplete diagnostic support only"
     ) in roadmap
 
 
@@ -578,11 +581,15 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
         PROJECT_ROOT / "docs/point_in_time_data_methodology_contract.md"
     ).read_text(encoding="utf-8")
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
+    registry_contract = (
+        PROJECT_ROOT
+        / "docs/experiment_trial_ledger_schema_registry_contract.md"
+    ).read_text(encoding="utf-8")
     normalized_contract = " ".join(contract.split())
+    normalized_registry_contract = " ".join(registry_contract.split())
 
     for phrase in [
-        "Status: proposed Stage 4a design contract",
-        "acceptance requires final current-head review, protected merge, and successful exact merge-head CI",
+        "Status: accepted Stage 4a design contract on protected main via PR #164",
         "Contract ID: `experiment_trial_ledger_contract_v1`",
         "Contract version: `1.0.0`",
         "Stage 4b runtime enforcement is not implemented",
@@ -696,7 +703,7 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
         "`backfilled = true`, `DIAGNOSTIC_ONLY`",
         "Documentation-token tests for this matrix are not runtime append-only evidence",
         "physical storage backend",
-        "The next implementation PR must not retrofit the legacy reporter in place",
+        "Later implementation must not retrofit the legacy reporter in place",
     ]:
         assert phrase in normalized_contract
 
@@ -736,18 +743,39 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
     assert "| 3. Point-in-time data methodology | Complete" in roadmap
     assert (
         "| 4a. Experiment/trial ledger contract | "
-        "Local P1/P2-remediation gates passed"
+        "Complete on protected main via PR #164"
     ) in roadmap
     assert (
-        "| 4b. Experiment/trial ledger implementation | "
-        "Blocked by Stage 4a protected merge and exact merge-head CI"
+        "| 4b-R0. Payload-schema registry foundation | "
+        "Active in the current tree; incomplete diagnostic support only"
     ) in roadmap
-    assert "Finish Stage 4a contract PR gates" in handoff
-    assert "Proposed Stage 4a design authority" in handoff
-    assert "proposed Stage 4a design authority" in " ".join(
+    assert "Finish Stage 4a contract PR gates" not in handoff
+    assert "Accepted Stage 4a design authority" in handoff
+    assert "accepted Stage 4a design authority" in " ".join(
         specification.split()
     )
-    assert "Proposed Stage 4a experiment/trial" in repo_map
+    assert "Accepted Stage 4a experiment/trial" in repo_map
+    assert "Active Stage 4B-R0 fail-closed schema-registry foundation" in repo_map
+    for phrase in [
+        "Contract ID: `experiment_trial_ledger_schema_registry_r0`",
+        "`SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`",
+        "`LEDGER_EPOCH_CREATED` is the sole `FROZEN_SUPPORTED` event",
+        "does not accept a complete payload-schema registry",
+        "does not implement a ledger runtime",
+        "Trial count, execution-attempt count, and protected-sample access remain zero",
+        "No other event becomes append-valid in R0",
+    ]:
+        assert phrase in normalized_registry_contract
+    for canonical_doc in [roadmap, handoff, specification, repo_map]:
+        assert "docs/experiment_trial_ledger_schema_registry_contract.md" in (
+            canonical_doc
+        )
+    assert "Blocked by Stage 4a protected merge" not in roadmap
+    assert "Proposed Stage 4a design authority" not in handoff
+    assert "proposed Stage 4a design authority" not in " ".join(
+        specification.split()
+    )
+    assert "Proposed Stage 4a experiment/trial" not in repo_map
     assert "proposed Stage 3" not in roadmap
     assert "proposed Stage 3" not in handoff
     assert "new-head GitHub gates pending" not in roadmap

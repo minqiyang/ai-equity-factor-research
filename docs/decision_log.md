@@ -15,6 +15,69 @@ investment performance.
 
 ---
 
+## 2026-07-28 - Start Stage 4B With A Fail-Closed Registry Foundation
+
+Context:
+
+- Stage 4a is accepted on protected `main` through PR #164 at `27f0497`; exact
+  merge-head CI passed.
+- The accepted contract closes the event vocabulary at 37 values but freezes
+  an exact payload schema only for `LEDGER_EPOCH_CREATED`.
+- Six non-overlapping read-only audits found that exact subject, campaign
+  scope, fields, nullability, unions, nested objects, enums, ordering, safe
+  vocabularies, and cross-field constraints remain intentionally unresolved
+  for the other 36 events.
+- Existing checkpoint helpers and the rejected trial-allocation stub are
+  synthetic semantic evidence, not event wire schemas.
+
+Decision:
+
+- Begin Stage 4B with the bounded
+  `experiment_trial_ledger_schema_registry_r0` contract.
+- Package one self-contained ASCII canonical JSON registry in a separate
+  `ledger` namespace. Use the JSON artifact, not Python constants, as the
+  registry authority.
+- Bind the full registry object, including vocabulary, type definitions,
+  schemas, constraints, incomplete-event declarations, and vectors, into one
+  canonical lowercase SHA-256 whose sidecar is outside the preimage.
+- Parse raw registry and event JSON with duplicate-property detection before a
+  mapping exists. Reject floating-point, non-finite, and non-I-JSON numbers.
+- Freeze a small closed schema DSL sufficient for the accepted epoch schema;
+  later descriptor kinds require a versioned amendment.
+- Keep `LEDGER_EPOCH_CREATED` as the sole `FROZEN_SUPPORTED` event. Reject the
+  other 36 known events as `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY` and unknown
+  events as `UNKNOWN_EVENT_TYPE` before append or action.
+- Do not call R0 a complete registry, Stage 4B conformance, or ledger runtime.
+
+Rationale:
+
+- A generic object, free string, opaque metadata map, hash-only stand-in, or
+  test-derived fact set would turn name coverage into false schema coverage.
+- Exact subject and scope rules determine campaign evidence inclusion and
+  checkpoint currentness; guessing them could conceal relevant events.
+- The standard library is sufficient for the ASCII R0 registry and avoids a
+  premature production-dependency decision.
+
+Consequences:
+
+- Trial count, execution-attempt count, and protected-sample access remain
+  zero. No private data, provider, campaign, performance result, or trading
+  behavior enters R0.
+- The legacy reporting writers and registries remain unchanged.
+- Stage 5 and formal interpretation remain blocked.
+- Storage backend, private location, transaction/recovery, checkpoint
+  currentness, authority/signature, capability security, and fork policy
+  remain owner decisions.
+
+Follow-up:
+
+- Add exact schemas in separately reviewed event-family decisions, beginning
+  with allocation/registration only after its subject, scope, ID namespaces,
+  payload, null/union/order rules, and stateful boundary are frozen.
+- Use a separate closure stage to prove 37-of-37 exact coverage with no
+  incomplete, wildcard, open-object, or free-text stand-ins. Payload-registry
+  acceptance will still not imply runtime completion.
+
 ## 2026-07-27 - Freeze Semantic Trials, Attempts, And Ledger Completeness
 
 Context:

@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-27 for the Experiment and Trial Ledger Contract.
+Updated: 2026-07-28 for the Stage 4B-R0 schema-registry foundation.
 
 ## Canonical State
 
@@ -10,20 +10,22 @@ Updated: 2026-07-27 for the Experiment and Trial Ledger Contract.
   `docs/signal_execution_timing_contract.md`.
 - Accepted Stage 3 data authority:
   `docs/point_in_time_data_methodology_contract.md`.
-- Proposed Stage 4a design authority:
+- Accepted Stage 4a design authority:
   `docs/experiment_trial_ledger_contract.md`.
+- Active Stage 4B-R0 registry authority:
+  `docs/experiment_trial_ledger_schema_registry_contract.md`.
 - Active roadmap: `docs/current_roadmap.md`.
 - Short operational controller: `docs/codex_long_running_controller.md`.
-- Verified starting `origin/main`: `a6c147e`, the protected merge of PR #163.
-- Starting validation: 854 tests passed with two platform-conditional
+- Verified starting `origin/main`: `27f0497`, the protected merge of PR #164.
+- Starting validation: 863 tests passed with two platform-conditional
   wide-`longdouble` skips; compilation and exact merge-head GitHub CI passed.
 - Stage 1 split isolation and Stage 2 signal/execution timing are complete on
   protected main. Stage 3 methodology is accepted; it does not accept a
   provider, dataset, license, universe, field, benchmark, or historical claim.
-- Stage 3 PR #163 passed 854 tests, Ruff, compilation, build, Skill, repo-map,
+- Stage 4a PR #164 passed 863 tests, Ruff, compilation, build, Skill, repo-map,
   privacy/Unicode/diff, final current-head review, protected merge, and exact
-  merge-head GitHub CI at `a6c147e`.
-- The Stage 4a candidate freezes ledger evidence semantics only. The existing
+  merge-head GitHub CI at `27f0497`.
+- The accepted Stage 4a contract freezes ledger evidence semantics only. The existing
   JSON writer and registry remain diagnostic/legacy; no append-only runtime,
   backend, private ledger, campaign, or formal interpretation is implemented.
   Its exact Stage 4a event payload coverage is deliberately limited to the
@@ -54,14 +56,12 @@ Updated: 2026-07-27 for the Experiment and Trial Ledger Contract.
   `campaign_adjudication_checkpoint_v1` anchors every terminal
   closure/review/promotion/adjudication generation; any later same-campaign
   event makes the old generation non-current.
-  The current local P1/P2 remediation passed seven focused contract tests
+  Its final P1/P2 remediation passed seven focused contract tests
   (six adjudication-specific), 28 structure tests, and the full 863-test suite
   with two
   platform-conditional skips, plus Ruff, diff, Unicode, and independent
-  integrity/scope re-review. The authoritative publication state is always the
-  verified local/PR head metadata rather than a prose SHA. Acceptance still
-  requires local/PR head parity, successful exact-current-head CI and final
-  current-head review, protected merge, and successful exact merge-head CI.
+  integrity/scope re-review. The authoritative publication state is the
+  protected-main merge and exact merge-head CI, not the prose SHA alone.
 - Current phase: research-only. No vendor download, credentials, brokerage,
   orders, paper deployment, live deployment, or real-money execution.
 
@@ -136,7 +136,7 @@ The private 2025-05-01 through 2026-05-31 diagnostic interval is confirmed
 append-only trial/access ledger. No current dataset becomes `formal_ready`
 through this documentation contract.
 
-## Proposed Stage 4a Experiment and Trial Ledger Decision
+## Accepted Stage 4a Experiment and Trial Ledger Decision
 
 `docs/experiment_trial_ledger_contract.md` separates one frozen semantic trial
 from every execution attempt. It requires:
@@ -163,9 +163,36 @@ from every execution attempt. It requires:
   public projection.
 
 The current schema-v1 JSON logs cannot prove these properties and remain
-`DIAGNOSTIC_ONLY` legacy evidence. Stage 4a adds no runtime, storage backend,
+`DIAGNOSTIC_ONLY` legacy evidence. Stage 4a added no runtime, storage backend,
 dependency, migrated log, research trial, private access, or generated
 performance evidence.
+
+## Active Stage 4B-R0 Schema Registry Decision
+
+Six non-overlapping read-only audits found that Stage 4a intentionally froze
+only the common event envelope and `LEDGER_EPOCH_CREATED` payload. Exact
+subjects, scopes, fields, nullability, unions, nested structures, enums, and
+cross-field constraints remain under-specified for the other 36 event types.
+Neither narrative field lists nor the synthetic checkpoint helpers are valid
+wire-schema authorities.
+
+`docs/experiment_trial_ledger_schema_registry_contract.md` therefore defines a
+small fail-closed R0 boundary:
+
+- one self-contained, packaged ASCII canonical JSON registry;
+- exact 37-event vocabulary and disjoint supported/incomplete partitions;
+- a duplicate-property-safe standard-library parser;
+- deterministic all-content registry SHA-256 with an external sidecar;
+- the exact Stage 4a epoch schema and synthetic conformance vectors; and
+- `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY` rejection for every other known event,
+  plus `UNKNOWN_EVENT_TYPE` for anything outside the vocabulary.
+
+R0 does not accept a complete payload registry and does not implement append,
+storage, allocation, lifecycle, access, closure, checkpoint currentness,
+review, or promotion behavior. Trial count, attempt count, and holdout access
+remain zero. Backend, private location, transaction/recovery, currentness,
+actor authority/signature, fork handling, and new production dependencies
+remain separate owner decisions.
 
 ## Verified Implementation Baseline
 
@@ -201,8 +228,10 @@ Stage 1 resolves the prior cross-split-label and unbounded-test defects in the
 current consumers. Stage 2 resolves the close-only runtime timing, target,
 evaluation-window, metric-anchor, benchmark-window, capital-validity, and
 metadata contract. Stage 3 defines the data-methodology contract but does not
-verify a dataset. Stage 4a defines the trial-ledger contract but does not
-enforce it. Additional blockers include incomplete runtime trial retention,
+verify a dataset. Stage 4a defines the accepted trial-ledger contract but does
+not enforce it. Stage 4B-R0 only makes its one exact event and every
+incomplete/unknown event machine-detectable and fail closed. Additional
+blockers include incomplete runtime trial retention,
 absent dependence/multiplicity/overfit controls, and diagnostic-only
 cost/capacity assumptions. See `docs/current_roadmap.md` for the prioritized
 list.
@@ -212,29 +241,26 @@ SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
 
 ## PR #148 Interaction
 
-At the charter-stage verification, PR #148 was an independent Draft governance
-PR from an older base that changed only `AGENTS.md`. It was not a predecessor
-for PRs #158-#163. Stage 4a does not edit `AGENTS.md`, merge/close that draft,
-or overwrite its policy.
+At the last verification, PR #148 was an independent Draft governance PR from
+an older base that changed only `AGENTS.md`. It was not a predecessor for PRs
+#158-#164. The Stage 4B-R0 registry slice does not edit `AGENTS.md`,
+merge/close that draft, or overwrite its policy.
 
 ## Next Safe Stage
 
-Finish Stage 4a contract PR gates: verify that PR #164 head equals the local
-branch head containing this handoff; publish the branch only if they differ.
-Then obtain terminal exact-head GitHub CI, request final current-head Codex
-review once, resolve any actionable findings, use only the normal protected
-merge path, and verify the exact merge-head CI.
+Complete the Stage 4B-R0 registry-foundation slice in the current tree. If this
+tree is not yet reachable from protected main, run focused and baseline gates,
+obtain terminal exact-head GitHub CI, request final current-head Codex review
+once, resolve actionable findings on a changed head, use only the normal
+protected merge path, and verify exact merge-head CI.
 
-Only then begin:
-
-```text
-Stage 4b - Experiment/trial ledger implementation.
-```
-
-Begin with a design-first, machine-readable exact payload-schema registry that
-covers every closed-vocabulary event exactly once and supplies deterministic
-positive/negative vectors plus a registry digest. Until that slice is accepted,
-all non-epoch events remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+If this tree is already on protected main, begin a separate design-first
+allocation/registration schema-family decision. Do not promote an event from
+`SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY` until its exact subject, all-and-only
+campaign scope, payload, nullable/union/ordering rules, safe vocabularies, and
+local/stateful constraint boundary have independent review and killing
+negative vectors. Do not call the registry accepted until all 37 events have
+exact schemas and no incomplete or wildcard entry remains.
 
 Only after the registry boundary is reviewable should Stage 4b select a
 physical backend, private storage location, transaction/recovery policy, or
