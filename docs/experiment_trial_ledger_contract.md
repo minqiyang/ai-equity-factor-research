@@ -548,7 +548,24 @@ invalid or non-NFC text, ambiguous timestamps or numbers, raw floats,
 NaN/infinity, non-string keys, unknown envelope properties, and invalid typed
 IDs are rejected rather than coerced.
 
-The v1 event-type vocabulary is closed at this minimum set:
+For `ledger_event_identity_v1`, `occurred_at` and `recorded_at` use the
+application-level `ledger_v1_utc_timestamp` subset. Its exact ASCII form is
+`YYYY-MM-DDTHH:MM:SS[.fraction]Z` over the proleptic Gregorian calendar,
+including year `0000`; hour, minute, and second ranges are respectively
+`00`-`23`, `00`-`59`, and `00`-`59`. A fractional second may have arbitrary
+precision but must be nonzero and must not end in zero; an exact zero fraction
+is omitted. Offsets, lowercase or alternate separators, trailing fractional
+zeros, invalid calendar days, and all coercion are rejected.
+
+Ledger event schema v1 rejects every `second = 60`, including historically
+announced June and December leap seconds and syntactically plausible
+unannounced dates, because this contract pins no leap-second table. This is a
+deliberate application-level subset of RFC 3339 timestamp syntax. It does not
+change `pit_canonical_json_v1`: the canonical serializer remains responsible
+only for deterministic serialization of values already accepted by the
+ledger event schema.
+
+The v1 event-type vocabulary is closed at exactly these 37 values:
 
 ```text
 LEDGER_EPOCH_CREATED
@@ -705,15 +722,82 @@ that exact position to match; mutation of the prefix or truncation below the
 anchor fails.
 
 Formal accounting closure also requires an independently retained immutable
-checkpoint containing exactly a checkpoint schema/version, checkpoint ID,
-canonicalization ID, ledger ID, evidence sequence/event SHA-256,
-`freeze_event_sequence`, `freeze_event_sha256`, campaign evidence
-version/SHA-256, sealed trial-inventory SHA-256, expected/actual entity counts,
-creation time, authorized issuer/authority reference, and checkpoint SHA-256.
-The checkpoint digest is outside its exact canonical preimage. The freeze
-event sequence is exactly `evidence_sequence + 1`; the checkpoint therefore
-anchors both the nonrecursive evidence prefix and its administrative snapshot.
-It is a closure-only, independently retained checkpoint and is distinct from
+checkpoint encoded as `campaign_evidence_checkpoint_v1`. Its exact canonical
+preimage has all-and-only these fields:
+
+```text
+schema_version
+canonicalization_id
+checkpoint_id
+ledger_id
+campaign_id
+evidence_sequence
+evidence_event_sha256
+freeze_event_sequence
+freeze_event_id
+freeze_event_sha256
+campaign_evidence_version_id
+campaign_evidence_sha256
+sealed_trial_inventory_sha256
+sealed_semantic_trial_count
+terminal_semantic_trial_count
+allocated_attempt_count
+terminal_attempt_count
+created_at
+issuer_authority_reference
+```
+
+The literal values are
+`schema_version = campaign_evidence_checkpoint_v1` and
+`canonicalization_id = pit_canonical_json_v1`. Missing or unknown fields are
+rejected. `checkpoint_id`, `campaign_evidence_version_id`, and
+`issuer_authority_reference` are nonempty NFC strings; `ledger_id`,
+`campaign_id`, and `freeze_event_id` are their typed opaque IDs. All SHA-256
+fields are exactly 64 lowercase hexadecimal characters. Both sequences and
+all four counts are non-Boolean, nonnegative I-JSON-safe integers.
+`created_at` uses `ledger_v1_utc_timestamp`. `checkpoint_sha256` is outside the
+preimage and is the SHA-256 of its exact `pit_canonical_json_v1` bytes.
+
+The checkpoint requires `freeze_event_sequence = evidence_sequence + 1`. The
+declared `freeze_event_sequence` selects the exact freeze event, which has the
+declared sequence, ID, type, campaign scope, SHA-256, and envelope
+`previous_event_sha256 = evidence_event_sha256`; the event at
+`evidence_sequence` has the exact `evidence_event_sha256`. Its semantic facts
+bind the same cutoff, evidence version/SHA-256, and sealed inventory SHA-256.
+The checkpoint therefore anchors both the nonrecursive evidence prefix and its
+administrative snapshot.
+
+Between that freeze and its accounting closure, the entire target-campaign
+projection is all-and-only exactly one `CHECKPOINT_REFERENCE_RECORDED`, binding
+the evidence checkpoint's exact ID and SHA-256. Any other event whose scope
+contains the target campaign fails closed; events scoped only to other
+campaigns and genuinely global events remain allowed. Missing, duplicate,
+wrong-scope, out-of-order, wrong-ID, or wrong-digest references fail closed.
+The closure, review, and adjudication continue to bind that same checkpoint
+ID/SHA-256 and evidence identity.
+
+`sealed_semantic_trial_count` is the cardinality of the unique sealed trial-ID
+set; `terminal_semantic_trial_count` is the cardinality of the same set after
+every trial has one current legal terminal disposition. `allocated_attempt_count`
+is the cardinality of unique allocated attempt IDs whose trial belongs to the
+sealed set; `terminal_attempt_count` is the cardinality of that same attempt
+set after every attempt has one current legal terminal state. Each pair of
+counts must be equal, but equal counts never substitute for exact set equality,
+membership, uniqueness, or current-disposition checks. A same-cardinality ID
+substitution fails.
+
+Stage 4a adds no open entity map or lifecycle taxonomy. Its synthetic contract
+vector uses one fixed all-excluded trial set and zero allocated/terminal
+attempts only to exercise exact set/count relations. Within that vector,
+conformance reconstructs sealed IDs from its one exact inventory record and
+terminal IDs from exact campaign-scoped `TRIAL_EXCLUDED` records; any other
+terminal-trial or attempt-lifecycle event is outside the vector and rejected,
+not inferred. Formal extraction of sealed IDs, current trial dispositions,
+attempt ownership, and current attempt states depends on the complete Stage 4b
+per-event payload schema registry; the runtime remains fail closed until that
+registry is accepted and enforced.
+
+This is a closure-only, independently retained checkpoint and is distinct from
 the earlier self-excluding `campaign_inventory_preseal_head_v1` ordering anchor.
 The provider, storage medium, retention, recovery, signature, and trust policy
 are deferred to a separate Stage 4b architecture decision.
@@ -728,7 +812,8 @@ An accounting-closure record is valid only when:
 5. every protected access and exposure decision is terminal;
 6. no orphan, duplicate, sequence gap, chain break, unknown field, or
    unresolved correction exists;
-7. expected and actual semantic-trial and attempt counts reconcile;
+7. sealed and terminal semantic-trial counts reconcile, and allocated and
+   terminal attempt counts reconcile;
 8. the current code/data/environment/config/artifact identities verify;
 9. the immutable campaign inventory and any amendments reconcile; and
 10. the independently retained checkpoint binds the exact frozen evidence
@@ -753,19 +838,19 @@ Review and promotion are immutable events separate from `attempt_state`,
 - decision outcome, reason, and predecessor/supersession ID; and
 - a decision-specific identity projection and SHA-256.
 
-A producer cannot self-certify the same evidence. Appending the decision itself
-or an unrelated campaign event does not change the bound evidence prefix and
-does not self-stale the decision. The freeze, checkpoint-reference, review,
-promotion, and adjudication events are administrative suffixes and do not
-alter their bound evidence version. A new campaign evidence-bearing correction,
-identity, inventory, output, or access event after the prefix makes that
-evidence version stale and requires a new accounting closure, checkpoint, and
-review. A threshold, finding, or finding-disposition change stales the decision
-and requires a new review without rewriting the evidence prefix. Promotion
-fails closed for omitted failures, result-informed same-sample amendments,
-unresolved findings, post-result threshold changes, an unanchored prefix, or
-incomplete accounting closure. Corrections append; they never rewrite the
-decision.
+A producer cannot self-certify the same evidence. Appending the decision itself,
+an event scoped only to another campaign, or a genuinely unrelated
+ledger-global event does not change the bound evidence prefix and does not
+self-stale the decision. The freeze, checkpoint-reference, review, promotion,
+and adjudication events are administrative suffixes and do not alter their
+bound evidence version. A new campaign evidence-bearing correction, identity,
+inventory, output, or access event after the prefix makes that evidence version
+stale and requires a new accounting closure, checkpoint, and review. A
+threshold, finding, or finding-disposition change stales the decision and
+requires a new review without rewriting the evidence prefix. Promotion fails
+closed for omitted failures, result-informed same-sample amendments, unresolved
+findings, post-result threshold changes, an unanchored prefix, or incomplete
+accounting closure. Corrections append; they never rewrite the decision.
 
 A formal campaign is fully adjudicated only after accounting closure and one
 `CAMPAIGN_ADJUDICATED` event bind:
@@ -781,8 +866,111 @@ A formal campaign is fully adjudicated only after accounting closure and one
 - the accepted review decision plus the same frozen evidence version and
   checkpoint.
 
-Neither accounting closure alone nor a missing/duplicate/stale adjudication may
-be called a complete formal campaign.
+The adjudication also binds the exact current accounting-closure event, sealed
+inventory, campaign evidence version and SHA-256, independent evidence
+checkpoint ID and SHA-256, review event, and promotion-or-disposition decision.
+It preallocates and semantically binds an opaque adjudication checkpoint ID,
+but it does not contain the future checkpoint digest.
+
+After that event, an independently retained
+`campaign_adjudication_checkpoint_v1` anchors the complete verified chain
+through the adjudication event. Its exact canonical preimage has all-and-only
+these fields:
+
+```text
+schema_version
+canonicalization_id
+checkpoint_id
+ledger_id
+campaign_id
+checkpoint_generation
+previous_checkpoint_id
+previous_checkpoint_sha256
+campaign_evidence_version_id
+campaign_evidence_sha256
+campaign_evidence_checkpoint_id
+campaign_evidence_checkpoint_sha256
+adjudication_event_sequence
+adjudication_event_id
+adjudication_event_sha256
+created_at
+issuer_authority_reference
+```
+
+The literal values are
+`schema_version = campaign_adjudication_checkpoint_v1` and
+`canonicalization_id = pit_canonical_json_v1`. `checkpoint_sha256` is stored
+outside the preimage and is the SHA-256 of its exact canonical bytes.
+Missing or unknown fields are rejected. The schema and canonicalization
+values, checkpoint/evidence IDs, `created_at`, and issuer authority reference
+are strings; IDs and the authority reference are nonempty NFC text,
+`ledger_id` and `campaign_id` are their typed opaque IDs, `created_at` uses
+`ledger_v1_utc_timestamp`, `adjudication_event_id` is a typed opaque event ID,
+and every SHA-256 field is exactly 64 lowercase hexadecimal characters.
+`checkpoint_generation` is a positive non-Boolean
+I-JSON-safe integer and `adjudication_event_sequence` is a nonnegative
+non-Boolean I-JSON-safe integer. Generation 1 has both
+`previous_checkpoint_id = null` and
+`previous_checkpoint_sha256 = null`. Every successor is exactly the preceding
+generation plus one and binds that predecessor's exact checkpoint ID and
+SHA-256. Half-null predecessors, skipped generations, two siblings from one
+predecessor, forks, replacement, or a digest mismatch fail closed; all old
+checkpoint bytes remain retained.
+
+Checkpoint verification requires the complete retained ledger chain to verify
+through the exact adjudication sequence, ID, and event SHA-256. The anchor event
+must be `CAMPAIGN_ADJUDICATED`, its immutable scope must include the exact
+campaign, and its semantics must bind the current exact closure, evidence
+checkpoint, review, promotion-or-disposition decision, inventory, evidence
+version, and preallocated checkpoint ID. Deleting, modifying, inserting,
+duplicating, reordering, replacing, or truncating any closure/review/decision/
+adjudication tail record therefore invalidates the checkpoint.
+
+Verification applies those rules to every retained generation, not only the
+head. The retained history starts at generation 1, contains every generation
+exactly once, and has strictly increasing adjudication anchors. Its checkpoint
+generations, independently retained evidence checkpoints, and all
+campaign-scoped `CAMPAIGN_ADJUDICATED` events correspond one-to-one in that
+order. Each generation revalidates its exact preallocated checkpoint ID,
+evidence version and checkpoint, inventory, closure, review, and
+promotion-or-disposition decision. An extra, duplicate, or unaccounted
+campaign adjudication, a generation reset, or a coordinated rehash whose old
+generation no longer matches its terminal bundle fails closed.
+
+The provider-neutral currentness authority key is exactly
+`(ledger_id, campaign_id)`. Before any post-adjudication action scoped to that
+campaign, exactly `current_checkpoint_generation + 1` becomes pending; skips,
+siblings, and any other pending value are invalid. A pending generation is not
+fully adjudicated. Publication of its successor must be monotonic, use the
+exact prior ID/SHA-256, reject a skip or sibling, retain prior bytes, and
+atomically make that successor the unique current generation. Any later event
+whose immutable scope contains the campaign -- including a correction,
+finding/disposition change, review, promotion, adjudication, or checkpoint
+reference -- immediately makes the old checkpoint non-current and requires a
+new freeze, closure, review, decision, adjudication, and generation-plus-one
+checkpoint. An event scoped only to another campaign or a genuinely unrelated
+ledger-global suffix is allowed. No campaign-scoped
+`CHECKPOINT_REFERENCE_RECORDED` is appended after the final adjudication
+checkpoint; the adjudication event's preallocated opaque ID avoids that
+recursive unanchored suffix.
+
+The Stage 4a contract vector may exercise the explicitly permitted unbound
+ledger-global `TRIAL_FAMILY_REGISTERED` path as that unrelated suffix. General
+machine proof of which payloads are genuinely global remains deferred to the
+complete Stage 4b per-event schema registry.
+
+A local old ledger plus its old checkpoint cannot detect that an entire later
+campaign suffix and successor checkpoint were both rolled back. Stage 4b must
+therefore obtain owner approval for, and verify, an independent append-only and
+anti-rollback latestness/concurrency/signature/authorization/recovery
+implementation. Stage 4a chooses no provider, physical backend, signature
+scheme, or recovery design. Until that external currentness proof exists and
+passes failure tests, the full runtime must remain fail closed and no
+implementation may claim a formally fully adjudicated campaign.
+
+Neither accounting closure alone nor a missing, unknown, hash-mismatched,
+pending, duplicate, stale, non-current, or externally unverified adjudication
+checkpoint may be called a complete formal campaign.
 
 ## Private Canonical Record and Public Projection
 
@@ -877,11 +1065,11 @@ facts alone are partial documentation-contract evidence.
 | `LEDGER-006` | Crash recovery treats committed events as authority, preserves incomplete work, and uses new attempt IDs for retries. | Fault after each lifecycle boundary and reconstruct every valid prefix after restart. |
 | `LEDGER-007` | Atomic commit hides torn/partial writes; recovery never presents a valid prefix as a complete ledger or overwrites history. | Truncation/rollback injection at every serialized or transaction boundary. |
 | `LEDGER-008` | Concurrent writers serialize unique contiguous sequences, previous hashes, IDs, and idempotent operations. | Multiprocess unique, exact-replay, and conflicting-request races. |
-| `LEDGER-009` | The exact campaign-scoped pre-freeze projection plus an independent checkpoint detects relevant-event omission/mutation, insertion, deletion, reorder, duplication, and truncation below the anchor while permitting administrative and unrelated suffixes. | Prove all-and-only scoped-event inclusion, relevant mutation sensitivity, freeze/review/decision/unrelated-suffix invariance, and prefix-truncation rejection. |
+| `LEDGER-009` | The exact campaign-scoped pre-freeze projection plus independent evidence and adjudication checkpoints detect relevant-event omission/mutation, insertion, deletion, reorder, duplication, replacement, and truncation through final adjudication while permitting only other-campaign or genuinely unrelated global suffixes. | Prove all-and-only scoped-event inclusion, relevant mutation sensitivity, pre-freeze prefix anchoring, closure/review/decision/adjudication tail anchoring, unrelated-suffix invariance, post-adjudication same-campaign staleness, and prefix/tail truncation rejection. |
 | `LEDGER-010` | Sequence is authoritative; clock order is not. Object-key order is non-semantic and schema-ordered arrays remain semantic. | Equal/backward clocks, duplicate/gapped sequence, key reorder, and array reorder tests. |
-| `LEDGER-011` | The common identity envelope and one frozen `LEDGER_EPOCH_CREATED` payload schema reject ambiguous/lossy values and distinguish absent from null; `TRIAL_ALLOCATED` has semantic parent facts only, and contract-wide payload rejection requires the complete machine-readable registry. | Epoch golden bytes plus envelope/epoch-payload duplicate-key, key-collision, Unicode, timestamp, and unknown-field negatives; semantic trial-parent path facts; then float, default, nullability, union, nested-schema, ordering, and other schema negatives for every registry event before full conformance. |
+| `LEDGER-011` | The common identity envelope and one frozen `LEDGER_EPOCH_CREATED` payload schema reject ambiguous/lossy values and distinguish absent from null. The ledger v1 timestamp subset rejects every `second = 60` without changing canonical JSON serialization. `TRIAL_ALLOCATED` has semantic parent facts only, and contract-wide payload rejection requires the complete machine-readable registry. | Epoch golden bytes plus envelope/epoch-payload duplicate-key, key-collision, Unicode, occurred/recorded timestamp, announced/unannounced June/December leap-second, and unknown-field negatives; semantic trial-parent path facts; then float, default, nullability, union, nested-schema, ordering, and other schema negatives for every registry event before full conformance. |
 | `LEDGER-012` | Every expected output is `PRODUCED`, `NOT_PRODUCED`, or `PARTIAL`; completion requires valid required artifact hashes. | Missing, stale, mutated, partial, and zero-output contract tests. |
-| `LEDGER-013` | Review/promotion binds the complete sealed inventory and campaign evidence prefix/checkpoint without self-staling; result-informed same-sample amendments cannot be resealed for promotion; full adjudication covers every trial/object. | Reject self/stale review, omitted trials, changed relevant evidence, unresolved findings, result-informed same-sample promotion, missing/duplicate dispositions, and unanchored promotion; allow the decision append and unrelated suffix. |
+| `LEDGER-013` | Review/promotion binds the complete sealed inventory and campaign evidence prefix/checkpoint without self-staling; result-informed same-sample amendments cannot be resealed for promotion; full adjudication covers every trial/object and has one independently retained, externally current adjudication-checkpoint generation. | Reject self/stale review, omitted trials, changed relevant evidence, unresolved findings, result-informed same-sample promotion, missing/duplicate dispositions, unanchored promotion, tail tampering/truncation, bad checkpoint lineage, pending/old/missing successors, and post-adjudication same-campaign events; allow terminal promoted/rejected/inconclusive/invalidated outcomes and unrelated suffixes. |
 | `LEDGER-014` | Capability validation/consumption and `ACCESS_STARTED` append are one atomic pre-open barrier; actual reader code/environment/evidence and terminal decisions are mandatory. | Accessor spy for failed/mismatched intent, concurrent double redemption, start-append failure, lost acknowledgement, crash, missing terminal, and broader actual scope. |
 | `LEDGER-015` | The explicit exposure-fact/atomic-interval transition graph covers aliases, overlap, backfill, unknown impact, derived lineage, correction, the historical interval, and complete design-purpose `SOME` observation without separately confirmed influence; private events and the exact public schema reject values/leaks. | Exhaust every allowed/forbidden transition and overlap join, attempted upgrade, complete design-purpose `SOME` classification, full-ledger raw-value rejection, public unknown/path/URI/query/value/direction/rank rejection, and unapproved hash/window disclosure. |
 

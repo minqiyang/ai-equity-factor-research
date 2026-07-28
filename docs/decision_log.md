@@ -52,6 +52,33 @@ Decision:
 - Reuse `pit_canonical_json_v1` for an exact ledger-event identity projection,
   chain every event to the prior hash, and require an independently retained
   immutable head/checkpoint for formal campaign closure.
+- Freeze an exact `campaign_evidence_checkpoint_v1` preimage. Reconstruct its
+  all-and-only campaign-scoped evidence prefix from the retained chain; bind
+  the cutoff, freeze, sealed inventory, and one ordered checkpoint reference;
+  and reconcile sealed/terminal semantic-trial counts plus
+  allocated/terminal attempt counts. Equal counts never replace exact set,
+  membership, uniqueness, or current-disposition checks.
+- Use the application-level `ledger_v1_utc_timestamp` profile for ledger event
+  timestamps. It preserves proleptic-Gregorian year `0000`, ordinary UTC
+  seconds, and normalized arbitrary-precision nonzero fractions, but rejects
+  every `second = 60` because Stage 4a pins no immutable leap-second table.
+  This narrows ledger schema acceptance without changing
+  `pit_canonical_json_v1` serialization.
+- Keep the independently retained evidence-closure checkpoint separate from a
+  second exact `campaign_adjudication_checkpoint_v1`. The latter anchors the
+  final adjudication event and therefore the complete closure, review,
+  promotion/disposition, and adjudication chain. Its preallocated checkpoint
+  ID avoids a digest cycle; its generation and predecessor ID/hash form a
+  monotone lineage. Any later event scoped to that campaign makes the prior
+  adjudication checkpoint non-current and requires a new complete cycle and
+  successor checkpoint. An unrelated campaign or truly ledger-global suffix
+  does not.
+- Treat checkpoint latestness and anti-rollback as an external Stage 4b gate.
+  Before any post-adjudication campaign action, the next generation must become
+  pending under the independent `(ledger_id, campaign_id)` authority key;
+  pending, missing, forked, skipped, or unverifiably current generations fail
+  closed. A local old ledger plus old checkpoint cannot prove that a later
+  generation was not created and then hidden.
 - Allocate each ledger-owned logical typed entity ID exactly once. Later
   lifecycle, correction, supersession, review, and decision records reuse that
   ID as a typed subject or reference; only a second allocation conflicts. Event
@@ -94,6 +121,13 @@ Consequences:
   evidence, dependency, or trading behavior.
 - Stage 4a's epoch golden and non-append semantic fact vectors do not establish
   contract-wide payload validation or Stage 4b conformance.
+- Stage 4a's adjudication-checkpoint vectors establish exact identity, lineage,
+  chain anchoring, and staleness semantics only. They do not implement an
+  independent currentness authority or make a campaign formally complete.
+- Stage 4a's evidence-checkpoint vector uses one fixed all-excluded trial and
+  zero attempts to prove exact prefix/checkpoint bytes and set/count
+  relationships. General event payload, scope, inventory, and lifecycle
+  extraction remains fail closed until the Stage 4b registry is accepted.
 - Legacy logs remain `DIAGNOSTIC_ONLY` references and cannot prove formal
   completeness or holdout independence.
 - Stage 5 remains blocked until Stage 4b implements and behaviorally verifies
@@ -104,10 +138,11 @@ Follow-up:
 - In the first separate Stage 4b slice, freeze the complete machine-readable
   event payload-schema registry, deterministic positive/negative vectors, and
   registry digest. Then choose and justify the storage, transaction/recovery,
-  private-location, and external-checkpoint policies in separately reviewable
-  architecture/implementation work; add fault, restart, concurrency, tamper,
-  protected-access, closure, and privacy tests before integrating one synthetic
-  workflow.
+  private-location, independent checkpoint/currentness authority, append-only
+  anti-rollback, concurrency/fork, signature/authorization, and recovery
+  policies in separately reviewable architecture/implementation work; add
+  fault, restart, concurrency, tamper, rollback, protected-access, closure, and
+  privacy tests before integrating one synthetic workflow.
 
 ## 2026-07-27 - Separate Data Methodology, Dataset, And Interpretation Gates
 

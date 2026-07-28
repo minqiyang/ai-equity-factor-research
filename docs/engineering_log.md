@@ -202,6 +202,60 @@
   three identical repo-map hashes across two regenerations, JSON parsing,
   privacy/path and hidden-Unicode scans, generated-artifact cleanup, and diff
   checks.
+- Exact-head review `4793725387` on the later `30bbc82` snapshot found a P1
+  because the independently retained checkpoint ended at the evidence freeze:
+  closure, review, promotion/disposition, and adjudication remained a
+  replaceable or deletable suffix. It also found a P2 because the timestamp
+  fact validator accepted structurally plausible but historically unannounced
+  leap seconds.
+- A separate timestamp fixer narrowed ledger v1 to ordinary UTC seconds
+  `00`-`59`, retained proleptic-Gregorian year `0000` and normalized
+  arbitrary-precision nonzero fractions, and exercised both event timestamp
+  fields. An independent reviewer found and closed one omitted greater-than-
+  nanosecond positive vector. The existing epoch fixture and all four canonical
+  hashes remained unchanged.
+- Two independent checkpoint-design audits selected a separate exact,
+  version-linked `campaign_adjudication_checkpoint_v1` rather than changing
+  the evidence checkpoint into a phase union or selecting signatures. Any
+  later same-campaign event makes the old generation non-current; an external
+  monotonic latest/pending-generation authority is a fail-closed Stage 4b owner
+  gate because a local old ledger/checkpoint cannot detect an entirely hidden
+  successor.
+- The first test-only adjudication model was rejected before commit after a
+  scope reviewer found a 1,397-line pseudo-runtime and no independent literal
+  hash oracle. A compact replacement split chain, schema, terminal binding,
+  lineage, and currentness checks into short helpers and table-driven vectors.
+  Subsequent independent adversarial reviews found and separate fixers closed:
+  historical-generation coordinated rehash/reset, an unknown event used as a
+  positive suffix, an opaque rather than recomputed evidence checkpoint, and a
+  freeze-to-closure interval that admitted new same-campaign evidence.
+- The final contract freezes exact canonical evidence and adjudication
+  checkpoint preimages, hard-coded bytes/hashes, all-and-only scoped prefix,
+  cutoff/freeze/reference relations, four flat trial/attempt counts with exact
+  fixed-set evidence, one-to-one adjudication generations, terminal tail
+  anchoring, and pending/currentness semantics. Full event payload/scope/set
+  extraction, storage, provider, authorization, signatures, anti-rollback,
+  concurrency, and recovery remain fail closed for Stage 4b owner decisions.
+  Final independent integrity and scope reviewers reported no actionable
+  P1/P2.
+- One noncanonical validation attempt used `/opt/homebrew/bin/python3.14`
+  (Python 3.14.6) with a Python 3.9 pytest-tool path and failed 33 tests because
+  that interpreter had no SciPy. No dependency was installed. The canonical
+  project interpreter `.venv/bin/python` (Python 3.12.13, SciPy 1.18.0) then
+  passed 863 tests with the same two platform skips.
+- Final validation of the evidence/adjudication checkpoint remediation passed
+  seven focused contract tests, all 28 structure-contract tests, and the full
+  863-test suite with the same two platform-conditional wide-`longdouble`
+  skips. Ruff, compilation of `src`, `research`, `tests`, and `lean`, the Skill
+  audit, JSON parsing, three identical repo-map hashes across two
+  regenerations, privacy/path and hidden-Unicode scans, generated-artifact
+  cleanup, and diff checks also passed. The first PEP 517 build attempt failed
+  only because the sandbox could not resolve the package index; the identical
+  approved-network retry built both artifacts. It installed
+  `setuptools==83.0.0`, `wheel==0.47.0`, and `packaging==26.2` only in
+  automatically removed disposable `build-env-*` directories under the
+  operating-system temporary directory. No project environment, dependency
+  declaration, lock file, tracked artifact, trial, or research result changed.
 - Reconciled Stage 3 acceptance and the Stage 4a/4b split in the specification,
   roadmap, handoff, repo-map generator, decision log, changelog, and
   documentation-contract tests. PR #148 remains an independent draft; this

@@ -46,15 +46,22 @@ Updated: 2026-07-27 for the Experiment and Trial Ledger Contract.
   stream head and assign the seal sequence/envelope previous hash at one
   serialized atomic boundary before any attempt or access. It is an ordering
   anchor, not the later independently retained closure checkpoint.
-  Head `2e65eee` was committed and pushed, and exact-head CI run `30327521020`
-  passed before review `4793622375` identified the pre-seal ambiguity and stale
-  handoff status. The current local P2 remediation passed 22 focused structure
-  tests and the full 857-test suite with two platform-conditional skips, plus
-  Ruff, compilation, Skill, diff, and two independent read-only re-reviews.
-  Build, deterministic repo-map, JSON, privacy/Unicode, generated-artifact
-  cleanup, and diff gates also passed on this status snapshot. Acceptance still
-  requires PR-head parity, successful exact-current-head CI and final
-  re-review, protected merge, and successful exact merge-head CI.
+  Ledger event timestamps use a conservative application profile that rejects
+  every leap second because no immutable leap-second table is pinned. The
+  exact `campaign_evidence_checkpoint_v1` reconstructs the scoped evidence
+  prefix and binds its cutoff, freeze, inventory, counts, and unique ordered
+  reference. A separate version-linked
+  `campaign_adjudication_checkpoint_v1` anchors every terminal
+  closure/review/promotion/adjudication generation; any later same-campaign
+  event makes the old generation non-current.
+  The current local P1/P2 remediation passed seven focused contract tests
+  (six adjudication-specific), 28 structure tests, and the full 863-test suite
+  with two
+  platform-conditional skips, plus Ruff, diff, Unicode, and independent
+  integrity/scope re-review. The authoritative publication state is always the
+  verified local/PR head metadata rather than a prose SHA. Acceptance still
+  requires local/PR head parity, successful exact-current-head CI and final
+  current-head review, protected merge, and successful exact merge-head CI.
 - Current phase: research-only. No vendor download, credentials, brokerage,
   orders, paper deployment, live deployment, or real-money execution.
 
@@ -149,7 +156,8 @@ from every execution attempt. It requires:
   the complete per-event payload registry remains an explicit Stage 4b
   prerequisite;
 - an independently retained head/checkpoint because a chain alone cannot prove
-  that a valid tail was not deleted;
+  that a valid tail was not deleted, including exact evidence-prefix and
+  version-linked adjudication checkpoints;
 - terminal trial/access reconciliation before campaign closure; and
 - a repository-external private ledger with a deterministic, allowlisted safe
   public projection.
@@ -230,14 +238,16 @@ all non-epoch events remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
 
 Only after the registry boundary is reviewable should Stage 4b select a
 physical backend, private storage location, transaction/recovery policy, or
-external checkpoint architecture; materially different valid architecture
-choices require an explicit owner decision. Runtime work must use a separate
-ledger namespace and caller-supplied temporary storage in tests until the
-private-location decision is accepted. Require behavioral fault, restart,
-concurrency, tamper, access-capability, campaign-closure, and privacy tests. Do
-not retrofit the legacy writer, run real-data campaigns, or interpret
-historical diagnostics while Stage 4b and later statistical gates remain
-incomplete.
+external checkpoint/currentness authority; materially different valid
+architecture choices require an explicit owner decision. That decision must
+cover append-only anti-rollback, latest/pending generation queries, fork
+handling, authority/signature policy, recovery, and retention. Runtime work
+must use a separate ledger namespace and caller-supplied temporary storage in
+tests until the private-location decision is accepted. Require behavioral
+fault, restart, concurrency, tamper, rollback, access-capability,
+campaign-closure, and privacy tests. Do not retrofit the legacy writer, run
+real-data campaigns, or interpret historical diagnostics while Stage 4b and
+later statistical gates remain incomplete.
 
 ## Freshness Checklist
 
