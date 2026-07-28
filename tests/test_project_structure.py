@@ -776,6 +776,51 @@ def _require_ledger_typed_id(
     return value
 
 
+def _require_normalized_utc_timestamp(value: object, *, context: str) -> str:
+    """Validate the frozen RFC 3339 UTC syntax without a mutable leap table."""
+    if not isinstance(value, str):
+        raise ValueError(f"{context} must be a normalized UTC timestamp")
+    match = re.fullmatch(
+        r"([0-9]{4})-([0-9]{2})-([0-9]{2})"
+        r"T([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\.([0-9]+))?Z",
+        value,
+    )
+    if match is None:
+        raise ValueError(f"{context} must be a normalized UTC timestamp")
+    year, month, day, hour, minute, second = map(int, match.groups()[:6])
+    leap_year = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+    days_in_month = (
+        31,
+        29 if leap_year else 28,
+        31,
+        30,
+        31,
+        30,
+        31,
+        31,
+        30,
+        31,
+        30,
+        31,
+    )
+    if not (1 <= month <= 12 and 1 <= day <= days_in_month[month - 1]):
+        raise ValueError(f"{context} must be a valid Gregorian date")
+    ordinary_time = 0 <= hour <= 23 and 0 <= minute <= 59 and 0 <= second <= 59
+    # RFC 3339 permits an inserted leap second at these structural UTC sites.
+    leap_second = (
+        hour == 23
+        and minute == 59
+        and second == 60
+        and (month, day) in {(6, 30), (12, 31)}
+    )
+    if not (ordinary_time or leap_second):
+        raise ValueError(f"{context} must be a valid RFC 3339 UTC time")
+    fraction = match.group(7)
+    if fraction is not None and fraction.endswith("0"):
+        raise ValueError(f"{context} has a noncanonical fractional second")
+    return value
+
+
 def _ledger_event_identity_projection(source: object) -> dict[str, object]:
     """Validate the exact envelope and the two Stage 4a golden payload schemas."""
     projection = _require_exact_keys(
@@ -853,12 +898,7 @@ def _ledger_event_identity_projection(source: object) -> dict[str, object]:
     }:
         raise ValueError("event type has no frozen Stage 4a golden payload schema")
     for field in ["occurred_at", "recorded_at"]:
-        if (
-            not isinstance(projection[field], str)
-            or re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", projection[field])
-            is None
-        ):
-            raise ValueError(f"{field} must be a normalized UTC timestamp")
+        _require_normalized_utc_timestamp(projection[field], context=field)
     previous_hash = projection["previous_event_sha256"]
     if previous_hash is not None and (
         not isinstance(previous_hash, str)
@@ -1522,6 +1562,61 @@ def test_ledger_event_golden_parent_paths_and_fail_closed_vectors() -> None:
     assert fixture["semantic_input"]["event_type"] == "LEDGER_EPOCH_CREATED"
     assert fixture["semantic_input"]["sequence"] == 0
     assert fixture["semantic_input"]["previous_event_sha256"] is None
+    fractional_timestamp_event = json.loads(json.dumps(fixture["semantic_input"]))
+    fractional_timestamp_event["occurred_at"] = "2024-02-29T23:59:59.123456789Z"
+    fractional_timestamp_event["recorded_at"] = "2024-03-01T00:00:00.000001Z"
+    assert _ledger_event_identity_projection(fractional_timestamp_event)[
+        "occurred_at"
+    ].endswith(".123456789Z")
+    year_zero_event = json.loads(json.dumps(fixture["semantic_input"]))
+    year_zero_event["occurred_at"] = "0000-02-29T00:00:00Z"
+    assert (
+        _ledger_event_identity_projection(year_zero_event)["occurred_at"]
+        == "0000-02-29T00:00:00Z"
+    )
+    leap_second_event = json.loads(json.dumps(fixture["semantic_input"]))
+    leap_second_event["occurred_at"] = "1990-12-31T23:59:60Z"
+    assert (
+        _ledger_event_identity_projection(leap_second_event)["occurred_at"]
+        == "1990-12-31T23:59:60Z"
+    )
+    fractional_leap_second_event = json.loads(
+        json.dumps(fixture["semantic_input"])
+    )
+    fractional_leap_second_event["occurred_at"] = (
+        "1990-12-31T23:59:60.1234567890123456789Z"
+    )
+    assert _ledger_event_identity_projection(fractional_leap_second_event)[
+        "occurred_at"
+    ].endswith(".1234567890123456789Z")
+
+    for invalid_timestamp in [
+        "2026-02-29T00:00:00Z",
+        "0001-02-29T00:00:00Z",
+        "0001-00-01T00:00:00Z",
+        "2026-13-01T00:00:00Z",
+        "0001-04-31T00:00:00Z",
+        "0001-01-00T00:00:00Z",
+        "2026-01-01T24:00:00Z",
+        "2026-01-01T23:60:00Z",
+        "2026-01-01T23:59:60Z",
+        "2026-01-01T23:59:61Z",
+        "1990-12-31T23:59:60.120Z",
+        "2024-06-30T22:59:60Z",
+        "2024-06-29T23:59:60Z",
+        "2026-01-01T00:00:00.000Z",
+        "2026-01-01T00:00:00.120Z",
+        "2026-01-01T00:00:00.Z",
+        "2026-01-01T00:00:00+00:00",
+    ]:
+        invalid_timestamp_event = json.loads(json.dumps(fixture["semantic_input"]))
+        invalid_timestamp_event["occurred_at"] = invalid_timestamp
+        _assert_value_error(
+            lambda event=invalid_timestamp_event: (
+                _ledger_event_identity_projection(event)
+            )
+        )
+
     assert (
         base_request_bytes.decode()
         == fixture["operation_request_canonical_utf8"]

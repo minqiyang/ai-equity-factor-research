@@ -72,6 +72,22 @@
   scope membership/order/uniqueness, and both legal interleavings. The
   canonical and integrity reviewers independently reran focused validation and
   reported no remaining actionable P1/P2.
+- The next current-head GitHub review found one timestamp P2: the
+  documentation-fact validator accepted impossible numeric calendar/time
+  ranges while rejecting every normalized nonzero fractional second allowed by
+  the inherited `pit_canonical_json_v1` RFC 3339 profile. A separate fixer
+  replaced the whole-second regular expression with exact ASCII UTC syntax,
+  proleptic-Gregorian month/day and year-zero leap rules, ordinary time ranges,
+  normalized arbitrary-precision fractions, and bounded structural
+  leap-second handling at UTC June/December month ends. Primary RFC 3339
+  verification and independent re-review exposed and closed the initial
+  all-leap-second rejection plus year-zero and fractional-leap coverage gaps.
+  Positive vectors now include leap day, year `0000`, a known RFC leap second,
+  and long fractional precision; negative vectors cover invalid dates/times,
+  misplaced leap seconds, zero/trailing-zero fractions, empty fractions, and
+  noncanonical offsets. The golden fixture and its canonical bytes/hashes did
+  not change, and the independent reviewer reported no remaining actionable
+  P1/P2.
 - Reconciled Stage 3 acceptance and the Stage 4a/4b split in the specification,
   roadmap, handoff, repo-map generator, decision log, changelog, and
   documentation-contract tests. PR #148 remains an independent draft; this
