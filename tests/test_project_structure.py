@@ -339,7 +339,8 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
         "Complete on protected main via PR #163"
     ) in roadmap
     assert (
-        "| 4a. Experiment/trial ledger contract | Local gates passed"
+        "| 4a. Experiment/trial ledger contract | "
+        "Local gates passed after external-attribution remediation"
     ) in roadmap
     assert (
         "| 4b. Experiment/trial ledger implementation | "
@@ -587,7 +588,12 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
         "diagnostic/legacy sidecars",
         "`trial_id` identifies exactly one semantic configuration",
         "`attempt_id` identifies one invocation",
-        "Each logical entity ID is allocated exactly once across the ledger",
+        "Each ledger-owned logical entity ID is allocated exactly once across the ledger",
+        "`actor_id` is an externally assigned, opaque claimed-attribution reference",
+        "does not prove the actor's authenticity, control, authorization",
+        "grants no append, access, review, promotion",
+        "must fail closed until Stage 4b accepts an owner-approved external authority mechanism",
+        "Stage 4a does not choose that mechanism",
         "reuse that already allocated ID as a typed subject or reference",
         "Entity-ID conflict therefore means a second allocation attempt",
         "Campaign reports disclose both semantic trial count and execution-attempt count",
@@ -652,6 +658,14 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
     ]:
         assert phrase in normalized_contract
 
+    for rejected_identity_architecture in [
+        "genesis_principal_binding",
+        "trusted_authority_manifest_v1",
+        "owner_pinned_manifest_sha256",
+        "authenticated_producer_context_v1",
+    ]:
+        assert rejected_identity_architecture not in contract
+
     vocabulary_block = (
         contract.split("The v1 event-type vocabulary is closed at this minimum set:", 1)[
             1
@@ -677,7 +691,10 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
     assert "accepted Stage 3 methodology contract" in point_in_time_contract
     assert "acceptance pending protected merge" not in point_in_time_contract
     assert "| 3. Point-in-time data methodology | Complete" in roadmap
-    assert "| 4a. Experiment/trial ledger contract | Local gates passed" in roadmap
+    assert (
+        "| 4a. Experiment/trial ledger contract | "
+        "Local gates passed after external-attribution remediation"
+    ) in roadmap
     assert (
         "| 4b. Experiment/trial ledger implementation | "
         "Blocked by Stage 4a protected merge and exact merge-head CI"
@@ -782,6 +799,15 @@ def _require_ledger_typed_id(
     return value
 
 
+def _require_actor_attribution_reference(value: object, *, context: str) -> str:
+    if (
+        not isinstance(value, str)
+        or re.fullmatch(r"act_[0-9a-f]{32}", value) is None
+    ):
+        raise ValueError(f"{context} must be an opaque actor attribution reference")
+    return value
+
+
 def _require_normalized_utc_timestamp(value: object, *, context: str) -> str:
     """Validate the frozen RFC 3339 UTC syntax without a mutable leap table."""
     if not isinstance(value, str):
@@ -881,9 +907,8 @@ def _ledger_event_identity_projection(source: object) -> dict[str, object]:
         != "ledger_operation_request_v1"
     ):
         raise ValueError("unexpected operation request projection ID")
-    _require_ledger_typed_id(
+    _require_actor_attribution_reference(
         projection["actor_id"],
-        prefix="act",
         context="actor_id",
     )
     sequence = projection["sequence"]
@@ -1687,6 +1712,11 @@ def test_ledger_epoch_golden_semantic_facts_and_fail_closed_vectors() -> None:
     _assert_value_error(
         lambda: _ledger_event_identity_projection(unknown_event_key)
     )
+    unauthorized_actor_binding = json.loads(json.dumps(fixture["semantic_input"]))
+    unauthorized_actor_binding["payload"]["genesis_principal_binding"] = {}
+    _assert_value_error(
+        lambda: _ledger_event_identity_projection(unauthorized_actor_binding)
+    )
     missing_event_key = dict(fixture["semantic_input"])
     del missing_event_key["operation_request_sha256"]
     _assert_value_error(
@@ -1697,6 +1727,17 @@ def test_ledger_epoch_golden_semantic_facts_and_fail_closed_vectors() -> None:
     _assert_value_error(
         lambda: _ledger_event_identity_projection(invalid_typed_id)
     )
+    for invalid_actor_id in [
+        "usr_00000000000000000000000000000004",
+        "act_0000000000000000000000000000004",
+        "act_0000000000000000000000000000000A",
+        "act_0000000000000000000000000000000é",
+    ]:
+        invalid_actor = json.loads(json.dumps(fixture["semantic_input"]))
+        invalid_actor["actor_id"] = invalid_actor_id
+        _assert_value_error(
+            lambda event=invalid_actor: _ledger_event_identity_projection(event)
+        )
     incomplete_trial_stub = fixture["incomplete_trial_allocation_stub"]
     _assert_value_error(
         lambda: _ledger_event_identity_projection(incomplete_trial_stub)

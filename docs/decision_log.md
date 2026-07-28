@@ -44,11 +44,21 @@ Decision:
 - Reuse `pit_canonical_json_v1` for an exact ledger-event identity projection,
   chain every event to the prior hash, and require an independently retained
   immutable head/checkpoint for formal campaign closure.
-- Allocate each logical typed entity ID exactly once. Later lifecycle,
-  correction, supersession, review, and decision records reuse that ID as a
-  typed subject or reference; only a second allocation conflicts. Event IDs,
-  operation IDs, and sequences continue to identify distinct
+- Allocate each ledger-owned logical typed entity ID exactly once. Later
+  lifecycle, correction, supersession, review, and decision records reuse that
+  ID as a typed subject or reference; only a second allocation conflicts. Event
+  IDs, operation IDs, and sequences continue to identify distinct
   append/request/commit records and cannot be reused inconsistently.
+- Treat event `actor_id` as an externally assigned, opaque
+  claimed-attribution reference, not a ledger-owned entity allocation.
+  `LEDGER_EPOCH_CREATED` atomically introduces `ledger_id`; no earlier event is
+  possible. Stage 4a validates only canonical actor syntax and identity
+  binding. It does not prove authenticity, control, authorization, role
+  independence, currentness, or revocation, and grants no append, access,
+  review, or promotion permission. Any formal behavior that depends on those
+  properties remains fail closed until Stage 4b accepts an owner-approved
+  external mechanism and historical activation/replacement/revocation policy.
+  Stage 4a does not select that identity architecture.
 - Freeze the exact common identity envelope and the synthetic
   `LEDGER_EPOCH_CREATED` payload in Stage 4a. Keep the complete
   `TRIAL_ALLOCATED` bindings and parent order as normative semantic

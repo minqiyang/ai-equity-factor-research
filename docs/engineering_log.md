@@ -122,6 +122,55 @@
   reference sequence to be strictly greater, and added a deterministic
   allocation-at-2/reference-at-1 rejection vector. The focused and full suites
   then passed.
+- The next exact-head GitHub review found one genesis P1: sequence-zero
+  `LEDGER_EPOCH_CREATED` already carried an `actor_id`, but the one-time entity
+  allocation wording required every typed reference to follow an in-ledger
+  allocation and the closed vocabulary had no prior actor-registration event.
+  The golden epoch therefore could not satisfy its own authorization model.
+- A separate read-only audit compared external-principal binding, atomic actor
+  bootstrap, and a detached bootstrap fact. It selected external-principal
+  binding because an actor allocated by its own epoch is circular and a
+  detached fact is substitutable unless the epoch preimage binds it. That first
+  candidate scoped one-time allocation to ledger-owned entities and attempted
+  to bind registry, record, review, authority, scope, and validity evidence.
+- Independent review of that first external-principal candidate found that its
+  record, decision, reviewer-authority, and producer fields were all supplied
+  by the caller and could be replaced together with freshly computed hashes.
+  The same review demonstrated that string ordering of normalized RFC 3339
+  timestamps misorders whole and fractional seconds, and that a later actor
+  could switch to an internally consistent foreign registry or replay a stale
+  snapshot. The candidate therefore did not pass current-remediation review.
+- A second read-only audit proposed one acyclic, provider-agnostic trust graph:
+  principal record -> authorization decision -> owner-pinned authority
+  manifest -> producer intent -> trusted-adapter producer context -> operation
+  request -> committed event. The manifest digest is fixed outside the request;
+  the context binds the authenticated producer to the intent rather than the
+  final request, avoiding a context/request hash cycle. Exact temporal checks
+  parse arbitrary-precision fractional seconds rather than comparing strings.
+  Concrete IdP, signature, key, adapter, rotation, revocation, and storage
+  choices remain Stage 4b owner decisions.
+- Independent canonical, integrity, and adversarial reviews rejected that
+  second candidate. Fully rehashed vectors could admit malformed/private
+  nested values, and a validation-time pin could not prove that the owner had
+  activated it before the event or had not later revoked it. More
+  fundamentally, the exact manifest/context DAG selected a material identity
+  architecture while claiming those owner choices were deferred.
+- The final narrow resolution retains the only invariant required to close the
+  genesis-allocation contradiction: ledger allocation rules apply only to
+  ledger-owned logical entities; the epoch atomically introduces `ledger_id`;
+  and `actor_id` is external claimed attribution whose syntax is hash-bound but
+  neither authenticated nor authorized. Authority-dependent behavior remains
+  fail closed until a separately approved Stage 4b mechanism can preserve
+  historical activation, replacement, and revocation evidence. The rejected
+  trust-DAG candidate was not adopted.
+- Independent canonical, integrity, and adversarial reviews found no remaining
+  actionable P1/P2 in that narrow resolution. They separately confirmed the
+  ledger-owned/external boundary, epoch genesis semantics, exact epoch payload
+  rejection, actor grammar and hash sensitivity, unchanged golden hashes,
+  absence of an adopted identity architecture, and the fail-closed Stage 4b
+  authority gate. Two final wording-only clarifications were re-reviewed after
+  they narrowed all remaining allocation/reference language to ledger-owned
+  entities.
 - Reconciled Stage 3 acceptance and the Stage 4a/4b split in the specification,
   roadmap, handoff, repo-map generator, decision log, changelog, and
   documentation-contract tests. PR #148 remains an independent draft; this
@@ -134,25 +183,33 @@
   wide-`longdouble` skips, Ruff, compilation, sdist/wheel build, the Skill
   audit, deterministic repo-map regeneration, JSON parsing, privacy/Unicode
   checks, and diff checks.
-- Final validation of the current remediation passed 856 tests with the same
-  two platform-conditional wide-`longdouble` skips, 21 focused structure
-  tests, Ruff, compilation of `src`, `research`, `tests`, and `lean`, sdist and
-  wheel build, the Skill audit, three identical repo-map hashes across two
-  regenerations, JSON parsing, privacy/Unicode scans, cleanup, and diff checks.
+- Validation of the `db323ed` pre-genesis-authority remediation passed 856
+  tests with the same two platform-conditional wide-`longdouble` skips, 21
+  focused structure tests, Ruff, compilation of `src`, `research`, `tests`,
+  and `lean`, sdist and wheel build, the Skill audit, three identical repo-map
+  hashes across two regenerations, JSON parsing, privacy/Unicode scans,
+  cleanup, and diff checks.
   The default shell still had no `python` command, so validation reused the
   existing isolated interpreter at
   `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv`;
   nothing was installed into or changed in that environment.
+- Final validation of the narrow external-attribution remediation passed 21
+  focused structure tests and the full 856-test suite with the same two
+  platform-conditional wide-`longdouble` skips, Ruff, compilation of `src`,
+  `research`, `tests`, and `lean`, sdist and wheel build, the Skill audit,
+  three identical repo-map hashes across two regenerations, JSON parsing,
+  privacy/path and hidden-Unicode scans, generated-artifact cleanup, and diff
+  checks.
 - The PEP 517 build installed `setuptools==83.0.0`, `wheel==0.47.0`, and
   `packaging==26.2` only inside automatically removed disposable build
   environments under
   `/private/var/folders/5r/vgv5b5gs3s91w6gp1mtbgnnc0000gn/T/build-env-*`.
   They were used only to validate the sdist and wheel; no project environment,
   dependency declaration, lock file, or tracked artifact changed. The final
-  current-remediation rebuild first failed because the sandbox could not
+  external-attribution rebuild first failed because the sandbox could not
   resolve the package index; the identical approved-network retry succeeded.
-  The temporary failed and successful isolated environments and external
-  build outputs were removed.
+  The temporary failed and successful isolated environments and build outputs
+  were removed.
 - During the second review fix, one `uv run` invocation unintentionally
   created the ignored worktree environment
   `/private/tmp/equity-factor-research-stage4a-trial-ledger-contract/.venv`

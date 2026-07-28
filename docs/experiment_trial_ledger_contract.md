@@ -86,19 +86,36 @@ The objects have distinct meanings:
 - `event_id`, `review_decision_id`, and `promotion_decision_id` identify
   immutable append records and decisions.
 
-Every entity ID is typed, opaque, globally unique, non-content-derived, and
-allocated from its own namespace. Its wire form is a lowercase prefix plus 32
-lowercase hexadecimal digits, such as `trl_<32-lowercase-hex>`. Stage 4b must
-freeze and test the production entropy, collision, and concurrent-allocation
-policy before runtime use; deterministic golden IDs prove syntax only. Content
-hashes never substitute for preallocated entity IDs.
+Every ledger-owned logical entity ID is typed, opaque, globally unique,
+non-content-derived, and allocated exactly once from its own namespace. Its
+wire form is a lowercase prefix plus 32 lowercase hexadecimal digits, such as
+`trl_<32-lowercase-hex>`. Stage 4b must freeze and test the production entropy,
+collision, and concurrent-allocation policy before runtime use; deterministic
+golden IDs prove syntax only. Content hashes never substitute for preallocated
+entity IDs.
 
-Each logical entity ID is allocated exactly once across the ledger. Later
-lifecycle, correction, supersession, review, or decision events intentionally
-reuse that already allocated ID as a typed subject or reference; those events
-do not allocate the entity again. Entity-ID conflict therefore means a second
-allocation attempt for an existing logical entity ID. A typed reference is
-legal only after its allocation and only for the allocated entity type.
+`LEDGER_EPOCH_CREATED` atomically introduces its ledger-owned `ledger_id`; no
+earlier ledger event can allocate it. `event_id` and `operation_id` identify
+the append record and append request rather than ledger-owned logical
+entities.
+
+`actor_id` is an externally assigned, opaque claimed-attribution reference.
+Stage 4a validates only its canonical `act_<32-lowercase-hex>` wire syntax and
+binds it into request/event identity. It does not prove the actor's
+authenticity, control, authorization, role independence, currentness, or
+revocation state, and it grants no append, access, review, promotion, or other
+permission. Any formal behavior that depends on those properties must fail
+closed until Stage 4b accepts an owner-approved external authority mechanism
+with historical activation, replacement, and revocation evidence. Stage 4a
+does not choose that mechanism.
+
+Each ledger-owned logical entity ID is allocated exactly once across the
+ledger. Later lifecycle, correction, supersession, review, or decision events
+intentionally reuse that already allocated ID as a typed subject or reference;
+those events do not allocate the entity again. Entity-ID conflict therefore
+means a second allocation attempt for an existing ledger-owned logical entity
+ID. A ledger-owned typed reference is legal only after its allocation and only
+for the allocated entity type.
 
 Changing any identity-bearing trial field creates a new `trial_id`. Exact
 replay of one ledger operation is idempotency, not another trial. An execution
@@ -238,11 +255,11 @@ The request projection has all-and-only those keys, uses
 SHA-256. Replaying the exact request returns the original sequence and event
 hash without appending. Reusing the operation ID, event ID, or sequence with
 different request bytes fails closed before action. Submitting a second
-allocation for an existing entity ID also fails; a later non-allocation event
-may legally reference the existing typed entity as described above. Event IDs
-identify individual append records, operation IDs identify idempotent
-requests, and sequences identify commit positions, so their conflicting reuse
-is never a lifecycle reference.
+allocation for an existing ledger-owned entity ID also fails; a later
+non-allocation event may legally reference the existing ledger-owned typed
+entity as described above. Event IDs identify individual append records,
+operation IDs identify idempotent requests, and sequences identify commit
+positions, so their conflicting reuse is never a lifecycle reference.
 
 ## Campaign Inventory and Trial Counting
 
@@ -560,7 +577,9 @@ Stage 4a freezes an exact unknown-field-rejecting payload schema only for one
 golden event type:
 
 - `LEDGER_EPOCH_CREATED` has all-and-only `campaign_scope_ids`, which is the
-  empty array for the ledger-global sequence-zero event.
+  empty array for the ledger-global sequence-zero event. The event atomically
+  introduces `ledger_id`; its envelope `actor_id` remains claimed attribution,
+  not an in-ledger allocation or authorization record.
 
 `TRIAL_ALLOCATED` and every other vocabulary event retain their narrative
 semantic requirements, but their exact required/optional/nullable properties,
@@ -590,7 +609,9 @@ closure, review, or promotion.
 `tests/fixtures/experiment_trial_ledger_event_v1_golden.json` freezes one tiny
 ASCII-only synthetic `LEDGER_EPOCH_CREATED` request/event, their exact
 canonical bytes/hashes, a source-key reorder with identical identity, and an
-identity mutation with different request/event hashes. Its
+actor-attribution mutation with different request/event hashes. The fixture
+proves syntax and identity binding only; it does not authenticate or authorize
+either synthetic actor. Its
 `incomplete_trial_allocation_stub` is rejection evidence only: both its
 sequence-zero form and a sequence/hash-repaired form remain invalid while the
 payload registry is deferred. The fixture is contract evidence only, not a
@@ -824,7 +845,7 @@ facts alone are partial documentation-contract evidence.
 
 | Case | Frozen contract decision | Required later runtime evidence |
 | --- | --- | --- |
-| `LEDGER-001` | Each typed logical entity ID is allocated once and may be reused by later typed lifecycle/correction/supersession references; event/operation IDs and sequences identify append/request/commit records. The store recomputes the exact request preimage/hash; exact replay is idempotent, while a second entity allocation or conflicting event/operation/sequence reuse fails before action. | Golden request bytes/hash, legal post-allocation references, duplicate/conflicting allocation, reference-before-allocation, wrong-type reference, same-request replay without a second append, same-operation/different-payload, and event/sequence conflict tests. |
+| `LEDGER-001` | Each ledger-owned typed logical entity ID is allocated once and may be reused by later typed lifecycle/correction/supersession references; the epoch atomically introduces `ledger_id`, while event/operation IDs and sequences identify append/request/commit records. External `actor_id` is claimed attribution outside ledger allocation and grants no authority. The store recomputes the exact request preimage/hash; exact replay is idempotent, while a second ledger-owned entity allocation or conflicting event/operation/sequence reuse fails before action. | Golden request bytes/hash, epoch-genesis introduction, actor syntax/hash-mutation, legal post-allocation references, duplicate/conflicting allocation, reference-before-allocation, wrong-type reference, same-request replay without a second append, same-operation/different-payload, and event/sequence conflict tests; prove authority-dependent behavior remains blocked before an owner-approved Stage 4b mechanism. |
 | `LEDGER-002` | A retry before trial closure is a new attempt under the same immutable trial; a post-terminal rerun is a new linked trial. | Lost-ack replay and retained failed-attempt/retry tests with separate trial/attempt counts. |
 | `LEDGER-003` | Attempt and trial transitions follow the frozen tables; terminal records never reopen and corrections append. | Reject illegal, backward, post-terminal, and in-place mutation transitions. |
 | `LEDGER-004` | Each family/sample parent follows exactly one direct campaign-scoped, ledger-global plus campaign-binding, or accepted external Stage 3 sample-reference path; all required paths, trial, campaign inventory, and attempt finish in their frozen partial order before validation/execution. Failed-before-output work remains with explicit artifact dispositions. | Accept every legal path and sibling interleaving; reject dangling, ambiguous, mixed-path, wrong-source binding, wrong-scope, and path-order-invalid parents; fault before validator, executor, and first artifact write; prove no action preceded durable allocation. |

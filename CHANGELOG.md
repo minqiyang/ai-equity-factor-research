@@ -15,10 +15,12 @@ profitability, or trading readiness.
   capabilities, canonical chained events, independently retained checkpoints,
   review binding, and private/public projections; and adds a synthetic golden
   epoch event, rejection/semantic fact vectors, and a 15-case later-runtime
-  matrix. Exact schemas for `TRIAL_ALLOCATED` and the rest of the closed event
-  vocabulary remain a Stage 4b prerequisite. It does not implement a ledger,
-  choose a backend, migrate legacy logs, access data, add a dependency, or run
-  a research trial.
+  matrix. The epoch atomically introduces `ledger_id`; its external
+  `actor_id` is claimed attribution only and grants no permission. Exact
+  schemas for `TRIAL_ALLOCATED` and the rest of the closed event vocabulary
+  remain a Stage 4b prerequisite. It does not implement or select an identity
+  provider, authorization mechanism, ledger backend, legacy-log migration,
+  data access, dependency, or research trial.
 - Added the accepted provider-agnostic point-in-time data methodology contract.
   It separates methodology acceptance, dataset-manifest review, and
   run-specific formal-interpretation eligibility; freezes provenance/license,

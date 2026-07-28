@@ -28,16 +28,24 @@ Updated: 2026-07-27 for the Experiment and Trial Ledger Contract.
   backend, private ledger, campaign, or formal interpretation is implemented.
   Its exact Stage 4a event payload coverage is deliberately limited to the
   common identity envelope and the synthetic `LEDGER_EPOCH_CREATED` payload.
+  The epoch atomically introduces `ledger_id`; `actor_id` is an externally
+  assigned claimed-attribution reference rather than a ledger-owned
+  allocation. Stage 4a binds its syntax into canonical identity but does not
+  authenticate it or grant any permission. Formal behavior that depends on
+  actor authority remains fail closed pending a separate Stage 4b owner
+  decision.
   `TRIAL_ALLOCATED` retains complete normative binding and parent-order
   semantics but must fail closed as `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY` until
   Stage 4b supplies a separately reviewed complete machine-readable event
-  schema registry. A logical entity is allocated once; later typed lifecycle,
-  correction, supersession, review, and decision events may reference that
-  existing entity without reallocating it.
-  Local validation passed 856 tests with two platform-conditional skips, Ruff,
-  compilation, build, Skill, repo-map, JSON, privacy/Unicode, and diff checks.
-  Final current-head review, protected merge, and exact merge-head CI remain
-  required before acceptance.
+  schema registry. A ledger-owned logical entity is allocated once; later typed
+  lifecycle, correction, supersession, review, and decision events may
+  reference that existing entity without reallocating it.
+  The current external-attribution remediation passed 21 focused structure
+  tests and the full 856-test suite with two platform-conditional skips, plus
+  Ruff, compilation, build, Skill, deterministic repo-map, JSON,
+  privacy/Unicode, cleanup, diff, and independent read-only review gates.
+  Commit/push, GitHub CI, final current-head review, protected merge, and exact
+  merge-head CI remain required before acceptance.
 - Current phase: research-only. No vendor download, credentials, brokerage,
   orders, paper deployment, live deployment, or real-money execution.
 
@@ -127,8 +135,10 @@ from every execution attempt. It requires:
 - exact `pit_canonical_json_v1` event bytes, an append-only previous-hash chain,
   and correction through supersession only;
 - one exact synthetic epoch payload plus non-append trial-parent and
-  entity-allocation/reference semantic facts; the complete per-event payload
-  registry remains an explicit Stage 4b prerequisite;
+  entity-allocation/reference semantic facts; the epoch atomically introduces
+  `ledger_id`, while its external `actor_id` is claimed attribution only and
+  the complete per-event payload registry remains an explicit Stage 4b
+  prerequisite;
 - an independently retained head/checkpoint because a chain alone cannot prove
   that a valid tail was not deleted;
 - terminal trial/access reconciliation before campaign closure; and
@@ -192,10 +202,10 @@ or overwrite its policy.
 
 ## Next Safe Stage
 
-Finish Stage 4a contract PR gates: commit and push the stable candidate, obtain
-terminal GitHub CI, request final current-head Codex review once, resolve any
-actionable findings, use only the normal protected merge path, and verify the
-exact merge-head CI.
+Finish Stage 4a contract PR gates: commit and push the independently reviewed,
+locally validated candidate, obtain terminal GitHub CI, request final
+current-head Codex review once, resolve any actionable findings, use only the
+normal protected merge path, and verify the exact merge-head CI.
 
 Only then begin:
 
