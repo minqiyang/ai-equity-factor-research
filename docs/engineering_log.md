@@ -171,6 +171,37 @@
   authority gate. Two final wording-only clarifications were re-reviewed after
   they narrowed all remaining allocation/reference language to ledger-owned
   entities.
+- Commit `2e65eee` carried that narrow remediation to PR #164. Exact-head
+  GitHub CI run `30327521020` completed successfully before the single final
+  review request. Review `4793622375` then found two P2s: the inventory seal's
+  "current ledger checkpoint" was circular or ambiguous because the only
+  defined checkpoint was created at later campaign closure, and the canonical
+  handoff/roadmap still called the already completed commit/push steps pending.
+- A separate non-reviewing fixer replaced that phrase with a semantic
+  `campaign_inventory_preseal_head_v1` anchor. Its ledger ID and immediate
+  predecessor sequence/hash are included in the seal request/event preimage;
+  the anchor never names the seal itself. At one serialized atomic boundary,
+  the implementation must compare the retained head and assign the seal
+  sequence/envelope previous hash, so a concurrent winning append conflicts
+  rather than silently rebasing. The v1 path forbids an empty-stream anchor,
+  and the pre-seal anchor has no independent trust/retention role or checkpoint
+  claim.
+- The first independent integrity review of that fix found one P2 in its
+  documentation-fact model: it did not bind the retained ledger ID or the seal
+  envelope's actual previous hash, and it lacked a forward head-drift vector.
+  The same separate fixer added typed retained-ledger/head checks, exact
+  envelope previous-hash equality, and independent forward-drift, wrong-
+  previous-hash, cross-ledger, epoch-empty, sequence/order, and atomicity
+  negatives. This remains documentation-contract evidence; runtime
+  compare-and-swap, replay, concurrency, and durability proof stay in Stage 4b.
+- Integrity and adversarial re-reviews of the completed P2 fix reported no
+  remaining actionable P1/P2. The final P2-remediation snapshot passed 22
+  focused structure tests and the full 857-test suite with the same two
+  platform-conditional wide-`longdouble` skips, Ruff, compilation of `src`,
+  `research`, `tests`, and `lean`, sdist and wheel build, the Skill audit,
+  three identical repo-map hashes across two regenerations, JSON parsing,
+  privacy/path and hidden-Unicode scans, generated-artifact cleanup, and diff
+  checks.
 - Reconciled Stage 3 acceptance and the Stage 4a/4b split in the specification,
   roadmap, handoff, repo-map generator, decision log, changelog, and
   documentation-contract tests. PR #148 remains an independent draft; this
@@ -200,8 +231,9 @@
   three identical repo-map hashes across two regenerations, JSON parsing,
   privacy/path and hidden-Unicode scans, generated-artifact cleanup, and diff
   checks.
-- The PEP 517 build installed `setuptools==83.0.0`, `wheel==0.47.0`, and
-  `packaging==26.2` only inside automatically removed disposable build
+- The PEP 517 builds, including the final P2-remediation rebuild, installed
+  `setuptools==83.0.0`, `wheel==0.47.0`, and `packaging==26.2` only inside
+  automatically removed disposable build
   environments under
   `/private/var/folders/5r/vgv5b5gs3s91w6gp1mtbgnnc0000gn/T/build-env-*`.
   They were used only to validate the sdist and wheel; no project environment,

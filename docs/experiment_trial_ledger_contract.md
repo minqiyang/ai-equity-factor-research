@@ -272,7 +272,29 @@ Before the first attempt or protected access, a campaign commits
 - sample roles and protected-access budget;
 - frozen review, promotion, cost, timing, and statistical policy references;
 - the canonical inventory bytes and SHA-256; and
-- the current ledger checkpoint.
+- one `campaign_inventory_preseal_head_v1` anchor.
+
+The pre-seal anchor is not the later accounting-closure checkpoint. Its three
+fields `(ledger_id, predecessor_sequence, predecessor_event_sha256)` are
+included and bound inside the inventory-seal request/event preimage, while the
+referenced predecessor event bytes are external to and excluded from that seal
+preimage. The seal is committed only at `predecessor_sequence + 1`; its own
+sequence/event hash are never named by the anchor, so the anchor is
+nonrecursive. The seal's stored `event_sha256` remains outside its event
+preimage under the common-envelope rule. The v1 campaign seal requires the
+concrete predecessor form; epoch-empty `(null, null)` is not legal because
+`LEDGER_EPOCH_CREATED` is already sequence zero. At the same serialized atomic
+commit boundary that compares the bound predecessor to the actual current
+retained stream head and assigns the seal sequence/envelope
+`previous_event_sha256`, the two heads must match exactly. If another append
+wins first, the seal fails/conflicts; it must not silently rebase. Before the
+first attempt or access, the retained
+stream must still contain that exact predecessor sequence/hash;
+mutation, replacement, truncation, or a different replay head fails the seal
+verification. Exact replay returns the original seal without another append;
+a changed request or predecessor head conflicts before action. This pre-seal
+ordering anchor has no issuer, retention, or independent-trust role and must
+not be called a checkpoint.
 
 An amendment follows an exact reservation order:
 
@@ -691,6 +713,8 @@ creation time, authorized issuer/authority reference, and checkpoint SHA-256.
 The checkpoint digest is outside its exact canonical preimage. The freeze
 event sequence is exactly `evidence_sequence + 1`; the checkpoint therefore
 anchors both the nonrecursive evidence prefix and its administrative snapshot.
+It is a closure-only, independently retained checkpoint and is distinct from
+the earlier self-excluding `campaign_inventory_preseal_head_v1` ordering anchor.
 The provider, storage medium, retention, recovery, signature, and trust policy
 are deferred to a separate Stage 4b architecture decision.
 
@@ -848,7 +872,7 @@ facts alone are partial documentation-contract evidence.
 | `LEDGER-001` | Each ledger-owned typed logical entity ID is allocated once and may be reused by later typed lifecycle/correction/supersession references; the epoch atomically introduces `ledger_id`, while event/operation IDs and sequences identify append/request/commit records. External `actor_id` is claimed attribution outside ledger allocation and grants no authority. The store recomputes the exact request preimage/hash; exact replay is idempotent, while a second ledger-owned entity allocation or conflicting event/operation/sequence reuse fails before action. | Golden request bytes/hash, epoch-genesis introduction, actor syntax/hash-mutation, legal post-allocation references, duplicate/conflicting allocation, reference-before-allocation, wrong-type reference, same-request replay without a second append, same-operation/different-payload, and event/sequence conflict tests; prove authority-dependent behavior remains blocked before an owner-approved Stage 4b mechanism. |
 | `LEDGER-002` | A retry before trial closure is a new attempt under the same immutable trial; a post-terminal rerun is a new linked trial. | Lost-ack replay and retained failed-attempt/retry tests with separate trial/attempt counts. |
 | `LEDGER-003` | Attempt and trial transitions follow the frozen tables; terminal records never reopen and corrections append. | Reject illegal, backward, post-terminal, and in-place mutation transitions. |
-| `LEDGER-004` | Each family/sample parent follows exactly one direct campaign-scoped, ledger-global plus campaign-binding, or accepted external Stage 3 sample-reference path; all required paths, trial, campaign inventory, and attempt finish in their frozen partial order before validation/execution. Failed-before-output work remains with explicit artifact dispositions. | Accept every legal path and sibling interleaving; reject dangling, ambiguous, mixed-path, wrong-source binding, wrong-scope, and path-order-invalid parents; fault before validator, executor, and first artifact write; prove no action preceded durable allocation. |
+| `LEDGER-004` | Each family/sample parent follows exactly one direct campaign-scoped, ledger-global plus campaign-binding, or accepted external Stage 3 sample-reference path; all required paths, trial, campaign inventory, and attempt finish in their frozen partial order before validation/execution. The inventory seal binds its exact predecessor head and precedes the first attempt/access. Failed-before-output work remains with explicit artifact dispositions. | Accept every legal path and sibling interleaving; reject dangling, ambiguous, mixed-path, wrong-source binding, wrong-scope, path-order-invalid parents, and changed, missing, truncated, or drifted pre-seal heads before action; fault before validator, executor, and first artifact write; prove no action preceded durable allocation. |
 | `LEDGER-005` | Planned but unexecuted `ABORTED` or `EXCLUDED` trials remain in campaign multiplicity and cannot be reused or deleted. | Closure reconciliation retains each configured non-run trial and typed reason. |
 | `LEDGER-006` | Crash recovery treats committed events as authority, preserves incomplete work, and uses new attempt IDs for retries. | Fault after each lifecycle boundary and reconstruct every valid prefix after restart. |
 | `LEDGER-007` | Atomic commit hides torn/partial writes; recovery never presents a valid prefix as a complete ledger or overwrites history. | Truncation/rollback injection at every serialized or transaction boundary. |

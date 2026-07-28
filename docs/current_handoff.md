@@ -40,12 +40,21 @@ Updated: 2026-07-27 for the Experiment and Trial Ledger Contract.
   schema registry. A ledger-owned logical entity is allocated once; later typed
   lifecycle, correction, supersession, review, and decision events may
   reference that existing entity without reallocating it.
-  The current external-attribution remediation passed 21 focused structure
-  tests and the full 856-test suite with two platform-conditional skips, plus
-  Ruff, compilation, build, Skill, deterministic repo-map, JSON,
-  privacy/Unicode, cleanup, diff, and independent read-only review gates.
-  Commit/push, GitHub CI, final current-head review, protected merge, and exact
-  merge-head CI remain required before acceptance.
+  Each initial campaign-inventory seal binds a nonrecursive
+  `campaign_inventory_preseal_head_v1` anchor inside its request/event
+  preimage. The implementation must compare that anchor to the actual current
+  stream head and assign the seal sequence/envelope previous hash at one
+  serialized atomic boundary before any attempt or access. It is an ordering
+  anchor, not the later independently retained closure checkpoint.
+  Head `2e65eee` was committed and pushed, and exact-head CI run `30327521020`
+  passed before review `4793622375` identified the pre-seal ambiguity and stale
+  handoff status. The current local P2 remediation passed 22 focused structure
+  tests and the full 857-test suite with two platform-conditional skips, plus
+  Ruff, compilation, Skill, diff, and two independent read-only re-reviews.
+  Build, deterministic repo-map, JSON, privacy/Unicode, generated-artifact
+  cleanup, and diff gates also passed on this status snapshot. Acceptance still
+  requires PR-head parity, successful exact-current-head CI and final
+  re-review, protected merge, and successful exact merge-head CI.
 - Current phase: research-only. No vendor download, credentials, brokerage,
   orders, paper deployment, live deployment, or real-money execution.
 
@@ -202,10 +211,11 @@ or overwrite its policy.
 
 ## Next Safe Stage
 
-Finish Stage 4a contract PR gates: commit and push the independently reviewed,
-locally validated candidate, obtain terminal GitHub CI, request final
-current-head Codex review once, resolve any actionable findings, use only the
-normal protected merge path, and verify the exact merge-head CI.
+Finish Stage 4a contract PR gates: verify that PR #164 head equals the local
+branch head containing this handoff; publish the branch only if they differ.
+Then obtain terminal exact-head GitHub CI, request final current-head Codex
+review once, resolve any actionable findings, use only the normal protected
+merge path, and verify the exact merge-head CI.
 
 Only then begin:
 

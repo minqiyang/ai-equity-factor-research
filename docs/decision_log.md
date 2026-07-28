@@ -41,6 +41,14 @@ Decision:
 - Seal the complete campaign inventory and global dependence-family lineage;
   preserve failures, invalid/aborted/excluded work, artifacts, access, review,
   and promotion decisions through append-only events and supersessions.
+- Bind each initial inventory seal to one
+  `campaign_inventory_preseal_head_v1` semantic anchor whose ledger ID and
+  exact predecessor sequence/hash are included in the seal request/event
+  preimage. Compare that anchor to the actual current stream head at the same
+  serialized atomic boundary that assigns the seal sequence and
+  `previous_event_sha256`; head drift conflicts rather than rebasing. This
+  ordering anchor is not the independently retained closure checkpoint and
+  selects no storage backend.
 - Reuse `pit_canonical_json_v1` for an exact ledger-event identity projection,
   chain every event to the prior hash, and require an independently retained
   immutable head/checkpoint for formal campaign closure.

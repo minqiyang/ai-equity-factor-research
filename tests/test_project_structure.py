@@ -340,7 +340,7 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 4a. Experiment/trial ledger contract | "
-        "Local gates passed after external-attribution remediation"
+        "Local P2-remediation gates passed"
     ) in roadmap
     assert (
         "| 4b. Experiment/trial ledger implementation | "
@@ -609,6 +609,14 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
         "exact external registry authority, external sample-record ID, schema/contract version",
         "A direct registration cannot also have `CAMPAIGN_ENTITY_BOUND`",
         "`CAMPAIGN_INVENTORY_SEALED`",
+        "included and bound inside the inventory-seal request/event preimage",
+        "referenced predecessor event bytes are external to and excluded from that seal preimage",
+        "sequence/event hash are never named by the anchor, so the anchor is nonrecursive",
+        "stored `event_sha256` remains outside its event preimage",
+        "same serialized atomic commit boundary",
+        "assigns the seal sequence/envelope `previous_event_sha256`",
+        "seal fails/conflicts; it must not silently rebase",
+        "epoch-empty `(null, null)` is not legal",
         "`ledger_operation_request_v1`",
         "result-informed amendment",
         "cannot support `RESEARCH_PASS` or higher",
@@ -693,7 +701,7 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
     assert "| 3. Point-in-time data methodology | Complete" in roadmap
     assert (
         "| 4a. Experiment/trial ledger contract | "
-        "Local gates passed after external-attribution remediation"
+        "Local P2-remediation gates passed"
     ) in roadmap
     assert (
         "| 4b. Experiment/trial ledger implementation | "
@@ -1257,6 +1265,72 @@ def _utf16_sort_key(value: str) -> bytes:
     return value.encode("utf-16-be")
 
 
+def _require_inventory_preseal_head_facts(
+    source: object,
+    *,
+    retained_ledger_id: object,
+    retained_predecessor_sequence: object,
+    retained_predecessor_event_sha256: object,
+) -> None:
+    """Conformance-only facts for the nonrecursive pre-attempt seal anchor."""
+    facts = _require_exact_keys(
+        source,
+        {
+            "anchor_schema_version",
+            "ledger_id",
+            "predecessor_sequence",
+            "predecessor_event_sha256",
+            "inventory_seal_previous_event_sha256",
+            "inventory_seal_sequence",
+            "first_attempt_or_access_sequence",
+            "anchor_fields_in_seal_preimage",
+            "predecessor_event_bytes_excluded_from_seal_preimage",
+            "atomic_head_compare_and_assign",
+        },
+        context="inventory preseal head facts",
+    )
+    if facts["anchor_schema_version"] != "campaign_inventory_preseal_head_v1":
+        raise ValueError("unexpected inventory preseal anchor schema")
+    _require_ledger_typed_id(facts["ledger_id"], prefix="ldg", context="ledger_id")
+    _require_ledger_typed_id(
+        retained_ledger_id, prefix="ldg", context="retained ledger_id"
+    )
+    if retained_ledger_id != facts["ledger_id"]:
+        raise ValueError("retained ledger does not match inventory anchor")
+    for field in ["predecessor_sequence", "inventory_seal_sequence", "first_attempt_or_access_sequence"]:
+        value = facts[field]
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ValueError(f"{field} must be a nonnegative integer")
+    predecessor_hash = facts["predecessor_event_sha256"]
+    if not isinstance(predecessor_hash, str) or re.fullmatch(r"[0-9a-f]{64}", predecessor_hash) is None:
+        raise ValueError("predecessor event hash must be lowercase SHA-256")
+    if (
+        isinstance(retained_predecessor_sequence, bool)
+        or not isinstance(retained_predecessor_sequence, int)
+        or retained_predecessor_sequence < 0
+    ):
+        raise ValueError("retained predecessor sequence must be a nonnegative integer")
+    if (
+        not isinstance(retained_predecessor_event_sha256, str)
+        or re.fullmatch(r"[0-9a-f]{64}", retained_predecessor_event_sha256) is None
+    ):
+        raise ValueError("retained predecessor hash must be lowercase SHA-256")
+    if (
+        retained_predecessor_sequence != facts["predecessor_sequence"]
+        or retained_predecessor_event_sha256 != predecessor_hash
+    ):
+        raise ValueError("retained predecessor mutation invalidates inventory seal")
+    if not (
+        facts["predecessor_sequence"] + 1 == facts["inventory_seal_sequence"]
+        and facts["inventory_seal_sequence"] < facts["first_attempt_or_access_sequence"]
+        and facts["inventory_seal_previous_event_sha256"] == predecessor_hash
+        and facts["anchor_fields_in_seal_preimage"] is True
+        and facts["predecessor_event_bytes_excluded_from_seal_preimage"] is True
+        and facts["atomic_head_compare_and_assign"] is True
+    ):
+        raise ValueError("inventory seal must anchor its immediate predecessor before action")
+
+
 def _ordered_component_inventory_projection(source: object) -> dict[str, object]:
     projection = _require_exact_keys(
         source,
@@ -1462,6 +1536,109 @@ def _assert_value_error(operation: object) -> None:
     except ValueError:
         return
     raise AssertionError("operation did not fail closed")
+
+
+def test_inventory_preseal_head_anchor_precedes_attempt_and_detects_mutation() -> None:
+    facts = {
+        "anchor_schema_version": "campaign_inventory_preseal_head_v1",
+        "ledger_id": "ldg_00000000000000000000000000000001",
+        "predecessor_sequence": 5,
+        "predecessor_event_sha256": "a" * 64,
+        "inventory_seal_previous_event_sha256": "a" * 64,
+        "inventory_seal_sequence": 6,
+        "first_attempt_or_access_sequence": 7,
+        "anchor_fields_in_seal_preimage": True,
+        "predecessor_event_bytes_excluded_from_seal_preimage": True,
+        "atomic_head_compare_and_assign": True,
+    }
+    _require_inventory_preseal_head_facts(
+        facts,
+        retained_ledger_id="ldg_00000000000000000000000000000001",
+        retained_predecessor_sequence=5,
+        retained_predecessor_event_sha256="a" * 64,
+    )
+
+    mutated_predecessor = dict(facts)
+    mutated_predecessor["predecessor_event_sha256"] = "b" * 64
+    assert mutated_predecessor["predecessor_event_sha256"] != facts[
+        "predecessor_event_sha256"
+    ]
+    _assert_value_error(
+        lambda: _require_inventory_preseal_head_facts(
+            mutated_predecessor,
+            retained_ledger_id="ldg_00000000000000000000000000000001",
+            retained_predecessor_sequence=5,
+            retained_predecessor_event_sha256="a" * 64,
+        )
+    )
+    _assert_value_error(
+        lambda: _require_inventory_preseal_head_facts(
+            facts,
+            retained_ledger_id="ldg_00000000000000000000000000000001",
+            retained_predecessor_sequence=4,
+            retained_predecessor_event_sha256="a" * 64,
+        )
+    )
+    _assert_value_error(
+        lambda: _require_inventory_preseal_head_facts(
+            {**facts, "inventory_seal_sequence": 7},
+            retained_ledger_id="ldg_00000000000000000000000000000001",
+            retained_predecessor_sequence=5,
+            retained_predecessor_event_sha256="a" * 64,
+        )
+    )
+    _assert_value_error(
+        lambda: _require_inventory_preseal_head_facts(
+            {**facts, "first_attempt_or_access_sequence": 6},
+            retained_ledger_id="ldg_00000000000000000000000000000001",
+            retained_predecessor_sequence=5,
+            retained_predecessor_event_sha256="a" * 64,
+        )
+    )
+    _assert_value_error(
+        lambda: _require_inventory_preseal_head_facts(
+            {**facts, "atomic_head_compare_and_assign": False},
+            retained_ledger_id="ldg_00000000000000000000000000000001",
+            retained_predecessor_sequence=5,
+            retained_predecessor_event_sha256="a" * 64,
+        )
+    )
+    _assert_value_error(
+        lambda: _require_inventory_preseal_head_facts(
+            facts,
+            retained_ledger_id="ldg_00000000000000000000000000000001",
+            retained_predecessor_sequence=6,
+            retained_predecessor_event_sha256="c" * 64,
+        )
+    )
+    _assert_value_error(
+        lambda: _require_inventory_preseal_head_facts(
+            {**facts, "inventory_seal_previous_event_sha256": "b" * 64},
+            retained_ledger_id="ldg_00000000000000000000000000000001",
+            retained_predecessor_sequence=5,
+            retained_predecessor_event_sha256="a" * 64,
+        )
+    )
+    _assert_value_error(
+        lambda: _require_inventory_preseal_head_facts(
+            facts,
+            retained_ledger_id="ldg_00000000000000000000000000000002",
+            retained_predecessor_sequence=5,
+            retained_predecessor_event_sha256="a" * 64,
+        )
+    )
+    _assert_value_error(
+        lambda: _require_inventory_preseal_head_facts(
+            {
+                **facts,
+                "predecessor_sequence": None,
+                "predecessor_event_sha256": None,
+            },
+            retained_ledger_id="ldg_00000000000000000000000000000001",
+            retained_predecessor_sequence=0,
+            retained_predecessor_event_sha256="a" * 64,
+        )
+    )
 
 
 def test_pit_canonical_json_v1_golden_bytes_and_digest() -> None:
