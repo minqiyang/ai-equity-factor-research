@@ -590,6 +590,15 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
         "Campaign reports disclose both semantic trial count and execution-attempt count",
         "No validator, executor, protected-data accessor, or result-producing process",
         "LEDGER_EPOCH_CREATED",
+        "Parent precedence is an exact partial order",
+        "Direct campaign-scoped registration",
+        "Ledger-global registration plus campaign binding",
+        "Accepted external Stage 3 registration",
+        "may list multiple affected campaigns",
+        "registration and `CAMPAIGN_ALLOCATED` are independent siblings",
+        "`STAGE3_SAMPLE_REFERENCE_BOUND` allocates the ledger-local typed `sample_id`",
+        "exact external registry authority, external sample-record ID, schema/contract version",
+        "A direct registration cannot also have `CAMPAIGN_ENTITY_BOUND`",
         "`CAMPAIGN_INVENTORY_SEALED`",
         "`ledger_operation_request_v1`",
         "result-informed amendment",
@@ -609,6 +618,12 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
         "`ledger_event_identity_v1`",
         "`pit_canonical_json_v1`",
         "The stored `event_sha256`",
+        "The common identity-envelope schema rejects missing or unknown envelope fields",
+        "The v1 event-type vocabulary is closed at this minimum set",
+        "Stage 4a freezes exact unknown-field-rejecting payload schemas only for the two golden event types",
+        "separately reviewed machine-readable per-event payload schema registry",
+        "`SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`",
+        "must not claim a contract-wide fail-closed ledger, Stage 4b conformance",
         "tamper-evident, not WORM",
         "`CAMPAIGN_EVIDENCE_FROZEN`",
         "`campaign_evidence_prefix_v1`",
@@ -630,6 +645,22 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
         "The next implementation PR must not retrofit the legacy reporter in place",
     ]:
         assert phrase in normalized_contract
+
+    vocabulary_block = (
+        contract.split("The v1 event-type vocabulary is closed at this minimum set:", 1)[
+            1
+        ]
+        .split("```text", 1)[1]
+        .split("```", 1)[0]
+        .split()
+    )
+    assert len(vocabulary_block) == len(set(vocabulary_block))
+    assert len(vocabulary_block) == 37
+    assert {
+        "LEDGER_EPOCH_CREATED", "CAMPAIGN_ENTITY_BOUND",
+        "STAGE3_SAMPLE_REFERENCE_BOUND", "TRIAL_ALLOCATED",
+        "CAMPAIGN_ACCOUNTING_CLOSED", "EVENT_SUPERSEDED",
+    } <= set(vocabulary_block)
 
     for case_number in range(1, 16):
         assert contract.count(f"`LEDGER-{case_number:03d}`") == 1
@@ -746,6 +777,7 @@ def _require_ledger_typed_id(
 
 
 def _ledger_event_identity_projection(source: object) -> dict[str, object]:
+    """Validate the exact envelope and the two Stage 4a golden payload schemas."""
     projection = _require_exact_keys(
         source,
         {
@@ -819,7 +851,7 @@ def _ledger_event_identity_projection(source: object) -> dict[str, object]:
         "LEDGER_EPOCH_CREATED",
         "TRIAL_ALLOCATED",
     }:
-        raise ValueError("unexpected golden event type")
+        raise ValueError("event type has no frozen Stage 4a golden payload schema")
     for field in ["occurred_at", "recorded_at"]:
         if (
             not isinstance(projection[field], str)
@@ -960,70 +992,175 @@ def _ledger_operation_request_projection(source: object) -> dict[str, object]:
 
 
 def _require_trial_allocation_parent_order(
-    preceding_events: object,
+    parent_facts: object,
     trial_event: object,
 ) -> None:
-    """Test-only order check for the contract's required trial parents."""
+    """Check the contract's three parent paths from documentation-only facts."""
     trial = _ledger_event_identity_projection(trial_event)
     if trial["event_type"] != "TRIAL_ALLOCATED":
         raise ValueError("trial parent order requires TRIAL_ALLOCATED")
-    if not isinstance(preceding_events, list):
-        raise ValueError("trial parent order requires an event list")
-
-    parsed_events: list[dict[str, object]] = []
-    for index, raw_event in enumerate(preceding_events):
-        event = _require_exact_keys(
-            raw_event,
-            {"sequence", "event_type", "subject_id"},
-            context=f"trial parent event {index}",
-        )
-        sequence = event["sequence"]
-        if isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0:
-            raise ValueError("trial parent sequence must be nonnegative")
-        if not isinstance(event["event_type"], str) or not isinstance(
-            event["subject_id"], str
-        ):
-            raise ValueError("trial parent event type and subject must be strings")
-        parsed_events.append(event)
-
-    if [event["sequence"] for event in parsed_events] != list(
-        range(len(parsed_events))
-    ):
-        raise ValueError("trial parent events must be a contiguous prefix")
-
+    facts = _require_exact_keys(
+        parent_facts,
+        {
+            "epoch_sequence",
+            "campaign_sequence",
+            "experiment_sequence",
+            "campaign_id",
+            "experiment_id",
+            "family_id",
+            "family_path",
+            "sample_paths",
+        },
+        context="trial parent facts",
+    )
     payload = trial["payload"]
     assert isinstance(payload, dict)
-
-    def required_sequence(event_type: str, subject_id: object) -> int:
-        for event in parsed_events:
-            if event["event_type"] == event_type and event["subject_id"] == subject_id:
-                return int(event["sequence"])
-        raise ValueError(f"missing required {event_type} parent")
-
-    epoch_sequence = required_sequence("LEDGER_EPOCH_CREATED", trial["ledger_id"])
-    campaign_sequence = required_sequence(
-        "CAMPAIGN_ALLOCATED", payload["campaign_id"]
-    )
-    experiment_sequence = required_sequence(
-        "EXPERIMENT_ALLOCATED", payload["experiment_id"]
-    )
-    family_sequence = required_sequence(
-        "TRIAL_FAMILY_REGISTERED", payload["trial_family_id"]
-    )
-    sample_sequences = [
-        required_sequence("SAMPLE_REGISTERED", sample_id)
-        for sample_id in payload["sample_ids"]
-    ]
-    if not (
-        epoch_sequence == 0
-        and epoch_sequence < campaign_sequence
-        and campaign_sequence < experiment_sequence
-        and campaign_sequence < family_sequence
-        and experiment_sequence < min(sample_sequences)
-        and family_sequence < min(sample_sequences)
-        and max(sample_sequences) < trial["sequence"]
+    epoch_sequence = facts["epoch_sequence"]
+    campaign_sequence = facts["campaign_sequence"]
+    experiment_sequence = facts["experiment_sequence"]
+    trial_sequence = trial["sequence"]
+    if (
+        facts["campaign_id"] != payload["campaign_id"]
+        or facts["experiment_id"] != payload["experiment_id"]
+        or facts["family_id"] != payload["trial_family_id"]
+        or not (epoch_sequence == 0 < campaign_sequence < experiment_sequence)
+        or experiment_sequence >= trial_sequence
+        or set(facts["sample_paths"]) != set(payload["sample_ids"])
     ):
-        raise ValueError("trial allocation parents are out of contract order")
+        raise ValueError("base parent bindings or order are invalid")
+
+    def require_path(
+        path: object,
+        *,
+        expected_entity_id: object,
+        allow_external: bool,
+    ) -> None:
+        if not isinstance(path, dict):
+            raise ValueError("parent path must be an object")
+        kind = path.get("kind")
+        if kind == "direct":
+            direct_path = _require_exact_keys(
+                path,
+                {
+                    "kind",
+                    "entity_id",
+                    "campaign_scope_ids",
+                    "registration_sequence",
+                },
+                context="direct parent path facts",
+            )
+            campaign_scope_ids = direct_path["campaign_scope_ids"]
+            if not (
+                direct_path["entity_id"] == expected_entity_id
+                and isinstance(campaign_scope_ids, list)
+                and campaign_scope_ids == sorted(set(campaign_scope_ids))
+                and facts["campaign_id"] in campaign_scope_ids
+                and campaign_sequence
+                < direct_path["registration_sequence"]
+                < trial_sequence
+            ):
+                raise ValueError("direct parent path is invalid")
+        elif kind == "ledger_global":
+            global_path = _require_exact_keys(
+                path,
+                {
+                    "kind",
+                    "entity_id",
+                    "registration_scope_ids",
+                    "registration_sequence",
+                    "registration_event_id",
+                    "registration_event_sha256",
+                    "binding_entity_id",
+                    "binding_campaign_id",
+                    "binding_sequence",
+                    "binding_source_event_id",
+                    "binding_source_event_sha256",
+                },
+                context="ledger-global parent path facts",
+            )
+            if not (
+                global_path["entity_id"] == expected_entity_id
+                and global_path["binding_entity_id"] == expected_entity_id
+                and global_path["registration_scope_ids"] == []
+                and global_path["registration_event_id"]
+                == global_path["binding_source_event_id"]
+                and global_path["registration_event_sha256"]
+                == global_path["binding_source_event_sha256"]
+                and re.fullmatch(
+                    r"evt_[0-9a-f]{32}",
+                    global_path["registration_event_id"],
+                )
+                is not None
+                and re.fullmatch(
+                    r"[0-9a-f]{64}",
+                    global_path["registration_event_sha256"],
+                )
+                is not None
+                and global_path["binding_campaign_id"] == facts["campaign_id"]
+                and epoch_sequence < global_path["registration_sequence"]
+                < global_path["binding_sequence"]
+                < trial_sequence
+                and epoch_sequence < campaign_sequence
+                < global_path["binding_sequence"]
+                < trial_sequence
+            ):
+                raise ValueError("ledger-global parent path is invalid")
+        elif kind == "stage3_external" and allow_external:
+            external_path = _require_exact_keys(
+                path,
+                {
+                    "kind",
+                    "entity_id",
+                    "binding_entity_id",
+                    "binding_campaign_id",
+                    "binding_sequence",
+                    "external_reference",
+                },
+                context="external Stage 3 sample path facts",
+            )
+            external_reference = _require_exact_keys(
+                external_path["external_reference"],
+                {
+                    "registry_authority_id",
+                    "external_sample_record_id",
+                    "schema_contract_version",
+                    "record_sha256",
+                    "review_decision_ref_id",
+                },
+                context="external Stage 3 sample reference",
+            )
+            if not (
+                all(
+                    isinstance(value, str) and value
+                    for value in external_reference.values()
+                )
+                and re.fullmatch(
+                    r"[0-9a-f]{64}",
+                    external_reference["record_sha256"],
+                )
+                is not None
+                and external_path["entity_id"] == expected_entity_id
+                and external_path["binding_entity_id"] == expected_entity_id
+                and external_path["binding_campaign_id"] == facts["campaign_id"]
+                and campaign_sequence
+                < external_path["binding_sequence"]
+                < trial_sequence
+            ):
+                raise ValueError("external Stage 3 sample path is invalid")
+        else:
+            raise ValueError("ambiguous or illegal parent path")
+
+    require_path(
+        facts["family_path"],
+        expected_entity_id=facts["family_id"],
+        allow_external=False,
+    )
+    for sample_id, sample_path in facts["sample_paths"].items():
+        require_path(
+            sample_path,
+            expected_entity_id=sample_id,
+            allow_external=True,
+        )
 
 
 def _utf16_sort_key(value: str) -> bytes:
@@ -1352,7 +1489,7 @@ def test_public_projection_sha256_golden_reorder_and_mutation_vectors() -> None:
     )
 
 
-def test_ledger_event_golden_reorder_mutation_and_fail_closed_vectors() -> None:
+def test_ledger_event_golden_parent_paths_and_fail_closed_vectors() -> None:
     fixture = json.loads(
         (
             PROJECT_ROOT
@@ -1453,47 +1590,166 @@ def test_ledger_event_golden_reorder_mutation_and_fail_closed_vectors() -> None:
     assert _ledger_event_identity_projection(epoch_chained_trial)[
         "previous_event_sha256"
     ] == fixture["sha256"]
-    epoch_parent = {
-        "sequence": 0,
-        "event_type": "LEDGER_EPOCH_CREATED",
-        "subject_id": fixture["semantic_input"]["ledger_id"],
-    }
-    _assert_value_error(
-        lambda: _require_trial_allocation_parent_order(
-            [epoch_parent], epoch_chained_trial
-        )
-    )
 
     payload = epoch_chained_trial["payload"]
-    valid_trial_chain = json.loads(json.dumps(epoch_chained_trial))
-    valid_trial_chain["sequence"] = 5
-    valid_trial_chain["previous_event_sha256"] = "a" * 64
-    _require_trial_allocation_parent_order(
-        [
-            epoch_parent,
-            {
-                "sequence": 1,
-                "event_type": "CAMPAIGN_ALLOCATED",
-                "subject_id": payload["campaign_id"],
+    campaign_id = payload["campaign_id"]
+    experiment_id = payload["experiment_id"]
+    family_id = payload["trial_family_id"]
+    sample_id = payload["sample_ids"][0]
+
+    def facts(
+        campaign_sequence: int,
+        experiment_sequence: int,
+        family_path: dict[str, object],
+        sample_path: dict[str, object],
+    ) -> dict[str, object]:
+        return {
+            "epoch_sequence": 0,
+            "campaign_sequence": campaign_sequence,
+            "experiment_sequence": experiment_sequence,
+            "campaign_id": campaign_id,
+            "experiment_id": experiment_id,
+            "family_id": family_id,
+            "family_path": family_path,
+            "sample_paths": {sample_id: sample_path},
+        }
+
+    def direct(
+        sequence: int,
+        entity_id: str,
+        campaign_scope_ids: list[str] | None = None,
+    ) -> dict[str, object]:
+        return {
+            "kind": "direct",
+            "entity_id": entity_id,
+            "campaign_scope_ids": campaign_scope_ids or [campaign_id],
+            "registration_sequence": sequence,
+        }
+
+    def ledger_global(
+        registration_sequence: int,
+        binding_sequence: int,
+        entity_id: str,
+    ) -> dict[str, object]:
+        registration_event_id = f"evt_{registration_sequence:032x}"
+        registration_event_sha256 = f"{registration_sequence:064x}"
+        return {
+            "kind": "ledger_global",
+            "entity_id": entity_id,
+            "registration_scope_ids": [],
+            "registration_sequence": registration_sequence,
+            "registration_event_id": registration_event_id,
+            "registration_event_sha256": registration_event_sha256,
+            "binding_entity_id": entity_id,
+            "binding_campaign_id": campaign_id,
+            "binding_sequence": binding_sequence,
+            "binding_source_event_id": registration_event_id,
+            "binding_source_event_sha256": registration_event_sha256,
+        }
+
+    def stage3_external(
+        binding_sequence: int,
+        entity_id: str,
+    ) -> dict[str, object]:
+        return {
+            "kind": "stage3_external",
+            "entity_id": entity_id,
+            "binding_entity_id": entity_id,
+            "binding_campaign_id": campaign_id,
+            "binding_sequence": binding_sequence,
+            "external_reference": {
+                "registry_authority_id": "registry-authority",
+                "external_sample_record_id": "sample-record",
+                "schema_contract_version": "schema-version",
+                "record_sha256": "b" * 64,
+                "review_decision_ref_id": "review-reference",
             },
-            {
-                "sequence": 2,
-                "event_type": "EXPERIMENT_ALLOCATED",
-                "subject_id": payload["experiment_id"],
-            },
-            {
-                "sequence": 3,
-                "event_type": "TRIAL_FAMILY_REGISTERED",
-                "subject_id": payload["trial_family_id"],
-            },
-            {
-                "sequence": 4,
-                "event_type": "SAMPLE_REGISTERED",
-                "subject_id": payload["sample_ids"][0],
-            },
-        ],
-        valid_trial_chain,
+        }
+
+    def trial_at(sequence: int) -> dict[str, object]:
+        trial = json.loads(json.dumps(epoch_chained_trial))
+        trial["sequence"] = sequence
+        trial["previous_event_sha256"] = "a" * 64
+        return trial
+
+    direct_facts = facts(1, 4, direct(3, family_id), direct(2, sample_id))
+    other_campaign_id = "cmp_00000000000000000000000000000004"
+    shared_direct_facts = facts(
+        1,
+        4,
+        direct(3, family_id, [other_campaign_id, campaign_id]),
+        direct(2, sample_id),
     )
+    global_facts = facts(
+        3,
+        4,
+        ledger_global(1, 5, family_id),
+        ledger_global(2, 6, sample_id),
+    )
+    late_global_facts = facts(
+        1,
+        2,
+        ledger_global(3, 5, family_id),
+        ledger_global(4, 6, sample_id),
+    )
+    external_facts = facts(
+        1,
+        3,
+        direct(4, family_id),
+        stage3_external(2, sample_id),
+    )
+    for valid_facts, trial_sequence in [
+        (direct_facts, 5),
+        (shared_direct_facts, 5),
+        (global_facts, 7),
+        (late_global_facts, 7),
+        (external_facts, 5),
+    ]:
+        _require_trial_allocation_parent_order(
+            valid_facts,
+            trial_at(trial_sequence),
+        )
+
+    invalid_cases: list[dict[str, object]] = []
+
+    def invalid_path(
+        base: dict[str, object],
+        *,
+        sample: bool = False,
+    ) -> dict[str, object]:
+        invalid = json.loads(json.dumps(base))
+        invalid_cases.append(invalid)
+        return (
+            invalid["sample_paths"][sample_id]
+            if sample
+            else invalid["family_path"]
+        )
+
+    invalid_path(direct_facts)["registration_sequence"] = 0
+    invalid_path(direct_facts)["binding_source_event_id"] = "extra-global-field"
+    invalid_path(direct_facts)["external_reference"] = {"extra": "external-field"}
+    invalid_path(global_facts, sample=True)["binding_entity_id"] = family_id
+    invalid_path(global_facts)["binding_campaign_id"] = other_campaign_id
+    invalid_path(global_facts)["binding_source_event_id"] = f"evt_{99:032x}"
+    invalid_path(global_facts)["binding_source_event_sha256"] = "f" * 64
+    invalid_path(direct_facts)["campaign_scope_ids"] = [other_campaign_id]
+    invalid_path(direct_facts)["campaign_scope_ids"] = [campaign_id, campaign_id]
+    invalid_path(direct_facts)["campaign_scope_ids"] = [
+        campaign_id,
+        other_campaign_id,
+    ]
+    missing_external = invalid_path(external_facts, sample=True)
+    del missing_external["external_reference"]["record_sha256"]
+    unknown_external = invalid_path(external_facts, sample=True)
+    unknown_external["external_reference"]["unknown_field"] = "rejected"
+
+    for invalid_facts in invalid_cases:
+        _assert_value_error(
+            lambda invalid_facts=invalid_facts: _require_trial_allocation_parent_order(
+                invalid_facts,
+                trial_at(7),
+            )
+        )
     _assert_value_error(
         lambda: _ascii_jcs_golden_bytes({"allowed_key": 1.5})
     )

@@ -49,6 +49,29 @@
   evidence, and added test-only exact parent-order checks. A separate reviewer
   independently recomputed the request/event hashes and found no remaining
   actionable P1/P2 in the narrow fix.
+- The next current-head review identified two further P2s: the documented
+  global-family/sample registration and campaign-binding alternatives did not
+  agree on one legal parent order, and the contract claimed exact payload
+  schemas for the whole event vocabulary without freezing those schemas. A
+  separate fixer made campaign allocation and ledger-global registration
+  independent siblings in one exact partial order, defined direct,
+  ledger-global-plus-binding, and accepted external Stage 3 sample-reference
+  paths, closed the vocabulary at 37 event types, and narrowed exact Stage 4a
+  payload schemas to `LEDGER_EPOCH_CREATED` and `TRIAL_ALLOCATED` plus the
+  common identity envelope. Full Stage 4b conformance now requires a separately
+  reviewed complete machine-readable payload-schema registry; an incomplete
+  prototype remains `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- Independent pre-publication re-review then found three documentation-fact
+  P2s: mixed path fields were not rejected, tests imposed an undocumented
+  registration-before-campaign total order, and direct shared-campaign scope
+  was rejected despite the contract allowing it. The separate fixer added
+  exact per-path key sets and source bindings, validated both global sibling
+  interleavings, and required direct scopes to be sorted, unique, and contain
+  the applicable campaign. Compact positive and negative vectors cover mixed
+  paths, identities, campaigns, source event IDs/hashes, external references,
+  scope membership/order/uniqueness, and both legal interleavings. The
+  canonical and integrity reviewers independently reran focused validation and
+  reported no remaining actionable P1/P2.
 - Reconciled Stage 3 acceptance and the Stage 4a/4b split in the specification,
   roadmap, handoff, repo-map generator, decision log, changelog, and
   documentation-contract tests. PR #148 remains an independent draft; this
@@ -65,7 +88,10 @@
   environments under
   `/private/var/folders/5r/vgv5b5gs3s91w6gp1mtbgnnc0000gn/T/build-env-*`.
   They were used only to validate the sdist and wheel; no project environment,
-  dependency declaration, lock file, or tracked artifact changed.
+  dependency declaration, lock file, or tracked artifact changed. The final
+  post-review rebuild first failed because the sandbox could not resolve the
+  package index; the identical approved-network retry succeeded. The temporary
+  failed and successful isolated environments were automatically removed.
 - During the second review fix, one `uv run` invocation unintentionally
   created the ignored worktree environment
   `/private/tmp/equity-factor-research-stage4a-trial-ledger-contract/.venv`

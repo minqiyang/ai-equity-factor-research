@@ -109,22 +109,77 @@ dependence or prior-trial multiplicity.
 ## Allocate Before Action
 
 No validator, executor, protected-data accessor, or result-producing process
-may run before the relevant allocation event is durably committed. The parent
-order is exact:
+may run before the relevant allocation event is durably committed. Parent
+precedence is an exact partial order, not one total order among independent
+siblings:
 
 ```text
 LEDGER_EPOCH_CREATED
   -> CAMPAIGN_ALLOCATED
-  -> EXPERIMENT_ALLOCATED and TRIAL_FAMILY_REGISTERED
-  -> SAMPLE_REGISTERED where a sample is referenced
+       -> EXPERIMENT_ALLOCATED
+       -> each direct family/sample or external-sample binding path
+  -> each optional ledger-global family/sample registration
+CAMPAIGN_ALLOCATED + each selected ledger-global registration
+  -> CAMPAIGN_ENTITY_BOUND
+EXPERIMENT_ALLOCATED + every completed selected family/sample path
   -> TRIAL_ALLOCATED
   -> CAMPAIGN_INVENTORY_SEALED
   -> ATTEMPT_ALLOCATED or ACCESS_INTENT
 ```
 
-Every referenced parent must already exist in the same verified ledger epoch
-or in the accepted Stage 3 sample registry. Dangling, mismatched, later-created,
-or out-of-order parents fail before commit and also fail closure verification.
+`EXPERIMENT_ALLOCATED` is campaign-scoped and must follow its
+`CAMPAIGN_ALLOCATED`. The experiment, family, and sample parent paths are
+independent siblings: they may interleave, but every selected path must finish
+before `TRIAL_ALLOCATED`. Each referenced family uses exactly one of these
+legal paths:
+
+1. **Direct campaign-scoped registration:** `CAMPAIGN_ALLOCATED` precedes
+   `TRIAL_FAMILY_REGISTERED`; that registration's immutable
+   `campaign_scope_ids` contains the campaign; and the registration precedes
+   `TRIAL_ALLOCATED`.
+2. **Ledger-global registration plus campaign binding:** a ledger-global
+   `TRIAL_FAMILY_REGISTERED` with empty `campaign_scope_ids` follows
+   `LEDGER_EPOCH_CREATED`; after both that registration and
+   `CAMPAIGN_ALLOCATED`, `CAMPAIGN_ENTITY_BOUND` names the family, campaign,
+   and exact source registration event ID/hash; that binding precedes
+   `TRIAL_ALLOCATED`.
+
+Each referenced sample independently uses exactly one of these legal paths:
+
+1. **Direct ledger-local campaign registration:** `CAMPAIGN_ALLOCATED`
+   precedes `SAMPLE_REGISTERED`; that registration's immutable
+   `campaign_scope_ids` contains the campaign; and the registration precedes
+   `TRIAL_ALLOCATED`.
+2. **Ledger-global registration plus campaign binding:** a ledger-global
+   `SAMPLE_REGISTERED` with empty `campaign_scope_ids` follows
+   `LEDGER_EPOCH_CREATED`; after both that registration and
+   `CAMPAIGN_ALLOCATED`, `CAMPAIGN_ENTITY_BOUND` names the sample, campaign,
+   and exact source registration event ID/hash; that binding precedes
+   `TRIAL_ALLOCATED`.
+3. **Accepted external Stage 3 registration:** no synthetic
+   `SAMPLE_REGISTERED` is backfilled into this ledger. After
+   `CAMPAIGN_ALLOCATED`, one campaign-scoped
+   `STAGE3_SAMPLE_REFERENCE_BOUND` allocates the ledger-local typed
+   `sample_id` used by the trial and binds it to the exact external registry
+   authority, external sample-record ID, schema/contract version, immutable
+   record SHA-256, and accepted review/decision reference. That binding
+   precedes `TRIAL_ALLOCATED`.
+
+For either direct path, `campaign_scope_ids` is sorted and unique, may list
+multiple affected campaigns, and must contain this campaign. For either
+ledger-global path, the registration and `CAMPAIGN_ALLOCATED` are independent
+siblings: each follows `LEDGER_EPOCH_CREATED`, both precede
+`CAMPAIGN_ENTITY_BOUND`, and neither must precede the other.
+
+A direct registration cannot also have `CAMPAIGN_ENTITY_BOUND`; an external
+Stage 3 representation cannot also have either local registration path for
+the same ledger-local sample ID. A binding to a different registration event,
+entity, campaign, external version, or digest is mismatched. Every referenced
+parent must therefore have exactly one completed legal path in the same
+verified ledger epoch, except that the external Stage 3 record remains in its
+accepted registry and is represented by the immutable local reference
+binding. Dangling, ambiguous, mismatched, later-created, or path-order-invalid
+parents fail before commit and also fail closure verification.
 
 For a trial:
 
@@ -413,9 +468,9 @@ previous_event_sha256
 payload
 ```
 
-The event schema rejects missing or unknown fields. `sequence` is a
-non-Boolean, zero-based, contiguous I-JSON-safe integer assigned at the
-serialized commit boundary. The first event has
+The common identity-envelope schema rejects missing or unknown envelope
+fields. `sequence` is a non-Boolean, zero-based, contiguous I-JSON-safe integer
+assigned at the serialized commit boundary. The first event has
 `previous_event_sha256 = null`; every later event contains the exact lowercase
 SHA-256 of the immediately prior canonical event preimage. Commit sequence is
 authoritative; timestamps never reorder events.
@@ -424,10 +479,93 @@ authoritative; timestamps never reorder events.
 fields above. Its typed values use the accepted `pit_canonical_json_v1`
 preprocessing and exact RFC 8785/JCS UTF-8 serialization. The stored
 `event_sha256` is the lowercase SHA-256 of those bytes and is outside the
-preimage. No other field is ignored. Duplicate JSON properties, invalid or
-non-NFC text, ambiguous timestamps or numbers, raw floats, NaN/infinity,
-non-string keys, unknown properties, and invalid typed IDs fail closed rather
-than being coerced.
+preimage. No other envelope field is ignored. Duplicate JSON properties,
+invalid or non-NFC text, ambiguous timestamps or numbers, raw floats,
+NaN/infinity, non-string keys, unknown envelope properties, and invalid typed
+IDs are rejected rather than coerced.
+
+The v1 event-type vocabulary is closed at this minimum set:
+
+```text
+LEDGER_EPOCH_CREATED
+CAMPAIGN_ALLOCATED
+EXPERIMENT_ALLOCATED
+TRIAL_FAMILY_REGISTERED
+SAMPLE_REGISTERED
+CAMPAIGN_ENTITY_BOUND
+STAGE3_SAMPLE_REFERENCE_BOUND
+TRIAL_ALLOCATED
+CAMPAIGN_INVENTORY_SEALED
+CAMPAIGN_AMENDMENT_PROPOSED
+CAMPAIGN_INVENTORY_AMENDED
+ATTEMPT_ALLOCATED
+ATTEMPT_STARTED
+ATTEMPT_COMPLETED
+ATTEMPT_FAILED
+ATTEMPT_INVALID
+ATTEMPT_ABORTED
+TRIAL_COMPLETED
+TRIAL_FAILED
+TRIAL_INVALID
+TRIAL_ABORTED
+TRIAL_EXCLUDED
+ARTIFACT_DISPOSITION_RECORDED
+ACCESS_INTENT
+ACCESS_STARTED
+ACCESS_COMPLETED
+ACCESS_FAILED
+ACCESS_ABORTED
+ACCESS_CANCELLED
+EXPOSURE_DECISION
+CAMPAIGN_EVIDENCE_FROZEN
+CHECKPOINT_REFERENCE_RECORDED
+CAMPAIGN_ACCOUNTING_CLOSED
+REVIEW_DECIDED
+PROMOTION_DECIDED
+CAMPAIGN_ADJUDICATED
+EVENT_SUPERSEDED
+```
+
+An unknown event type is rejected. A later event type requires a versioned
+contract amendment; it cannot be introduced as an unknown extension field.
+The transition names above make the lifecycle tables concrete but do not
+freeze every event-specific payload schema in Stage 4a.
+
+Stage 4a freezes exact unknown-field-rejecting payload schemas only for the
+two golden event types:
+
+- `LEDGER_EPOCH_CREATED` has all-and-only `campaign_scope_ids`, which is the
+  empty array for the ledger-global sequence-zero event.
+- `TRIAL_ALLOCATED` has all-and-only `campaign_id`, `campaign_scope_ids`,
+  `experiment_id`, `trial_family_id`, `trial_id`, `configuration_sha256`,
+  `code_identity_sha256`, `data_manifest_ids`, `environment_id`,
+  `environment_lock_sha256`, `sample_ids`, `selection_role`,
+  `expected_artifact_roles`, and `trial_state`, with the typed, ordering, and
+  cross-field constraints exercised by the golden documentation-contract
+  vectors.
+
+The narrative requirements for every other vocabulary event are normative
+semantic requirements, but their exact required/optional/nullable properties,
+types, enum values, collection ordering, subject rules, and cross-field
+constraints are intentionally not an exact payload schema in this PR. Before
+Stage 4b can claim contract-wide fail-closed validation or full conformance, a
+separately reviewed machine-readable per-event payload schema registry must:
+
+1. cover every event type in the closed vocabulary exactly once;
+2. key each schema by ledger schema version, event schema version, and event
+   type;
+3. freeze the exact subject type, payload properties, required/nullable
+   status, scalar/collection types, closed enums, ordering/uniqueness rules,
+   typed IDs, and cross-field constraints;
+4. reject missing, unknown, or duplicate properties for every payload; and
+5. include positive and negative vectors plus a deterministic registry digest.
+
+Until that registry is accepted, a prototype may validate only an explicitly
+named event-specific subset. It must label that support
+`SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`, reject every unimplemented vocabulary
+event and every unknown event before append or action, and must not claim a
+contract-wide fail-closed ledger, Stage 4b conformance, campaign completeness,
+protected-access enforcement, accounting closure, review, or promotion.
 
 `tests/fixtures/experiment_trial_ledger_event_v1_golden.json` freezes one tiny
 ASCII-only synthetic allocation request/event, their exact canonical
@@ -452,7 +590,7 @@ its head.
 Every event-specific payload contains a required `campaign_scope_ids` array of
 sorted unique campaign IDs. It is empty only for a genuinely ledger-global
 event. A shared event lists every affected campaign. When a global family or
-sample was registered before a campaign existed, a campaign-scoped
+sample was registered without campaign scope, a campaign-scoped
 `CAMPAIGN_ENTITY_BOUND` event binds that global event ID/hash and becomes the
 campaign evidence; scope is never inferred retrospectively.
 
@@ -653,19 +791,24 @@ independence, or a formal candidate state.
 
 ## Deterministic Stage 4b Conformance Matrix
 
+This matrix cannot be claimed complete until the separately reviewed
+machine-readable per-event payload schema registry covers the entire closed
+vocabulary. Tests against narrative semantics or the two golden payloads alone
+are partial documentation-contract evidence.
+
 | Case | Frozen contract decision | Required later runtime evidence |
 | --- | --- | --- |
 | `LEDGER-001` | Typed entity/event IDs are unique; the store recomputes the exact request preimage/hash; exact operation replay is idempotent and conflicting reuse fails before action. | Golden request bytes/hash, duplicate allocation, same-request replay, same-operation/different-payload, and same-ID/different-request tests. |
 | `LEDGER-002` | A retry before trial closure is a new attempt under the same immutable trial; a post-terminal rerun is a new linked trial. | Lost-ack replay and retained failed-attempt/retry tests with separate trial/attempt counts. |
 | `LEDGER-003` | Attempt and trial transitions follow the frozen tables; terminal records never reopen and corrections append. | Reject illegal, backward, post-terminal, and in-place mutation transitions. |
-| `LEDGER-004` | Parent entities, trial, campaign inventory, and attempt allocate in the frozen order before validation/execution; failed-before-output work remains with explicit artifact dispositions. | Reject dangling/out-of-order parents; fault before validator, executor, and first artifact write; prove no action preceded durable allocation. |
+| `LEDGER-004` | Each family/sample parent follows exactly one direct campaign-scoped, ledger-global plus campaign-binding, or accepted external Stage 3 sample-reference path; all required paths, trial, campaign inventory, and attempt finish in their frozen partial order before validation/execution. Failed-before-output work remains with explicit artifact dispositions. | Accept every legal path and sibling interleaving; reject dangling, ambiguous, mixed-path, wrong-source binding, wrong-scope, and path-order-invalid parents; fault before validator, executor, and first artifact write; prove no action preceded durable allocation. |
 | `LEDGER-005` | Planned but unexecuted `ABORTED` or `EXCLUDED` trials remain in campaign multiplicity and cannot be reused or deleted. | Closure reconciliation retains each configured non-run trial and typed reason. |
 | `LEDGER-006` | Crash recovery treats committed events as authority, preserves incomplete work, and uses new attempt IDs for retries. | Fault after each lifecycle boundary and reconstruct every valid prefix after restart. |
 | `LEDGER-007` | Atomic commit hides torn/partial writes; recovery never presents a valid prefix as a complete ledger or overwrites history. | Truncation/rollback injection at every serialized or transaction boundary. |
 | `LEDGER-008` | Concurrent writers serialize unique contiguous sequences, previous hashes, IDs, and idempotent operations. | Multiprocess unique, exact-replay, and conflicting-request races. |
 | `LEDGER-009` | The exact campaign-scoped pre-freeze projection plus an independent checkpoint detects relevant-event omission/mutation, insertion, deletion, reorder, duplication, and truncation below the anchor while permitting administrative and unrelated suffixes. | Prove all-and-only scoped-event inclusion, relevant mutation sensitivity, freeze/review/decision/unrelated-suffix invariance, and prefix-truncation rejection. |
 | `LEDGER-010` | Sequence is authoritative; clock order is not. Object-key order is non-semantic and schema-ordered arrays remain semantic. | Equal/backward clocks, duplicate/gapped sequence, key reorder, and array reorder tests. |
-| `LEDGER-011` | Typed canonicalization rejects ambiguous/lossy configuration and distinguishes absent from null. | Golden bytes plus duplicate-key, key-collision, float, Unicode, timestamp, default, unknown-field, and unordered-set negatives. |
+| `LEDGER-011` | The common identity envelope and two frozen golden payload schemas reject ambiguous/lossy values and distinguish absent from null; contract-wide payload rejection additionally requires the complete machine-readable registry. | Golden bytes plus envelope and frozen-payload duplicate-key, key-collision, float, Unicode, timestamp, default, unknown-field, and unordered-set negatives; then repeat schema negatives for every registry event before full conformance. |
 | `LEDGER-012` | Every expected output is `PRODUCED`, `NOT_PRODUCED`, or `PARTIAL`; completion requires valid required artifact hashes. | Missing, stale, mutated, partial, and zero-output contract tests. |
 | `LEDGER-013` | Review/promotion binds the complete sealed inventory and campaign evidence prefix/checkpoint without self-staling; result-informed same-sample amendments cannot be resealed for promotion; full adjudication covers every trial/object. | Reject self/stale review, omitted trials, changed relevant evidence, unresolved findings, result-informed same-sample promotion, missing/duplicate dispositions, and unanchored promotion; allow the decision append and unrelated suffix. |
 | `LEDGER-014` | Capability validation/consumption and `ACCESS_STARTED` append are one atomic pre-open barrier; actual reader code/environment/evidence and terminal decisions are mandatory. | Accessor spy for failed/mismatched intent, concurrent double redemption, start-append failure, lost acknowledgement, crash, missing terminal, and broader actual scope. |
@@ -683,15 +826,22 @@ Frozen in this Stage 4a proposal for v1:
 - IDs and protected-access intent are durable before action;
 - campaign inventory, variation budget, and family lineage are sealed;
 - lifecycle and candidate evidence states are independent;
-- events use exact typed canonical bytes, an append-only chain, and immutable
-  supersession;
+- the common event identity envelope, closed event vocabulary, and two golden
+  payload schemas use exact typed canonical bytes; a later complete
+  machine-readable payload registry is required before contract-wide
+  fail-closed claims;
+- events form an append-only chain and use immutable supersession;
 - formal accounting closure requires a separately retained campaign
   evidence-prefix checkpoint and full completion also requires adjudication;
-- protected access fails closed and classification never upgrades; and
+- protected-access semantics require a closed pre-open barrier and
+  classification never upgrades; and
 - private canonical evidence and tracked public projections are separate.
 
 Deferred to Stage 4b or later:
 
+- the separately reviewed machine-readable exact payload schema registry for
+  every event in the closed vocabulary, which is a prerequisite to full
+  Stage 4b conformance rather than a claim supplied by this narrative;
 - physical storage backend (`sqlite3`, a deliberately single-writer event
   store, or another reviewed option);
 - transaction, locking, journaling, `fsync`, migration, backup, and recovery
