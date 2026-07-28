@@ -36,6 +36,12 @@
   defines an explicit atomic-interval exposure transition graph; and freezes an
   exact safe public projection schema. Final targeted re-reviews from all four
   reviewers reported no remaining actionable P1/P2.
+- The first stable-head GitHub review then identified one P2 omitted case:
+  complete `SOME` observation under a frozen design-purpose access had no
+  deterministic classification absent separately confirmed influence. A
+  separate fixer mapped that case directly to `development` and added the
+  corresponding `LEDGER-015` conformance assertion; a separate reviewer
+  rechecked the narrow fix before the head was republished.
 - Reconciled Stage 3 acceptance and the Stage 4a/4b split in the specification,
   roadmap, handoff, repo-map generator, decision log, changelog, and
   documentation-contract tests. PR #148 remains an independent draft; this

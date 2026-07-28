@@ -353,10 +353,13 @@ Classification is derived, never caller-selected, in this precedence order:
    missing terminal state, uncertain overlap, or `SOME` with incomplete or
    uncertain evidence is `pseudo_holdout`; complete `SOME` evidence is
    classified by its frozen validation, evaluation, or design purpose below;
-3. one frozen outcome-reconstructible evaluation with no design influence is
+3. a complete `SOME` observation with frozen `purpose = design` is
+   `development`, even without separately confirmed downstream design/tuning
+   influence;
+4. one frozen outcome-reconstructible evaluation with no design influence is
    `historical_evaluation` for later campaigns;
-4. registered selection inside its frozen trial budget is `validation`; and
-5. only a prospectively sealed, information-independent, never-accessed sample
+5. registered selection inside its frozen trial budget is `validation`; and
+6. only a prospectively sealed, information-independent, never-accessed sample
    can remain `holdout`.
 
 The explicit allowed-transition graph is:
@@ -666,7 +669,7 @@ independence, or a formal candidate state.
 | `LEDGER-012` | Every expected output is `PRODUCED`, `NOT_PRODUCED`, or `PARTIAL`; completion requires valid required artifact hashes. | Missing, stale, mutated, partial, and zero-output contract tests. |
 | `LEDGER-013` | Review/promotion binds the complete sealed inventory and campaign evidence prefix/checkpoint without self-staling; result-informed same-sample amendments cannot be resealed for promotion; full adjudication covers every trial/object. | Reject self/stale review, omitted trials, changed relevant evidence, unresolved findings, result-informed same-sample promotion, missing/duplicate dispositions, and unanchored promotion; allow the decision append and unrelated suffix. |
 | `LEDGER-014` | Capability validation/consumption and `ACCESS_STARTED` append are one atomic pre-open barrier; actual reader code/environment/evidence and terminal decisions are mandatory. | Accessor spy for failed/mismatched intent, concurrent double redemption, start-append failure, lost acknowledgement, crash, missing terminal, and broader actual scope. |
-| `LEDGER-015` | The explicit exposure-fact/atomic-interval transition graph covers aliases, overlap, backfill, unknown impact, derived lineage, correction, and the historical interval; private events and the exact public schema reject values/leaks. | Exhaust every allowed/forbidden transition and overlap join, attempted upgrade, full-ledger raw-value rejection, public unknown/path/URI/query/value/direction/rank rejection, and unapproved hash/window disclosure. |
+| `LEDGER-015` | The explicit exposure-fact/atomic-interval transition graph covers aliases, overlap, backfill, unknown impact, derived lineage, correction, the historical interval, and complete design-purpose `SOME` observation without separately confirmed influence; private events and the exact public schema reject values/leaks. | Exhaust every allowed/forbidden transition and overlap join, attempted upgrade, complete design-purpose `SOME` classification, full-ledger raw-value rejection, public unknown/path/URI/query/value/direction/rank rejection, and unapproved hash/window disclosure. |
 
 Documentation-token tests for this matrix are not runtime append-only evidence.
 Stage 4b must implement fault injection, restart, concurrency, tamper,
