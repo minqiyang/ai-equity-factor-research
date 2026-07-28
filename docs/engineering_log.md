@@ -1,5 +1,53 @@
 # Engineering Log
 
+## 2026-07-28 - Stage 4B-R1A Allocation/Registration Architecture
+
+- Started from protected `main` merge `4c874eb` (PR #165) in the isolated
+  `codex/ledger-allocation-registration-schemas` worktree. The clean starting
+  baseline had 912 passing tests and two platform-conditional skips; Ruff,
+  compilation, and exact merge-head GitHub CI were successful.
+- Six non-overlapping read-only audits covered campaign/experiment allocation,
+  family/sample registration, binding and external references, schema-language
+  evolution, independent vectors, and adversarial evidence/privacy risks. They
+  made no edits, installed no dependency, accessed no private data, and ran no
+  research or GitHub mutation.
+- The audits agreed that none of the six events could be promoted safely from
+  narrative fields or non-append test helpers. The owner selected architecture
+  A: immutable R0 plus a separately versioned minimal R1 path.
+- Added a design-only R1A contract that retains the 37-event vocabulary,
+  freezes reservation-only campaign/experiment allocation, entity subjects,
+  explicit campaign scope, prior allocation for every shared direct-scope
+  campaign, closed schema-language additions, and future family-definition
+  and Stage 3 sample reference-authority requirements. No concrete family or
+  Stage 3 sample authority is accepted.
+- R1A intentionally does not modify packaged registry JSON, digest sidecars, or
+  validator code. Epoch remains the sole supported event; the other 36 remain
+  fail-closed. Trial, attempt, protected-access, dependency, backend,
+  private-data, and trading impacts remain zero.
+- Three independent post-edit reviews initially found no P1 implementation
+  defect but identified incomplete byte guards, under-specified registry
+  succession and DSL evidence, overstated authority completion, and two
+  owner-choice leaks: unaccepted non-campaign ID prefixes and an unselected
+  family-review architecture. The integration owner pinned raw R0 bytes and
+  exact tables/lists, made every registry release immutable, required complete
+  DSL `0.2.0` meta-tests, deferred the owner choices, and clarified Stage 3
+  decision currentness at trial, attempt, and access boundaries. All three
+  read-only re-reviews then reported zero actionable P1/P2.
+- Final validation passed 78 focused structure/R0-registry tests and the full
+  913-test suite with two platform-conditional skips. Ruff, compilation,
+  deterministic repo-map generation, Skill audit, raw/package resource
+  parity, Unicode/privacy, cleanup, and diff checks passed.
+- The no-isolation sdist/wheel build reused, without installing,
+  `build==1.5.0`, `setuptools==83.0.0`, `wheel==0.47.0`, and
+  `packaging==26.2` from
+  `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv`.
+  Both artifacts reproduced raw R0 JSON SHA-256
+  `4b78c36647621deaec15114558d827c17dae2bfa29918f4cbf2ceb2aa6b6e6d9`
+  and sidecar SHA-256
+  `dc870da2958a107998d3939350edb20d3a9185e13a4edb48664befcb89e79d51`.
+  Temporary build outputs were removed; no dependency declaration, lock file,
+  project environment, or persistent environment changed.
+
 ## 2026-07-28 - Stage 4B-R0 Ledger Schema Registry Foundation
 
 - Started from protected `main` merge `27f0497` (PR #164) in the isolated

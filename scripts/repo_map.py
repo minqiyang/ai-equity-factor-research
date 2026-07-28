@@ -81,7 +81,11 @@ IMPORTANT_FILES = [
     ),
     (
         "docs/experiment_trial_ledger_schema_registry_contract.md",
-        "Active Stage 4B-R0 fail-closed schema-registry foundation.",
+        "Accepted Stage 4B-R0 fail-closed schema-registry foundation.",
+    ),
+    (
+        "docs/experiment_trial_ledger_allocation_registration_schema_contract.md",
+        "Active Stage 4B-R1A allocation/registration architecture-A decision.",
     ),
     ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),
