@@ -15,6 +15,135 @@ investment performance.
 
 ---
 
+## 2026-07-27 - Freeze Semantic Trials, Attempts, And Ledger Completeness
+
+Context:
+
+- Stage 3 is accepted on protected `main` through PR #163 at `a6c147e`, but no
+  dataset is accepted for formal interpretation.
+- The existing schema-v1 experiment writer creates overwrite-capable
+  successful-run sidecars after computation. It cannot retain
+  failed-before-write, abandoned, retried, or overwritten history and is not an
+  immutable all-trial ledger.
+- A record hash chain alone cannot detect deletion of a valid tail when the
+  writer can also replace the retained head.
+
+Decision:
+
+- Propose `docs/experiment_trial_ledger_contract.md` as the Stage 4a design
+  authority, subject to final current-head review, protected merge, and exact
+  merge-head CI.
+- Treat `trial_id` as one frozen semantic configuration and `attempt_id` as one
+  invocation. Retain both semantic trial count and execution-attempt count;
+  operational retries never erase failed attempts.
+- Require durable allocation before validation/execution and a committed exact
+  access-intent capability before protected content can be released.
+- Seal the complete campaign inventory and global dependence-family lineage;
+  preserve failures, invalid/aborted/excluded work, artifacts, access, review,
+  and promotion decisions through append-only events and supersessions.
+- Bind each initial inventory seal to one
+  `campaign_inventory_preseal_head_v1` semantic anchor whose ledger ID and
+  exact predecessor sequence/hash are included in the seal request/event
+  preimage. Compare that anchor to the actual current stream head at the same
+  serialized atomic boundary that assigns the seal sequence and
+  `previous_event_sha256`; head drift conflicts rather than rebasing. This
+  ordering anchor is not the independently retained closure checkpoint and
+  selects no storage backend.
+- Reuse `pit_canonical_json_v1` for an exact ledger-event identity projection,
+  chain every event to the prior hash, and require an independently retained
+  immutable head/checkpoint for formal campaign closure.
+- Freeze an exact `campaign_evidence_checkpoint_v1` preimage. Reconstruct its
+  all-and-only campaign-scoped evidence prefix from the retained chain; bind
+  the cutoff, freeze, sealed inventory, and one ordered checkpoint reference;
+  and reconcile sealed/terminal semantic-trial counts plus
+  allocated/terminal attempt counts. Equal counts never replace exact set,
+  membership, uniqueness, or current-disposition checks.
+- Use the application-level `ledger_v1_utc_timestamp` profile for ledger event
+  timestamps. It preserves proleptic-Gregorian year `0000`, ordinary UTC
+  seconds, and normalized arbitrary-precision nonzero fractions, but rejects
+  every `second = 60` because Stage 4a pins no immutable leap-second table.
+  This narrows ledger schema acceptance without changing
+  `pit_canonical_json_v1` serialization.
+- Keep the independently retained evidence-closure checkpoint separate from a
+  second exact `campaign_adjudication_checkpoint_v1`. The latter anchors the
+  final adjudication event and therefore the complete closure, review,
+  promotion/disposition, and adjudication chain. Its preallocated checkpoint
+  ID avoids a digest cycle; its generation and predecessor ID/hash form a
+  monotone lineage. Any later event scoped to that campaign makes the prior
+  adjudication checkpoint non-current and requires a new complete cycle and
+  successor checkpoint. An unrelated campaign or truly ledger-global suffix
+  does not.
+- Treat checkpoint latestness and anti-rollback as an external Stage 4b gate.
+  Before any post-adjudication campaign action, the next generation must become
+  pending under the independent `(ledger_id, campaign_id)` authority key;
+  pending, missing, forked, skipped, or unverifiably current generations fail
+  closed. A local old ledger plus old checkpoint cannot prove that a later
+  generation was not created and then hidden.
+- Allocate each ledger-owned logical typed entity ID exactly once. Later
+  lifecycle, correction, supersession, review, and decision records reuse that
+  ID as a typed subject or reference; only a second allocation conflicts. Event
+  IDs, operation IDs, and sequences continue to identify distinct
+  append/request/commit records and cannot be reused inconsistently.
+- Treat event `actor_id` as an externally assigned, opaque
+  claimed-attribution reference, not a ledger-owned entity allocation.
+  `LEDGER_EPOCH_CREATED` atomically introduces `ledger_id`; no earlier event is
+  possible. Stage 4a validates only canonical actor syntax and identity
+  binding. It does not prove authenticity, control, authorization, role
+  independence, currentness, or revocation, and grants no append, access,
+  review, or promotion permission. Any formal behavior that depends on those
+  properties remains fail closed until Stage 4b accepts an owner-approved
+  external mechanism and historical activation/replacement/revocation policy.
+  Stage 4a does not select that identity architecture.
+- Freeze the exact common identity envelope and the synthetic
+  `LEDGER_EPOCH_CREATED` payload in Stage 4a. Keep the complete
+  `TRIAL_ALLOCATED` bindings and parent order as normative semantic
+  requirements, but reject that event as
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY` until Stage 4b accepts a complete
+  machine-readable per-event payload-schema registry.
+- Keep execution state separate from charter candidate evidence state.
+- Keep the full ledger private and repository-external; expose only a
+  deterministic allowlisted public projection without paths, credentials, raw
+  values, directions, magnitudes, ranks, or private performance.
+
+Rationale:
+
+- Complete multiplicity and failure accounting is necessary before statistical
+  evidence can be interpreted.
+- Separate trials and attempts prevent infrastructure retries from either
+  inflating configuration multiplicity or concealing failed executions.
+- Prospective access barriers and monotone sample downgrades prevent
+  after-the-fact holdout laundering.
+
+Consequences:
+
+- Stage 4a is a documentation/golden-contract stage only. It adds no runtime,
+  database, migrated log, research trial, private access, generated performance
+  evidence, dependency, or trading behavior.
+- Stage 4a's epoch golden and non-append semantic fact vectors do not establish
+  contract-wide payload validation or Stage 4b conformance.
+- Stage 4a's adjudication-checkpoint vectors establish exact identity, lineage,
+  chain anchoring, and staleness semantics only. They do not implement an
+  independent currentness authority or make a campaign formally complete.
+- Stage 4a's evidence-checkpoint vector uses one fixed all-excluded trial and
+  zero attempts to prove exact prefix/checkpoint bytes and set/count
+  relationships. General event payload, scope, inventory, and lifecycle
+  extraction remains fail closed until the Stage 4b registry is accepted.
+- Legacy logs remain `DIAGNOSTIC_ONLY` references and cannot prove formal
+  completeness or holdout independence.
+- Stage 5 remains blocked until Stage 4b implements and behaviorally verifies
+  the accepted contract.
+
+Follow-up:
+
+- In the first separate Stage 4b slice, freeze the complete machine-readable
+  event payload-schema registry, deterministic positive/negative vectors, and
+  registry digest. Then choose and justify the storage, transaction/recovery,
+  private-location, independent checkpoint/currentness authority, append-only
+  anti-rollback, concurrency/fork, signature/authorization, and recovery
+  policies in separately reviewable architecture/implementation work; add
+  fault, restart, concurrency, tamper, rollback, protected-access, closure, and
+  privacy tests before integrating one synthetic workflow.
+
 ## 2026-07-27 - Separate Data Methodology, Dataset, And Interpretation Gates
 
 Context:

@@ -69,7 +69,11 @@ IMPORTANT_FILES = [
     ),
     (
         "docs/point_in_time_data_methodology_contract.md",
-        "Proposed Stage 3 point-in-time data and holdout-evidence methodology.",
+        "Accepted Stage 3 point-in-time data and holdout-evidence methodology.",
+    ),
+    (
+        "docs/experiment_trial_ledger_contract.md",
+        "Proposed Stage 4a experiment/trial identity, lifecycle, completeness, access, and integrity design.",
     ),
     ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),

@@ -9,7 +9,30 @@ profitability, or trading readiness.
 
 ### Added
 
-- Added the proposed provider-agnostic point-in-time data methodology contract.
+- Added the Stage 4a experiment and trial ledger design contract. It separates
+  semantic trials from execution attempts; freezes durable preallocation,
+  campaign inventory/closure, failure and artifact retention, protected-access
+  capabilities, canonical chained events, independently retained checkpoints,
+  review binding, and private/public projections; and adds a synthetic golden
+  epoch event, rejection/semantic fact vectors, and a 15-case later-runtime
+  matrix. A nonrecursive pre-seal stream-head anchor is bound inside each
+  campaign-inventory seal and atomically checked before the first attempt or
+  protected access; it is distinct from the later independently retained
+  closure checkpoint. A separate exact, version-linked, independently retained
+  adjudication checkpoint anchors the final closure/review/promotion/
+  adjudication chain; any later campaign-scoped event makes it non-current.
+  The closure checkpoint now has an exact canonical preimage and digest whose
+  all-and-only campaign prefix, cutoff, freeze, inventory, trial/attempt
+  counts, and unique ordered reference are deterministically checked.
+  Formal currentness remains fail closed until Stage 4b selects and verifies an
+  independent append-only anti-rollback/latestness authority. The epoch
+  atomically introduces `ledger_id`; its
+  external `actor_id` is claimed attribution only and grants no permission.
+  Exact schemas for `TRIAL_ALLOCATED` and the rest of the closed event
+  vocabulary remain a Stage 4b prerequisite. It does not implement or select
+  an identity provider, authorization mechanism, ledger backend, legacy-log
+  migration, data access, dependency, or research trial.
+- Added the accepted provider-agnostic point-in-time data methodology contract.
   It separates methodology acceptance, dataset-manifest review, and
   run-specific formal-interpretation eligibility; freezes provenance/license,
   canonicalization/environment identity, immutable non-self-issued dataset
@@ -59,6 +82,19 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Rejected every leap-second timestamp from the Stage 4a ledger event schema
+  because no immutable leap-second table is pinned, while preserving
+  proleptic-Gregorian year `0000`, ordinary UTC ranges, and normalized
+  arbitrary-precision fractional seconds without changing canonical JSON
+  serialization.
+- Added an independently retained adjudication-checkpoint contract and
+  deterministic tail-tamper/currentness vectors so a valid evidence-freeze
+  checkpoint cannot be mistaken for proof that later closure, review,
+  promotion, and adjudication records were retained.
+- Closed coordinated evidence-checkpoint substitution paths by recomputing the
+  exact campaign prefix and checkpoint digest, checking freeze facts and the
+  all-and-only freeze-to-closure campaign reference interval, and retaining
+  explicit Stage 4b payload/currentness gates.
 - Made the latest controlled bounded real/complex assignment authoritative
   when recovering a real column after an out-of-window complex dtype upcast,
   including when a later out-of-window non-real write changes the container to

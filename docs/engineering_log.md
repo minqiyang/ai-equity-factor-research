@@ -1,5 +1,336 @@
 # Engineering Log
 
+## 2026-07-27 - Experiment And Trial Ledger Contract
+
+- Started from protected `main` merge `a6c147e` (PR #163) in the isolated
+  `codex/experiment-trial-ledger-contract` worktree. The clean starting baseline
+  had 854 passing tests, two platform-conditional skips, successful
+  compilation, and successful exact merge-head GitHub CI.
+- Eight non-overlapping read-only audits covered legacy writers/callers,
+  identity/lifecycle semantics, storage/atomicity, protected access,
+  canonical-document conformance, adversarial program risks, and deterministic
+  failure tests. No audit edited files, opened private data or performance
+  values, ran a research campaign, or added a dependency.
+- The audits agreed that current schema-v1 logs are overwrite-capable
+  post-success sidecars, not an append-only all-trial ledger. Failed-before-
+  write, abandoned, retried, or overwritten history cannot be proven complete.
+- Added a backend-neutral Stage 4a contract that separates semantic trials from
+  execution attempts; freezes allocation-before-action, campaign inventory,
+  lifecycle, artifact, protected-access, canonical-event, chain/checkpoint,
+  review/promotion, and private/public projection semantics; and defines
+  deterministic `LEDGER-001` through `LEDGER-015` later-runtime cases.
+- Added a tiny synthetic event fixture with exact canonical UTF-8, SHA-256,
+  source-key reorder invariance, and identity-mutation vectors. The fixture and
+  documentation assertions are contract evidence, not a production serializer
+  or append-only implementation.
+- Four independent post-edit reviewers found that the first draft
+  self-invalidated review decisions through its global-head rule, allowed
+  result-informed reseal/promotion, omitted the exact idempotency-request
+  preimage, left access capability/classification/public-projection behavior
+  ambiguous, and prematurely called the unmerged contract accepted. The
+  integration owner, not the reviewers, fixed those findings.
+- The revised contract uses a nonrecursive campaign-scoped pre-freeze evidence
+  projection plus separately anchored freeze event; forbids same-sample
+  result-informed promotion; freezes exact request/event preimages and hashes;
+  makes capability consumption plus access-start one atomic pre-open barrier;
+  defines an explicit atomic-interval exposure transition graph; and freezes an
+  exact safe public projection schema. Final targeted re-reviews from all four
+  reviewers reported no remaining actionable P1/P2.
+- The first stable-head GitHub review then identified one P2 omitted case:
+  complete `SOME` observation under a frozen design-purpose access had no
+  deterministic classification absent separately confirmed influence. A
+  separate fixer mapped that case directly to `development` and added the
+  corresponding `LEDGER-015` conformance assertion; a separate reviewer
+  rechecked the narrow fix before the head was republished.
+- The fixed-head re-review identified a second P2: the original canonical
+  `TRIAL_ALLOCATED` vector incorrectly occupied sequence zero with no parent
+  chain. A separate fixer replaced the positive vector with a valid
+  sequence-zero `LEDGER_EPOCH_CREATED`, retained the orphan trial as rejection
+  evidence, and added test-only exact parent-order checks. A separate reviewer
+  independently recomputed the request/event hashes and found no remaining
+  actionable P1/P2 in the narrow fix.
+- The next current-head review identified two further P2s: the documented
+  global-family/sample registration and campaign-binding alternatives did not
+  agree on one legal parent order, and the contract claimed exact payload
+  schemas for the whole event vocabulary without freezing those schemas. A
+  separate fixer made campaign allocation and ledger-global registration
+  independent siblings in one exact partial order, defined direct,
+  ledger-global-plus-binding, and accepted external Stage 3 sample-reference
+  paths, closed the vocabulary at 37 event types, and narrowed exact Stage 4a
+  payload schemas to `LEDGER_EPOCH_CREATED` and `TRIAL_ALLOCATED` plus the
+  common identity envelope. Full Stage 4b conformance now requires a separately
+  reviewed complete machine-readable payload-schema registry; an incomplete
+  prototype remains `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- Independent pre-publication re-review then found three documentation-fact
+  P2s: mixed path fields were not rejected, tests imposed an undocumented
+  registration-before-campaign total order, and direct shared-campaign scope
+  was rejected despite the contract allowing it. The separate fixer added
+  exact per-path key sets and source bindings, validated both global sibling
+  interleavings, and required direct scopes to be sorted, unique, and contain
+  the applicable campaign. Compact positive and negative vectors cover mixed
+  paths, identities, campaigns, source event IDs/hashes, external references,
+  scope membership/order/uniqueness, and both legal interleavings. The
+  canonical and integrity reviewers independently reran focused validation and
+  reported no remaining actionable P1/P2.
+- The next current-head GitHub review found one timestamp P2: the
+  documentation-fact validator accepted impossible numeric calendar/time
+  ranges while rejecting every normalized nonzero fractional second allowed by
+  the inherited `pit_canonical_json_v1` RFC 3339 profile. A separate fixer
+  replaced the whole-second regular expression with exact ASCII UTC syntax,
+  proleptic-Gregorian month/day and year-zero leap rules, ordinary time ranges,
+  normalized arbitrary-precision fractions, and bounded structural
+  leap-second handling at UTC June/December month ends. Primary RFC 3339
+  verification and independent re-review exposed and closed the initial
+  all-leap-second rejection plus year-zero and fractional-leap coverage gaps.
+  Positive vectors now include leap day, year `0000`, a known RFC leap second,
+  and long fractional precision; negative vectors cover invalid dates/times,
+  misplaced leap seconds, zero/trailing-zero fractions, empty fractions, and
+  noncanonical offsets. The golden fixture and its canonical bytes/hashes did
+  not change, and the independent reviewer reported no remaining actionable
+  P1/P2.
+- The following current-head review found one P1 and one P2. The P1 showed that
+  Stage 4a's supposedly exact `TRIAL_ALLOCATED` payload omitted many immutable
+  bindings that the same contract requires, so an accepted event could not
+  prove the trial configuration, code, data, environment, sample, timing,
+  execution, and policy identity. The P2 showed that "every entity ID is
+  globally unique" had been encoded as if a later lifecycle record could not
+  reuse the already allocated entity as its subject, contradicting the
+  lifecycle and supersession model.
+- A separate read-only remediation audit rejected two unsafe shortcuts:
+  inventing unreviewed trial fields merely to satisfy the narrative and
+  weakening the required trial bindings to match the incomplete fixture. It
+  recommended that Stage 4a freeze only the exact epoch payload, retain the
+  full trial bindings as normative semantic requirements, and defer their
+  field placement/types/nullability/unions/nested schemas to the complete
+  Stage 4b registry. It also distinguished one-time logical-entity allocation
+  from legal later typed references and from event/operation/sequence
+  uniqueness.
+- A different fixer applied that narrow remediation. The fixture now labels the
+  trial object as `incomplete_trial_allocation_stub` and proves rejection both
+  at sequence zero and after repairing sequence/previous-hash fields. The
+  documentation validator accepts only the exact epoch event; trial-parent
+  alternatives and entity allocation/reference/idempotency checks are
+  explicitly non-append semantic facts. Exact operation replay adds no record,
+  while second allocation, reference-before-allocation, wrong-type reference,
+  changed-request replay, and event/sequence conflicts fail closed. The epoch
+  canonical bytes and request/event hashes remain unchanged.
+- The first independent post-remediation integrity review found one P2 in the
+  documentation-fact helper: it treated input-list order as sufficient proof
+  that an entity reference followed allocation, even when the reference's
+  authoritative ledger sequence was earlier. A separate non-reviewing fixer
+  retained the allocation sequence with the entity type, required every
+  reference sequence to be strictly greater, and added a deterministic
+  allocation-at-2/reference-at-1 rejection vector. The focused and full suites
+  then passed.
+- The next exact-head GitHub review found one genesis P1: sequence-zero
+  `LEDGER_EPOCH_CREATED` already carried an `actor_id`, but the one-time entity
+  allocation wording required every typed reference to follow an in-ledger
+  allocation and the closed vocabulary had no prior actor-registration event.
+  The golden epoch therefore could not satisfy its own authorization model.
+- A separate read-only audit compared external-principal binding, atomic actor
+  bootstrap, and a detached bootstrap fact. It selected external-principal
+  binding because an actor allocated by its own epoch is circular and a
+  detached fact is substitutable unless the epoch preimage binds it. That first
+  candidate scoped one-time allocation to ledger-owned entities and attempted
+  to bind registry, record, review, authority, scope, and validity evidence.
+- Independent review of that first external-principal candidate found that its
+  record, decision, reviewer-authority, and producer fields were all supplied
+  by the caller and could be replaced together with freshly computed hashes.
+  The same review demonstrated that string ordering of normalized RFC 3339
+  timestamps misorders whole and fractional seconds, and that a later actor
+  could switch to an internally consistent foreign registry or replay a stale
+  snapshot. The candidate therefore did not pass current-remediation review.
+- A second read-only audit proposed one acyclic, provider-agnostic trust graph:
+  principal record -> authorization decision -> owner-pinned authority
+  manifest -> producer intent -> trusted-adapter producer context -> operation
+  request -> committed event. The manifest digest is fixed outside the request;
+  the context binds the authenticated producer to the intent rather than the
+  final request, avoiding a context/request hash cycle. Exact temporal checks
+  parse arbitrary-precision fractional seconds rather than comparing strings.
+  Concrete IdP, signature, key, adapter, rotation, revocation, and storage
+  choices remain Stage 4b owner decisions.
+- Independent canonical, integrity, and adversarial reviews rejected that
+  second candidate. Fully rehashed vectors could admit malformed/private
+  nested values, and a validation-time pin could not prove that the owner had
+  activated it before the event or had not later revoked it. More
+  fundamentally, the exact manifest/context DAG selected a material identity
+  architecture while claiming those owner choices were deferred.
+- The final narrow resolution retains the only invariant required to close the
+  genesis-allocation contradiction: ledger allocation rules apply only to
+  ledger-owned logical entities; the epoch atomically introduces `ledger_id`;
+  and `actor_id` is external claimed attribution whose syntax is hash-bound but
+  neither authenticated nor authorized. Authority-dependent behavior remains
+  fail closed until a separately approved Stage 4b mechanism can preserve
+  historical activation, replacement, and revocation evidence. The rejected
+  trust-DAG candidate was not adopted.
+- Independent canonical, integrity, and adversarial reviews found no remaining
+  actionable P1/P2 in that narrow resolution. They separately confirmed the
+  ledger-owned/external boundary, epoch genesis semantics, exact epoch payload
+  rejection, actor grammar and hash sensitivity, unchanged golden hashes,
+  absence of an adopted identity architecture, and the fail-closed Stage 4b
+  authority gate. Two final wording-only clarifications were re-reviewed after
+  they narrowed all remaining allocation/reference language to ledger-owned
+  entities.
+- Commit `2e65eee` carried that narrow remediation to PR #164. Exact-head
+  GitHub CI run `30327521020` completed successfully before the single final
+  review request. Review `4793622375` then found two P2s: the inventory seal's
+  "current ledger checkpoint" was circular or ambiguous because the only
+  defined checkpoint was created at later campaign closure, and the canonical
+  handoff/roadmap still called the already completed commit/push steps pending.
+- A separate non-reviewing fixer replaced that phrase with a semantic
+  `campaign_inventory_preseal_head_v1` anchor. Its ledger ID and immediate
+  predecessor sequence/hash are included in the seal request/event preimage;
+  the anchor never names the seal itself. At one serialized atomic boundary,
+  the implementation must compare the retained head and assign the seal
+  sequence/envelope previous hash, so a concurrent winning append conflicts
+  rather than silently rebasing. The v1 path forbids an empty-stream anchor,
+  and the pre-seal anchor has no independent trust/retention role or checkpoint
+  claim.
+- The first independent integrity review of that fix found one P2 in its
+  documentation-fact model: it did not bind the retained ledger ID or the seal
+  envelope's actual previous hash, and it lacked a forward head-drift vector.
+  The same separate fixer added typed retained-ledger/head checks, exact
+  envelope previous-hash equality, and independent forward-drift, wrong-
+  previous-hash, cross-ledger, epoch-empty, sequence/order, and atomicity
+  negatives. This remains documentation-contract evidence; runtime
+  compare-and-swap, replay, concurrency, and durability proof stay in Stage 4b.
+- Integrity and adversarial re-reviews of the completed P2 fix reported no
+  remaining actionable P1/P2. The final P2-remediation snapshot passed 22
+  focused structure tests and the full 857-test suite with the same two
+  platform-conditional wide-`longdouble` skips, Ruff, compilation of `src`,
+  `research`, `tests`, and `lean`, sdist and wheel build, the Skill audit,
+  three identical repo-map hashes across two regenerations, JSON parsing,
+  privacy/path and hidden-Unicode scans, generated-artifact cleanup, and diff
+  checks.
+- Exact-head review `4793725387` on the later `30bbc82` snapshot found a P1
+  because the independently retained checkpoint ended at the evidence freeze:
+  closure, review, promotion/disposition, and adjudication remained a
+  replaceable or deletable suffix. It also found a P2 because the timestamp
+  fact validator accepted structurally plausible but historically unannounced
+  leap seconds.
+- A separate timestamp fixer narrowed ledger v1 to ordinary UTC seconds
+  `00`-`59`, retained proleptic-Gregorian year `0000` and normalized
+  arbitrary-precision nonzero fractions, and exercised both event timestamp
+  fields. An independent reviewer found and closed one omitted greater-than-
+  nanosecond positive vector. The existing epoch fixture and all four canonical
+  hashes remained unchanged.
+- Two independent checkpoint-design audits selected a separate exact,
+  version-linked `campaign_adjudication_checkpoint_v1` rather than changing
+  the evidence checkpoint into a phase union or selecting signatures. Any
+  later same-campaign event makes the old generation non-current; an external
+  monotonic latest/pending-generation authority is a fail-closed Stage 4b owner
+  gate because a local old ledger/checkpoint cannot detect an entirely hidden
+  successor.
+- The first test-only adjudication model was rejected before commit after a
+  scope reviewer found a 1,397-line pseudo-runtime and no independent literal
+  hash oracle. A compact replacement split chain, schema, terminal binding,
+  lineage, and currentness checks into short helpers and table-driven vectors.
+  Subsequent independent adversarial reviews found and separate fixers closed:
+  historical-generation coordinated rehash/reset, an unknown event used as a
+  positive suffix, an opaque rather than recomputed evidence checkpoint, and a
+  freeze-to-closure interval that admitted new same-campaign evidence.
+- The final contract freezes exact canonical evidence and adjudication
+  checkpoint preimages, hard-coded bytes/hashes, all-and-only scoped prefix,
+  cutoff/freeze/reference relations, four flat trial/attempt counts with exact
+  fixed-set evidence, one-to-one adjudication generations, terminal tail
+  anchoring, and pending/currentness semantics. Full event payload/scope/set
+  extraction, storage, provider, authorization, signatures, anti-rollback,
+  concurrency, and recovery remain fail closed for Stage 4b owner decisions.
+  Final independent integrity and scope reviewers reported no actionable
+  P1/P2.
+- One noncanonical validation attempt used `/opt/homebrew/bin/python3.14`
+  (Python 3.14.6) with a Python 3.9 pytest-tool path and failed 33 tests because
+  that interpreter had no SciPy. No dependency was installed. The canonical
+  project interpreter `.venv/bin/python` (Python 3.12.13, SciPy 1.18.0) then
+  passed 863 tests with the same two platform skips.
+- Final validation of the evidence/adjudication checkpoint remediation passed
+  seven focused contract tests, all 28 structure-contract tests, and the full
+  863-test suite with the same two platform-conditional wide-`longdouble`
+  skips. Ruff, compilation of `src`, `research`, `tests`, and `lean`, the Skill
+  audit, JSON parsing, three identical repo-map hashes across two
+  regenerations, privacy/path and hidden-Unicode scans, generated-artifact
+  cleanup, and diff checks also passed. The first PEP 517 build attempt failed
+  only because the sandbox could not resolve the package index; the identical
+  approved-network retry built both artifacts. It installed
+  `setuptools==83.0.0`, `wheel==0.47.0`, and `packaging==26.2` only in
+  automatically removed disposable `build-env-*` directories under the
+  operating-system temporary directory. No project environment, dependency
+  declaration, lock file, tracked artifact, trial, or research result changed.
+- Exact-head review `4794514495` on `094f00b` then found two test-contract P2s:
+  the synthetic retained chain did not require its sole empty-scope epoch at
+  sequence zero, and the terminal-bundle check admitted coherently rehashed
+  duplicate review or promotion-decision events. A separate fixer required the
+  exact genesis invariant and the all-and-only target-campaign
+  closure/review/decision/adjudication projection while preserving
+  other-campaign and genuinely global interleaving. Coherently rebuilt
+  missing, replaced, moved, duplicate, and wrong-scope epoch vectors plus
+  duplicate review/decision vectors now fail for those exact invariants. An
+  independent integrity reviewer confirmed both fixes and found no actionable
+  P1/P2.
+- Final validation after those two P2 fixes again passed seven focused contract
+  tests, all 28 structure-contract tests, and the full 863-test suite with the
+  same two platform skips, plus Ruff, compilation, the Skill audit,
+  deterministic repo-map regeneration, JSON, privacy/path, hidden-Unicode,
+  artifact-cleanup, and diff gates. The PEP 517 rebuild again used only
+  `setuptools==83.0.0`, `wheel==0.47.0`, and `packaging==26.2` in automatically
+  removed disposable build environments; it changed no project environment,
+  dependency declaration, lock file, tracked artifact, trial, or result.
+- Reconciled Stage 3 acceptance and the Stage 4a/4b split in the specification,
+  roadmap, handoff, repo-map generator, decision log, changelog, and
+  documentation-contract tests. PR #148 remains an independent draft; this
+  stage does not edit `AGENTS.md`.
+- The physical backend, locking/journaling/recovery policy, private storage
+  location, external checkpoint provider, and cross-platform durability claims
+  remain explicit Stage 4b decisions.
+- The pre-remediation stable-head local validation passed 856 tests with two
+  platform-conditional
+  wide-`longdouble` skips, Ruff, compilation, sdist/wheel build, the Skill
+  audit, deterministic repo-map regeneration, JSON parsing, privacy/Unicode
+  checks, and diff checks.
+- Validation of the `db323ed` pre-genesis-authority remediation passed 856
+  tests with the same two platform-conditional wide-`longdouble` skips, 21
+  focused structure tests, Ruff, compilation of `src`, `research`, `tests`,
+  and `lean`, sdist and wheel build, the Skill audit, three identical repo-map
+  hashes across two regenerations, JSON parsing, privacy/Unicode scans,
+  cleanup, and diff checks.
+  The default shell still had no `python` command, so validation reused the
+  existing isolated interpreter at
+  `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv`;
+  nothing was installed into or changed in that environment.
+- Final validation of the narrow external-attribution remediation passed 21
+  focused structure tests and the full 856-test suite with the same two
+  platform-conditional wide-`longdouble` skips, Ruff, compilation of `src`,
+  `research`, `tests`, and `lean`, sdist and wheel build, the Skill audit,
+  three identical repo-map hashes across two regenerations, JSON parsing,
+  privacy/path and hidden-Unicode scans, generated-artifact cleanup, and diff
+  checks.
+- The PEP 517 builds, including the final P2-remediation rebuild, installed
+  `setuptools==83.0.0`, `wheel==0.47.0`, and `packaging==26.2` only inside
+  automatically removed disposable build
+  environments under
+  `/private/var/folders/5r/vgv5b5gs3s91w6gp1mtbgnnc0000gn/T/build-env-*`.
+  They were used only to validate the sdist and wheel; no project environment,
+  dependency declaration, lock file, or tracked artifact changed. The final
+  external-attribution rebuild first failed because the sandbox could not
+  resolve the package index; the identical approved-network retry succeeded.
+  The temporary failed and successful isolated environments and build outputs
+  were removed.
+- During the second review fix, one `uv run` invocation unintentionally
+  created the ignored worktree environment
+  `/private/tmp/equity-factor-research-stage4a-trial-ledger-contract/.venv`
+  and an untracked `uv.lock`. The environment contained the local project
+  `ai-equity-factor-research==0.1.0` plus `Pygments==2.20.0`, `build==1.5.0`,
+  `iniconfig==2.3.0`, `numpy==2.5.1`, `packaging==26.2`, `pandas==3.0.5`,
+  `pluggy==1.6.0`, `pyproject_hooks==1.2.0`, `pytest==9.1.1`,
+  `python-dateutil==2.9.0.post0`, `ruff==0.16.0`, `scipy==1.18.0`, and
+  `six==1.17.0`; it was used only for focused fixture validation. The untracked
+  lock and entire environment were removed before commit, so no repository,
+  persistent environment, dependency declaration, or lock-file impact
+  remains.
+- This stage adds no factor, strategy, trial, generated research evidence,
+  provider, data access, private artifact, credential, dependency, paper/live
+  path, brokerage connection, or order behavior.
+
 ## 2026-07-27 - Point-In-Time Data Methodology Contract
 
 - Started from protected `main` merge `8a352d3` (PR #162) in the isolated

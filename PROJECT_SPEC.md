@@ -20,10 +20,16 @@ authority. Stage 2b implements it with required, role-bound, immutable source
 provenance whose caller-declared baseline is captured before later mutation,
 plus a controlled coordinate ledger for any later source write. Enforcement
 begins at capture and cannot reconstruct pre-capture history.
-`docs/point_in_time_data_methodology_contract.md` is the proposed Stage 3
+`docs/point_in_time_data_methodology_contract.md` is the accepted Stage 3
 provider-agnostic data authority. It separates acceptance of the methodology
 contract from review of a particular immutable dataset manifest and from
 eligibility for formal interpretation.
+`docs/experiment_trial_ledger_contract.md` is the proposed Stage 4a design
+authority. It separates semantic trials from execution attempts, freezes
+allocation-before-action and access-intent-before-read semantics, and requires
+append-only completeness plus an independently retained checkpoint. Acceptance
+still requires final current-head review, protected merge, and successful exact
+merge-head CI; Stage 4b runtime enforcement remains unimplemented.
 
 ## Current Phase and Boundary
 
@@ -174,10 +180,13 @@ and completeness enforcement.
 
 ## Trial and Statistical Discipline
 
-Before a formal run, allocate immutable experiment, campaign, trial-family, and
-trial IDs. Record every attempted configuration, failure, abort, invalid run,
-data revision, output hash, review outcome, selection decision, and protected
-sample access. Do not report only the best configuration.
+Before a formal run, allocate immutable campaign, experiment, global
+trial-family, semantic-trial, and execution-attempt IDs under
+`docs/experiment_trial_ledger_contract.md`. Record every configured variation,
+invocation, retry, failure, abort, invalid/excluded run, data revision, output
+disposition/hash, review outcome, selection decision, and protected-sample
+access. Trial completion is an execution state, not a research pass. Do not
+report only the best configuration.
 
 Formal validation is staged to include:
 
@@ -229,7 +238,7 @@ The canonical sequence is maintained in `docs/current_roadmap.md`:
 2. purged and bounded sample splits;
 3. signal and execution timing;
 4. point-in-time data methodology;
-5. immutable experiment and trial ledger;
+5. immutable experiment and trial ledger contract and implementation;
 6. statistical validation;
 7. factor registry and interpretable baselines;
 8. WorldQuant batches;
