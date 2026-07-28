@@ -815,15 +815,11 @@ def _ledger_event_identity_projection(source: object) -> dict[str, object]:
         is None
     ):
         raise ValueError("operation request hash must be lowercase SHA-256")
-    if projection["event_type"] != "TRIAL_ALLOCATED":
-        raise ValueError("golden event must be TRIAL_ALLOCATED")
-    if projection["subject_type"] != "trial":
-        raise ValueError("golden subject must be trial")
-    subject_id = _require_ledger_typed_id(
-        projection["subject_id"],
-        prefix="trl",
-        context="subject_id",
-    )
+    if projection["event_type"] not in {
+        "LEDGER_EPOCH_CREATED",
+        "TRIAL_ALLOCATED",
+    }:
+        raise ValueError("unexpected golden event type")
     for field in ["occurred_at", "recorded_at"]:
         if (
             not isinstance(projection[field], str)
@@ -837,6 +833,32 @@ def _ledger_event_identity_projection(source: object) -> dict[str, object]:
         or re.fullmatch(r"[0-9a-f]{64}", previous_hash) is None
     ):
         raise ValueError("previous event hash must be null or lowercase SHA-256")
+
+    if projection["event_type"] == "LEDGER_EPOCH_CREATED":
+        if sequence != 0 or previous_hash is not None:
+            raise ValueError("LEDGER_EPOCH_CREATED must reserve sequence zero")
+        if projection["subject_type"] != "ledger":
+            raise ValueError("golden epoch subject must be ledger")
+        if projection["subject_id"] != projection["ledger_id"]:
+            raise ValueError("golden epoch subject must equal its ledger")
+        _require_exact_keys(
+            projection["payload"],
+            {"campaign_scope_ids"},
+            context="LEDGER_EPOCH_CREATED payload",
+        )
+        if projection["payload"]["campaign_scope_ids"] != []:
+            raise ValueError("golden epoch must be ledger-global")
+        return projection
+
+    if sequence == 0 or previous_hash is None:
+        raise ValueError("TRIAL_ALLOCATED requires earlier parent allocations")
+    if projection["subject_type"] != "trial":
+        raise ValueError("golden subject must be trial")
+    subject_id = _require_ledger_typed_id(
+        projection["subject_id"],
+        prefix="trl",
+        context="subject_id",
+    )
 
     payload = _require_exact_keys(
         projection["payload"],
@@ -935,6 +957,73 @@ def _ledger_operation_request_projection(source: object) -> dict[str, object]:
         "payload",
     ]
     return {key: event[key] for key in request_keys}
+
+
+def _require_trial_allocation_parent_order(
+    preceding_events: object,
+    trial_event: object,
+) -> None:
+    """Test-only order check for the contract's required trial parents."""
+    trial = _ledger_event_identity_projection(trial_event)
+    if trial["event_type"] != "TRIAL_ALLOCATED":
+        raise ValueError("trial parent order requires TRIAL_ALLOCATED")
+    if not isinstance(preceding_events, list):
+        raise ValueError("trial parent order requires an event list")
+
+    parsed_events: list[dict[str, object]] = []
+    for index, raw_event in enumerate(preceding_events):
+        event = _require_exact_keys(
+            raw_event,
+            {"sequence", "event_type", "subject_id"},
+            context=f"trial parent event {index}",
+        )
+        sequence = event["sequence"]
+        if isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0:
+            raise ValueError("trial parent sequence must be nonnegative")
+        if not isinstance(event["event_type"], str) or not isinstance(
+            event["subject_id"], str
+        ):
+            raise ValueError("trial parent event type and subject must be strings")
+        parsed_events.append(event)
+
+    if [event["sequence"] for event in parsed_events] != list(
+        range(len(parsed_events))
+    ):
+        raise ValueError("trial parent events must be a contiguous prefix")
+
+    payload = trial["payload"]
+    assert isinstance(payload, dict)
+
+    def required_sequence(event_type: str, subject_id: object) -> int:
+        for event in parsed_events:
+            if event["event_type"] == event_type and event["subject_id"] == subject_id:
+                return int(event["sequence"])
+        raise ValueError(f"missing required {event_type} parent")
+
+    epoch_sequence = required_sequence("LEDGER_EPOCH_CREATED", trial["ledger_id"])
+    campaign_sequence = required_sequence(
+        "CAMPAIGN_ALLOCATED", payload["campaign_id"]
+    )
+    experiment_sequence = required_sequence(
+        "EXPERIMENT_ALLOCATED", payload["experiment_id"]
+    )
+    family_sequence = required_sequence(
+        "TRIAL_FAMILY_REGISTERED", payload["trial_family_id"]
+    )
+    sample_sequences = [
+        required_sequence("SAMPLE_REGISTERED", sample_id)
+        for sample_id in payload["sample_ids"]
+    ]
+    if not (
+        epoch_sequence == 0
+        and epoch_sequence < campaign_sequence
+        and campaign_sequence < experiment_sequence
+        and campaign_sequence < family_sequence
+        and experiment_sequence < min(sample_sequences)
+        and family_sequence < min(sample_sequences)
+        and max(sample_sequences) < trial["sequence"]
+    ):
+        raise ValueError("trial allocation parents are out of contract order")
 
 
 def _utf16_sort_key(value: str) -> bytes:
@@ -1293,6 +1382,9 @@ def test_ledger_event_golden_reorder_mutation_and_fail_closed_vectors() -> None:
         fixture["schema_version"]
         == "experiment_trial_ledger_event_v1_golden_v1"
     )
+    assert fixture["semantic_input"]["event_type"] == "LEDGER_EPOCH_CREATED"
+    assert fixture["semantic_input"]["sequence"] == 0
+    assert fixture["semantic_input"]["previous_event_sha256"] is None
     assert (
         base_request_bytes.decode()
         == fixture["operation_request_canonical_utf8"]
@@ -1344,9 +1436,63 @@ def test_ledger_event_golden_reorder_mutation_and_fail_closed_vectors() -> None:
         lambda: _ledger_event_identity_projection(missing_event_key)
     )
     invalid_typed_id = json.loads(json.dumps(fixture["semantic_input"]))
-    invalid_typed_id["payload"]["trial_id"] = "trial-readable-name"
+    invalid_typed_id["subject_id"] = "ledger-readable-name"
     _assert_value_error(
         lambda: _ledger_event_identity_projection(invalid_typed_id)
+    )
+    _assert_value_error(
+        lambda: _ledger_event_identity_projection(
+            fixture["orphan_trial_semantic_input"]
+        )
+    )
+    epoch_chained_trial = json.loads(
+        json.dumps(fixture["orphan_trial_semantic_input"])
+    )
+    epoch_chained_trial["sequence"] = 1
+    epoch_chained_trial["previous_event_sha256"] = fixture["sha256"]
+    assert _ledger_event_identity_projection(epoch_chained_trial)[
+        "previous_event_sha256"
+    ] == fixture["sha256"]
+    epoch_parent = {
+        "sequence": 0,
+        "event_type": "LEDGER_EPOCH_CREATED",
+        "subject_id": fixture["semantic_input"]["ledger_id"],
+    }
+    _assert_value_error(
+        lambda: _require_trial_allocation_parent_order(
+            [epoch_parent], epoch_chained_trial
+        )
+    )
+
+    payload = epoch_chained_trial["payload"]
+    valid_trial_chain = json.loads(json.dumps(epoch_chained_trial))
+    valid_trial_chain["sequence"] = 5
+    valid_trial_chain["previous_event_sha256"] = "a" * 64
+    _require_trial_allocation_parent_order(
+        [
+            epoch_parent,
+            {
+                "sequence": 1,
+                "event_type": "CAMPAIGN_ALLOCATED",
+                "subject_id": payload["campaign_id"],
+            },
+            {
+                "sequence": 2,
+                "event_type": "EXPERIMENT_ALLOCATED",
+                "subject_id": payload["experiment_id"],
+            },
+            {
+                "sequence": 3,
+                "event_type": "TRIAL_FAMILY_REGISTERED",
+                "subject_id": payload["trial_family_id"],
+            },
+            {
+                "sequence": 4,
+                "event_type": "SAMPLE_REGISTERED",
+                "subject_id": payload["sample_ids"][0],
+            },
+        ],
+        valid_trial_chain,
     )
     _assert_value_error(
         lambda: _ascii_jcs_golden_bytes({"allowed_key": 1.5})

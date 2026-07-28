@@ -42,6 +42,13 @@
   separate fixer mapped that case directly to `development` and added the
   corresponding `LEDGER-015` conformance assertion; a separate reviewer
   rechecked the narrow fix before the head was republished.
+- The fixed-head re-review identified a second P2: the original canonical
+  `TRIAL_ALLOCATED` vector incorrectly occupied sequence zero with no parent
+  chain. A separate fixer replaced the positive vector with a valid
+  sequence-zero `LEDGER_EPOCH_CREATED`, retained the orphan trial as rejection
+  evidence, and added test-only exact parent-order checks. A separate reviewer
+  independently recomputed the request/event hashes and found no remaining
+  actionable P1/P2 in the narrow fix.
 - Reconciled Stage 3 acceptance and the Stage 4a/4b split in the specification,
   roadmap, handoff, repo-map generator, decision log, changelog, and
   documentation-contract tests. PR #148 remains an independent draft; this
@@ -59,6 +66,18 @@
   `/private/var/folders/5r/vgv5b5gs3s91w6gp1mtbgnnc0000gn/T/build-env-*`.
   They were used only to validate the sdist and wheel; no project environment,
   dependency declaration, lock file, or tracked artifact changed.
+- During the second review fix, one `uv run` invocation unintentionally
+  created the ignored worktree environment
+  `/private/tmp/equity-factor-research-stage4a-trial-ledger-contract/.venv`
+  and an untracked `uv.lock`. The environment contained the local project
+  `ai-equity-factor-research==0.1.0` plus `Pygments==2.20.0`, `build==1.5.0`,
+  `iniconfig==2.3.0`, `numpy==2.5.1`, `packaging==26.2`, `pandas==3.0.5`,
+  `pluggy==1.6.0`, `pyproject_hooks==1.2.0`, `pytest==9.1.1`,
+  `python-dateutil==2.9.0.post0`, `ruff==0.16.0`, `scipy==1.18.0`, and
+  `six==1.17.0`; it was used only for focused fixture validation. The untracked
+  lock and entire environment were removed before commit, so no repository,
+  persistent environment, dependency declaration, or lock-file impact
+  remains.
 - This stage adds no factor, strategy, trial, generated research evidence,
   provider, data access, private artifact, credential, dependency, paper/live
   path, brokerage connection, or order behavior.
