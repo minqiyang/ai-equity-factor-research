@@ -1,5 +1,5 @@
 {
-  "schema_version": "experiment_trial_ledger_event_v1_golden_v1",
+  "schema_version": "experiment_trial_ledger_event_v1_golden_v2",
   "semantic_input": {
     "ledger_schema_version": "experiment_trial_ledger_v1",
     "event_schema_version": "ledger_event_v1",
@@ -66,7 +66,7 @@
     },
     "operation_request_sha256": "ef01294f07f255f3a8d1cfdd747478f4ff05c6b8a7715e677c5a2f5ebf7e7431"
   },
-  "orphan_trial_semantic_input": {
+  "incomplete_trial_allocation_stub": {
     "ledger_schema_version": "experiment_trial_ledger_v1",
     "event_schema_version": "ledger_event_v1",
     "canonicalization_id": "pit_canonical_json_v1",

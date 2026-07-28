@@ -587,6 +587,9 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
         "diagnostic/legacy sidecars",
         "`trial_id` identifies exactly one semantic configuration",
         "`attempt_id` identifies one invocation",
+        "Each logical entity ID is allocated exactly once across the ledger",
+        "reuse that already allocated ID as a typed subject or reference",
+        "Entity-ID conflict therefore means a second allocation attempt",
         "Campaign reports disclose both semantic trial count and execution-attempt count",
         "No validator, executor, protected-data accessor, or result-producing process",
         "LEDGER_EPOCH_CREATED",
@@ -620,7 +623,10 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
         "The stored `event_sha256`",
         "The common identity-envelope schema rejects missing or unknown envelope fields",
         "The v1 event-type vocabulary is closed at this minimum set",
-        "Stage 4a freezes exact unknown-field-rejecting payload schemas only for the two golden event types",
+        "Stage 4a freezes an exact unknown-field-rejecting payload schema only for one golden event type",
+        "`TRIAL_ALLOCATED` bindings are normative semantic requirements",
+        "must reject `TRIAL_ALLOCATED` as `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`",
+        "`incomplete_trial_allocation_stub` is rejection evidence only",
         "separately reviewed machine-readable per-event payload schema registry",
         "`SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`",
         "must not claim a contract-wide fail-closed ledger, Stage 4b conformance",
@@ -822,7 +828,7 @@ def _require_normalized_utc_timestamp(value: object, *, context: str) -> str:
 
 
 def _ledger_event_identity_projection(source: object) -> dict[str, object]:
-    """Validate the exact envelope and the two Stage 4a golden payload schemas."""
+    """Validate the exact envelope and sole Stage 4a golden epoch payload."""
     projection = _require_exact_keys(
         source,
         {
@@ -892,11 +898,8 @@ def _ledger_event_identity_projection(source: object) -> dict[str, object]:
         is None
     ):
         raise ValueError("operation request hash must be lowercase SHA-256")
-    if projection["event_type"] not in {
-        "LEDGER_EPOCH_CREATED",
-        "TRIAL_ALLOCATED",
-    }:
-        raise ValueError("event type has no frozen Stage 4a golden payload schema")
+    if projection["event_type"] != "LEDGER_EPOCH_CREATED":
+        raise ValueError("event type has no exact Stage 4a payload schema")
     for field in ["occurred_at", "recorded_at"]:
         _require_normalized_utc_timestamp(projection[field], context=field)
     previous_hash = projection["previous_event_sha256"]
@@ -906,107 +909,19 @@ def _ledger_event_identity_projection(source: object) -> dict[str, object]:
     ):
         raise ValueError("previous event hash must be null or lowercase SHA-256")
 
-    if projection["event_type"] == "LEDGER_EPOCH_CREATED":
-        if sequence != 0 or previous_hash is not None:
-            raise ValueError("LEDGER_EPOCH_CREATED must reserve sequence zero")
-        if projection["subject_type"] != "ledger":
-            raise ValueError("golden epoch subject must be ledger")
-        if projection["subject_id"] != projection["ledger_id"]:
-            raise ValueError("golden epoch subject must equal its ledger")
-        _require_exact_keys(
-            projection["payload"],
-            {"campaign_scope_ids"},
-            context="LEDGER_EPOCH_CREATED payload",
-        )
-        if projection["payload"]["campaign_scope_ids"] != []:
-            raise ValueError("golden epoch must be ledger-global")
-        return projection
-
-    if sequence == 0 or previous_hash is None:
-        raise ValueError("TRIAL_ALLOCATED requires earlier parent allocations")
-    if projection["subject_type"] != "trial":
-        raise ValueError("golden subject must be trial")
-    subject_id = _require_ledger_typed_id(
-        projection["subject_id"],
-        prefix="trl",
-        context="subject_id",
-    )
-
-    payload = _require_exact_keys(
+    if sequence != 0 or previous_hash is not None:
+        raise ValueError("LEDGER_EPOCH_CREATED must reserve sequence zero")
+    if projection["subject_type"] != "ledger":
+        raise ValueError("golden epoch subject must be ledger")
+    if projection["subject_id"] != projection["ledger_id"]:
+        raise ValueError("golden epoch subject must equal its ledger")
+    _require_exact_keys(
         projection["payload"],
-        {
-            "campaign_id",
-            "campaign_scope_ids",
-            "experiment_id",
-            "trial_family_id",
-            "trial_id",
-            "configuration_sha256",
-            "code_identity_sha256",
-            "data_manifest_ids",
-            "environment_id",
-            "environment_lock_sha256",
-            "sample_ids",
-            "selection_role",
-            "expected_artifact_roles",
-            "trial_state",
-        },
-        context="TRIAL_ALLOCATED payload",
+        {"campaign_scope_ids"},
+        context="LEDGER_EPOCH_CREATED payload",
     )
-    for field, prefix in {
-        "campaign_id": "cmp",
-        "experiment_id": "exp",
-        "trial_family_id": "tfm",
-        "trial_id": "trl",
-        "environment_id": "env",
-    }.items():
-        _require_ledger_typed_id(payload[field], prefix=prefix, context=field)
-    campaign_scope_ids = payload["campaign_scope_ids"]
-    if (
-        not isinstance(campaign_scope_ids, list)
-        or campaign_scope_ids != sorted(set(campaign_scope_ids))
-        or payload["campaign_id"] not in campaign_scope_ids
-    ):
-        raise ValueError("campaign scope IDs must be sorted and include campaign")
-    for index, campaign_scope_id in enumerate(campaign_scope_ids):
-        _require_ledger_typed_id(
-            campaign_scope_id,
-            prefix="cmp",
-            context=f"campaign_scope_ids[{index}]",
-        )
-    if payload["trial_id"] != subject_id:
-        raise ValueError("payload trial ID must equal the event subject")
-    for field in [
-        "configuration_sha256",
-        "code_identity_sha256",
-        "environment_lock_sha256",
-    ]:
-        value = payload[field]
-        if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
-            raise ValueError(f"{field} must be lowercase SHA-256")
-    for field, prefix in {
-        "data_manifest_ids": "dsm",
-        "sample_ids": "smp",
-    }.items():
-        values = payload[field]
-        if not isinstance(values, list) or values != sorted(set(values)):
-            raise ValueError(f"{field} must be a sorted unique array")
-        for index, value in enumerate(values):
-            _require_ledger_typed_id(
-                value,
-                prefix=prefix,
-                context=f"{field}[{index}]",
-            )
-    artifact_roles = payload["expected_artifact_roles"]
-    if (
-        not isinstance(artifact_roles, list)
-        or artifact_roles != sorted(set(artifact_roles))
-        or not all(isinstance(role, str) and role for role in artifact_roles)
-    ):
-        raise ValueError("expected artifact roles must be sorted unique strings")
-    if payload["selection_role"] != "diagnostic":
-        raise ValueError("unexpected golden selection role")
-    if payload["trial_state"] != "PLANNED":
-        raise ValueError("unexpected golden trial state")
+    if projection["payload"]["campaign_scope_ids"] != []:
+        raise ValueError("golden epoch must be ledger-global")
     return projection
 
 
@@ -1031,43 +946,58 @@ def _ledger_operation_request_projection(source: object) -> dict[str, object]:
     return {key: event[key] for key in request_keys}
 
 
-def _require_trial_allocation_parent_order(
+def _require_trial_parent_semantic_order_facts(
     parent_facts: object,
-    trial_event: object,
 ) -> None:
-    """Check the contract's three parent paths from documentation-only facts."""
-    trial = _ledger_event_identity_projection(trial_event)
-    if trial["event_type"] != "TRIAL_ALLOCATED":
-        raise ValueError("trial parent order requires TRIAL_ALLOCATED")
+    """Check non-append semantic trial-parent ordering facts."""
     facts = _require_exact_keys(
         parent_facts,
         {
             "epoch_sequence",
             "campaign_sequence",
             "experiment_sequence",
+            "trial_sequence",
             "campaign_id",
             "experiment_id",
             "family_id",
+            "trial_id",
+            "sample_ids",
             "family_path",
             "sample_paths",
         },
         context="trial parent facts",
     )
-    payload = trial["payload"]
-    assert isinstance(payload, dict)
     epoch_sequence = facts["epoch_sequence"]
     campaign_sequence = facts["campaign_sequence"]
     experiment_sequence = facts["experiment_sequence"]
-    trial_sequence = trial["sequence"]
+    trial_sequence = facts["trial_sequence"]
+    for field, prefix in {
+        "campaign_id": "cmp",
+        "experiment_id": "exp",
+        "family_id": "tfm",
+        "trial_id": "trl",
+    }.items():
+        _require_ledger_typed_id(facts[field], prefix=prefix, context=field)
+    sample_ids = facts["sample_ids"]
     if (
-        facts["campaign_id"] != payload["campaign_id"]
-        or facts["experiment_id"] != payload["experiment_id"]
-        or facts["family_id"] != payload["trial_family_id"]
+        any(
+            isinstance(sequence, bool) or not isinstance(sequence, int)
+            for sequence in [
+                epoch_sequence,
+                campaign_sequence,
+                experiment_sequence,
+                trial_sequence,
+            ]
+        )
         or not (epoch_sequence == 0 < campaign_sequence < experiment_sequence)
         or experiment_sequence >= trial_sequence
-        or set(facts["sample_paths"]) != set(payload["sample_ids"])
+        or not isinstance(sample_ids, list)
+        or sample_ids != sorted(set(sample_ids))
+        or set(facts["sample_paths"]) != set(sample_ids)
     ):
-        raise ValueError("base parent bindings or order are invalid")
+        raise ValueError("base semantic parent bindings or order are invalid")
+    for sample_id in sample_ids:
+        _require_ledger_typed_id(sample_id, prefix="smp", context="sample_id")
 
     def require_path(
         path: object,
@@ -1201,6 +1131,101 @@ def _require_trial_allocation_parent_order(
             expected_entity_id=sample_id,
             allow_external=True,
         )
+
+
+def _count_entity_identity_fact_appends(source: object) -> int:
+    """Evaluate allocation/reference/idempotency documentation facts."""
+    if not isinstance(source, list):
+        raise ValueError("entity identity facts must be a list")
+    allocations: dict[str, tuple[str, int]] = {}
+    committed_operations: dict[str, tuple[object, ...]] = {}
+    event_ids: set[str] = set()
+    sequences: set[int] = set()
+    append_count = 0
+    entity_prefixes = {"trial": "trl", "attempt": "att"}
+
+    for raw_fact in source:
+        fact = _require_exact_keys(
+            raw_fact,
+            {
+                "kind",
+                "entity_type",
+                "entity_id",
+                "event_id",
+                "operation_id",
+                "sequence",
+                "operation_request_sha256",
+            },
+            context="entity identity fact",
+        )
+        entity_type = fact["entity_type"]
+        if entity_type not in entity_prefixes:
+            raise ValueError("unknown entity type")
+        entity_id = _require_ledger_typed_id(
+            fact["entity_id"],
+            prefix=entity_prefixes[entity_type],
+            context="entity identity fact",
+        )
+        event_id = _require_ledger_typed_id(
+            fact["event_id"],
+            prefix="evt",
+            context="entity fact event_id",
+        )
+        operation_id = _require_ledger_typed_id(
+            fact["operation_id"],
+            prefix="opn",
+            context="entity fact operation_id",
+        )
+        sequence = fact["sequence"]
+        request_sha256 = fact["operation_request_sha256"]
+        if (
+            isinstance(sequence, bool)
+            or not isinstance(sequence, int)
+            or sequence < 0
+            or not isinstance(request_sha256, str)
+            or re.fullmatch(r"[0-9a-f]{64}", request_sha256) is None
+        ):
+            raise ValueError("invalid entity identity commit fact")
+        request_identity = (
+            event_id,
+            operation_id,
+            sequence,
+            request_sha256,
+            entity_type,
+            entity_id,
+        )
+
+        if fact["kind"] == "exact_replay":
+            if committed_operations.get(operation_id) != request_identity:
+                raise ValueError("replay does not match the committed request")
+            continue
+        if (
+            operation_id in committed_operations
+            or event_id in event_ids
+            or sequence in sequences
+        ):
+            raise ValueError("conflicting operation, event, or sequence reuse")
+        if fact["kind"] == "allocate":
+            if entity_id in allocations:
+                raise ValueError("logical entity has already been allocated")
+            allocations[entity_id] = (entity_type, sequence)
+        elif fact["kind"] == "reference":
+            allocation = allocations.get(entity_id)
+            if (
+                allocation is None
+                or allocation[0] != entity_type
+                or sequence <= allocation[1]
+            ):
+                raise ValueError("reference precedes allocation or has wrong type")
+        else:
+            raise ValueError("unknown entity identity fact kind")
+
+        committed_operations[operation_id] = request_identity
+        event_ids.add(event_id)
+        sequences.add(sequence)
+        append_count += 1
+
+    return append_count
 
 
 def _utf16_sort_key(value: str) -> bytes:
@@ -1529,7 +1554,7 @@ def test_public_projection_sha256_golden_reorder_and_mutation_vectors() -> None:
     )
 
 
-def test_ledger_event_golden_parent_paths_and_fail_closed_vectors() -> None:
+def test_ledger_epoch_golden_semantic_facts_and_fail_closed_vectors() -> None:
     fixture = json.loads(
         (
             PROJECT_ROOT
@@ -1557,7 +1582,7 @@ def test_ledger_event_golden_parent_paths_and_fail_closed_vectors() -> None:
 
     assert (
         fixture["schema_version"]
-        == "experiment_trial_ledger_event_v1_golden_v1"
+        == "experiment_trial_ledger_event_v1_golden_v2"
     )
     assert fixture["semantic_input"]["event_type"] == "LEDGER_EPOCH_CREATED"
     assert fixture["semantic_input"]["sequence"] == 0
@@ -1672,29 +1697,28 @@ def test_ledger_event_golden_parent_paths_and_fail_closed_vectors() -> None:
     _assert_value_error(
         lambda: _ledger_event_identity_projection(invalid_typed_id)
     )
+    incomplete_trial_stub = fixture["incomplete_trial_allocation_stub"]
     _assert_value_error(
-        lambda: _ledger_event_identity_projection(
-            fixture["orphan_trial_semantic_input"]
-        )
+        lambda: _ledger_event_identity_projection(incomplete_trial_stub)
     )
-    epoch_chained_trial = json.loads(
-        json.dumps(fixture["orphan_trial_semantic_input"])
+    sequence_repaired_stub = json.loads(json.dumps(incomplete_trial_stub))
+    sequence_repaired_stub["sequence"] = 1
+    sequence_repaired_stub["previous_event_sha256"] = fixture["sha256"]
+    _assert_value_error(
+        lambda: _ledger_event_identity_projection(sequence_repaired_stub)
     )
-    epoch_chained_trial["sequence"] = 1
-    epoch_chained_trial["previous_event_sha256"] = fixture["sha256"]
-    assert _ledger_event_identity_projection(epoch_chained_trial)[
-        "previous_event_sha256"
-    ] == fixture["sha256"]
 
-    payload = epoch_chained_trial["payload"]
-    campaign_id = payload["campaign_id"]
-    experiment_id = payload["experiment_id"]
-    family_id = payload["trial_family_id"]
-    sample_id = payload["sample_ids"][0]
+    # Independent semantic facts; these do not project the rejected stub payload.
+    campaign_id = "cmp_00000000000000000000000000000005"
+    experiment_id = "exp_00000000000000000000000000000006"
+    family_id = "tfm_00000000000000000000000000000007"
+    trial_id = "trl_00000000000000000000000000000008"
+    sample_id = "smp_0000000000000000000000000000000b"
 
     def facts(
         campaign_sequence: int,
         experiment_sequence: int,
+        trial_sequence: int,
         family_path: dict[str, object],
         sample_path: dict[str, object],
     ) -> dict[str, object]:
@@ -1702,9 +1726,12 @@ def test_ledger_event_golden_parent_paths_and_fail_closed_vectors() -> None:
             "epoch_sequence": 0,
             "campaign_sequence": campaign_sequence,
             "experiment_sequence": experiment_sequence,
+            "trial_sequence": trial_sequence,
             "campaign_id": campaign_id,
             "experiment_id": experiment_id,
             "family_id": family_id,
+            "trial_id": trial_id,
+            "sample_ids": [sample_id],
             "family_path": family_path,
             "sample_paths": {sample_id: sample_path},
         }
@@ -1761,49 +1788,44 @@ def test_ledger_event_golden_parent_paths_and_fail_closed_vectors() -> None:
             },
         }
 
-    def trial_at(sequence: int) -> dict[str, object]:
-        trial = json.loads(json.dumps(epoch_chained_trial))
-        trial["sequence"] = sequence
-        trial["previous_event_sha256"] = "a" * 64
-        return trial
-
-    direct_facts = facts(1, 4, direct(3, family_id), direct(2, sample_id))
+    direct_facts = facts(1, 4, 5, direct(3, family_id), direct(2, sample_id))
     other_campaign_id = "cmp_00000000000000000000000000000004"
     shared_direct_facts = facts(
         1,
         4,
+        5,
         direct(3, family_id, [other_campaign_id, campaign_id]),
         direct(2, sample_id),
     )
     global_facts = facts(
         3,
         4,
+        7,
         ledger_global(1, 5, family_id),
         ledger_global(2, 6, sample_id),
     )
     late_global_facts = facts(
         1,
         2,
+        7,
         ledger_global(3, 5, family_id),
         ledger_global(4, 6, sample_id),
     )
     external_facts = facts(
         1,
         3,
+        5,
         direct(4, family_id),
         stage3_external(2, sample_id),
     )
-    for valid_facts, trial_sequence in [
-        (direct_facts, 5),
-        (shared_direct_facts, 5),
-        (global_facts, 7),
-        (late_global_facts, 7),
-        (external_facts, 5),
+    for valid_facts in [
+        direct_facts,
+        shared_direct_facts,
+        global_facts,
+        late_global_facts,
+        external_facts,
     ]:
-        _require_trial_allocation_parent_order(
-            valid_facts,
-            trial_at(trial_sequence),
-        )
+        _require_trial_parent_semantic_order_facts(valid_facts)
 
     invalid_cases: list[dict[str, object]] = []
 
@@ -1840,11 +1862,109 @@ def test_ledger_event_golden_parent_paths_and_fail_closed_vectors() -> None:
 
     for invalid_facts in invalid_cases:
         _assert_value_error(
-            lambda invalid_facts=invalid_facts: _require_trial_allocation_parent_order(
+            lambda invalid_facts=invalid_facts: _require_trial_parent_semantic_order_facts(
                 invalid_facts,
-                trial_at(7),
             )
         )
+
+    def entity_fact(
+        kind: str,
+        sequence: int,
+        *,
+        event_suffix: int,
+        operation_suffix: int,
+        request_digit: str,
+    ) -> dict[str, object]:
+        return {
+            "kind": kind,
+            "entity_type": "trial",
+            "entity_id": trial_id,
+            "event_id": f"evt_{event_suffix:032x}",
+            "operation_id": f"opn_{operation_suffix:032x}",
+            "sequence": sequence,
+            "operation_request_sha256": request_digit * 64,
+        }
+
+    allocation_fact = entity_fact(
+        "allocate",
+        1,
+        event_suffix=21,
+        operation_suffix=31,
+        request_digit="1",
+    )
+    lifecycle_reference_fact = entity_fact(
+        "reference",
+        2,
+        event_suffix=22,
+        operation_suffix=32,
+        request_digit="2",
+    )
+    assert (
+        _count_entity_identity_fact_appends(
+            [allocation_fact, lifecycle_reference_fact]
+        )
+        == 2
+    )
+    exact_replay_fact = dict(allocation_fact)
+    exact_replay_fact["kind"] = "exact_replay"
+    assert (
+        _count_entity_identity_fact_appends([allocation_fact, exact_replay_fact])
+        == 1
+    )
+
+    duplicate_allocation = entity_fact(
+        "allocate",
+        3,
+        event_suffix=23,
+        operation_suffix=33,
+        request_digit="3",
+    )
+    _assert_value_error(
+        lambda: _count_entity_identity_fact_appends(
+            [allocation_fact, duplicate_allocation]
+        )
+    )
+    _assert_value_error(
+        lambda: _count_entity_identity_fact_appends([lifecycle_reference_fact])
+    )
+    allocation_at_two = dict(allocation_fact)
+    allocation_at_two["sequence"] = 2
+    reference_at_one = dict(lifecycle_reference_fact)
+    reference_at_one["sequence"] = 1
+    _assert_value_error(
+        lambda: _count_entity_identity_fact_appends(
+            [allocation_at_two, reference_at_one]
+        )
+    )
+    wrong_type_reference = dict(lifecycle_reference_fact)
+    wrong_type_reference["entity_type"] = "attempt"
+    _assert_value_error(
+        lambda: _count_entity_identity_fact_appends(
+            [allocation_fact, wrong_type_reference]
+        )
+    )
+    conflicting_replay = dict(exact_replay_fact)
+    conflicting_replay["operation_request_sha256"] = "f" * 64
+    _assert_value_error(
+        lambda: _count_entity_identity_fact_appends(
+            [allocation_fact, conflicting_replay]
+        )
+    )
+    duplicate_event_reference = dict(lifecycle_reference_fact)
+    duplicate_event_reference["event_id"] = allocation_fact["event_id"]
+    _assert_value_error(
+        lambda: _count_entity_identity_fact_appends(
+            [allocation_fact, duplicate_event_reference]
+        )
+    )
+    duplicate_sequence_reference = dict(lifecycle_reference_fact)
+    duplicate_sequence_reference["sequence"] = allocation_fact["sequence"]
+    _assert_value_error(
+        lambda: _count_entity_identity_fact_appends(
+            [allocation_fact, duplicate_sequence_reference]
+        )
+    )
+
     _assert_value_error(
         lambda: _ascii_jcs_golden_bytes({"allowed_key": 1.5})
     )

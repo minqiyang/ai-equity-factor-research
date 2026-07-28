@@ -14,7 +14,9 @@ profitability, or trading readiness.
   campaign inventory/closure, failure and artifact retention, protected-access
   capabilities, canonical chained events, independently retained checkpoints,
   review binding, and private/public projections; and adds a synthetic golden
-  event plus a 15-case later-runtime matrix. It does not implement a ledger,
+  epoch event, rejection/semantic fact vectors, and a 15-case later-runtime
+  matrix. Exact schemas for `TRIAL_ALLOCATED` and the rest of the closed event
+  vocabulary remain a Stage 4b prerequisite. It does not implement a ledger,
   choose a backend, migrate legacy logs, access data, add a dependency, or run
   a research trial.
 - Added the accepted provider-agnostic point-in-time data methodology contract.

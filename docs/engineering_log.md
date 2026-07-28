@@ -88,6 +88,40 @@
   noncanonical offsets. The golden fixture and its canonical bytes/hashes did
   not change, and the independent reviewer reported no remaining actionable
   P1/P2.
+- The following current-head review found one P1 and one P2. The P1 showed that
+  Stage 4a's supposedly exact `TRIAL_ALLOCATED` payload omitted many immutable
+  bindings that the same contract requires, so an accepted event could not
+  prove the trial configuration, code, data, environment, sample, timing,
+  execution, and policy identity. The P2 showed that "every entity ID is
+  globally unique" had been encoded as if a later lifecycle record could not
+  reuse the already allocated entity as its subject, contradicting the
+  lifecycle and supersession model.
+- A separate read-only remediation audit rejected two unsafe shortcuts:
+  inventing unreviewed trial fields merely to satisfy the narrative and
+  weakening the required trial bindings to match the incomplete fixture. It
+  recommended that Stage 4a freeze only the exact epoch payload, retain the
+  full trial bindings as normative semantic requirements, and defer their
+  field placement/types/nullability/unions/nested schemas to the complete
+  Stage 4b registry. It also distinguished one-time logical-entity allocation
+  from legal later typed references and from event/operation/sequence
+  uniqueness.
+- A different fixer applied that narrow remediation. The fixture now labels the
+  trial object as `incomplete_trial_allocation_stub` and proves rejection both
+  at sequence zero and after repairing sequence/previous-hash fields. The
+  documentation validator accepts only the exact epoch event; trial-parent
+  alternatives and entity allocation/reference/idempotency checks are
+  explicitly non-append semantic facts. Exact operation replay adds no record,
+  while second allocation, reference-before-allocation, wrong-type reference,
+  changed-request replay, and event/sequence conflicts fail closed. The epoch
+  canonical bytes and request/event hashes remain unchanged.
+- The first independent post-remediation integrity review found one P2 in the
+  documentation-fact helper: it treated input-list order as sufficient proof
+  that an entity reference followed allocation, even when the reference's
+  authoritative ledger sequence was earlier. A separate non-reviewing fixer
+  retained the allocation sequence with the entity type, required every
+  reference sequence to be strictly greater, and added a deterministic
+  allocation-at-2/reference-at-1 rejection vector. The focused and full suites
+  then passed.
 - Reconciled Stage 3 acceptance and the Stage 4a/4b split in the specification,
   roadmap, handoff, repo-map generator, decision log, changelog, and
   documentation-contract tests. PR #148 remains an independent draft; this
@@ -95,19 +129,30 @@
 - The physical backend, locking/journaling/recovery policy, private storage
   location, external checkpoint provider, and cross-platform durability claims
   remain explicit Stage 4b decisions.
-- Final local validation passed 856 tests with two platform-conditional
+- The pre-remediation stable-head local validation passed 856 tests with two
+  platform-conditional
   wide-`longdouble` skips, Ruff, compilation, sdist/wheel build, the Skill
   audit, deterministic repo-map regeneration, JSON parsing, privacy/Unicode
   checks, and diff checks.
+- Final validation of the current remediation passed 856 tests with the same
+  two platform-conditional wide-`longdouble` skips, 21 focused structure
+  tests, Ruff, compilation of `src`, `research`, `tests`, and `lean`, sdist and
+  wheel build, the Skill audit, three identical repo-map hashes across two
+  regenerations, JSON parsing, privacy/Unicode scans, cleanup, and diff checks.
+  The default shell still had no `python` command, so validation reused the
+  existing isolated interpreter at
+  `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv`;
+  nothing was installed into or changed in that environment.
 - The PEP 517 build installed `setuptools==83.0.0`, `wheel==0.47.0`, and
   `packaging==26.2` only inside automatically removed disposable build
   environments under
   `/private/var/folders/5r/vgv5b5gs3s91w6gp1mtbgnnc0000gn/T/build-env-*`.
   They were used only to validate the sdist and wheel; no project environment,
   dependency declaration, lock file, or tracked artifact changed. The final
-  post-review rebuild first failed because the sandbox could not resolve the
-  package index; the identical approved-network retry succeeded. The temporary
-  failed and successful isolated environments were automatically removed.
+  current-remediation rebuild first failed because the sandbox could not
+  resolve the package index; the identical approved-network retry succeeded.
+  The temporary failed and successful isolated environments and external
+  build outputs were removed.
 - During the second review fix, one `uv run` invocation unintentionally
   created the ignored worktree environment
   `/private/tmp/equity-factor-research-stage4a-trial-ledger-contract/.venv`

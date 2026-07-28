@@ -44,6 +44,17 @@ Decision:
 - Reuse `pit_canonical_json_v1` for an exact ledger-event identity projection,
   chain every event to the prior hash, and require an independently retained
   immutable head/checkpoint for formal campaign closure.
+- Allocate each logical typed entity ID exactly once. Later lifecycle,
+  correction, supersession, review, and decision records reuse that ID as a
+  typed subject or reference; only a second allocation conflicts. Event IDs,
+  operation IDs, and sequences continue to identify distinct
+  append/request/commit records and cannot be reused inconsistently.
+- Freeze the exact common identity envelope and the synthetic
+  `LEDGER_EPOCH_CREATED` payload in Stage 4a. Keep the complete
+  `TRIAL_ALLOCATED` bindings and parent order as normative semantic
+  requirements, but reject that event as
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY` until Stage 4b accepts a complete
+  machine-readable per-event payload-schema registry.
 - Keep execution state separate from charter candidate evidence state.
 - Keep the full ledger private and repository-external; expose only a
   deterministic allowlisted public projection without paths, credentials, raw
@@ -63,6 +74,8 @@ Consequences:
 - Stage 4a is a documentation/golden-contract stage only. It adds no runtime,
   database, migrated log, research trial, private access, generated performance
   evidence, dependency, or trading behavior.
+- Stage 4a's epoch golden and non-append semantic fact vectors do not establish
+  contract-wide payload validation or Stage 4b conformance.
 - Legacy logs remain `DIAGNOSTIC_ONLY` references and cannot prove formal
   completeness or holdout independence.
 - Stage 5 remains blocked until Stage 4b implements and behaviorally verifies
@@ -70,10 +83,13 @@ Consequences:
 
 Follow-up:
 
-- In a separate Stage 4b architecture/implementation PR, choose and justify the
-  storage, transaction/recovery, private-location, and external-checkpoint
-  policies; then add fault, restart, concurrency, tamper, protected-access,
-  closure, and privacy tests before integrating one synthetic workflow.
+- In the first separate Stage 4b slice, freeze the complete machine-readable
+  event payload-schema registry, deterministic positive/negative vectors, and
+  registry digest. Then choose and justify the storage, transaction/recovery,
+  private-location, and external-checkpoint policies in separately reviewable
+  architecture/implementation work; add fault, restart, concurrency, tamper,
+  protected-access, closure, and privacy tests before integrating one synthetic
+  workflow.
 
 ## 2026-07-27 - Separate Data Methodology, Dataset, And Interpretation Gates
 

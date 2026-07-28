@@ -26,6 +26,14 @@ Updated: 2026-07-27 for the Experiment and Trial Ledger Contract.
 - The Stage 4a candidate freezes ledger evidence semantics only. The existing
   JSON writer and registry remain diagnostic/legacy; no append-only runtime,
   backend, private ledger, campaign, or formal interpretation is implemented.
+  Its exact Stage 4a event payload coverage is deliberately limited to the
+  common identity envelope and the synthetic `LEDGER_EPOCH_CREATED` payload.
+  `TRIAL_ALLOCATED` retains complete normative binding and parent-order
+  semantics but must fail closed as `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY` until
+  Stage 4b supplies a separately reviewed complete machine-readable event
+  schema registry. A logical entity is allocated once; later typed lifecycle,
+  correction, supersession, review, and decision events may reference that
+  existing entity without reallocating it.
   Local validation passed 856 tests with two platform-conditional skips, Ruff,
   compilation, build, Skill, repo-map, JSON, privacy/Unicode, and diff checks.
   Final current-head review, protected merge, and exact merge-head CI remain
@@ -118,6 +126,9 @@ from every execution attempt. It requires:
 - explicit produced, partial, and not-produced artifact dispositions;
 - exact `pit_canonical_json_v1` event bytes, an append-only previous-hash chain,
   and correction through supersession only;
+- one exact synthetic epoch payload plus non-append trial-parent and
+  entity-allocation/reference semantic facts; the complete per-event payload
+  registry remains an explicit Stage 4b prerequisite;
 - an independently retained head/checkpoint because a chain alone cannot prove
   that a valid tail was not deleted;
 - terminal trial/access reconciliation before campaign closure; and
@@ -192,14 +203,21 @@ Only then begin:
 Stage 4b - Experiment/trial ledger implementation.
 ```
 
-Implement the accepted contract in a separate ledger namespace. Before runtime
-work, resolve the physical backend, private storage location, transaction and
-recovery policy, and external checkpoint architecture. Use only caller-supplied
-temporary storage in tests until that decision is accepted. Require behavioral
-fault, restart, concurrency, tamper, access-capability, campaign-closure, and
-privacy tests. Do not retrofit the legacy writer, run real-data campaigns, or
-interpret historical diagnostics while Stage 4b and later statistical gates
-remain incomplete.
+Begin with a design-first, machine-readable exact payload-schema registry that
+covers every closed-vocabulary event exactly once and supplies deterministic
+positive/negative vectors plus a registry digest. Until that slice is accepted,
+all non-epoch events remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+
+Only after the registry boundary is reviewable should Stage 4b select a
+physical backend, private storage location, transaction/recovery policy, or
+external checkpoint architecture; materially different valid architecture
+choices require an explicit owner decision. Runtime work must use a separate
+ledger namespace and caller-supplied temporary storage in tests until the
+private-location decision is accepted. Require behavioral fault, restart,
+concurrency, tamper, access-capability, campaign-closure, and privacy tests. Do
+not retrofit the legacy writer, run real-data campaigns, or interpret
+historical diagnostics while Stage 4b and later statistical gates remain
+incomplete.
 
 ## Freshness Checklist
 
