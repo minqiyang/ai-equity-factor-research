@@ -9,6 +9,14 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the design-only Stage 4B-R1A allocation/registration architecture-A
+  contract. It preserves the accepted R0 authority byte-for-byte, retains the
+  37-event vocabulary, selects reservation-only campaign/experiment
+  allocation, entity subjects, explicit campaign scope, a separately versioned
+  closed R1 schema language, and requirements for future exact reference-based
+  family and Stage 3 sample authorities. It accepts neither authority,
+  promotes no event, adds no runtime or dependency, and creates no trial,
+  attempt, protected access, private data, or trading behavior.
 - Added the Stage 4B-R0 fail-closed ledger schema-registry foundation in a
   separate `ledger` namespace. It packages a self-contained canonical JSON
   registry and digest, rejects duplicate raw JSON properties and unsafe

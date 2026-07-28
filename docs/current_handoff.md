@@ -1,6 +1,7 @@
 # Current Handoff
 
-Updated: 2026-07-28 for the Stage 4B-R0 schema-registry foundation.
+Updated: 2026-07-28 for the Stage 4B-R1A allocation/registration architecture
+decision.
 
 ## Canonical State
 
@@ -12,19 +13,26 @@ Updated: 2026-07-28 for the Stage 4B-R0 schema-registry foundation.
   `docs/point_in_time_data_methodology_contract.md`.
 - Accepted Stage 4a design authority:
   `docs/experiment_trial_ledger_contract.md`.
-- Active Stage 4B-R0 registry authority:
+- Accepted Stage 4B-R0 registry authority:
   `docs/experiment_trial_ledger_schema_registry_contract.md`.
+- Active Stage 4B-R1A architecture decision:
+  `docs/experiment_trial_ledger_allocation_registration_schema_contract.md`.
 - Active roadmap: `docs/current_roadmap.md`.
 - Short operational controller: `docs/codex_long_running_controller.md`.
-- Verified starting `origin/main`: `27f0497`, the protected merge of PR #164.
-- Starting validation: 863 tests passed with two platform-conditional
-  wide-`longdouble` skips; compilation and exact merge-head GitHub CI passed.
+- Verified starting `origin/main`: `4c874eb`, the protected merge of PR #165.
+- Starting validation: 912 tests passed with two platform-conditional
+  wide-`longdouble` skips; Ruff, compilation, and exact merge-head GitHub CI
+  passed.
 - Stage 1 split isolation and Stage 2 signal/execution timing are complete on
   protected main. Stage 3 methodology is accepted; it does not accept a
   provider, dataset, license, universe, field, benchmark, or historical claim.
 - Stage 4a PR #164 passed 863 tests, Ruff, compilation, build, Skill, repo-map,
   privacy/Unicode/diff, final current-head review, protected merge, and exact
   merge-head GitHub CI at `27f0497`.
+- Stage 4B-R0 PR #165 passed 912 tests, Ruff, compilation, build, deterministic
+  repo-map, package-resource, privacy/Unicode/diff, three independent final
+  reviews, exact-head CI, final current-head Codex review, protected merge, and
+  exact merge-head GitHub CI at `4c874eb`.
 - The accepted Stage 4a contract freezes ledger evidence semantics only. The existing
   JSON writer and registry remain diagnostic/legacy; no append-only runtime,
   backend, private ledger, campaign, or formal interpretation is implemented.
@@ -167,7 +175,7 @@ The current schema-v1 JSON logs cannot prove these properties and remain
 dependency, migrated log, research trial, private access, or generated
 performance evidence.
 
-## Active Stage 4B-R0 Schema Registry Decision
+## Accepted R0 And Active R1A Architecture Decision
 
 Six non-overlapping read-only audits found that Stage 4a intentionally froze
 only the common event envelope and `LEDGER_EPOCH_CREATED` payload. Exact
@@ -193,6 +201,42 @@ review, or promotion behavior. Trial count, attempt count, and holdout access
 remain zero. Backend, private location, transaction/recovery, currentness,
 actor authority/signature, fork handling, and new production dependencies
 remain separate owner decisions.
+
+PR #165 accepted that R0 authority on protected main without changing the
+accepted Stage 4a event semantics. Its packaged registry supports only
+`LEDGER_EPOCH_CREATED` and rejects the other 36 known events as
+`SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+
+Six new non-overlapping read-only audits then examined the
+allocation/registration family. They agreed that direct promotion would
+launder narrative or test-helper facts into false wire-schema coverage. The
+owner selected architecture A:
+
+- preserve R0 registry JSON and its sidecar byte-for-byte;
+- retain the accepted 37-event vocabulary;
+- publish R1B as separate registry/schema-language version `0.2.0` and require
+  every later promotion batch to publish a new immutable registry release;
+- make campaign and experiment allocation reservation-only;
+- use the allocated, registered, or bound entity as subject;
+- place `campaign_scope_ids` explicitly in each family payload and require
+  every shared direct-scope campaign to be allocated first;
+- add only closed tagged-union, array/path-membership, and `safe_public_id`
+  capabilities in the versioned R1 language; and
+- require future exact retrievable family-definition and Stage 3 sample
+  authorities, without accepting either authority and without inferring
+  non-campaign typed-ID prefixes from helpers or rejected fixtures.
+
+`docs/experiment_trial_ledger_allocation_registration_schema_contract.md`
+records that design. R1A promotes no event and modifies no registry artifact or
+runtime. Family, sample, and binding events remain blocked by exact authority,
+anti-reset, alias/currentness, finite-bound, and privacy decisions.
+
+R1B remains additionally blocked by an owner decision on the exact experiment
+ID namespace. Once selected, R1B must publish immutable registry `0.2.0`,
+implement and meta-test all three schema-language `0.2.0` additions, and
+preserve R0 artifact bytes and validator behavior. Each later schema-promotion
+batch must publish a new immutable, monotonically versioned registry artifact
+and digest rather than overwrite an accepted release.
 
 ## Verified Implementation Baseline
 
@@ -230,7 +274,9 @@ evaluation-window, metric-anchor, benchmark-window, capital-validity, and
 metadata contract. Stage 3 defines the data-methodology contract but does not
 verify a dataset. Stage 4a defines the accepted trial-ledger contract but does
 not enforce it. Stage 4B-R0 only makes its one exact event and every
-incomplete/unknown event machine-detectable and fail closed. Additional
+incomplete/unknown event machine-detectable and fail closed. Stage 4B-R1A
+selects the versioned minimal allocation/registration architecture but still
+promotes no event. Additional
 blockers include incomplete runtime trial retention,
 absent dependence/multiplicity/overfit controls, and diagnostic-only
 cost/capacity assumptions. See `docs/current_roadmap.md` for the prioritized
@@ -243,24 +289,28 @@ SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
 
 At the last verification, PR #148 was an independent Draft governance PR from
 an older base that changed only `AGENTS.md`. It was not a predecessor for PRs
-#158-#164. The Stage 4B-R0 registry slice does not edit `AGENTS.md`,
+#158-#165. The Stage 4B-R1A design slice does not edit `AGENTS.md`,
 merge/close that draft, or overwrite its policy.
 
 ## Next Safe Stage
 
-Complete the Stage 4B-R0 registry-foundation slice in the current tree. If this
-tree is not yet reachable from protected main, run focused and baseline gates,
-obtain terminal exact-head GitHub CI, request final current-head Codex review
-once, resolve actionable findings on a changed head, use only the normal
-protected merge path, and verify exact merge-head CI.
+Complete the design-only Stage 4B-R1A slice in the current tree. Run focused
+documentation and baseline gates, obtain terminal exact-head GitHub CI, request
+final current-head Codex review once, resolve actionable findings only on a
+changed head, use only the normal protected merge path, and verify exact
+merge-head CI. Do not enable auto-merge or merge before every CI check and the
+final current-head review are complete.
 
-If this tree is already on protected main, begin a separate design-first
-allocation/registration schema-family decision. Do not promote an event from
-`SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY` until its exact subject, all-and-only
-campaign scope, payload, nullable/union/ordering rules, safe vocabularies, and
-local/stateful constraint boundary have independent review and killing
-negative vectors. Do not call the registry accepted until all 37 events have
-exact schemas and no incomplete or wildcard entry remains.
+After R1A is accepted on protected main, begin a separate R1B branch and
+worktree. Add a separate versioned R1 authority and promote only exact
+reservation-only `CAMPAIGN_ALLOCATED` and `EXPERIMENT_ALLOCATED` schemas.
+Preserve R0 byte/hash/package parity, keep the other 34 events incomplete, and
+require independent positive fixtures plus killing subject/scope vectors. Do
+not add append storage, campaign execution, family/sample registration,
+binding, trial allocation, access, or research interpretation in R1B.
+
+Do not call the registry accepted until all 37 events have exact schemas and no
+incomplete or wildcard entry remains.
 
 Only after the registry boundary is reviewable should Stage 4b select a
 physical backend, private storage location, transaction/recovery policy, or

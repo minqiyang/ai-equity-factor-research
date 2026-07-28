@@ -1,5 +1,6 @@
 from copy import deepcopy
 import hashlib
+from importlib import resources
 import json
 from pathlib import Path
 import re
@@ -43,6 +44,7 @@ def test_required_governance_files_exist() -> None:
         "docs/point_in_time_data_methodology_contract.md",
         "docs/experiment_trial_ledger_contract.md",
         "docs/experiment_trial_ledger_schema_registry_contract.md",
+        "docs/experiment_trial_ledger_allocation_registration_schema_contract.md",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
@@ -71,7 +73,9 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "2a. Signal/execution timing contract",
         "2b. Signal/execution timing implementation",
         "3. Point-in-time data methodology",
+        "4b-R1A. Allocation/registration architecture decision",
         "`docs/point_in_time_data_methodology_contract.md`",
+        "`docs/experiment_trial_ledger_allocation_registration_schema_contract.md`",
         "Target construction currently lives in `src/backtest/portfolio.py`",
         "`historical_evaluation`, not a pristine holdout",
         "request `@codex review` once on the",
@@ -88,18 +92,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Stage 2 Timing Decision",
         "## Stage 3 Data Methodology Decision",
         "## Accepted Stage 4a Experiment and Trial Ledger Decision",
-        "## Active Stage 4B-R0 Schema Registry Decision",
+        "## Accepted R0 And Active R1A Architecture Decision",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Stage 4B-R0 registry-foundation slice",
+        "design-only Stage 4B-R1A slice",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "863 passing tests" in roadmap
-    assert "Starting validation: 863 tests passed" in handoff
+    assert "912 passing tests" in roadmap
+    assert "Starting validation: 912 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -208,7 +212,7 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
         "| 2b. Signal/execution timing implementation | "
         "Complete on protected main via PR #162"
     ) in roadmap
-    assert "Stage 4B-R0 registry-foundation slice" in handoff
+    assert "design-only Stage 4B-R1A slice" in handoff
 
 
 def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
@@ -348,7 +352,12 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 4b-R0. Payload-schema registry foundation | "
-        "Active in the current tree; incomplete diagnostic support only"
+        "Complete on protected main via PR #165; "
+        "incomplete diagnostic support only"
+    ) in roadmap
+    assert (
+        "| 4b-R1A. Allocation/registration architecture decision | "
+        "Active in the current tree; design-only and no event promotion"
     ) in roadmap
 
 
@@ -747,7 +756,8 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
     ) in roadmap
     assert (
         "| 4b-R0. Payload-schema registry foundation | "
-        "Active in the current tree; incomplete diagnostic support only"
+        "Complete on protected main via PR #165; "
+        "incomplete diagnostic support only"
     ) in roadmap
     assert "Finish Stage 4a contract PR gates" not in handoff
     assert "Accepted Stage 4a design authority" in handoff
@@ -755,7 +765,10 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
         specification.split()
     )
     assert "Accepted Stage 4a experiment/trial" in repo_map
-    assert "Active Stage 4B-R0 fail-closed schema-registry foundation" in repo_map
+    assert (
+        "Accepted Stage 4B-R0 fail-closed schema-registry foundation"
+        in repo_map
+    )
     for phrase in [
         "Contract ID: `experiment_trial_ledger_schema_registry_r0`",
         "`SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`",
@@ -780,6 +793,214 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
     assert "proposed Stage 3" not in handoff
     assert "new-head GitHub gates pending" not in roadmap
     assert "required current-head review remain pending" not in handoff
+
+
+def test_allocation_registration_r1a_contract_freezes_architecture_a() -> None:
+    contract_path = (
+        PROJECT_ROOT
+        / "docs/experiment_trial_ledger_allocation_registration_schema_contract.md"
+    )
+    contract = contract_path.read_text(encoding="utf-8")
+    normalized_contract = " ".join(contract.split())
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
+        encoding="utf-8"
+    )
+    repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
+    registry_path = (
+        PROJECT_ROOT
+        / "src/ledger/schemas/"
+        "experiment_trial_ledger_payload_schema_registry_v1.json"
+    )
+    sidecar_path = registry_path.with_suffix(".sha256")
+    registry_bytes = registry_path.read_bytes()
+    sidecar_bytes = sidecar_path.read_bytes()
+    registry = json.loads(registry_path.read_text(encoding="ascii"))
+
+    for phrase in [
+        "Contract ID: `experiment_trial_ledger_allocation_registration_schema_r1a`",
+        "Owner decision: architecture `A`",
+        "No event becomes append-valid in R1A",
+        "`LEDGER_EPOCH_CREATED` remains the sole `FROZEN_SUPPORTED` event",
+        "other 36 known event types remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`",
+        "Trial count, execution-attempt count, and protected-sample access remain zero",
+        "preserve both R0 artifact files byte-for-byte",
+        "preserve every accepted R0 validator behavior and literal test oracle",
+        "registry version `0.2.0` and schema-language version `0.2.0`",
+        "Every protected-merged registry release is immutable",
+        "retains the accepted 37-event vocabulary unchanged",
+        "reservation-only",
+        "The allocated, registered, or bound logical entity is the event subject",
+        "R1A does not infer the experiment, trial-family, or sample prefix",
+        "`campaign_scope_ids` directly in its top-level payload",
+        "every campaign listed in `campaign_scope_ids` must already be allocated",
+        "### `tagged_union`",
+        "### `array_contains_path`",
+        "### `safe_public_id`",
+        "R1B must implement and meta-test all three closed schema-language `0.2.0` capabilities",
+        "Whether the family authority requires a separate acceptance decision",
+        "remain human methodology decisions for R1C",
+        "Before every new trial allocation, at each attempt execution boundary, and at each protected-access boundary",
+        "superseded after trial allocation but before attempt execution",
+        "Returning schema `ACCEPT` must never be described as satisfying a stateful rule",
+        "An ID plus digest without retrievable, schema-valid semantic content is a forbidden hash-only stand-in",
+        "A digest is not automatically publication-safe",
+        "R1B must not promote the four registration/binding events",
+        "Stage 5 remains blocked",
+    ]:
+        assert phrase in normalized_contract
+
+    def text_block_after(lead_in: str) -> list[str]:
+        return (
+            contract.split(lead_in, 1)[1]
+            .split("```text", 1)[1]
+            .split("```", 1)[0]
+            .split()
+        )
+
+    family_block = text_block_after(
+        "The allocation/registration family remains exactly:"
+    )
+    assert family_block == [
+        "CAMPAIGN_ALLOCATED",
+        "EXPERIMENT_ALLOCATED",
+        "TRIAL_FAMILY_REGISTERED",
+        "SAMPLE_REGISTERED",
+        "CAMPAIGN_ENTITY_BOUND",
+        "STAGE3_SAMPLE_REFERENCE_BOUND",
+    ]
+
+    assert text_block_after("Their exact reservation payload field set is:") == [
+        "campaign_scope_ids"
+    ]
+    assert text_block_after(
+        "The forbidden definition-bearing or open-ended field categories are exactly:"
+    ) == [
+        "objective",
+        "hypothesis",
+        "estimand",
+        "protocol",
+        "budget",
+        "sample_policy",
+        "threshold",
+        "inventory",
+        "status",
+        "reason",
+        "metadata",
+        "free_text",
+    ]
+    assert text_block_after(
+        "versioned amendment. It will add only these capabilities:"
+    ) == [
+        "tagged_union",
+        "array_contains_path",
+        "safe_public_id",
+    ]
+
+    subject_section = (
+        contract.split(
+            "following subject and namespace decisions are frozen for later exact schemas.",
+            1,
+        )[1]
+        .split("Subject IDs must not be duplicated", 1)[0]
+    )
+    assert [
+        line for line in subject_section.splitlines() if line.startswith("| `")
+    ] == [
+        "| `CAMPAIGN_ALLOCATED` | `campaign` | newly reserved `campaign_id` | accepted `cmp_<32 lowercase hex>` |",
+        "| `EXPERIMENT_ALLOCATED` | `experiment` | newly reserved `experiment_id` | exact prefix deferred to the R1B owner gate |",
+        "| `TRIAL_FAMILY_REGISTERED` | `trial_family` | newly registered `trial_family_id` | exact prefix deferred to the R1C owner gate |",
+        "| `SAMPLE_REGISTERED` | `sample` | newly registered local `sample_id` | exact prefix deferred to the R1D owner gate |",
+        "| `CAMPAIGN_ENTITY_BOUND` | `trial_family` or `sample` | existing global entity identity | must match the later accepted family or sample namespace |",
+        "| `STAGE3_SAMPLE_REFERENCE_BOUND` | `sample` | newly allocated ledger-local `sample_id` | exact prefix deferred to the R1D owner gate |",
+    ]
+
+    scope_section = contract.split("The scope formulas are:", 1)[1].split(
+        "The experiment parent campaign", 1
+    )[0]
+    assert [
+        line
+        for line in scope_section.splitlines()
+        if line.startswith("| `")
+        or line.startswith("| direct")
+        or line.startswith("| global")
+    ] == [
+        "| `CAMPAIGN_ALLOCATED` | one-item array containing `subject_id` |",
+        "| `EXPERIMENT_ALLOCATED` | one-item array containing the sole parent campaign ID |",
+        "| direct `TRIAL_FAMILY_REGISTERED` | nonempty sorted-unique array of all directly covered campaigns |",
+        "| global `TRIAL_FAMILY_REGISTERED` | empty array |",
+        "| direct `SAMPLE_REGISTERED` | nonempty sorted-unique array of all directly covered campaigns |",
+        "| global `SAMPLE_REGISTERED` | empty array |",
+        "| `CAMPAIGN_ENTITY_BOUND` | one-item array containing the binding campaign ID |",
+        "| `STAGE3_SAMPLE_REFERENCE_BOUND` | one-item array containing the binding campaign ID |",
+    ]
+
+    assert registry["registry_version"] == "0.1.0"
+    assert registry["schema_language_version"] == "0.1.0"
+    assert [
+        schema["event_type"] for schema in registry["event_schemas"]
+    ] == ["LEDGER_EPOCH_CREATED"]
+    assert len(registry["incomplete_event_types"]) == 36
+    assert set(registry["incomplete_event_types"]) == (
+        set(registry["closed_event_vocabulary"]) - {"LEDGER_EPOCH_CREATED"}
+    )
+    assert (
+        sidecar_path.read_text(encoding="ascii").strip()
+        == "92ab88b0bac4c683c25aab25dd31f6a48f44250afbef7d4995de26b68451e2cf"
+    )
+    assert (
+        hashlib.sha256(registry_bytes).hexdigest()
+        == "4b78c36647621deaec15114558d827c17dae2bfa29918f4cbf2ceb2aa6b6e6d9"
+    )
+    assert (
+        hashlib.sha256(sidecar_bytes).hexdigest()
+        == "dc870da2958a107998d3939350edb20d3a9185e13a4edb48664befcb89e79d51"
+    )
+    assert sidecar_bytes == (
+        b"92ab88b0bac4c683c25aab25dd31f6a48f44250afbef7d4995de26b68451e2cf\n"
+    )
+    packaged_schema_root = resources.files("ledger").joinpath("schemas")
+    assert (
+        packaged_schema_root.joinpath(registry_path.name).read_bytes()
+        == registry_bytes
+    )
+    assert (
+        packaged_schema_root.joinpath(sidecar_path.name).read_bytes()
+        == sidecar_bytes
+    )
+
+    for canonical_doc in [roadmap, handoff, specification, repo_map]:
+        assert (
+            "docs/experiment_trial_ledger_allocation_registration_schema_contract.md"
+            in canonical_doc
+        )
+    assert (
+        "| 4b-R1A. Allocation/registration architecture decision | "
+        "Active in the current tree; design-only and no event promotion"
+    ) in roadmap
+    assert (
+        "| 4b-R1B. Campaign/experiment allocation schemas | "
+        "Blocked by R1A protected merge and exact experiment-namespace owner decision"
+    ) in roadmap
+    assert "preserve R0 registry JSON and its sidecar byte-for-byte" in handoff
+    assert "promotes no event and modifies no registry artifact" in handoff
+    assert "meta-test all three schema-language `0.2.0` additions" in handoff
+    assert (
+        "new immutable, monotonically versioned registry artifact and digest"
+        in " ".join(handoff.split())
+    )
+    assert "owner-selected Stage 4B-R1A architecture-A decision" in " ".join(
+        specification.split()
+    )
+    assert (
+        "Active Stage 4B-R1A allocation/registration architecture-A decision"
+        in repo_map
+    )
 
 
 def _ascii_jcs_golden_bytes(value: object) -> bytes:
@@ -3285,6 +3506,7 @@ def test_stage_three_tracked_policy_files_fail_closed_on_private_identifiers() -
         "docs/local_csv_readiness_audit_report_template.md",
         "docs/point_in_time_data_methodology_contract.md",
         "docs/experiment_trial_ledger_contract.md",
+        "docs/experiment_trial_ledger_allocation_registration_schema_contract.md",
         "docs/real_data_readiness_audit.md",
     ]
 

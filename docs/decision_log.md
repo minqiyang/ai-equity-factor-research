@@ -15,6 +15,83 @@ investment performance.
 
 ---
 
+## 2026-07-28 - Select Versioned Minimal Allocation/Registration Architecture
+
+Context:
+
+- Stage 4B-R0 is accepted on protected `main` through PR #165 at `4c874eb`;
+  exact merge-head CI passed.
+- Six non-overlapping read-only audits examined campaign/experiment allocation,
+  family/sample registration, local/global/external binding, schema-language
+  expressiveness, independent vector evidence, and adversarial scope/privacy
+  risks.
+- The audits agreed that promoting the six-event family from narrative fields
+  or test helpers would launder incomplete semantics into false wire-schema
+  coverage.
+- The owner selected architecture A after reviewing the materially different
+  versioned-minimal and definition-bearing alternatives.
+
+Decision:
+
+- Preserve the R0 registry and sidecar byte-for-byte and preserve accepted R0
+  validator behavior. Add R1B as separate registry version `0.2.0` artifacts;
+  every later promotion batch publishes a new immutable, monotonically
+  versioned registry release rather than overwriting an accepted release.
+- Retain the accepted 37-event vocabulary. Do not split
+  `CAMPAIGN_ENTITY_BOUND`; use a future closed tagged union.
+- Make `CAMPAIGN_ALLOCATED` and `EXPERIMENT_ALLOCATED` reservation-only.
+  Complete campaign and experiment definitions belong to later exact
+  campaign-inventory schemas before attempt or protected access.
+- Use the allocated, registered, or bound entity as subject. Preserve the
+  accepted `cmp_` campaign namespace; defer exact experiment, trial-family,
+  and sample prefixes to owner decisions in R1B, R1C, and R1D.
+- Place `campaign_scope_ids` explicitly in each family payload. Every campaign
+  in a shared direct registration must already be allocated.
+- Version the closed schema language before adding tagged unions,
+  array/path membership, or `safe_public_id`; never retrofit those semantics
+  into R0.
+- Require future exact, immutable, schema-versioned family-definition and
+  Stage 3 sample authorities with retrievable canonical records. Preserve the
+  selected exact Stage 3 decision-binding/currentness rules, but defer family
+  acceptance, reviewer identity/independence, decision schema, and currentness
+  policy to R1C. An ID plus digest alone is not sufficient.
+
+Rationale:
+
+- Immutable coexistence preserves accepted R0 reproduction and prevents a
+  later validator from silently reinterpreting old evidence.
+- Reservation-only allocation keeps identity creation separate from the full
+  research protocol and avoids partial or hash-only preregistration.
+- Entity subjects and explicit scope make evidence inclusion reviewable without
+  redundant scalar fields.
+- Closed versioned unions and safe reference tokens prevent generic-ID,
+  nullable-arm, path, URI, free-text, and private-data laundering.
+
+Consequences:
+
+- R1A is design-only. `LEDGER_EPOCH_CREATED` remains the sole
+  `FROZEN_SUPPORTED` event and all other 36 events remain
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- Trial count, execution-attempt count, and protected-sample access remain
+  zero. No dependency, backend, private data, or trading behavior is added.
+- The first implementable follow-up is a separate R1B batch for exact
+  campaign/experiment allocation schemas only, after the owner ratifies the
+  exact experiment namespace.
+- Family, sample, and binding events remain blocked by their exact authority,
+  anti-reset, alias/currentness, finite-bound, and privacy decisions.
+- R1B must implement and meta-test all three closed schema-language `0.2.0`
+  additions even though only array/path membership is consumed by its event
+  schemas.
+
+Follow-up:
+
+- Complete R1A documentation gates without changing registry artifacts.
+- In R1B, add a separate versioned R1 authority and independent allocation
+  vectors, ratify the exact experiment namespace, meta-test all schema-language
+  `0.2.0` additions, and prove R0 byte/hash/behavior/package parity.
+- Continue with separately reviewed family, sample, and binding decisions
+  before the later 37-of-37 closure and runtime architecture gates.
+
 ## 2026-07-28 - Start Stage 4B With A Fail-Closed Registry Foundation
 
 Context:

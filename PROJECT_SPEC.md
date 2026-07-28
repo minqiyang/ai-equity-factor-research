@@ -29,11 +29,19 @@ authority. It separates semantic trials from execution attempts, freezes
 allocation-before-action and access-intent-before-read semantics, and requires
 append-only completeness plus independently retained evidence and adjudication
 checkpoints.
-`docs/experiment_trial_ledger_schema_registry_contract.md` defines the active
-Stage 4B-R0 fail-closed registry foundation. R0 supports only the exact epoch
-schema, rejects the other 36 known events as
+`docs/experiment_trial_ledger_schema_registry_contract.md` defines the
+protected-main Stage 4B-R0 fail-closed registry foundation. R0 supports only
+the exact epoch schema, rejects the other 36 known events as
 `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`, and does not claim a complete payload
 registry or Stage 4b runtime enforcement.
+`docs/experiment_trial_ledger_allocation_registration_schema_contract.md`
+defines the owner-selected Stage 4B-R1A architecture-A decision. It preserves
+R0 unchanged, retains the 37-event vocabulary, selects reservation-only
+campaign/experiment allocation, entity subjects, explicit campaign scope, a
+versioned closed R1 schema-language path, and requirements for future exact
+reference-based family and Stage 3 sample authorities. R1A accepts neither
+authority and is design-only: it promotes no event, creates no trial or
+access, and leaves Stage 4b runtime and Stage 5 blocked.
 
 ## Current Phase and Boundary
 
