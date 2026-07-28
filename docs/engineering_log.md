@@ -256,6 +256,25 @@
   automatically removed disposable `build-env-*` directories under the
   operating-system temporary directory. No project environment, dependency
   declaration, lock file, tracked artifact, trial, or research result changed.
+- Exact-head review `4794514495` on `094f00b` then found two test-contract P2s:
+  the synthetic retained chain did not require its sole empty-scope epoch at
+  sequence zero, and the terminal-bundle check admitted coherently rehashed
+  duplicate review or promotion-decision events. A separate fixer required the
+  exact genesis invariant and the all-and-only target-campaign
+  closure/review/decision/adjudication projection while preserving
+  other-campaign and genuinely global interleaving. Coherently rebuilt
+  missing, replaced, moved, duplicate, and wrong-scope epoch vectors plus
+  duplicate review/decision vectors now fail for those exact invariants. An
+  independent integrity reviewer confirmed both fixes and found no actionable
+  P1/P2.
+- Final validation after those two P2 fixes again passed seven focused contract
+  tests, all 28 structure-contract tests, and the full 863-test suite with the
+  same two platform skips, plus Ruff, compilation, the Skill audit,
+  deterministic repo-map regeneration, JSON, privacy/path, hidden-Unicode,
+  artifact-cleanup, and diff gates. The PEP 517 rebuild again used only
+  `setuptools==83.0.0`, `wheel==0.47.0`, and `packaging==26.2` in automatically
+  removed disposable build environments; it changed no project environment,
+  dependency declaration, lock file, tracked artifact, trial, or result.
 - Reconciled Stage 3 acceptance and the Stage 4a/4b split in the specification,
   roadmap, handoff, repo-map generator, decision log, changelog, and
   documentation-contract tests. PR #148 remains an independent draft; this

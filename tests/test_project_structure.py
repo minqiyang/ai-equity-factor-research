@@ -1672,6 +1672,9 @@ def _verified_campaign_chain(source: object) -> list[dict[str, object]]:
         seen.add(event["event_id"])
         verified.append({**event, "event_sha256": digest})
         previous = digest
+    epochs = [event for event in verified if event["event_type"] == "LEDGER_EPOCH_CREATED"]
+    if len(epochs) != 1 or verified[0]["event_type"] != "LEDGER_EPOCH_CREATED" or epochs[0]["campaign_scope_ids"] != []:
+        raise ValueError("synthetic retained chain requires one empty-scope genesis epoch")
     return verified
 
 
@@ -1904,11 +1907,9 @@ def _generation_terminal_binding(events: list[dict], checkpoint: dict, evidence:
     closure = _event_ref(events, facts, "closure", "CAMPAIGN_ACCOUNTING_CLOSED", campaign_id, anchor)
     review = _event_ref(events, facts, "review", "REVIEW_DECIDED", campaign_id, anchor)
     decision = _event_ref(events, facts, "decision", "PROMOTION_DECIDED", campaign_id, anchor)
-    if not closure["sequence"] < review["sequence"] < decision["sequence"] < anchor:
-        raise ValueError("terminal event order mismatch")
-    allowed = {"CAMPAIGN_ACCOUNTING_CLOSED", "REVIEW_DECIDED", "PROMOTION_DECIDED", "CAMPAIGN_ADJUDICATED"}
-    if any(campaign_id in item["campaign_scope_ids"] and item["event_type"] not in allowed for item in events[closure["sequence"] : anchor + 1]):
-        raise ValueError("campaign evidence changed after closure")
+    terminal_projection = [item for item in events[closure["sequence"] : anchor + 1] if campaign_id in item["campaign_scope_ids"]]
+    if terminal_projection != [closure, review, decision, event]:
+        raise ValueError("target campaign terminal projection mismatch")
     closure_facts = _require_exact_keys(closure["facts"], _CLOSURE_KEYS, context="closure facts")
     review_facts = _require_exact_keys(review["facts"], _REVIEW_KEYS, context="review facts")
     decision_facts = _require_exact_keys(decision["facts"], _DECISION_KEYS, context="decision facts")
@@ -2103,6 +2104,8 @@ def _build_generation(generation: int, outcome: str, events: list[dict] | None =
     closure = _append_tail_event(events, "CAMPAIGN_ACCOUNTING_CLOSED", [_CAMPAIGN_ID], {
         **common, "freeze_event_id": freeze["event_id"], "freeze_event_sha256": freeze["event_sha256"], "sealed_trial_inventory_sha256": inventory,
     })
+    _append_tail_event(events, "EVENT_SUPERSEDED", [_OTHER_CAMPAIGN_ID], {"other_campaign_terminal_interval": True})
+    _append_tail_event(events, "TRIAL_FAMILY_REGISTERED", [], {"global_terminal_interval": True})
     review = _append_tail_event(
         events, "REVIEW_DECIDED", [_CAMPAIGN_ID], {"closure_event_id": closure["event_id"], "closure_event_sha256": closure["event_sha256"],
         "campaign_evidence_checkpoint_id": evidence_id, "campaign_evidence_checkpoint_sha256": evidence_checkpoint_sha, "review_outcome": "ACCEPTED"},
@@ -2431,6 +2434,32 @@ def test_campaign_adjudication_tail_mutations_fail_closed() -> None:
         assert _assert_value_error(
             lambda invalid=invalid: _verify_case(invalid)
         ) == expected_error
+    for mode in ("missing", "replaced", "moved later", "duplicate later", "wrong scope"):
+        invalid = deepcopy(base)
+        if mode == "missing":
+            invalid["events"].pop(0)
+        elif mode == "replaced":
+            invalid["events"][0]["event_type"] = "TRIAL_FAMILY_REGISTERED"
+        elif mode == "moved later":
+            invalid["events"].insert(1, invalid["events"].pop(0))
+        elif mode == "duplicate later":
+            duplicate = deepcopy(invalid["events"][0])
+            duplicate["event_id"] = "evt_000000000000000000000000000004b0"
+            invalid["events"].insert(2, duplicate)
+        else:
+            invalid["events"][0]["campaign_scope_ids"] = [_CAMPAIGN_ID]
+        invalid["events"] = _rechain_tail(invalid["events"], refresh_terminal_refs=True)
+        _refresh_records(invalid)
+        assert _assert_value_error(lambda invalid=invalid: _verify_case(invalid)) == "synthetic retained chain requires one empty-scope genesis epoch"
+    for nonce, event_type in ((1201, "REVIEW_DECIDED"), (1202, "PROMOTION_DECIDED")):
+        invalid = deepcopy(base)
+        position = next(event["sequence"] for event in invalid["events"] if event["event_type"] == event_type and _CAMPAIGN_ID in event["campaign_scope_ids"])
+        duplicate = deepcopy(invalid["events"][position])
+        duplicate["event_id"] = f"evt_{nonce:032x}"
+        invalid["events"].insert(position, duplicate)
+        invalid["events"] = _rechain_tail(invalid["events"], refresh_terminal_refs=True)
+        _refresh_records(invalid)
+        assert _assert_value_error(lambda invalid=invalid: _verify_case(invalid)) == "target campaign terminal projection mismatch"
 
 
 def test_campaign_adjudication_lineage_and_currentness_fail_closed() -> None:
@@ -2490,7 +2519,7 @@ def test_campaign_adjudication_exact_correspondence_and_schema() -> None:
     for nonce, checkpoint_id in ((901, "unaccounted-checkpoint"), (902, original["facts"]["checkpoint_id"])):
         invalid, extra = deepcopy(base), deepcopy(original)
         extra["event_id"], extra["facts"]["checkpoint_id"] = f"evt_{nonce:032x}", checkpoint_id
-        invalid["events"].insert(original["sequence"], extra)
+        invalid["events"].insert(original["sequence"] + 1, extra)
         invalid["events"] = _rechain_tail(invalid["events"])
         _refresh_records(invalid)
         assert _assert_value_error(
