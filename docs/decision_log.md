@@ -15,6 +15,66 @@ investment performance.
 
 ---
 
+## 2026-07-27 - Freeze Semantic Trials, Attempts, And Ledger Completeness
+
+Context:
+
+- Stage 3 is accepted on protected `main` through PR #163 at `a6c147e`, but no
+  dataset is accepted for formal interpretation.
+- The existing schema-v1 experiment writer creates overwrite-capable
+  successful-run sidecars after computation. It cannot retain
+  failed-before-write, abandoned, retried, or overwritten history and is not an
+  immutable all-trial ledger.
+- A record hash chain alone cannot detect deletion of a valid tail when the
+  writer can also replace the retained head.
+
+Decision:
+
+- Propose `docs/experiment_trial_ledger_contract.md` as the Stage 4a design
+  authority, subject to final current-head review, protected merge, and exact
+  merge-head CI.
+- Treat `trial_id` as one frozen semantic configuration and `attempt_id` as one
+  invocation. Retain both semantic trial count and execution-attempt count;
+  operational retries never erase failed attempts.
+- Require durable allocation before validation/execution and a committed exact
+  access-intent capability before protected content can be released.
+- Seal the complete campaign inventory and global dependence-family lineage;
+  preserve failures, invalid/aborted/excluded work, artifacts, access, review,
+  and promotion decisions through append-only events and supersessions.
+- Reuse `pit_canonical_json_v1` for an exact ledger-event identity projection,
+  chain every event to the prior hash, and require an independently retained
+  immutable head/checkpoint for formal campaign closure.
+- Keep execution state separate from charter candidate evidence state.
+- Keep the full ledger private and repository-external; expose only a
+  deterministic allowlisted public projection without paths, credentials, raw
+  values, directions, magnitudes, ranks, or private performance.
+
+Rationale:
+
+- Complete multiplicity and failure accounting is necessary before statistical
+  evidence can be interpreted.
+- Separate trials and attempts prevent infrastructure retries from either
+  inflating configuration multiplicity or concealing failed executions.
+- Prospective access barriers and monotone sample downgrades prevent
+  after-the-fact holdout laundering.
+
+Consequences:
+
+- Stage 4a is a documentation/golden-contract stage only. It adds no runtime,
+  database, migrated log, research trial, private access, generated performance
+  evidence, dependency, or trading behavior.
+- Legacy logs remain `DIAGNOSTIC_ONLY` references and cannot prove formal
+  completeness or holdout independence.
+- Stage 5 remains blocked until Stage 4b implements and behaviorally verifies
+  the accepted contract.
+
+Follow-up:
+
+- In a separate Stage 4b architecture/implementation PR, choose and justify the
+  storage, transaction/recovery, private-location, and external-checkpoint
+  policies; then add fault, restart, concurrency, tamper, protected-access,
+  closure, and privacy tests before integrating one synthetic workflow.
+
 ## 2026-07-27 - Separate Data Methodology, Dataset, And Interpretation Gates
 
 Context:

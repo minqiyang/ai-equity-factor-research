@@ -1,0 +1,140 @@
+{
+  "schema_version": "experiment_trial_ledger_event_v1_golden_v1",
+  "semantic_input": {
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "event_schema_version": "ledger_event_v1",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_00000000000000000000000000000001",
+    "sequence": 0,
+    "event_id": "evt_00000000000000000000000000000002",
+    "operation_id": "opn_00000000000000000000000000000003",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "54280e247ff07db86dffa58594c07ee358d0ee0cf7159b95e41ed72424109102",
+    "event_type": "TRIAL_ALLOCATED",
+    "subject_type": "trial",
+    "subject_id": "trl_00000000000000000000000000000008",
+    "occurred_at": "2026-07-27T20:00:00Z",
+    "recorded_at": "2026-07-27T20:00:00Z",
+    "actor_id": "act_00000000000000000000000000000004",
+    "previous_event_sha256": null,
+    "payload": {
+      "campaign_id": "cmp_00000000000000000000000000000005",
+      "campaign_scope_ids": [
+        "cmp_00000000000000000000000000000005"
+      ],
+      "experiment_id": "exp_00000000000000000000000000000006",
+      "trial_family_id": "tfm_00000000000000000000000000000007",
+      "trial_id": "trl_00000000000000000000000000000008",
+      "configuration_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "code_identity_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "data_manifest_ids": [
+        "dsm_00000000000000000000000000000009"
+      ],
+      "environment_id": "env_0000000000000000000000000000000a",
+      "environment_lock_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "sample_ids": [
+        "smp_0000000000000000000000000000000b"
+      ],
+      "selection_role": "diagnostic",
+      "expected_artifact_roles": [
+        "trial_summary"
+      ],
+      "trial_state": "PLANNED"
+    }
+  },
+  "reordered_semantic_input": {
+    "payload": {
+      "trial_state": "PLANNED",
+      "expected_artifact_roles": [
+        "trial_summary"
+      ],
+      "selection_role": "diagnostic",
+      "sample_ids": [
+        "smp_0000000000000000000000000000000b"
+      ],
+      "environment_lock_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "environment_id": "env_0000000000000000000000000000000a",
+      "data_manifest_ids": [
+        "dsm_00000000000000000000000000000009"
+      ],
+      "code_identity_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "configuration_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "trial_id": "trl_00000000000000000000000000000008",
+      "trial_family_id": "tfm_00000000000000000000000000000007",
+      "experiment_id": "exp_00000000000000000000000000000006",
+      "campaign_id": "cmp_00000000000000000000000000000005",
+      "campaign_scope_ids": [
+        "cmp_00000000000000000000000000000005"
+      ]
+    },
+    "previous_event_sha256": null,
+    "actor_id": "act_00000000000000000000000000000004",
+    "recorded_at": "2026-07-27T20:00:00Z",
+    "occurred_at": "2026-07-27T20:00:00Z",
+    "subject_id": "trl_00000000000000000000000000000008",
+    "subject_type": "trial",
+    "event_type": "TRIAL_ALLOCATED",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "54280e247ff07db86dffa58594c07ee358d0ee0cf7159b95e41ed72424109102",
+    "operation_id": "opn_00000000000000000000000000000003",
+    "event_id": "evt_00000000000000000000000000000002",
+    "sequence": 0,
+    "ledger_id": "ldg_00000000000000000000000000000001",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "event_schema_version": "ledger_event_v1",
+    "ledger_schema_version": "experiment_trial_ledger_v1"
+  },
+  "mutated_semantic_input": {
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "event_schema_version": "ledger_event_v1",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_00000000000000000000000000000001",
+    "sequence": 0,
+    "event_id": "evt_00000000000000000000000000000002",
+    "operation_id": "opn_00000000000000000000000000000003",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "5fa58eb98e7f5d6fca57fd60b49ac2fe63e903b183893f8931ab412efa536f52",
+    "event_type": "TRIAL_ALLOCATED",
+    "subject_type": "trial",
+    "subject_id": "trl_00000000000000000000000000000008",
+    "occurred_at": "2026-07-27T20:00:00Z",
+    "recorded_at": "2026-07-27T20:00:00Z",
+    "actor_id": "act_00000000000000000000000000000004",
+    "previous_event_sha256": null,
+    "payload": {
+      "campaign_id": "cmp_00000000000000000000000000000005",
+      "campaign_scope_ids": [
+        "cmp_00000000000000000000000000000005"
+      ],
+      "experiment_id": "exp_00000000000000000000000000000006",
+      "trial_family_id": "tfm_00000000000000000000000000000007",
+      "trial_id": "trl_00000000000000000000000000000008",
+      "configuration_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "code_identity_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "data_manifest_ids": [
+        "dsm_00000000000000000000000000000009"
+      ],
+      "environment_id": "env_0000000000000000000000000000000a",
+      "environment_lock_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "sample_ids": [
+        "smp_0000000000000000000000000000000b"
+      ],
+      "selection_role": "diagnostic",
+      "expected_artifact_roles": [
+        "trial_summary"
+      ],
+      "trial_state": "PLANNED"
+    }
+  },
+  "operation_request_canonical_utf8": "{\"actor_id\":\"act_00000000000000000000000000000004\",\"canonicalization_id\":\"pit_canonical_json_v1\",\"event_id\":\"evt_00000000000000000000000000000002\",\"event_schema_version\":\"ledger_event_v1\",\"event_type\":\"TRIAL_ALLOCATED\",\"identity_projection_id\":\"ledger_event_identity_v1\",\"ledger_id\":\"ldg_00000000000000000000000000000001\",\"ledger_schema_version\":\"experiment_trial_ledger_v1\",\"occurred_at\":\"2026-07-27T20:00:00Z\",\"operation_id\":\"opn_00000000000000000000000000000003\",\"operation_request_projection_id\":\"ledger_operation_request_v1\",\"payload\":{\"campaign_id\":\"cmp_00000000000000000000000000000005\",\"campaign_scope_ids\":[\"cmp_00000000000000000000000000000005\"],\"code_identity_sha256\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"configuration_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"data_manifest_ids\":[\"dsm_00000000000000000000000000000009\"],\"environment_id\":\"env_0000000000000000000000000000000a\",\"environment_lock_sha256\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"expected_artifact_roles\":[\"trial_summary\"],\"experiment_id\":\"exp_00000000000000000000000000000006\",\"sample_ids\":[\"smp_0000000000000000000000000000000b\"],\"selection_role\":\"diagnostic\",\"trial_family_id\":\"tfm_00000000000000000000000000000007\",\"trial_id\":\"trl_00000000000000000000000000000008\",\"trial_state\":\"PLANNED\"},\"subject_id\":\"trl_00000000000000000000000000000008\",\"subject_type\":\"trial\"}",
+  "operation_request_sha256": "54280e247ff07db86dffa58594c07ee358d0ee0cf7159b95e41ed72424109102",
+  "mutated_operation_request_canonical_utf8": "{\"actor_id\":\"act_00000000000000000000000000000004\",\"canonicalization_id\":\"pit_canonical_json_v1\",\"event_id\":\"evt_00000000000000000000000000000002\",\"event_schema_version\":\"ledger_event_v1\",\"event_type\":\"TRIAL_ALLOCATED\",\"identity_projection_id\":\"ledger_event_identity_v1\",\"ledger_id\":\"ldg_00000000000000000000000000000001\",\"ledger_schema_version\":\"experiment_trial_ledger_v1\",\"occurred_at\":\"2026-07-27T20:00:00Z\",\"operation_id\":\"opn_00000000000000000000000000000003\",\"operation_request_projection_id\":\"ledger_operation_request_v1\",\"payload\":{\"campaign_id\":\"cmp_00000000000000000000000000000005\",\"campaign_scope_ids\":[\"cmp_00000000000000000000000000000005\"],\"code_identity_sha256\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"configuration_sha256\":\"5555555555555555555555555555555555555555555555555555555555555555\",\"data_manifest_ids\":[\"dsm_00000000000000000000000000000009\"],\"environment_id\":\"env_0000000000000000000000000000000a\",\"environment_lock_sha256\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"expected_artifact_roles\":[\"trial_summary\"],\"experiment_id\":\"exp_00000000000000000000000000000006\",\"sample_ids\":[\"smp_0000000000000000000000000000000b\"],\"selection_role\":\"diagnostic\",\"trial_family_id\":\"tfm_00000000000000000000000000000007\",\"trial_id\":\"trl_00000000000000000000000000000008\",\"trial_state\":\"PLANNED\"},\"subject_id\":\"trl_00000000000000000000000000000008\",\"subject_type\":\"trial\"}",
+  "mutated_operation_request_sha256": "5fa58eb98e7f5d6fca57fd60b49ac2fe63e903b183893f8931ab412efa536f52",
+  "canonical_utf8": "{\"actor_id\":\"act_00000000000000000000000000000004\",\"canonicalization_id\":\"pit_canonical_json_v1\",\"event_id\":\"evt_00000000000000000000000000000002\",\"event_schema_version\":\"ledger_event_v1\",\"event_type\":\"TRIAL_ALLOCATED\",\"identity_projection_id\":\"ledger_event_identity_v1\",\"ledger_id\":\"ldg_00000000000000000000000000000001\",\"ledger_schema_version\":\"experiment_trial_ledger_v1\",\"occurred_at\":\"2026-07-27T20:00:00Z\",\"operation_id\":\"opn_00000000000000000000000000000003\",\"operation_request_projection_id\":\"ledger_operation_request_v1\",\"operation_request_sha256\":\"54280e247ff07db86dffa58594c07ee358d0ee0cf7159b95e41ed72424109102\",\"payload\":{\"campaign_id\":\"cmp_00000000000000000000000000000005\",\"campaign_scope_ids\":[\"cmp_00000000000000000000000000000005\"],\"code_identity_sha256\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"configuration_sha256\":\"2222222222222222222222222222222222222222222222222222222222222222\",\"data_manifest_ids\":[\"dsm_00000000000000000000000000000009\"],\"environment_id\":\"env_0000000000000000000000000000000a\",\"environment_lock_sha256\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"expected_artifact_roles\":[\"trial_summary\"],\"experiment_id\":\"exp_00000000000000000000000000000006\",\"sample_ids\":[\"smp_0000000000000000000000000000000b\"],\"selection_role\":\"diagnostic\",\"trial_family_id\":\"tfm_00000000000000000000000000000007\",\"trial_id\":\"trl_00000000000000000000000000000008\",\"trial_state\":\"PLANNED\"},\"previous_event_sha256\":null,\"recorded_at\":\"2026-07-27T20:00:00Z\",\"sequence\":0,\"subject_id\":\"trl_00000000000000000000000000000008\",\"subject_type\":\"trial\"}",
+  "sha256": "027dbb6395bbaa82009842ad4c765fde9119978bcffe1175d2b2846b1159d635",
+  "mutated_canonical_utf8": "{\"actor_id\":\"act_00000000000000000000000000000004\",\"canonicalization_id\":\"pit_canonical_json_v1\",\"event_id\":\"evt_00000000000000000000000000000002\",\"event_schema_version\":\"ledger_event_v1\",\"event_type\":\"TRIAL_ALLOCATED\",\"identity_projection_id\":\"ledger_event_identity_v1\",\"ledger_id\":\"ldg_00000000000000000000000000000001\",\"ledger_schema_version\":\"experiment_trial_ledger_v1\",\"occurred_at\":\"2026-07-27T20:00:00Z\",\"operation_id\":\"opn_00000000000000000000000000000003\",\"operation_request_projection_id\":\"ledger_operation_request_v1\",\"operation_request_sha256\":\"5fa58eb98e7f5d6fca57fd60b49ac2fe63e903b183893f8931ab412efa536f52\",\"payload\":{\"campaign_id\":\"cmp_00000000000000000000000000000005\",\"campaign_scope_ids\":[\"cmp_00000000000000000000000000000005\"],\"code_identity_sha256\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"configuration_sha256\":\"5555555555555555555555555555555555555555555555555555555555555555\",\"data_manifest_ids\":[\"dsm_00000000000000000000000000000009\"],\"environment_id\":\"env_0000000000000000000000000000000a\",\"environment_lock_sha256\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"expected_artifact_roles\":[\"trial_summary\"],\"experiment_id\":\"exp_00000000000000000000000000000006\",\"sample_ids\":[\"smp_0000000000000000000000000000000b\"],\"selection_role\":\"diagnostic\",\"trial_family_id\":\"tfm_00000000000000000000000000000007\",\"trial_id\":\"trl_00000000000000000000000000000008\",\"trial_state\":\"PLANNED\"},\"previous_event_sha256\":null,\"recorded_at\":\"2026-07-27T20:00:00Z\",\"sequence\":0,\"subject_id\":\"trl_00000000000000000000000000000008\",\"subject_type\":\"trial\"}",
+  "mutated_sha256": "6eb5a89bed2c65ef6d78730b23c5e1cffc367f6a0edca37138a51aed70c8deae"
+}

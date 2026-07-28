@@ -1,7 +1,7 @@
 # Point-in-Time Data Methodology Contract
 
-Status: proposed Stage 3 methodology contract; acceptance pending protected
-merge.
+Status: accepted Stage 3 methodology contract on protected `main` through PR
+#163; no dataset or formal interpretation was accepted.
 
 Contract ID: `point_in_time_data_methodology_contract_v1`.
 

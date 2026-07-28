@@ -39,6 +39,7 @@ def test_required_governance_files_exist() -> None:
         "docs/purged_bounded_split_contract.md",
         "docs/signal_execution_timing_contract.md",
         "docs/point_in_time_data_methodology_contract.md",
+        "docs/experiment_trial_ledger_contract.md",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
@@ -83,17 +84,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Stage 1 Split Decision",
         "## Stage 2 Timing Decision",
         "## Stage 3 Data Methodology Decision",
+        "## Proposed Stage 4a Experiment and Trial Ledger Decision",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Stage 4 - Experiment and trial ledger",
+        "Stage 4b - Experiment/trial ledger implementation",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "849 passing tests" in roadmap
-    assert "Starting validation: 849 tests passed" in handoff
+    assert "854 passing tests" in roadmap
+    assert "Starting validation: 854 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -202,10 +204,7 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
         "| 2b. Signal/execution timing implementation | "
         "Complete on protected main via PR #162"
     ) in roadmap
-    assert (
-        "Stage 4 - Experiment and trial ledger"
-        in handoff
-    )
+    assert "Stage 4b - Experiment/trial ledger implementation" in handoff
 
 
 def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
@@ -337,11 +336,14 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 3. Point-in-time data methodology | "
-        "Readiness-scope re-review fix validated; new-head GitHub gates pending"
+        "Complete on protected main via PR #163"
     ) in roadmap
     assert (
-        "| 4. Experiment/trial ledger | Next after Stage 3 protected merge "
-        "and successful exact merge-head CI"
+        "| 4a. Experiment/trial ledger contract | Local gates passed"
+    ) in roadmap
+    assert (
+        "| 4b. Experiment/trial ledger implementation | "
+        "Blocked by Stage 4a protected merge and exact merge-head CI"
     ) in roadmap
 
 
@@ -377,7 +379,7 @@ def test_point_in_time_data_methodology_contract_freezes_stage_three_design() ->
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
 
     for phrase in [
-        "Status: proposed Stage 3 methodology contract",
+        "Status: accepted Stage 3 methodology contract",
         "Contract ID: `point_in_time_data_methodology_contract_v1`",
         "Contract version: `1.0.0`",
         "`methodology_contract_accepted`",
@@ -557,6 +559,101 @@ def test_point_in_time_data_methodology_contract_freezes_stage_three_design() ->
         ) in normalized_intake
 
 
+def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
+    contract = (
+        PROJECT_ROOT / "docs/experiment_trial_ledger_contract.md"
+    ).read_text(encoding="utf-8")
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
+        encoding="utf-8"
+    )
+    point_in_time_contract = (
+        PROJECT_ROOT / "docs/point_in_time_data_methodology_contract.md"
+    ).read_text(encoding="utf-8")
+    repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
+    normalized_contract = " ".join(contract.split())
+
+    for phrase in [
+        "Status: proposed Stage 4a design contract",
+        "acceptance requires final current-head review, protected merge, and successful exact merge-head CI",
+        "Contract ID: `experiment_trial_ledger_contract_v1`",
+        "Contract version: `1.0.0`",
+        "Stage 4b runtime enforcement is not implemented",
+        "diagnostic/legacy sidecars",
+        "`trial_id` identifies exactly one semantic configuration",
+        "`attempt_id` identifies one invocation",
+        "Campaign reports disclose both semantic trial count and execution-attempt count",
+        "No validator, executor, protected-data accessor, or result-producing process",
+        "LEDGER_EPOCH_CREATED",
+        "`CAMPAIGN_INVENTORY_SEALED`",
+        "`ledger_operation_request_v1`",
+        "result-informed amendment",
+        "cannot support `RESEARCH_PASS` or higher",
+        "Trial disposition and attempt execution state are separate",
+        "It never means `RESEARCH_PASS`",
+        "`ACCESS_INTENT` must be durable before the accessor",
+        "validates and consumes that exact capability",
+        "`protected_material_observed = NONE | SOME | UNKNOWN`",
+        "No canonical access event, including the private full ledger",
+        "The explicit allowed-transition graph",
+        "validation -> validation | historical_evaluation | pseudo_holdout | development",
+        "irrevocable floor of `historical_evaluation`",
+        "`ledger_event_identity_v1`",
+        "`pit_canonical_json_v1`",
+        "The stored `event_sha256`",
+        "tamper-evident, not WORM",
+        "`CAMPAIGN_EVIDENCE_FROZEN`",
+        "`campaign_evidence_prefix_v1`",
+        "The freeze event is necessarily excluded",
+        "`freeze_event_sequence`",
+        "independently retained immutable checkpoint",
+        "A producer cannot self-certify",
+        "does not self-stale the decision",
+        "`CAMPAIGN_ADJUDICATED`",
+        "The full canonical ledger is private, repository-external evidence",
+        "No runtime may create a default ledger database or event stream inside the repository",
+        "`ledger_public_projection_v1` has all-and-only these top-level keys",
+        "`schema_version` is exactly `ledger_public_projection_v1`",
+        "`canonicalization_id` is exactly `pit_canonical_json_v1`",
+        "Unknown-field, path, file-URI, query, username, raw-value",
+        "`backfilled = true`, `DIAGNOSTIC_ONLY`",
+        "Documentation-token tests for this matrix are not runtime append-only evidence",
+        "physical storage backend",
+        "The next implementation PR must not retrofit the legacy reporter in place",
+    ]:
+        assert phrase in normalized_contract
+
+    for case_number in range(1, 16):
+        assert contract.count(f"`LEDGER-{case_number:03d}`") == 1
+
+    for canonical_doc in [roadmap, handoff, specification, repo_map]:
+        assert "docs/experiment_trial_ledger_contract.md" in canonical_doc
+
+    assert "accepted Stage 3 methodology contract" in point_in_time_contract
+    assert "acceptance pending protected merge" not in point_in_time_contract
+    assert "| 3. Point-in-time data methodology | Complete" in roadmap
+    assert "| 4a. Experiment/trial ledger contract | Local gates passed" in roadmap
+    assert (
+        "| 4b. Experiment/trial ledger implementation | "
+        "Blocked by Stage 4a protected merge and exact merge-head CI"
+    ) in roadmap
+    assert "Finish Stage 4a contract PR gates" in handoff
+    assert "Proposed Stage 4a design authority" in handoff
+    assert "proposed Stage 4a design authority" in " ".join(
+        specification.split()
+    )
+    assert "Proposed Stage 4a experiment/trial" in repo_map
+    assert "proposed Stage 3" not in roadmap
+    assert "proposed Stage 3" not in handoff
+    assert "new-head GitHub gates pending" not in roadmap
+    assert "required current-head review remain pending" not in handoff
+
+
 def _ascii_jcs_golden_bytes(value: object) -> bytes:
     """Serialize a preprocessed ASCII-only golden vector under the JCS subset."""
 
@@ -629,6 +726,212 @@ def _require_safe_public_id(value: object, *, context: str) -> str:
     ):
         raise ValueError(f"{context} must be an opaque safe_public_id")
     return value
+
+
+def _require_ledger_typed_id(
+    value: object,
+    *,
+    prefix: str,
+    context: str,
+) -> str:
+    if (
+        not isinstance(value, str)
+        or re.fullmatch(rf"{re.escape(prefix)}_[0-9a-f]{{32}}", value) is None
+    ):
+        raise ValueError(f"{context} must be a typed opaque ledger ID")
+    return value
+
+
+def _ledger_event_identity_projection(source: object) -> dict[str, object]:
+    projection = _require_exact_keys(
+        source,
+        {
+            "ledger_schema_version",
+            "event_schema_version",
+            "canonicalization_id",
+            "identity_projection_id",
+            "ledger_id",
+            "sequence",
+            "event_id",
+            "operation_id",
+            "operation_request_projection_id",
+            "operation_request_sha256",
+            "event_type",
+            "subject_type",
+            "subject_id",
+            "occurred_at",
+            "recorded_at",
+            "actor_id",
+            "previous_event_sha256",
+            "payload",
+        },
+        context="ledger event identity projection",
+    )
+    if projection["ledger_schema_version"] != "experiment_trial_ledger_v1":
+        raise ValueError("unexpected ledger schema version")
+    if projection["event_schema_version"] != "ledger_event_v1":
+        raise ValueError("unexpected event schema version")
+    if projection["canonicalization_id"] != "pit_canonical_json_v1":
+        raise ValueError("unexpected canonicalization ID")
+    if projection["identity_projection_id"] != "ledger_event_identity_v1":
+        raise ValueError("unexpected identity projection ID")
+    _require_ledger_typed_id(
+        projection["ledger_id"],
+        prefix="ldg",
+        context="ledger_id",
+    )
+    _require_ledger_typed_id(
+        projection["event_id"],
+        prefix="evt",
+        context="event_id",
+    )
+    _require_ledger_typed_id(
+        projection["operation_id"],
+        prefix="opn",
+        context="operation_id",
+    )
+    if (
+        projection["operation_request_projection_id"]
+        != "ledger_operation_request_v1"
+    ):
+        raise ValueError("unexpected operation request projection ID")
+    _require_ledger_typed_id(
+        projection["actor_id"],
+        prefix="act",
+        context="actor_id",
+    )
+    sequence = projection["sequence"]
+    if isinstance(sequence, bool) or not isinstance(sequence, int) or sequence < 0:
+        raise ValueError("sequence must be a nonnegative non-Boolean integer")
+    if (
+        not isinstance(projection["operation_request_sha256"], str)
+        or re.fullmatch(
+            r"[0-9a-f]{64}",
+            projection["operation_request_sha256"],
+        )
+        is None
+    ):
+        raise ValueError("operation request hash must be lowercase SHA-256")
+    if projection["event_type"] != "TRIAL_ALLOCATED":
+        raise ValueError("golden event must be TRIAL_ALLOCATED")
+    if projection["subject_type"] != "trial":
+        raise ValueError("golden subject must be trial")
+    subject_id = _require_ledger_typed_id(
+        projection["subject_id"],
+        prefix="trl",
+        context="subject_id",
+    )
+    for field in ["occurred_at", "recorded_at"]:
+        if (
+            not isinstance(projection[field], str)
+            or re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", projection[field])
+            is None
+        ):
+            raise ValueError(f"{field} must be a normalized UTC timestamp")
+    previous_hash = projection["previous_event_sha256"]
+    if previous_hash is not None and (
+        not isinstance(previous_hash, str)
+        or re.fullmatch(r"[0-9a-f]{64}", previous_hash) is None
+    ):
+        raise ValueError("previous event hash must be null or lowercase SHA-256")
+
+    payload = _require_exact_keys(
+        projection["payload"],
+        {
+            "campaign_id",
+            "campaign_scope_ids",
+            "experiment_id",
+            "trial_family_id",
+            "trial_id",
+            "configuration_sha256",
+            "code_identity_sha256",
+            "data_manifest_ids",
+            "environment_id",
+            "environment_lock_sha256",
+            "sample_ids",
+            "selection_role",
+            "expected_artifact_roles",
+            "trial_state",
+        },
+        context="TRIAL_ALLOCATED payload",
+    )
+    for field, prefix in {
+        "campaign_id": "cmp",
+        "experiment_id": "exp",
+        "trial_family_id": "tfm",
+        "trial_id": "trl",
+        "environment_id": "env",
+    }.items():
+        _require_ledger_typed_id(payload[field], prefix=prefix, context=field)
+    campaign_scope_ids = payload["campaign_scope_ids"]
+    if (
+        not isinstance(campaign_scope_ids, list)
+        or campaign_scope_ids != sorted(set(campaign_scope_ids))
+        or payload["campaign_id"] not in campaign_scope_ids
+    ):
+        raise ValueError("campaign scope IDs must be sorted and include campaign")
+    for index, campaign_scope_id in enumerate(campaign_scope_ids):
+        _require_ledger_typed_id(
+            campaign_scope_id,
+            prefix="cmp",
+            context=f"campaign_scope_ids[{index}]",
+        )
+    if payload["trial_id"] != subject_id:
+        raise ValueError("payload trial ID must equal the event subject")
+    for field in [
+        "configuration_sha256",
+        "code_identity_sha256",
+        "environment_lock_sha256",
+    ]:
+        value = payload[field]
+        if not isinstance(value, str) or re.fullmatch(r"[0-9a-f]{64}", value) is None:
+            raise ValueError(f"{field} must be lowercase SHA-256")
+    for field, prefix in {
+        "data_manifest_ids": "dsm",
+        "sample_ids": "smp",
+    }.items():
+        values = payload[field]
+        if not isinstance(values, list) or values != sorted(set(values)):
+            raise ValueError(f"{field} must be a sorted unique array")
+        for index, value in enumerate(values):
+            _require_ledger_typed_id(
+                value,
+                prefix=prefix,
+                context=f"{field}[{index}]",
+            )
+    artifact_roles = payload["expected_artifact_roles"]
+    if (
+        not isinstance(artifact_roles, list)
+        or artifact_roles != sorted(set(artifact_roles))
+        or not all(isinstance(role, str) and role for role in artifact_roles)
+    ):
+        raise ValueError("expected artifact roles must be sorted unique strings")
+    if payload["selection_role"] != "diagnostic":
+        raise ValueError("unexpected golden selection role")
+    if payload["trial_state"] != "PLANNED":
+        raise ValueError("unexpected golden trial state")
+    return projection
+
+
+def _ledger_operation_request_projection(source: object) -> dict[str, object]:
+    event = _ledger_event_identity_projection(source)
+    request_keys = [
+        "operation_request_projection_id",
+        "ledger_schema_version",
+        "event_schema_version",
+        "canonicalization_id",
+        "identity_projection_id",
+        "ledger_id",
+        "event_id",
+        "operation_id",
+        "event_type",
+        "subject_type",
+        "subject_id",
+        "occurred_at",
+        "actor_id",
+        "payload",
+    ]
+    return {key: event[key] for key in request_keys}
 
 
 def _utf16_sort_key(value: str) -> bytes:
@@ -957,6 +1260,96 @@ def test_public_projection_sha256_golden_reorder_and_mutation_vectors() -> None:
     )
 
 
+def test_ledger_event_golden_reorder_mutation_and_fail_closed_vectors() -> None:
+    fixture = json.loads(
+        (
+            PROJECT_ROOT
+            / "tests/fixtures/experiment_trial_ledger_event_v1_golden.json"
+        ).read_text(encoding="utf-8")
+    )
+    base_bytes = _ascii_jcs_golden_bytes(
+        _ledger_event_identity_projection(fixture["semantic_input"])
+    )
+    reordered_bytes = _ascii_jcs_golden_bytes(
+        _ledger_event_identity_projection(fixture["reordered_semantic_input"])
+    )
+    mutated_bytes = _ascii_jcs_golden_bytes(
+        _ledger_event_identity_projection(fixture["mutated_semantic_input"])
+    )
+    base_request_bytes = _ascii_jcs_golden_bytes(
+        _ledger_operation_request_projection(fixture["semantic_input"])
+    )
+    reordered_request_bytes = _ascii_jcs_golden_bytes(
+        _ledger_operation_request_projection(fixture["reordered_semantic_input"])
+    )
+    mutated_request_bytes = _ascii_jcs_golden_bytes(
+        _ledger_operation_request_projection(fixture["mutated_semantic_input"])
+    )
+
+    assert (
+        fixture["schema_version"]
+        == "experiment_trial_ledger_event_v1_golden_v1"
+    )
+    assert (
+        base_request_bytes.decode()
+        == fixture["operation_request_canonical_utf8"]
+    )
+    assert reordered_request_bytes == base_request_bytes
+    assert (
+        hashlib.sha256(base_request_bytes).hexdigest()
+        == fixture["operation_request_sha256"]
+        == fixture["semantic_input"]["operation_request_sha256"]
+    )
+    assert (
+        hashlib.sha256(reordered_request_bytes).hexdigest()
+        == fixture["operation_request_sha256"]
+        == fixture["reordered_semantic_input"]["operation_request_sha256"]
+    )
+    assert (
+        mutated_request_bytes.decode()
+        == fixture["mutated_operation_request_canonical_utf8"]
+    )
+    assert (
+        hashlib.sha256(mutated_request_bytes).hexdigest()
+        == fixture["mutated_operation_request_sha256"]
+        == fixture["mutated_semantic_input"]["operation_request_sha256"]
+    )
+    assert (
+        fixture["mutated_operation_request_sha256"]
+        != fixture["operation_request_sha256"]
+    )
+    assert (
+        fixture["mutated_semantic_input"]["operation_id"]
+        == fixture["semantic_input"]["operation_id"]
+    )
+    assert base_bytes.decode() == fixture["canonical_utf8"]
+    assert reordered_bytes == base_bytes
+    assert hashlib.sha256(base_bytes).hexdigest() == fixture["sha256"]
+    assert hashlib.sha256(reordered_bytes).hexdigest() == fixture["sha256"]
+    assert mutated_bytes.decode() == fixture["mutated_canonical_utf8"]
+    assert hashlib.sha256(mutated_bytes).hexdigest() == fixture["mutated_sha256"]
+    assert fixture["mutated_sha256"] != fixture["sha256"]
+
+    unknown_event_key = dict(fixture["semantic_input"])
+    unknown_event_key["event_sha256"] = fixture["sha256"]
+    _assert_value_error(
+        lambda: _ledger_event_identity_projection(unknown_event_key)
+    )
+    missing_event_key = dict(fixture["semantic_input"])
+    del missing_event_key["operation_request_sha256"]
+    _assert_value_error(
+        lambda: _ledger_event_identity_projection(missing_event_key)
+    )
+    invalid_typed_id = json.loads(json.dumps(fixture["semantic_input"]))
+    invalid_typed_id["payload"]["trial_id"] = "trial-readable-name"
+    _assert_value_error(
+        lambda: _ledger_event_identity_projection(invalid_typed_id)
+    )
+    _assert_value_error(
+        lambda: _ascii_jcs_golden_bytes({"allowed_key": 1.5})
+    )
+
+
 def test_stage_three_tracked_policy_files_fail_closed_on_private_identifiers() -> None:
     tracked_policy_paths = [
         ".agents/skills/real-data-readiness-audit/SKILL.md",
@@ -964,6 +1357,7 @@ def test_stage_three_tracked_policy_files_fail_closed_on_private_identifiers() -
         "docs/local_csv_study_checklist.md",
         "docs/local_csv_readiness_audit_report_template.md",
         "docs/point_in_time_data_methodology_contract.md",
+        "docs/experiment_trial_ledger_contract.md",
         "docs/real_data_readiness_audit.md",
     ]
 

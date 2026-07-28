@@ -9,7 +9,15 @@ profitability, or trading readiness.
 
 ### Added
 
-- Added the proposed provider-agnostic point-in-time data methodology contract.
+- Added the Stage 4a experiment and trial ledger design contract. It separates
+  semantic trials from execution attempts; freezes durable preallocation,
+  campaign inventory/closure, failure and artifact retention, protected-access
+  capabilities, canonical chained events, independently retained checkpoints,
+  review binding, and private/public projections; and adds a synthetic golden
+  event plus a 15-case later-runtime matrix. It does not implement a ledger,
+  choose a backend, migrate legacy logs, access data, add a dependency, or run
+  a research trial.
+- Added the accepted provider-agnostic point-in-time data methodology contract.
   It separates methodology acceptance, dataset-manifest review, and
   run-specific formal-interpretation eligibility; freezes provenance/license,
   canonicalization/environment identity, immutable non-self-issued dataset

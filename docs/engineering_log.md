@@ -1,5 +1,62 @@
 # Engineering Log
 
+## 2026-07-27 - Experiment And Trial Ledger Contract
+
+- Started from protected `main` merge `a6c147e` (PR #163) in the isolated
+  `codex/experiment-trial-ledger-contract` worktree. The clean starting baseline
+  had 854 passing tests, two platform-conditional skips, successful
+  compilation, and successful exact merge-head GitHub CI.
+- Eight non-overlapping read-only audits covered legacy writers/callers,
+  identity/lifecycle semantics, storage/atomicity, protected access,
+  canonical-document conformance, adversarial program risks, and deterministic
+  failure tests. No audit edited files, opened private data or performance
+  values, ran a research campaign, or added a dependency.
+- The audits agreed that current schema-v1 logs are overwrite-capable
+  post-success sidecars, not an append-only all-trial ledger. Failed-before-
+  write, abandoned, retried, or overwritten history cannot be proven complete.
+- Added a backend-neutral Stage 4a contract that separates semantic trials from
+  execution attempts; freezes allocation-before-action, campaign inventory,
+  lifecycle, artifact, protected-access, canonical-event, chain/checkpoint,
+  review/promotion, and private/public projection semantics; and defines
+  deterministic `LEDGER-001` through `LEDGER-015` later-runtime cases.
+- Added a tiny synthetic event fixture with exact canonical UTF-8, SHA-256,
+  source-key reorder invariance, and identity-mutation vectors. The fixture and
+  documentation assertions are contract evidence, not a production serializer
+  or append-only implementation.
+- Four independent post-edit reviewers found that the first draft
+  self-invalidated review decisions through its global-head rule, allowed
+  result-informed reseal/promotion, omitted the exact idempotency-request
+  preimage, left access capability/classification/public-projection behavior
+  ambiguous, and prematurely called the unmerged contract accepted. The
+  integration owner, not the reviewers, fixed those findings.
+- The revised contract uses a nonrecursive campaign-scoped pre-freeze evidence
+  projection plus separately anchored freeze event; forbids same-sample
+  result-informed promotion; freezes exact request/event preimages and hashes;
+  makes capability consumption plus access-start one atomic pre-open barrier;
+  defines an explicit atomic-interval exposure transition graph; and freezes an
+  exact safe public projection schema. Final targeted re-reviews from all four
+  reviewers reported no remaining actionable P1/P2.
+- Reconciled Stage 3 acceptance and the Stage 4a/4b split in the specification,
+  roadmap, handoff, repo-map generator, decision log, changelog, and
+  documentation-contract tests. PR #148 remains an independent draft; this
+  stage does not edit `AGENTS.md`.
+- The physical backend, locking/journaling/recovery policy, private storage
+  location, external checkpoint provider, and cross-platform durability claims
+  remain explicit Stage 4b decisions.
+- Final local validation passed 856 tests with two platform-conditional
+  wide-`longdouble` skips, Ruff, compilation, sdist/wheel build, the Skill
+  audit, deterministic repo-map regeneration, JSON parsing, privacy/Unicode
+  checks, and diff checks.
+- The PEP 517 build installed `setuptools==83.0.0`, `wheel==0.47.0`, and
+  `packaging==26.2` only inside automatically removed disposable build
+  environments under
+  `/private/var/folders/5r/vgv5b5gs3s91w6gp1mtbgnnc0000gn/T/build-env-*`.
+  They were used only to validate the sdist and wheel; no project environment,
+  dependency declaration, lock file, or tracked artifact changed.
+- This stage adds no factor, strategy, trial, generated research evidence,
+  provider, data access, private artifact, credential, dependency, paper/live
+  path, brokerage connection, or order behavior.
+
 ## 2026-07-27 - Point-In-Time Data Methodology Contract
 
 - Started from protected `main` merge `8a352d3` (PR #162) in the isolated
