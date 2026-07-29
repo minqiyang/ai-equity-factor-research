@@ -47,6 +47,7 @@ def test_required_governance_files_exist() -> None:
         "docs/experiment_trial_ledger_allocation_registration_schema_contract.md",
         "docs/experiment_trial_ledger_trial_family_registration_schema_contract.md",
         "docs/experiment_trial_ledger_sample_registration_schema_contract.md",
+        "docs/experiment_trial_ledger_binding_schema_contract.md",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
@@ -78,10 +79,12 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "4b-R1A. Allocation/registration architecture decision",
         "4b-R1C. Trial-family registration schema",
         "4b-R1D. Sample registration schema",
+        "4b-R1E. Campaign-entity and Stage 3 sample-reference binding schemas",
         "`docs/point_in_time_data_methodology_contract.md`",
         "`docs/experiment_trial_ledger_allocation_registration_schema_contract.md`",
         "`docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`",
         "`docs/experiment_trial_ledger_sample_registration_schema_contract.md`",
+        "`docs/experiment_trial_ledger_binding_schema_contract.md`",
         "Target construction currently lives in `src/backtest/portfolio.py`",
         "`historical_evaluation`, not a pristine holdout",
         "request `@codex review` once on the",
@@ -98,18 +101,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Stage 2 Timing Decision",
         "## Stage 3 Data Methodology Decision",
         "## Accepted Stage 4a Experiment and Trial Ledger Decision",
-        "## Accepted R0/R1A/R1B/R1C And Active R1D Registration Release",
+        "## Accepted R0/R1A/R1B/R1C/R1D And Active R1E Binding Release",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Complete Stage 4B-R1D in the current isolated worktree",
+        "Complete Stage 4B-R1E in the current isolated worktree",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "1171 passing tests" in roadmap
-    assert "Current base validation reported 1171 tests passed" in handoff
+    assert "1404 passing tests" in roadmap
+    assert "Current base validation reported 1404 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -218,7 +221,7 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
         "| 2b. Signal/execution timing implementation | "
         "Complete on protected main via PR #162"
     ) in roadmap
-    assert "Complete Stage 4B-R1D in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1E in the current isolated worktree" in handoff
 
 
 def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
@@ -375,7 +378,11 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 4b-R1D. Sample registration schema | "
-        "Active in the current tree; owner selected bundle R1D-A"
+        "Complete on protected main via PR #170"
+    ) in roadmap
+    assert (
+        "| 4b-R1E. Campaign-entity and Stage 3 sample-reference binding "
+        "schemas | Active in the current tree; owner selected bundle R1E-A"
     ) in roadmap
 
 
@@ -1277,7 +1284,7 @@ def test_trial_family_registration_r1c_freezes_owner_bundle_and_release() -> Non
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1C-A`" in normalized_handoff
     assert "leaves the other 33 events" in normalized_handoff
-    assert "Complete Stage 4B-R1D in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1E in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1C-A" in " ".join(specification.split())
     assert (
         "Accepted Stage 4B-R1C-A trial-family registration authority" in repo_map
@@ -1454,16 +1461,207 @@ def test_sample_registration_r1d_freezes_owner_bundle_and_release() -> None:
     ) in roadmap
     assert (
         "| 4b-R1D. Sample registration schema | "
-        "Active in the current tree; owner selected bundle R1D-A"
+        "Complete on protected main via PR #170"
     ) in roadmap
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1D-A`" in normalized_handoff
     assert "leaves the other 32 events" in normalized_handoff
-    assert "Complete Stage 4B-R1D in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1E in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1D-A" in " ".join(specification.split())
     assert (
-        "Active Stage 4B-R1D-A local sample registration authority" in repo_map
+        "Accepted Stage 4B-R1D-A local sample registration authority" in repo_map
     )
+
+
+def test_binding_r1e_freezes_owner_bundle_and_release() -> None:
+    contract_path = (
+        PROJECT_ROOT
+        / "docs/experiment_trial_ledger_binding_schema_contract.md"
+    )
+    contract = contract_path.read_text(encoding="utf-8")
+    normalized_contract = " ".join(contract.split())
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
+        encoding="utf-8"
+    )
+    repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
+    registry_path = (
+        PROJECT_ROOT
+        / "src/ledger/schemas/"
+        "experiment_trial_ledger_payload_schema_registry_v5.json"
+    )
+    sidecar_path = registry_path.with_suffix(".sha256")
+    fixture_path = (
+        PROJECT_ROOT
+        / "tests/fixtures/"
+        "experiment_trial_ledger_binding_events_v1_golden.json"
+    )
+    registry = json.loads(registry_path.read_text(encoding="ascii"))
+    fixture = json.loads(fixture_path.read_text(encoding="ascii"))
+
+    for phrase in [
+        "Contract ID: `experiment_trial_ledger_binding_schema_r1e`",
+        "Contract version: `0.5.0`",
+        "Owner decision: option `R1E-A`",
+        "registry schema ID `experiment_trial_ledger_payload_schema_registry_v5`",
+        "registry version `0.5.0`",
+        "unchanged schema-language version `0.2.0`",
+        "The other 30 events remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`",
+        "`CAMPAIGN_ENTITY_BOUND` binds one existing ledger-local trial family or sample identity to one already allocated campaign",
+        "top-level `tagged_union` discriminated by `subject_type`",
+        "`trial_family`",
+        "`sample`",
+        "`local_registration`",
+        "`external_reference`",
+        "one-item `payload.campaign_scope_ids`",
+        "source_registration_event_id",
+        "source_registration_event_sha256",
+        "source_reference_event_id",
+        "source_reference_event_sha256",
+        "the source exists earlier in the same ledger epoch",
+        "recomputing the event digest from the exact retained canonical bytes",
+        "R1E-A makes one explicit bounded amendment to the R1A binding architecture",
+        "referencing the exact earlier `STAGE3_SAMPLE_REFERENCE_BOUND` event ID and hash",
+        "The first external-reference event remains the sole allocation",
+        "`STAGE3_SAMPLE_REFERENCE_BOUND` introduces one external-origin ledger-local sample identity",
+        "A digest is not publication safe merely because it is non-reversible",
+        "one `(ledger_id, campaign_id, subject_type, subject_id)` binding exists at most once",
+        "a directly campaign-scoped registration cannot also have a binding for that campaign",
+        "Aliases, clones, reruns, new campaigns, window overlap, result access, and post-result reclassification do not allocate a new identity",
+        "local schema `ACCEPT` must not be represented as proof",
+        "Trial count, execution-attempt count, and protected-sample access remain zero",
+        "four reminders at 30-minute intervals",
+    ]:
+        assert phrase in normalized_contract
+
+    expected_supported = [
+        "LEDGER_EPOCH_CREATED",
+        "CAMPAIGN_ALLOCATED",
+        "EXPERIMENT_ALLOCATED",
+        "TRIAL_FAMILY_REGISTERED",
+        "SAMPLE_REGISTERED",
+        "CAMPAIGN_ENTITY_BOUND",
+        "STAGE3_SAMPLE_REFERENCE_BOUND",
+    ]
+    assert registry["registry_schema_id"] == (
+        "experiment_trial_ledger_payload_schema_registry_v5"
+    )
+    assert registry["registry_version"] == "0.5.0"
+    assert registry["registry_status"] == "SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY"
+    assert registry["schema_language_version"] == "0.2.0"
+    assert [item["event_type"] for item in registry["event_schemas"]] == (
+        expected_supported
+    )
+    assert len(registry["incomplete_event_types"]) == 30
+    assert set(registry["incomplete_event_types"]) == (
+        set(registry["closed_event_vocabulary"]) - set(expected_supported)
+    )
+
+    binding_schema = next(
+        item
+        for item in registry["event_schemas"]
+        if item["event_type"] == "CAMPAIGN_ENTITY_BOUND"
+    )
+    assert binding_schema["schema_status"] == "FROZEN_SUPPORTED"
+    binding_schema = binding_schema["event_schema"]
+    assert binding_schema["kind"] == "tagged_union"
+    assert binding_schema["discriminator"] == "subject_type"
+    assert list(binding_schema["variants"]) == ["trial_family", "sample"]
+    sample_payload = binding_schema["variants"]["sample"]["properties"][
+        "payload"
+    ]
+    assert sample_payload["kind"] == "tagged_union"
+    assert sample_payload["discriminator"] == "source_kind"
+    assert list(sample_payload["variants"]) == [
+        "local_registration",
+        "external_reference",
+    ]
+
+    stage3_schema = next(
+        item
+        for item in registry["event_schemas"]
+        if item["event_type"] == "STAGE3_SAMPLE_REFERENCE_BOUND"
+    )["event_schema"]
+    assert stage3_schema["properties"]["subject_type"] == {
+        "kind": "literal",
+        "value": "sample",
+    }
+    assert stage3_schema["properties"]["subject_id"] == {
+        "kind": "named",
+        "name": "sample_id",
+    }
+    assert stage3_schema["properties"]["payload"]["properties"][
+        "campaign_scope_ids"
+    ] == {
+        "kind": "array",
+        "collection_semantics": "sorted_unique",
+        "items": {"kind": "named", "name": "campaign_id"},
+        "min_items": 1,
+        "max_items": 1,
+    }
+
+    assert sidecar_path.read_text(encoding="ascii").strip() == (
+        "c6fed9409f596cae5cdba1bce3ad8c5b088d2931361aeda7c06dfd2453805a52"
+    )
+    assert hashlib.sha256(registry_path.read_bytes()).hexdigest() == (
+        "223a2b7e2ff8ffdb4977c878186236cd747428838bade571e43e513e71ee52b2"
+    )
+    assert hashlib.sha256(sidecar_path.read_bytes()).hexdigest() == (
+        "dceb0f334fe2056ae0d3a673e499caa899d69d67b60a21b2380d0ea947427483"
+    )
+
+    assert fixture["fixture_id"] == (
+        "experiment_trial_ledger_binding_events_v1_golden"
+    )
+    assert set(fixture) == {
+        "fixture_id",
+        "trial_family_global_bound",
+        "sample_global_local_bound",
+        "stage3_sample_reference_bound",
+        "sample_external_origin_reused",
+    }
+    assert fixture["trial_family_global_bound"]["subject_type"] == (
+        "trial_family"
+    )
+    assert fixture["sample_global_local_bound"]["payload"]["source_kind"] == (
+        "local_registration"
+    )
+    assert fixture["stage3_sample_reference_bound"]["event_type"] == (
+        "STAGE3_SAMPLE_REFERENCE_BOUND"
+    )
+    assert fixture["sample_external_origin_reused"]["payload"][
+        "source_kind"
+    ] == "external_reference"
+    assert fixture["sample_external_origin_reused"]["subject_id"] == (
+        fixture["stage3_sample_reference_bound"]["subject_id"]
+    )
+
+    for canonical_doc in [roadmap, handoff, specification, repo_map]:
+        assert (
+            "docs/experiment_trial_ledger_binding_schema_contract.md"
+            in canonical_doc
+        )
+    assert (
+        "| 4b-R1D. Sample registration schema | "
+        "Complete on protected main via PR #170"
+    ) in roadmap
+    assert (
+        "| 4b-R1E. Campaign-entity and Stage 3 sample-reference binding "
+        "schemas | Active in the current tree; owner selected bundle R1E-A"
+    ) in roadmap
+    normalized_handoff = " ".join(handoff.split())
+    assert "the owner selected bundle `R1E-A`" in normalized_handoff
+    assert "leaves the other 30 events" in normalized_handoff
+    assert "Complete Stage 4B-R1E in the current isolated worktree" in handoff
+    assert "owner-selected Stage 4B-R1E-A" in " ".join(
+        specification.split()
+    )
+    assert "Active Stage 4B-R1E-A binding authority" in repo_map
 
 
 def _ascii_jcs_golden_bytes(value: object) -> bytes:

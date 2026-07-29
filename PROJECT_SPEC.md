@@ -76,6 +76,18 @@ proves only closed event shape; retrieval, authority, acceptance and
 publication currentness, role independence, path exclusivity, exposure
 history, prior allocation, and append behavior remain fail-closed stateful
 requirements.
+`docs/experiment_trial_ledger_binding_schema_contract.md` defines the
+owner-selected Stage 4B-R1E-A binding authority. A separate immutable registry
+`0.5.0` preserves R0/R1/R2/R3 bytes and behavior while promoting only
+`CAMPAIGN_ENTITY_BOUND` and `STAGE3_SAMPLE_REFERENCE_BOUND`. Campaign binding
+uses a closed outer subject union and, for samples, a closed local-registration
+versus external-reference source union. The first external Stage 3 reference
+allocates one `smp_<32 lowercase hex>` identity for one campaign; later
+campaigns reuse that same external-origin identity only by binding the exact
+first event ID/hash. Local schema acceptance proves only event shape and
+reference syntax; retained-source bytes/digests, prior campaign allocation,
+authority/currentness, path exclusivity, anti-reset history, uniqueness, and
+append behavior remain fail-closed stateful requirements.
 
 ## Current Phase and Boundary
 

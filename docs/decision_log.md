@@ -15,6 +15,81 @@ investment performance.
 
 ---
 
+## 2026-07-29 - Select R1E-A Binding Authority
+
+Context:
+
+- Stage 4B-R1D is accepted on protected `main` through PR #170 at `8d02e5a`;
+  exact merge-head CI run `30475306672` passed.
+- R1A and R1D deliberately left campaign-entity binding, the external Stage 3
+  sample-reference event, exact source references, cross-campaign
+  external-origin reuse, and their stateful path/currentness rules for a
+  separate owner decision.
+- The owner selected bundle `R1E-A`.
+
+Decision:
+
+- `CAMPAIGN_ENTITY_BOUND` remains one event with a top-level closed
+  `subject_type` union. The exact branches are `trial_family` with
+  `fam_<32 lowercase hex>` and `sample` with
+  `smp_<32 lowercase hex>`.
+- Each campaign binding has singleton `campaign_scope_ids` and an exact source
+  event ID and SHA-256. Trial families source only empty-scope global
+  `TRIAL_FAMILY_REGISTERED`.
+- The sample branch contains a nested closed `source_kind` union:
+  `local_registration` sources an empty-scope global `SAMPLE_REGISTERED`;
+  `external_reference` sources the exact first
+  `STAGE3_SAMPLE_REFERENCE_BOUND` event.
+- `STAGE3_SAMPLE_REFERENCE_BOUND` allocates one new external-origin
+  `smp_<32 lowercase hex>` identity for one campaign and carries the exact R1D
+  Stage 3 authority, record, acceptance, public-projection, and
+  publication-approval tuple with singleton scope.
+- A later campaign reuses the same external-origin identity only through the
+  `external_reference` campaign-binding branch. It must not allocate another
+  identity or backfill a synthetic `SAMPLE_REGISTERED`.
+- Stateful use fails closed unless the campaign is already allocated; source
+  bytes, digest, event ID/type/subject/scope and ordering are exact; authority
+  and decisions are current; the target binding is unique; origin paths remain
+  exclusive; and aliases, clones, reruns, campaigns, overlap, access, or
+  reclassification cannot reset identity or exposure history.
+- R1E may publish immutable registry `0.5.0` under unchanged schema-language
+  `0.2.0` and promote only `CAMPAIGN_ENTITY_BOUND` and
+  `STAGE3_SAMPLE_REFERENCE_BOUND`.
+
+Rationale:
+
+- Closed outer and nested unions prevent generic-entity and nullable-field
+  ambiguity.
+- Exact retained source references make campaign evidence auditable without
+  copying a partial registration or external record into the binding event.
+- Reusing the first external-origin identity preserves R1D-A lineage,
+  dependence, and exposure history across campaigns instead of allowing a
+  per-campaign reset.
+- Keeping local shape validation separate from source/currentness/runtime
+  enforcement prevents schema acceptance from laundering missing stateful
+  evidence.
+
+Consequences:
+
+- R1E's owner-methodology gate is cleared. Registry `0.5.0` may support
+  exactly seven events while the other 30 remain
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- The R1E contract makes a bounded explicit amendment to R1A's former
+  registration-only campaign source description for external-origin sample
+  reuse.
+- Trial, attempt, protected-access, private-data, dependency, and trading
+  impacts remain zero.
+
+Follow-up:
+
+- Add independent fixtures for trial-family, global-local sample, first Stage
+  3 external reference, and later external-origin reuse paths.
+- Add literal union, source-field, namespace, singleton-scope, authority,
+  privacy, incomplete-event, prior-release, package-parity, and
+  unpublished-promotion oracles.
+- After protected R1E completion, orient the next small registry family and
+  surface any genuine owner methodology decision before mutation.
+
 ## 2026-07-29 - Select R1D-A Local Sample Registration Authority
 
 Context:

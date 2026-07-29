@@ -389,3 +389,10 @@ references, direct/global/external path exclusivity, and stateful source
 currentness requirements. Any genuine owner-methodology gate follows the
 bounded reminder policy: four reminders at 30-minute intervals, then the
 heartbeat pauses if the owner has not replied.
+
+R1E-A is the selected successor decision. It preserves R1D bytes and local
+sample-registration behavior, promotes both deferred binding events in a new
+immutable release, and resolves cross-campaign external-origin reuse by
+referencing the exact first `STAGE3_SAMPLE_REFERENCE_BOUND` event rather than
+allocating another sample identity. The exact successor authority is
+`docs/experiment_trial_ledger_binding_schema_contract.md`.
