@@ -15,6 +15,76 @@ investment performance.
 
 ---
 
+## 2026-07-29 - Select R1D-A Local Sample Registration Authority
+
+Context:
+
+- Stage 4B-R1C is accepted on protected `main` through PR #169 at `68a4c4f`;
+  exact merge-head CI run `30471505290` passed.
+- R1A and R1C deliberately deferred the exact local sample namespace, Stage 3
+  sample-record authority, local/external representation boundary,
+  acceptance/currentness, privacy projection, and event boundary because
+  helpers, fixtures, and narrative examples are not wire-schema authorities.
+- The owner selected the recommended bundle `R1D-A`.
+
+Decision:
+
+- The exact ledger-local `sample_id` namespace is
+  `smp_<32 lowercase hex>`.
+- Local registration uses an immutable versioned Stage 3 sample-authority
+  catalog plus complete repository-external canonical records retrieved by one
+  exact digest-pinned resolver tuple. Retrieval miss, ambiguity, schema
+  mismatch, noncanonical bytes, digest mismatch, or hash-only stand-in fails
+  closed.
+- Acceptance and public-projection publication approval are separate complete
+  immutable records. The acceptance reviewer is distinct from both the sample
+  record producer and registration actor. Both authorities use strictly
+  increasing, single-current generations.
+- Direct local, global local with later campaign binding, and later external
+  Stage 3 reference paths are mutually exclusive. One canonical lineage/path
+  has one ledger-local identity per epoch; external references are not
+  backfilled as synthetic local registrations.
+- Aliases, clones, new campaigns, reruns, window overlap, result access, and
+  reclassification do not reset identity or exposure history. Overlap cannot
+  manufacture pristine holdout status.
+- Complete records, private locators and digests, raw values, and performance
+  remain external/private. Public projections contain only allowlisted safe IDs
+  and explicitly publication-approved hashes.
+- Local sample registration retains the owner-selected common maximum of 32
+  direct campaign IDs.
+- R1D may publish immutable registry `0.4.0` under unchanged schema-language
+  `0.2.0` and promote only `SAMPLE_REGISTERED`.
+
+Rationale:
+
+- Complete retrievable records and independent acceptance prevent hash-only or
+  self-reviewed sample registration from becoming formal authority.
+- Separate publication approval treats non-reversibility as insufficient for
+  public disclosure.
+- Stable lineage identity and exclusive representation paths prevent exposure
+  resets and duplicate local/external identities.
+- Keeping both binding events for R1E avoids laundering incomplete stateful
+  source, currentness, and path checks into a local shape schema.
+
+Consequences:
+
+- R1D's owner-methodology gate is cleared. The other 32 event types, including
+  `CAMPAIGN_ENTITY_BOUND` and `STAGE3_SAMPLE_REFERENCE_BOUND`, remain
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- Local schema acceptance proves event shape and pinned references only; it
+  does not retrieve records, authenticate roles, determine currentness, enforce
+  path exclusivity or exposure history, append events, or authorize research.
+- Trial, attempt, protected-access, private-data, dependency, and trading
+  impacts remain zero.
+
+Follow-up:
+
+- Add independent global/direct fixtures and literal namespace, authority,
+  acceptance, currentness, privacy, scope, and unpublished-promotion oracles.
+- Prove byte/behavior/package parity for immutable R0, R1B, and R1C releases.
+- After protected R1D completion, open separate R1E design authority for both
+  binding events and their stateful source/path rules.
+
 ## 2026-07-28 - Select R1C-A Trial-Family Registration Authority
 
 Context:

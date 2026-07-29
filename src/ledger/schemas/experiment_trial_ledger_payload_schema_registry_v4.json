@@ -1,0 +1,1225 @@
+{
+  "registry_schema_id": "experiment_trial_ledger_payload_schema_registry_v4",
+  "registry_version": "0.4.0",
+  "registry_status": "SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY",
+  "schema_language_id": "ledger_closed_schema_dsl_v1",
+  "schema_language_version": "0.2.0",
+  "canonicalization_id": "pit_canonical_json_v1",
+  "ledger_schema_version": "experiment_trial_ledger_v1",
+  "event_identity_projection_id": "ledger_event_identity_v1",
+  "operation_request_projection_id": "ledger_operation_request_v1",
+  "closed_event_vocabulary": [
+    "LEDGER_EPOCH_CREATED",
+    "CAMPAIGN_ALLOCATED",
+    "EXPERIMENT_ALLOCATED",
+    "TRIAL_FAMILY_REGISTERED",
+    "SAMPLE_REGISTERED",
+    "CAMPAIGN_ENTITY_BOUND",
+    "STAGE3_SAMPLE_REFERENCE_BOUND",
+    "TRIAL_ALLOCATED",
+    "CAMPAIGN_INVENTORY_SEALED",
+    "CAMPAIGN_AMENDMENT_PROPOSED",
+    "CAMPAIGN_INVENTORY_AMENDED",
+    "ATTEMPT_ALLOCATED",
+    "ATTEMPT_STARTED",
+    "ATTEMPT_COMPLETED",
+    "ATTEMPT_FAILED",
+    "ATTEMPT_INVALID",
+    "ATTEMPT_ABORTED",
+    "TRIAL_COMPLETED",
+    "TRIAL_FAILED",
+    "TRIAL_INVALID",
+    "TRIAL_ABORTED",
+    "TRIAL_EXCLUDED",
+    "ARTIFACT_DISPOSITION_RECORDED",
+    "ACCESS_INTENT",
+    "ACCESS_STARTED",
+    "ACCESS_COMPLETED",
+    "ACCESS_FAILED",
+    "ACCESS_ABORTED",
+    "ACCESS_CANCELLED",
+    "EXPOSURE_DECISION",
+    "CAMPAIGN_EVIDENCE_FROZEN",
+    "CHECKPOINT_REFERENCE_RECORDED",
+    "CAMPAIGN_ACCOUNTING_CLOSED",
+    "REVIEW_DECIDED",
+    "PROMOTION_DECIDED",
+    "CAMPAIGN_ADJUDICATED",
+    "EVENT_SUPERSEDED"
+  ],
+  "local_constraint_predicates": [
+    "array_contains_path",
+    "path_equals_path"
+  ],
+  "type_definitions": {
+    "actor_id": {
+      "kind": "typed_id",
+      "prefix": "act"
+    },
+    "campaign_id": {
+      "kind": "typed_id",
+      "prefix": "cmp"
+    },
+    "event_id": {
+      "kind": "typed_id",
+      "prefix": "evt"
+    },
+    "experiment_id": {
+      "kind": "typed_id",
+      "prefix": "exp"
+    },
+    "trial_family_id": {
+      "kind": "typed_id",
+      "prefix": "fam"
+    },
+    "sample_id": {
+      "kind": "typed_id",
+      "prefix": "smp"
+    },
+    "ledger_id": {
+      "kind": "typed_id",
+      "prefix": "ldg"
+    },
+    "operation_id": {
+      "kind": "typed_id",
+      "prefix": "opn"
+    },
+    "sha256": {
+      "kind": "sha256"
+    },
+    "timestamp": {
+      "kind": "ledger_v1_utc_timestamp"
+    }
+  },
+  "event_schemas": [
+    {
+      "ledger_schema_version": "experiment_trial_ledger_v1",
+      "event_schema_version": "ledger_event_v1",
+      "event_type": "LEDGER_EPOCH_CREATED",
+      "schema_status": "FROZEN_SUPPORTED",
+      "event_schema": {
+        "kind": "closed_object",
+        "required": [
+          "actor_id",
+          "canonicalization_id",
+          "event_id",
+          "event_schema_version",
+          "event_type",
+          "identity_projection_id",
+          "ledger_id",
+          "ledger_schema_version",
+          "occurred_at",
+          "operation_id",
+          "operation_request_projection_id",
+          "operation_request_sha256",
+          "payload",
+          "previous_event_sha256",
+          "recorded_at",
+          "sequence",
+          "subject_id",
+          "subject_type"
+        ],
+        "properties": {
+          "actor_id": {
+            "kind": "named",
+            "name": "actor_id"
+          },
+          "canonicalization_id": {
+            "kind": "literal",
+            "value": "pit_canonical_json_v1"
+          },
+          "event_id": {
+            "kind": "named",
+            "name": "event_id"
+          },
+          "event_schema_version": {
+            "kind": "literal",
+            "value": "ledger_event_v1"
+          },
+          "event_type": {
+            "kind": "literal",
+            "value": "LEDGER_EPOCH_CREATED"
+          },
+          "identity_projection_id": {
+            "kind": "literal",
+            "value": "ledger_event_identity_v1"
+          },
+          "ledger_id": {
+            "kind": "named",
+            "name": "ledger_id"
+          },
+          "ledger_schema_version": {
+            "kind": "literal",
+            "value": "experiment_trial_ledger_v1"
+          },
+          "occurred_at": {
+            "kind": "named",
+            "name": "timestamp"
+          },
+          "operation_id": {
+            "kind": "named",
+            "name": "operation_id"
+          },
+          "operation_request_projection_id": {
+            "kind": "literal",
+            "value": "ledger_operation_request_v1"
+          },
+          "operation_request_sha256": {
+            "kind": "named",
+            "name": "sha256"
+          },
+          "payload": {
+            "kind": "closed_object",
+            "required": [
+              "campaign_scope_ids"
+            ],
+            "properties": {
+              "campaign_scope_ids": {
+                "kind": "array",
+                "collection_semantics": "sorted_unique",
+                "items": {
+                  "kind": "named",
+                  "name": "campaign_id"
+                },
+                "min_items": 0,
+                "max_items": 0
+              }
+            }
+          },
+          "previous_event_sha256": {
+            "kind": "literal",
+            "value": null
+          },
+          "recorded_at": {
+            "kind": "named",
+            "name": "timestamp"
+          },
+          "sequence": {
+            "kind": "literal",
+            "value": 0
+          },
+          "subject_id": {
+            "kind": "named",
+            "name": "ledger_id"
+          },
+          "subject_type": {
+            "kind": "literal",
+            "value": "ledger"
+          }
+        }
+      },
+      "local_constraints": [
+        {
+          "constraint_id": "epoch_subject_matches_ledger",
+          "predicate": "path_equals_path",
+          "left_path": [
+            "subject_id"
+          ],
+          "right_path": [
+            "ledger_id"
+          ]
+        }
+      ]
+    },
+    {
+      "ledger_schema_version": "experiment_trial_ledger_v1",
+      "event_schema_version": "ledger_event_v1",
+      "event_type": "CAMPAIGN_ALLOCATED",
+      "schema_status": "FROZEN_SUPPORTED",
+      "event_schema": {
+        "kind": "closed_object",
+        "required": [
+          "actor_id",
+          "canonicalization_id",
+          "event_id",
+          "event_schema_version",
+          "event_type",
+          "identity_projection_id",
+          "ledger_id",
+          "ledger_schema_version",
+          "occurred_at",
+          "operation_id",
+          "operation_request_projection_id",
+          "operation_request_sha256",
+          "payload",
+          "previous_event_sha256",
+          "recorded_at",
+          "sequence",
+          "subject_id",
+          "subject_type"
+        ],
+        "properties": {
+          "actor_id": {
+            "kind": "named",
+            "name": "actor_id"
+          },
+          "canonicalization_id": {
+            "kind": "literal",
+            "value": "pit_canonical_json_v1"
+          },
+          "event_id": {
+            "kind": "named",
+            "name": "event_id"
+          },
+          "event_schema_version": {
+            "kind": "literal",
+            "value": "ledger_event_v1"
+          },
+          "event_type": {
+            "kind": "literal",
+            "value": "CAMPAIGN_ALLOCATED"
+          },
+          "identity_projection_id": {
+            "kind": "literal",
+            "value": "ledger_event_identity_v1"
+          },
+          "ledger_id": {
+            "kind": "named",
+            "name": "ledger_id"
+          },
+          "ledger_schema_version": {
+            "kind": "literal",
+            "value": "experiment_trial_ledger_v1"
+          },
+          "occurred_at": {
+            "kind": "named",
+            "name": "timestamp"
+          },
+          "operation_id": {
+            "kind": "named",
+            "name": "operation_id"
+          },
+          "operation_request_projection_id": {
+            "kind": "literal",
+            "value": "ledger_operation_request_v1"
+          },
+          "operation_request_sha256": {
+            "kind": "named",
+            "name": "sha256"
+          },
+          "payload": {
+            "kind": "closed_object",
+            "required": [
+              "campaign_scope_ids"
+            ],
+            "properties": {
+              "campaign_scope_ids": {
+                "kind": "array",
+                "collection_semantics": "sorted_unique",
+                "items": {
+                  "kind": "named",
+                  "name": "campaign_id"
+                },
+                "min_items": 1,
+                "max_items": 1
+              }
+            }
+          },
+          "previous_event_sha256": {
+            "kind": "named",
+            "name": "sha256"
+          },
+          "recorded_at": {
+            "kind": "named",
+            "name": "timestamp"
+          },
+          "sequence": {
+            "kind": "safe_integer",
+            "minimum": 1
+          },
+          "subject_id": {
+            "kind": "named",
+            "name": "campaign_id"
+          },
+          "subject_type": {
+            "kind": "literal",
+            "value": "campaign"
+          }
+        }
+      },
+      "local_constraints": [
+        {
+          "constraint_id": "campaign_subject_in_scope",
+          "predicate": "array_contains_path",
+          "left_path": [
+            "payload",
+            "campaign_scope_ids"
+          ],
+          "right_path": [
+            "subject_id"
+          ]
+        }
+      ]
+    },
+    {
+      "ledger_schema_version": "experiment_trial_ledger_v1",
+      "event_schema_version": "ledger_event_v1",
+      "event_type": "EXPERIMENT_ALLOCATED",
+      "schema_status": "FROZEN_SUPPORTED",
+      "event_schema": {
+        "kind": "closed_object",
+        "required": [
+          "actor_id",
+          "canonicalization_id",
+          "event_id",
+          "event_schema_version",
+          "event_type",
+          "identity_projection_id",
+          "ledger_id",
+          "ledger_schema_version",
+          "occurred_at",
+          "operation_id",
+          "operation_request_projection_id",
+          "operation_request_sha256",
+          "payload",
+          "previous_event_sha256",
+          "recorded_at",
+          "sequence",
+          "subject_id",
+          "subject_type"
+        ],
+        "properties": {
+          "actor_id": {
+            "kind": "named",
+            "name": "actor_id"
+          },
+          "canonicalization_id": {
+            "kind": "literal",
+            "value": "pit_canonical_json_v1"
+          },
+          "event_id": {
+            "kind": "named",
+            "name": "event_id"
+          },
+          "event_schema_version": {
+            "kind": "literal",
+            "value": "ledger_event_v1"
+          },
+          "event_type": {
+            "kind": "literal",
+            "value": "EXPERIMENT_ALLOCATED"
+          },
+          "identity_projection_id": {
+            "kind": "literal",
+            "value": "ledger_event_identity_v1"
+          },
+          "ledger_id": {
+            "kind": "named",
+            "name": "ledger_id"
+          },
+          "ledger_schema_version": {
+            "kind": "literal",
+            "value": "experiment_trial_ledger_v1"
+          },
+          "occurred_at": {
+            "kind": "named",
+            "name": "timestamp"
+          },
+          "operation_id": {
+            "kind": "named",
+            "name": "operation_id"
+          },
+          "operation_request_projection_id": {
+            "kind": "literal",
+            "value": "ledger_operation_request_v1"
+          },
+          "operation_request_sha256": {
+            "kind": "named",
+            "name": "sha256"
+          },
+          "payload": {
+            "kind": "closed_object",
+            "required": [
+              "campaign_scope_ids"
+            ],
+            "properties": {
+              "campaign_scope_ids": {
+                "kind": "array",
+                "collection_semantics": "sorted_unique",
+                "items": {
+                  "kind": "named",
+                  "name": "campaign_id"
+                },
+                "min_items": 1,
+                "max_items": 1
+              }
+            }
+          },
+          "previous_event_sha256": {
+            "kind": "named",
+            "name": "sha256"
+          },
+          "recorded_at": {
+            "kind": "named",
+            "name": "timestamp"
+          },
+          "sequence": {
+            "kind": "safe_integer",
+            "minimum": 1
+          },
+          "subject_id": {
+            "kind": "named",
+            "name": "experiment_id"
+          },
+          "subject_type": {
+            "kind": "literal",
+            "value": "experiment"
+          }
+        }
+      },
+      "local_constraints": []
+    },
+    {
+      "ledger_schema_version": "experiment_trial_ledger_v1",
+      "event_schema_version": "ledger_event_v1",
+      "event_type": "TRIAL_FAMILY_REGISTERED",
+      "schema_status": "FROZEN_SUPPORTED",
+      "event_schema": {
+        "kind": "closed_object",
+        "required": [
+          "actor_id",
+          "canonicalization_id",
+          "event_id",
+          "event_schema_version",
+          "event_type",
+          "identity_projection_id",
+          "ledger_id",
+          "ledger_schema_version",
+          "occurred_at",
+          "operation_id",
+          "operation_request_projection_id",
+          "operation_request_sha256",
+          "payload",
+          "previous_event_sha256",
+          "recorded_at",
+          "sequence",
+          "subject_id",
+          "subject_type"
+        ],
+        "properties": {
+          "actor_id": {
+            "kind": "named",
+            "name": "actor_id"
+          },
+          "canonicalization_id": {
+            "kind": "literal",
+            "value": "pit_canonical_json_v1"
+          },
+          "event_id": {
+            "kind": "named",
+            "name": "event_id"
+          },
+          "event_schema_version": {
+            "kind": "literal",
+            "value": "ledger_event_v1"
+          },
+          "event_type": {
+            "kind": "literal",
+            "value": "TRIAL_FAMILY_REGISTERED"
+          },
+          "identity_projection_id": {
+            "kind": "literal",
+            "value": "ledger_event_identity_v1"
+          },
+          "ledger_id": {
+            "kind": "named",
+            "name": "ledger_id"
+          },
+          "ledger_schema_version": {
+            "kind": "literal",
+            "value": "experiment_trial_ledger_v1"
+          },
+          "occurred_at": {
+            "kind": "named",
+            "name": "timestamp"
+          },
+          "operation_id": {
+            "kind": "named",
+            "name": "operation_id"
+          },
+          "operation_request_projection_id": {
+            "kind": "literal",
+            "value": "ledger_operation_request_v1"
+          },
+          "operation_request_sha256": {
+            "kind": "named",
+            "name": "sha256"
+          },
+          "payload": {
+            "kind": "closed_object",
+            "required": [
+              "campaign_scope_ids",
+              "family_acceptance_decision_id",
+              "family_acceptance_generation",
+              "family_acceptance_record_sha256",
+              "family_acceptance_schema_version",
+              "family_authority_id",
+              "family_authority_registry_sha256",
+              "family_authority_version",
+              "family_definition_canonicalization_id",
+              "family_definition_record_id",
+              "family_definition_record_sha256",
+              "family_definition_record_version",
+              "family_definition_schema_version"
+            ],
+            "properties": {
+              "campaign_scope_ids": {
+                "kind": "array",
+                "collection_semantics": "sorted_unique",
+                "items": {
+                  "kind": "named",
+                  "name": "campaign_id"
+                },
+                "min_items": 0,
+                "max_items": 32
+              },
+              "family_acceptance_decision_id": {
+                "kind": "safe_public_id"
+              },
+              "family_acceptance_generation": {
+                "kind": "safe_integer",
+                "minimum": 1
+              },
+              "family_acceptance_record_sha256": {
+                "kind": "named",
+                "name": "sha256"
+              },
+              "family_acceptance_schema_version": {
+                "kind": "literal",
+                "value": "trial_family_definition_acceptance_v1"
+              },
+              "family_authority_id": {
+                "kind": "safe_public_id"
+              },
+              "family_authority_registry_sha256": {
+                "kind": "named",
+                "name": "sha256"
+              },
+              "family_authority_version": {
+                "kind": "safe_integer",
+                "minimum": 1
+              },
+              "family_definition_canonicalization_id": {
+                "kind": "literal",
+                "value": "pit_canonical_json_v1"
+              },
+              "family_definition_record_id": {
+                "kind": "safe_public_id"
+              },
+              "family_definition_record_sha256": {
+                "kind": "named",
+                "name": "sha256"
+              },
+              "family_definition_record_version": {
+                "kind": "safe_integer",
+                "minimum": 1
+              },
+              "family_definition_schema_version": {
+                "kind": "literal",
+                "value": "trial_family_definition_v1"
+              }
+            }
+          },
+          "previous_event_sha256": {
+            "kind": "named",
+            "name": "sha256"
+          },
+          "recorded_at": {
+            "kind": "named",
+            "name": "timestamp"
+          },
+          "sequence": {
+            "kind": "safe_integer",
+            "minimum": 1
+          },
+          "subject_id": {
+            "kind": "named",
+            "name": "trial_family_id"
+          },
+          "subject_type": {
+            "kind": "literal",
+            "value": "trial_family"
+          }
+        }
+      },
+      "local_constraints": []
+    },
+    {
+      "ledger_schema_version": "experiment_trial_ledger_v1",
+      "event_schema_version": "ledger_event_v1",
+      "event_type": "SAMPLE_REGISTERED",
+      "schema_status": "FROZEN_SUPPORTED",
+      "event_schema": {
+        "kind": "closed_object",
+        "required": [
+          "actor_id",
+          "canonicalization_id",
+          "event_id",
+          "event_schema_version",
+          "event_type",
+          "identity_projection_id",
+          "ledger_id",
+          "ledger_schema_version",
+          "occurred_at",
+          "operation_id",
+          "operation_request_projection_id",
+          "operation_request_sha256",
+          "payload",
+          "previous_event_sha256",
+          "recorded_at",
+          "sequence",
+          "subject_id",
+          "subject_type"
+        ],
+        "properties": {
+          "actor_id": {
+            "kind": "named",
+            "name": "actor_id"
+          },
+          "canonicalization_id": {
+            "kind": "literal",
+            "value": "pit_canonical_json_v1"
+          },
+          "event_id": {
+            "kind": "named",
+            "name": "event_id"
+          },
+          "event_schema_version": {
+            "kind": "literal",
+            "value": "ledger_event_v1"
+          },
+          "event_type": {
+            "kind": "literal",
+            "value": "SAMPLE_REGISTERED"
+          },
+          "identity_projection_id": {
+            "kind": "literal",
+            "value": "ledger_event_identity_v1"
+          },
+          "ledger_id": {
+            "kind": "named",
+            "name": "ledger_id"
+          },
+          "ledger_schema_version": {
+            "kind": "literal",
+            "value": "experiment_trial_ledger_v1"
+          },
+          "occurred_at": {
+            "kind": "named",
+            "name": "timestamp"
+          },
+          "operation_id": {
+            "kind": "named",
+            "name": "operation_id"
+          },
+          "operation_request_projection_id": {
+            "kind": "literal",
+            "value": "ledger_operation_request_v1"
+          },
+          "operation_request_sha256": {
+            "kind": "named",
+            "name": "sha256"
+          },
+          "payload": {
+            "kind": "closed_object",
+            "required": [
+              "campaign_scope_ids",
+              "sample_acceptance_decision_id",
+              "sample_acceptance_generation",
+              "sample_acceptance_record_sha256",
+              "sample_acceptance_schema_version",
+              "sample_authority_id",
+              "sample_authority_registry_sha256",
+              "sample_authority_version",
+              "sample_public_projection_id",
+              "sample_public_projection_schema_version",
+              "sample_public_projection_sha256",
+              "sample_publication_approval_generation",
+              "sample_publication_approval_id",
+              "sample_publication_approval_record_sha256",
+              "sample_publication_approval_schema_version",
+              "sample_record_canonicalization_id",
+              "sample_record_id",
+              "sample_record_schema_version",
+              "sample_record_sha256",
+              "sample_record_version"
+            ],
+            "properties": {
+              "campaign_scope_ids": {
+                "kind": "array",
+                "collection_semantics": "sorted_unique",
+                "items": {
+                  "kind": "named",
+                  "name": "campaign_id"
+                },
+                "min_items": 0,
+                "max_items": 32
+              },
+              "sample_acceptance_decision_id": {
+                "kind": "safe_public_id"
+              },
+              "sample_acceptance_generation": {
+                "kind": "safe_integer",
+                "minimum": 1
+              },
+              "sample_acceptance_record_sha256": {
+                "kind": "named",
+                "name": "sha256"
+              },
+              "sample_acceptance_schema_version": {
+                "kind": "literal",
+                "value": "stage3_sample_acceptance_v1"
+              },
+              "sample_authority_id": {
+                "kind": "safe_public_id"
+              },
+              "sample_authority_registry_sha256": {
+                "kind": "named",
+                "name": "sha256"
+              },
+              "sample_authority_version": {
+                "kind": "safe_integer",
+                "minimum": 1
+              },
+              "sample_public_projection_id": {
+                "kind": "safe_public_id"
+              },
+              "sample_public_projection_schema_version": {
+                "kind": "literal",
+                "value": "public_redacted_projection_v1"
+              },
+              "sample_public_projection_sha256": {
+                "kind": "named",
+                "name": "sha256"
+              },
+              "sample_publication_approval_generation": {
+                "kind": "safe_integer",
+                "minimum": 1
+              },
+              "sample_publication_approval_id": {
+                "kind": "safe_public_id"
+              },
+              "sample_publication_approval_record_sha256": {
+                "kind": "named",
+                "name": "sha256"
+              },
+              "sample_publication_approval_schema_version": {
+                "kind": "literal",
+                "value": "sample_public_projection_approval_v1"
+              },
+              "sample_record_canonicalization_id": {
+                "kind": "literal",
+                "value": "pit_canonical_json_v1"
+              },
+              "sample_record_id": {
+                "kind": "safe_public_id"
+              },
+              "sample_record_schema_version": {
+                "kind": "literal",
+                "value": "stage3_sample_record_v1"
+              },
+              "sample_record_sha256": {
+                "kind": "named",
+                "name": "sha256"
+              },
+              "sample_record_version": {
+                "kind": "safe_integer",
+                "minimum": 1
+              }
+            }
+          },
+          "previous_event_sha256": {
+            "kind": "named",
+            "name": "sha256"
+          },
+          "recorded_at": {
+            "kind": "named",
+            "name": "timestamp"
+          },
+          "sequence": {
+            "kind": "safe_integer",
+            "minimum": 1
+          },
+          "subject_id": {
+            "kind": "named",
+            "name": "sample_id"
+          },
+          "subject_type": {
+            "kind": "literal",
+            "value": "sample"
+          }
+        }
+      },
+      "local_constraints": []
+    }
+  ],
+  "incomplete_event_types": [
+    "CAMPAIGN_ENTITY_BOUND",
+    "STAGE3_SAMPLE_REFERENCE_BOUND",
+    "TRIAL_ALLOCATED",
+    "CAMPAIGN_INVENTORY_SEALED",
+    "CAMPAIGN_AMENDMENT_PROPOSED",
+    "CAMPAIGN_INVENTORY_AMENDED",
+    "ATTEMPT_ALLOCATED",
+    "ATTEMPT_STARTED",
+    "ATTEMPT_COMPLETED",
+    "ATTEMPT_FAILED",
+    "ATTEMPT_INVALID",
+    "ATTEMPT_ABORTED",
+    "TRIAL_COMPLETED",
+    "TRIAL_FAILED",
+    "TRIAL_INVALID",
+    "TRIAL_ABORTED",
+    "TRIAL_EXCLUDED",
+    "ARTIFACT_DISPOSITION_RECORDED",
+    "ACCESS_INTENT",
+    "ACCESS_STARTED",
+    "ACCESS_COMPLETED",
+    "ACCESS_FAILED",
+    "ACCESS_ABORTED",
+    "ACCESS_CANCELLED",
+    "EXPOSURE_DECISION",
+    "CAMPAIGN_EVIDENCE_FROZEN",
+    "CHECKPOINT_REFERENCE_RECORDED",
+    "CAMPAIGN_ACCOUNTING_CLOSED",
+    "REVIEW_DECIDED",
+    "PROMOTION_DECIDED",
+    "CAMPAIGN_ADJUDICATED",
+    "EVENT_SUPERSEDED"
+  ],
+  "conformance_vectors": [
+    {
+      "vector_id": "epoch_valid",
+      "input_kind": "event_object",
+      "expected_code": "ACCEPT",
+      "value": {
+        "ledger_schema_version": "experiment_trial_ledger_v1",
+        "event_schema_version": "ledger_event_v1",
+        "canonicalization_id": "pit_canonical_json_v1",
+        "identity_projection_id": "ledger_event_identity_v1",
+        "ledger_id": "ldg_00000000000000000000000000000001",
+        "sequence": 0,
+        "event_id": "evt_00000000000000000000000000000002",
+        "operation_id": "opn_00000000000000000000000000000003",
+        "operation_request_projection_id": "ledger_operation_request_v1",
+        "operation_request_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "event_type": "LEDGER_EPOCH_CREATED",
+        "subject_type": "ledger",
+        "subject_id": "ldg_00000000000000000000000000000001",
+        "occurred_at": "2026-07-27T00:00:00Z",
+        "recorded_at": "2026-07-27T00:00:00Z",
+        "actor_id": "act_00000000000000000000000000000004",
+        "previous_event_sha256": null,
+        "payload": {
+          "campaign_scope_ids": []
+        }
+      }
+    },
+    {
+      "vector_id": "campaign_allocated_valid",
+      "input_kind": "event_object",
+      "expected_code": "ACCEPT",
+      "value": {
+        "ledger_schema_version": "experiment_trial_ledger_v1",
+        "event_schema_version": "ledger_event_v1",
+        "canonicalization_id": "pit_canonical_json_v1",
+        "identity_projection_id": "ledger_event_identity_v1",
+        "ledger_id": "ldg_00000000000000000000000000000001",
+        "sequence": 1,
+        "event_id": "evt_00000000000000000000000000000005",
+        "operation_id": "opn_00000000000000000000000000000006",
+        "operation_request_projection_id": "ledger_operation_request_v1",
+        "operation_request_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "event_type": "CAMPAIGN_ALLOCATED",
+        "subject_type": "campaign",
+        "subject_id": "cmp_00000000000000000000000000000007",
+        "occurred_at": "2026-07-28T00:00:00Z",
+        "recorded_at": "2026-07-28T00:00:00Z",
+        "actor_id": "act_00000000000000000000000000000004",
+        "previous_event_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "payload": {
+          "campaign_scope_ids": [
+            "cmp_00000000000000000000000000000007"
+          ]
+        }
+      }
+    },
+    {
+      "vector_id": "experiment_allocated_valid",
+      "input_kind": "event_object",
+      "expected_code": "ACCEPT",
+      "value": {
+        "ledger_schema_version": "experiment_trial_ledger_v1",
+        "event_schema_version": "ledger_event_v1",
+        "canonicalization_id": "pit_canonical_json_v1",
+        "identity_projection_id": "ledger_event_identity_v1",
+        "ledger_id": "ldg_00000000000000000000000000000001",
+        "sequence": 2,
+        "event_id": "evt_00000000000000000000000000000008",
+        "operation_id": "opn_00000000000000000000000000000009",
+        "operation_request_projection_id": "ledger_operation_request_v1",
+        "operation_request_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "event_type": "EXPERIMENT_ALLOCATED",
+        "subject_type": "experiment",
+        "subject_id": "exp_0000000000000000000000000000000a",
+        "occurred_at": "2026-07-28T00:00:01Z",
+        "recorded_at": "2026-07-28T00:00:01Z",
+        "actor_id": "act_00000000000000000000000000000004",
+        "previous_event_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "payload": {
+          "campaign_scope_ids": [
+            "cmp_00000000000000000000000000000007"
+          ]
+        }
+      }
+    },
+    {
+      "vector_id": "trial_family_registered_valid",
+      "input_kind": "event_object",
+      "expected_code": "ACCEPT",
+      "value": {
+        "ledger_schema_version": "experiment_trial_ledger_v1",
+        "event_schema_version": "ledger_event_v1",
+        "canonicalization_id": "pit_canonical_json_v1",
+        "identity_projection_id": "ledger_event_identity_v1",
+        "ledger_id": "ldg_00000000000000000000000000000001",
+        "sequence": 3,
+        "event_id": "evt_0000000000000000000000000000000b",
+        "operation_id": "opn_0000000000000000000000000000000c",
+        "operation_request_projection_id": "ledger_operation_request_v1",
+        "operation_request_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "event_type": "TRIAL_FAMILY_REGISTERED",
+        "subject_type": "trial_family",
+        "subject_id": "fam_0000000000000000000000000000000d",
+        "occurred_at": "2026-07-28T00:00:02Z",
+        "recorded_at": "2026-07-28T00:00:02Z",
+        "actor_id": "act_00000000000000000000000000000004",
+        "previous_event_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "payload": {
+          "campaign_scope_ids": [],
+          "family_acceptance_decision_id": "family-acceptance-1",
+          "family_acceptance_generation": 1,
+          "family_acceptance_record_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+          "family_acceptance_schema_version": "trial_family_definition_acceptance_v1",
+          "family_authority_id": "family-authority-1",
+          "family_authority_registry_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "family_authority_version": 1,
+          "family_definition_canonicalization_id": "pit_canonical_json_v1",
+          "family_definition_record_id": "family-definition-1",
+          "family_definition_record_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "family_definition_record_version": 1,
+          "family_definition_schema_version": "trial_family_definition_v1"
+        }
+      }
+    },
+    {
+      "vector_id": "trial_family_wrong_namespace",
+      "input_kind": "event_object",
+      "expected_code": "INVALID_EVENT",
+      "value": {
+        "ledger_schema_version": "experiment_trial_ledger_v1",
+        "event_schema_version": "ledger_event_v1",
+        "canonicalization_id": "pit_canonical_json_v1",
+        "identity_projection_id": "ledger_event_identity_v1",
+        "ledger_id": "ldg_00000000000000000000000000000001",
+        "sequence": 3,
+        "event_id": "evt_0000000000000000000000000000000b",
+        "operation_id": "opn_0000000000000000000000000000000c",
+        "operation_request_projection_id": "ledger_operation_request_v1",
+        "operation_request_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "event_type": "TRIAL_FAMILY_REGISTERED",
+        "subject_type": "trial_family",
+        "subject_id": "tfm_0000000000000000000000000000000d",
+        "occurred_at": "2026-07-28T00:00:02Z",
+        "recorded_at": "2026-07-28T00:00:02Z",
+        "actor_id": "act_00000000000000000000000000000004",
+        "previous_event_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "payload": {
+          "campaign_scope_ids": [],
+          "family_acceptance_decision_id": "family-acceptance-1",
+          "family_acceptance_generation": 1,
+          "family_acceptance_record_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+          "family_acceptance_schema_version": "trial_family_definition_acceptance_v1",
+          "family_authority_id": "family-authority-1",
+          "family_authority_registry_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "family_authority_version": 1,
+          "family_definition_canonicalization_id": "pit_canonical_json_v1",
+          "family_definition_record_id": "family-definition-1",
+          "family_definition_record_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "family_definition_record_version": 1,
+          "family_definition_schema_version": "trial_family_definition_v1"
+        }
+      }
+    },
+    {
+      "vector_id": "sample_registered_valid",
+      "input_kind": "event_object",
+      "expected_code": "ACCEPT",
+      "value": {
+        "ledger_schema_version": "experiment_trial_ledger_v1",
+        "event_schema_version": "ledger_event_v1",
+        "canonicalization_id": "pit_canonical_json_v1",
+        "identity_projection_id": "ledger_event_identity_v1",
+        "ledger_id": "ldg_00000000000000000000000000000001",
+        "sequence": 4,
+        "event_id": "evt_0000000000000000000000000000000e",
+        "operation_id": "opn_0000000000000000000000000000000f",
+        "operation_request_projection_id": "ledger_operation_request_v1",
+        "operation_request_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "event_type": "SAMPLE_REGISTERED",
+        "subject_type": "sample",
+        "subject_id": "smp_00000000000000000000000000000010",
+        "occurred_at": "2026-07-29T00:00:00Z",
+        "recorded_at": "2026-07-29T00:00:00Z",
+        "actor_id": "act_00000000000000000000000000000004",
+        "previous_event_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "payload": {
+          "campaign_scope_ids": [],
+          "sample_acceptance_decision_id": "sample-acceptance-1",
+          "sample_acceptance_generation": 1,
+          "sample_acceptance_record_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+          "sample_acceptance_schema_version": "stage3_sample_acceptance_v1",
+          "sample_authority_id": "stage3-sample-authority-1",
+          "sample_authority_registry_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+          "sample_authority_version": 1,
+          "sample_public_projection_id": "sample-public-projection-1",
+          "sample_public_projection_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sample_public_projection_schema_version": "public_redacted_projection_v1",
+          "sample_publication_approval_generation": 1,
+          "sample_publication_approval_id": "sample-publication-approval-1",
+          "sample_publication_approval_record_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "sample_publication_approval_schema_version": "sample_public_projection_approval_v1",
+          "sample_record_canonicalization_id": "pit_canonical_json_v1",
+          "sample_record_id": "sample-record-1",
+          "sample_record_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "sample_record_schema_version": "stage3_sample_record_v1",
+          "sample_record_version": 1
+        }
+      }
+    },
+    {
+      "vector_id": "sample_wrong_namespace",
+      "input_kind": "event_object",
+      "expected_code": "INVALID_EVENT",
+      "value": {
+        "ledger_schema_version": "experiment_trial_ledger_v1",
+        "event_schema_version": "ledger_event_v1",
+        "canonicalization_id": "pit_canonical_json_v1",
+        "identity_projection_id": "ledger_event_identity_v1",
+        "ledger_id": "ldg_00000000000000000000000000000001",
+        "sequence": 4,
+        "event_id": "evt_0000000000000000000000000000000e",
+        "operation_id": "opn_0000000000000000000000000000000f",
+        "operation_request_projection_id": "ledger_operation_request_v1",
+        "operation_request_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "event_type": "SAMPLE_REGISTERED",
+        "subject_type": "sample",
+        "subject_id": "sam_00000000000000000000000000000010",
+        "occurred_at": "2026-07-29T00:00:00Z",
+        "recorded_at": "2026-07-29T00:00:00Z",
+        "actor_id": "act_00000000000000000000000000000004",
+        "previous_event_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "payload": {
+          "campaign_scope_ids": [],
+          "sample_acceptance_decision_id": "sample-acceptance-1",
+          "sample_acceptance_generation": 1,
+          "sample_acceptance_record_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+          "sample_acceptance_schema_version": "stage3_sample_acceptance_v1",
+          "sample_authority_id": "stage3-sample-authority-1",
+          "sample_authority_registry_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+          "sample_authority_version": 1,
+          "sample_public_projection_id": "sample-public-projection-1",
+          "sample_public_projection_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sample_public_projection_schema_version": "public_redacted_projection_v1",
+          "sample_publication_approval_generation": 1,
+          "sample_publication_approval_id": "sample-publication-approval-1",
+          "sample_publication_approval_record_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "sample_publication_approval_schema_version": "sample_public_projection_approval_v1",
+          "sample_record_canonicalization_id": "pit_canonical_json_v1",
+          "sample_record_id": "sample-record-1",
+          "sample_record_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "sample_record_schema_version": "stage3_sample_record_v1",
+          "sample_record_version": 1
+        }
+      }
+    },
+    {
+      "vector_id": "epoch_wrong_subject",
+      "input_kind": "event_object",
+      "expected_code": "INVALID_EVENT",
+      "value": {
+        "ledger_schema_version": "experiment_trial_ledger_v1",
+        "event_schema_version": "ledger_event_v1",
+        "canonicalization_id": "pit_canonical_json_v1",
+        "identity_projection_id": "ledger_event_identity_v1",
+        "ledger_id": "ldg_00000000000000000000000000000001",
+        "sequence": 0,
+        "event_id": "evt_00000000000000000000000000000002",
+        "operation_id": "opn_00000000000000000000000000000003",
+        "operation_request_projection_id": "ledger_operation_request_v1",
+        "operation_request_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "event_type": "LEDGER_EPOCH_CREATED",
+        "subject_type": "ledger",
+        "subject_id": "ldg_00000000000000000000000000000005",
+        "occurred_at": "2026-07-27T00:00:00Z",
+        "recorded_at": "2026-07-27T00:00:00Z",
+        "actor_id": "act_00000000000000000000000000000004",
+        "previous_event_sha256": null,
+        "payload": {
+          "campaign_scope_ids": []
+        }
+      }
+    },
+    {
+      "vector_id": "epoch_nonempty_scope",
+      "input_kind": "event_object",
+      "expected_code": "INVALID_EVENT",
+      "value": {
+        "ledger_schema_version": "experiment_trial_ledger_v1",
+        "event_schema_version": "ledger_event_v1",
+        "canonicalization_id": "pit_canonical_json_v1",
+        "identity_projection_id": "ledger_event_identity_v1",
+        "ledger_id": "ldg_00000000000000000000000000000001",
+        "sequence": 0,
+        "event_id": "evt_00000000000000000000000000000002",
+        "operation_id": "opn_00000000000000000000000000000003",
+        "operation_request_projection_id": "ledger_operation_request_v1",
+        "operation_request_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "event_type": "LEDGER_EPOCH_CREATED",
+        "subject_type": "ledger",
+        "subject_id": "ldg_00000000000000000000000000000001",
+        "occurred_at": "2026-07-27T00:00:00Z",
+        "recorded_at": "2026-07-27T00:00:00Z",
+        "actor_id": "act_00000000000000000000000000000004",
+        "previous_event_sha256": null,
+        "payload": {
+          "campaign_scope_ids": [
+            "cmp_00000000000000000000000000000006"
+          ]
+        }
+      }
+    },
+    {
+      "vector_id": "known_incomplete_trial",
+      "input_kind": "event_object",
+      "expected_code": "SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY",
+      "value": {
+        "event_type": "TRIAL_ALLOCATED"
+      }
+    },
+    {
+      "vector_id": "unknown_event_type",
+      "input_kind": "event_object",
+      "expected_code": "UNKNOWN_EVENT_TYPE",
+      "value": {
+        "event_type": "UNREGISTERED_EVENT"
+      }
+    },
+    {
+      "vector_id": "raw_duplicate_event_type",
+      "input_kind": "raw_event_json",
+      "expected_code": "DUPLICATE_PROPERTY",
+      "raw_json": "{\"event_type\":\"LEDGER_EPOCH_CREATED\",\"event_type\":\"TRIAL_ALLOCATED\"}"
+    }
+  ]
+}

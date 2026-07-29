@@ -89,7 +89,11 @@ IMPORTANT_FILES = [
     ),
     (
         "docs/experiment_trial_ledger_trial_family_registration_schema_contract.md",
-        "Active Stage 4B-R1C-A trial-family registration authority.",
+        "Accepted Stage 4B-R1C-A trial-family registration authority.",
+    ),
+    (
+        "docs/experiment_trial_ledger_sample_registration_schema_contract.md",
+        "Active Stage 4B-R1D-A local sample registration authority.",
     ),
     ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),

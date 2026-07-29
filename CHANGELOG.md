@@ -9,6 +9,18 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the bounded Stage 4B-R1D local sample-registration release. The owner
+  selected bundle `R1D-A`, freezing `smp_<32 lowercase hex>`, the common
+  32-campaign direct-scope maximum, a digest-pinned external Stage 3
+  sample-record authority, separate acceptance and publication-approval
+  records, mutually exclusive local/global/external representation paths,
+  stable lineage identity, anti-reset/currentness rules, and private complete
+  records with allowlisted public projections. A separate immutable registry
+  and digest at version `0.4.0` preserve R0/R1/R2 byte and behavior authority
+  while promoting only `SAMPLE_REGISTERED`; the other 32 events remain fail
+  closed. This adds no retrieval/currentness runtime, binding event,
+  append/storage backend, dependency, private data, research trial, protected
+  access, or trading behavior.
 - Added the bounded Stage 4B-R1C trial-family registration release. The owner
   selected bundle `R1C-A`, freezing `fam_<32 lowercase hex>`, an immutable
   external family-definition catalog/record tuple, a separate digest-pinned

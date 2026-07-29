@@ -1,10 +1,9 @@
 # Current Roadmap
 
-Updated: 2026-07-28 for the Stage 4B-R1C trial-family registration release.
+Updated: 2026-07-29 for the Stage 4B-R1D sample registration release.
 
-Current protected-main base: `4ac5adb`, the merge of independent workflow
-router PR #168. R1C originally started from verified PR #167 merge `a6f7d43`
-and was normally rebased onto `4ac5adb` after PR #168 advanced `main`.
+Current protected-main base: `68a4c4f`, the verified merge of Stage 4B-R1C
+PR #169. Its exact merge-head CI run `30471505290` succeeded.
 
 This is the canonical roadmap. `docs/research_program_charter.md` defines the
 long-term evidence policy. Older checkpoints, gap refreshes, plans, and audits
@@ -32,10 +31,17 @@ namespace option `E1`, `exp_<32 lowercase hex>`. R1B publishes a separate
 immutable registry `0.2.0`, promotes only reservation-only
 campaign/experiment allocation, and implements no append or storage runtime.
 `docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`
-is the active Stage 4B-R1C authority. The owner selected bundle `R1C-A`,
+is the accepted Stage 4B-R1C authority. The owner selected bundle `R1C-A`,
 including the exact `fam_<32 lowercase hex>` namespace, external retrievable
 definition/acceptance authority, reviewer independence, anti-reset/currentness
 policy, closed relation vocabulary, and common direct-scope maximum 32.
+`docs/experiment_trial_ledger_sample_registration_schema_contract.md` is the
+active Stage 4B-R1D authority. The owner selected bundle `R1D-A`, including the
+exact `smp_<32 lowercase hex>` namespace, digest-pinned external Stage 3 sample
+authority, separate acceptance and publication-approval records, mutually
+exclusive local/global/external paths, anti-reset/currentness policy, private
+complete records with allowlisted public projections, and promotion of only
+`SAMPLE_REGISTERED` in immutable registry `0.4.0`.
 
 ## Objective
 
@@ -63,9 +69,9 @@ authorized.
 | Private diagnostics | Local-only EODHD validation and factor diagnostics on a fixed cohort; not accepted point-in-time real-data interpretation. |
 | LEAN | Non-executing metadata/signal scaffold only; no algorithm runtime, parity evidence, brokerage, orders, paper, or live path. |
 
-Protected main has a reported baseline of 1003 passing tests with two
-platform-conditional wide-`longdouble` skips after PR #168. Stages 1-3, Stage
-4a, Stage 4B-R0, Stage 4B-R1A, and Stage 4B-R1B are complete.
+Protected main has a reported baseline of 1171 passing tests with two
+platform-conditional wide-`longdouble` skips after PR #169. Stages 1-3, Stage
+4a, Stage 4B-R0, Stage 4B-R1A, Stage 4B-R1B, and Stage 4B-R1C are complete.
 Stage 4a defines the accepted ledger contract and deterministic synthetic event
 fixture; Stage 4B-R0 adds only a fail-closed registry foundation. Neither
 implements
@@ -148,7 +154,8 @@ timing, holdout, statistical, or public-documentation findings above.
 | 4b-R0. Payload-schema registry foundation | Complete on protected main via PR #165; incomplete diagnostic support only | Freeze a self-contained registry meta-contract, exact 37-event vocabulary, deterministic digest, duplicate-safe parser, the accepted epoch schema, and fail-closed dispatch. Keep all other known events `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`; do not use placeholders or synthetic checkpoint facts as wire schemas. | Registry vocabulary, supported/incomplete partitions, digest, parser, exact epoch vectors, and known-incomplete/unknown rejection passed locally, in CI, and under final current-head review; protected merge and exact merge-head CI passed. This gate does not accept a complete registry or Stage 4b runtime. |
 | 4b-R1A. Allocation/registration architecture decision | Complete on protected main via PR #166 | Preserve R0 artifacts and behavior; retain the 37-event vocabulary; select reservation-only allocation, entity subjects, explicit scope, versioned closed DSL additions, prior allocation of every shared direct-scope campaign, and requirements for future exact reference-based family/sample authorities without accepting either authority. | The R1A contract, canonical-document reconciliation, documentation tests, full local gates, independent review, exact-head CI, final current-head review, protected merge, and exact merge-head CI passed. All 36 non-epoch events remained `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`; trial, attempt, and protected-access counts remained zero. |
 | 4b-R1B. Campaign/experiment allocation schemas | Complete on protected main via PR #167 | Publish immutable R1 registry `0.2.0` and schema-language `0.2.0`; implement and meta-test all three closed DSL additions; promote only exact reservation-only `CAMPAIGN_ALLOCATED` and `EXPERIMENT_ALLOCATED` schemas with independent vectors and packaged R0/R1 parity. The exact experiment namespace is `exp_<32 lowercase hex>`. | R0 artifacts and behavior remain immutable; R1 supports exactly epoch plus the two allocation events and leaves the other 34 incomplete; all three DSL meta-test families, subject/scope killers, arbitrary-promotion rejection, package parity, local/full gates, exact-head CI, final review, protected merge, and exact merge-head CI passed. Every later promotion batch must publish a new immutable, monotonically versioned registry release rather than overwrite `0.2.0`. |
-| 4b-R1C. Trial-family registration schema | Active in the current tree; owner selected bundle R1C-A | Publish immutable registry `0.3.0` under unchanged schema-language `0.2.0`; preserve R0/R1 bytes and behavior; promote only `TRIAL_FAMILY_REGISTERED` with exact `fam_<32 lowercase hex>` subject IDs, bounded global/direct campaign scope, and pinned external definition and separate acceptance references. | Registry `0.3.0` supports exactly epoch, campaign allocation, experiment allocation, and trial-family registration while leaving the other 33 events incomplete. Independent fixtures and literal namespace/authority/acceptance/currentness/scope oracles, R0/R1/package parity, focused/full gates, final current-head review, protected merge, and exact merge-head CI must pass. Local shape acceptance must not be represented as proof of retrieval, reviewer independence, currentness, anti-reset history, or append behavior. |
+| 4b-R1C. Trial-family registration schema | Complete on protected main via PR #169 | Publish immutable registry `0.3.0` under unchanged schema-language `0.2.0`; preserve R0/R1 bytes and behavior; promote only `TRIAL_FAMILY_REGISTERED` with exact `fam_<32 lowercase hex>` subject IDs, bounded global/direct campaign scope, and pinned external definition and separate acceptance references. | Registry `0.3.0` supports exactly epoch, campaign allocation, experiment allocation, and trial-family registration while leaving the other 33 events incomplete. Independent fixtures and literal namespace/authority/acceptance/currentness/scope oracles, R0/R1/package parity, focused/full gates, exact-head CI, final current-head review, protected merge, and exact merge-head CI passed. Local shape acceptance is not proof of retrieval, reviewer independence, currentness, anti-reset history, or append behavior. |
+| 4b-R1D. Sample registration schema | Active in the current tree; owner selected bundle R1D-A | Publish immutable registry `0.4.0` under unchanged schema-language `0.2.0`; preserve R0/R1/R2 bytes and behavior; promote only `SAMPLE_REGISTERED` with exact `smp_<32 lowercase hex>` subject IDs, bounded global/direct campaign scope, pinned Stage 3 record and separate acceptance references, and allowlisted projection/publication-approval references. Keep local/global/external paths exclusive and both binding events incomplete for R1E. | Registry `0.4.0` supports exactly epoch, campaign allocation, experiment allocation, trial-family registration, and sample registration while leaving the other 32 events incomplete. Independent fixtures and literal namespace/authority/acceptance/currentness/privacy/scope oracles, R0/R1/R2/package parity, focused/full gates, exact-head CI, final current-head review, protected merge, and exact merge-head CI must pass. Local shape acceptance must not be represented as proof of retrieval, reviewer independence, publication approval, currentness, path exclusivity, exposure history, or append behavior. |
 | 4b. Experiment/trial ledger implementation | Blocked by complete 37-event payload-registry acceptance and later runtime architecture decisions | Freeze exact schemas in separately reviewed event-family batches, then close 37-of-37 coverage without incomplete, wildcard, open-object, or free-string stand-ins. Only afterward implement the accepted contract in a separate namespace with atomic allocation, append-only events, restart/concurrency/tamper tests, protected-access capability enforcement, campaign completeness, and safe projection. Material backend/private-location/recovery/checkpoint-currentness architecture choices require a separately recorded owner decision. | Complete registry coverage rejects every missing, unknown, or incompletely specified event before append. Later behavioral tests prove no silent overwrite, backfilled holdout laundering, failed-before-write loss, retry hiding, prefix/tail truncation, currentness rollback, checkpoint fork, or private projection leak. |
 | 5. Statistical validation | Blocked by Stage 4b | Add descriptive, dependence-aware, bootstrap, placebo, multiplicity, DSR, PBO, and stability controls in design-first increments. | Registered inference policy and deterministic synthetic/golden tests pass. |
 | 6. Canonical factor registry | Blocked by Stages 3-5 | Register interpretable price/volume baselines first; fundamentals wait for filing-availability support. | Formula, direction, source, fields, lag, parameters, fixture, tests, limitations, and trial family are complete. |
