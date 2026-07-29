@@ -1,5 +1,43 @@
 # Engineering Log
 
+## 2026-07-28 - Stage 4B-R1B Campaign/Experiment Allocation Schemas
+
+- Started from protected `main` merge `9cf5325` (PR #166) in the isolated
+  `codex/ledger-campaign-experiment-allocation-schemas` worktree. Exact
+  merge-head CI run `30377401789` succeeded. The clean startup baseline passed
+  913 tests with two platform-conditional skips, Ruff, compilation, and exact
+  base/status checks.
+- The owner selected namespace option `E1`, making
+  `exp_<32 lowercase hex>` the sole authority for `experiment_id` syntax.
+  Existing helpers, narrative examples, and rejected fixtures were not used as
+  authority.
+- Added a separate immutable registry `0.2.0` artifact and digest while
+  retaining the R0 JSON, sidecar, default loader, canonical digest, and
+  validation behavior. Explicit release selection is required for R1.
+- R1 supports exactly `LEDGER_EPOCH_CREATED`, reservation-only
+  `CAMPAIGN_ALLOCATED`, and reservation-only `EXPERIMENT_ALLOCATED`; the other
+  34 event types remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- Added the closed schema-language `0.2.0` implementations for
+  `tagged_union`, `array_contains_path`, and `safe_public_id`. Independent
+  fixtures and literal tests cover both promoted schemas, namespace and scope
+  attacks, missing/unknown/null/type failures, duplicate raw properties,
+  arbitrary unpublished promotion, union branches, public-ID boundaries, and
+  path/schema compatibility.
+- Final validation passed 166 focused registry/structure tests and 1001 full
+  tests with two platform-conditional skips, plus Ruff, compilation,
+  deterministic repo-map, Skill audit, source/sdist/wheel R0/R1 package
+  parity, privacy/Unicode/control-character, cleanup, and diff gates.
+- No dependency was installed or added. The no-isolation package build reused
+  `build==1.5.0`, `setuptools==83.0.0`, `wheel==0.47.0`, and
+  `packaging==26.2` from the existing project environment at
+  `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv`.
+  Their purpose was package-resource parity validation; they changed no
+  dependency declaration or tracked repository file. Generated ignored
+  egg-info metadata was removed after validation.
+- No private data, research result, campaign, trial, attempt, protected access,
+  append/storage runtime, brokerage, order, paper, or live behavior was
+  introduced.
+
 ## 2026-07-28 - Stage 4B-R1A Allocation/Registration Architecture
 
 - Started from protected `main` merge `4c874eb` (PR #165) in the isolated

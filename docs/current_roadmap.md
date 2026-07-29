@@ -1,10 +1,10 @@
 # Current Roadmap
 
-Updated: 2026-07-28 for the Stage 4B-R1A allocation/registration architecture
-decision.
+Updated: 2026-07-28 for the Stage 4B-R1B campaign/experiment allocation
+release.
 
-Protected-main baseline verified before this stage: `4c874eb`, the protected
-merge of PR #165, with successful exact merge-head CI.
+Protected-main baseline verified before this stage: `9cf5325`, the protected
+merge of PR #166, with successful exact merge-head CI.
 
 This is the canonical roadmap. `docs/research_program_charter.md` defines the
 long-term evidence policy. Older checkpoints, gap refreshes, plans, and audits
@@ -26,8 +26,11 @@ canonical-event, checkpoint, and private/public projection semantics.
 Stage 4B-R0 authority for a fail-closed registry foundation; it is not a
 complete 37-event payload registry or ledger runtime.
 `docs/experiment_trial_ledger_allocation_registration_schema_contract.md` is
-the active Stage 4B-R1A architecture-A decision. It selects the versioned
-minimal path but promotes no event and implements no runtime.
+the accepted Stage 4B-R1A architecture-A decision and active Stage 4B-R1B
+implementation authority. The owner selected experiment namespace option
+`E1`, `exp_<32 lowercase hex>`. R1B publishes a separate immutable registry
+`0.2.0`, promotes only reservation-only campaign/experiment allocation, and
+implements no append or storage runtime.
 
 ## Objective
 
@@ -55,9 +58,10 @@ authorized.
 | Private diagnostics | Local-only EODHD validation and factor diagnostics on a fixed cohort; not accepted point-in-time real-data interpretation. |
 | LEAN | Non-executing metadata/signal scaffold only; no algorithm runtime, parity evidence, brokerage, orders, paper, or live path. |
 
-Protected main has a local baseline of 912 passing tests with two
+Protected main has a local baseline of 913 passing tests with two
 platform-conditional wide-`longdouble` skips, plus successful PR and exact
-merge-head CI for PR #165. Stages 1-3, Stage 4a, and Stage 4B-R0 are complete.
+merge-head CI for PR #166. Stages 1-3, Stage 4a, Stage 4B-R0, and Stage
+4B-R1A are complete.
 Stage 4a defines the accepted ledger contract and deterministic synthetic event
 fixture; Stage 4B-R0 adds only a fail-closed registry foundation. Neither
 implements
@@ -138,8 +142,8 @@ timing, holdout, statistical, or public-documentation findings above.
 | 3. Point-in-time data methodology | Complete on protected main via PR #163 | Accept `docs/point_in_time_data_methodology_contract.md` as the provider-agnostic provenance, canonicalization/environment, immutable dataset-review, universe, corporate-action, field, benchmark, missing-data, privacy, and exposure-ledger contract. | The three gates remain separate; all `PIT-*` documentation cases, local/full gates, final current-head review, protected merge, and exact merge-head CI passed; no dataset, vendor, or formal interpretation was accepted. |
 | 4a. Experiment/trial ledger contract | Complete on protected main via PR #164 | Freeze semantic trial versus attempt identity, ledger-owned preallocation/reference rules, lifecycle, campaign inventory/accounting closure and adjudication, protected access, canonical request/event chain, exact evidence-prefix/closure checkpoint, version-linked adjudication checkpoint, review binding, and exact private/public projection contracts without selecting a backend or identity architecture. The ledger timestamp profile rejects leap seconds because no immutable table is pinned. Exact event-payload coverage remains limited to the common envelope plus `LEDGER_EPOCH_CREATED`; the epoch atomically introduces `ledger_id`, while `actor_id` is external claimed attribution that grants no permission and authority-dependent behavior remains fail closed pending a Stage 4b owner decision. An initial inventory seal binds an atomically checked, nonrecursive pre-seal stream-head ordering anchor. Trial-parent, entity-allocation/reference, and fixed checkpoint semantic vectors are non-runtime contract facts. | `docs/experiment_trial_ledger_contract.md`, its synthetic epoch/checkpoint goldens and rejection/semantic vectors, all `LEDGER-*` documentation cases, local/full gates, final current-head review, protected merge, and exact merge-head CI passed; complete per-event schemas, runtime currentness, and research trials remain deferred. |
 | 4b-R0. Payload-schema registry foundation | Complete on protected main via PR #165; incomplete diagnostic support only | Freeze a self-contained registry meta-contract, exact 37-event vocabulary, deterministic digest, duplicate-safe parser, the accepted epoch schema, and fail-closed dispatch. Keep all other known events `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`; do not use placeholders or synthetic checkpoint facts as wire schemas. | Registry vocabulary, supported/incomplete partitions, digest, parser, exact epoch vectors, and known-incomplete/unknown rejection passed locally, in CI, and under final current-head review; protected merge and exact merge-head CI passed. This gate does not accept a complete registry or Stage 4b runtime. |
-| 4b-R1A. Allocation/registration architecture decision | Active in the current tree; design-only and no event promotion | Preserve R0 artifacts and behavior; retain the 37-event vocabulary; select reservation-only allocation, entity subjects, explicit scope, versioned closed DSL additions, prior allocation of every shared direct-scope campaign, and requirements for future exact reference-based family/sample authorities without accepting either authority. | The R1A contract, canonical-document reconciliation, documentation tests, full local gates, independent review, exact-head CI, final current-head review, protected merge, and exact merge-head CI must pass. All 36 non-epoch events remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`; trial, attempt, and protected-access counts remain zero. |
-| 4b-R1B. Campaign/experiment allocation schemas | Blocked by R1A protected merge and exact experiment-namespace owner decision | Publish immutable R1 registry `0.2.0` and schema-language `0.2.0`; implement and meta-test all three closed DSL additions; promote only exact reservation-only `CAMPAIGN_ALLOCATED` and `EXPERIMENT_ALLOCATED` schemas with independent vectors and packaged R0/R1 parity. | R0 artifacts and behavior remain immutable; the exact experiment namespace is owner-ratified; R1 supports exactly epoch plus the two allocation events and leaves the other 34 incomplete; all three DSL meta-test families, subject/scope killers, arbitrary-promotion rejection, package parity, local/full gates, CI, review, protected merge, and exact merge-head CI pass. Every later promotion batch must publish a new immutable, monotonically versioned registry release rather than overwrite `0.2.0`. |
+| 4b-R1A. Allocation/registration architecture decision | Complete on protected main via PR #166 | Preserve R0 artifacts and behavior; retain the 37-event vocabulary; select reservation-only allocation, entity subjects, explicit scope, versioned closed DSL additions, prior allocation of every shared direct-scope campaign, and requirements for future exact reference-based family/sample authorities without accepting either authority. | The R1A contract, canonical-document reconciliation, documentation tests, full local gates, independent review, exact-head CI, final current-head review, protected merge, and exact merge-head CI passed. All 36 non-epoch events remained `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`; trial, attempt, and protected-access counts remained zero. |
+| 4b-R1B. Campaign/experiment allocation schemas | Active in the current tree; owner selected namespace option E1 | Publish immutable R1 registry `0.2.0` and schema-language `0.2.0`; implement and meta-test all three closed DSL additions; promote only exact reservation-only `CAMPAIGN_ALLOCATED` and `EXPERIMENT_ALLOCATED` schemas with independent vectors and packaged R0/R1 parity. The exact experiment namespace is `exp_<32 lowercase hex>`. | R0 artifacts and behavior remain immutable; R1 supports exactly epoch plus the two allocation events and leaves the other 34 incomplete; all three DSL meta-test families, subject/scope killers, arbitrary-promotion rejection, package parity, local/full gates, CI, review, protected merge, and exact merge-head CI pass. Every later promotion batch must publish a new immutable, monotonically versioned registry release rather than overwrite `0.2.0`. |
 | 4b. Experiment/trial ledger implementation | Blocked by complete 37-event payload-registry acceptance and later runtime architecture decisions | Freeze exact schemas in separately reviewed event-family batches, then close 37-of-37 coverage without incomplete, wildcard, open-object, or free-string stand-ins. Only afterward implement the accepted contract in a separate namespace with atomic allocation, append-only events, restart/concurrency/tamper tests, protected-access capability enforcement, campaign completeness, and safe projection. Material backend/private-location/recovery/checkpoint-currentness architecture choices require a separately recorded owner decision. | Complete registry coverage rejects every missing, unknown, or incompletely specified event before append. Later behavioral tests prove no silent overwrite, backfilled holdout laundering, failed-before-write loss, retry hiding, prefix/tail truncation, currentness rollback, checkpoint fork, or private projection leak. |
 | 5. Statistical validation | Blocked by Stage 4b | Add descriptive, dependence-aware, bootstrap, placebo, multiplicity, DSR, PBO, and stability controls in design-first increments. | Registered inference policy and deterministic synthetic/golden tests pass. |
 | 6. Canonical factor registry | Blocked by Stages 3-5 | Register interpretable price/volume baselines first; fundamentals wait for filing-availability support. | Formula, direction, source, fields, lag, parameters, fixture, tests, limitations, and trial family are complete. |

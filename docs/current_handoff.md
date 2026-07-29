@@ -1,7 +1,7 @@
 # Current Handoff
 
-Updated: 2026-07-28 for the Stage 4B-R1A allocation/registration architecture
-decision.
+Updated: 2026-07-28 for the Stage 4B-R1B campaign/experiment allocation
+release.
 
 ## Canonical State
 
@@ -15,12 +15,12 @@ decision.
   `docs/experiment_trial_ledger_contract.md`.
 - Accepted Stage 4B-R0 registry authority:
   `docs/experiment_trial_ledger_schema_registry_contract.md`.
-- Active Stage 4B-R1A architecture decision:
+- Accepted Stage 4B-R1A and active Stage 4B-R1B authority:
   `docs/experiment_trial_ledger_allocation_registration_schema_contract.md`.
 - Active roadmap: `docs/current_roadmap.md`.
 - Short operational controller: `docs/codex_long_running_controller.md`.
-- Verified starting `origin/main`: `4c874eb`, the protected merge of PR #165.
-- Starting validation: 912 tests passed with two platform-conditional
+- Verified starting `origin/main`: `9cf5325`, the protected merge of PR #166.
+- Starting validation: 913 tests passed with two platform-conditional
   wide-`longdouble` skips; Ruff, compilation, and exact merge-head GitHub CI
   passed.
 - Stage 1 split isolation and Stage 2 signal/execution timing are complete on
@@ -33,6 +33,11 @@ decision.
   repo-map, package-resource, privacy/Unicode/diff, three independent final
   reviews, exact-head CI, final current-head Codex review, protected merge, and
   exact merge-head GitHub CI at `4c874eb`.
+- Stage 4B-R1A PR #166 passed 913 tests, Ruff, compilation, deterministic
+  repo-map, Skill audit, source/sdist/wheel R0 package parity, privacy/Unicode/
+  diff gates, three independent post-fix reviews, exact-head CI, one final
+  current-head Codex review, protected merge, and exact merge-head GitHub CI
+  at `9cf5325`.
 - The accepted Stage 4a contract freezes ledger evidence semantics only. The existing
   JSON writer and registry remain diagnostic/legacy; no append-only runtime,
   backend, private ledger, campaign, or formal interpretation is implemented.
@@ -175,7 +180,7 @@ The current schema-v1 JSON logs cannot prove these properties and remain
 dependency, migrated log, research trial, private access, or generated
 performance evidence.
 
-## Accepted R0 And Active R1A Architecture Decision
+## Accepted R0/R1A And Active R1B Allocation Release
 
 Six non-overlapping read-only audits found that Stage 4a intentionally froze
 only the common event envelope and `LEDGER_EPOCH_CREATED` payload. Exact
@@ -231,12 +236,21 @@ records that design. R1A promotes no event and modifies no registry artifact or
 runtime. Family, sample, and binding events remain blocked by exact authority,
 anti-reset, alias/currentness, finite-bound, and privacy decisions.
 
-R1B remains additionally blocked by an owner decision on the exact experiment
-ID namespace. Once selected, R1B must publish immutable registry `0.2.0`,
-implement and meta-test all three schema-language `0.2.0` additions, and
-preserve R0 artifact bytes and validator behavior. Each later schema-promotion
-batch must publish a new immutable, monotonically versioned registry artifact
-and digest rather than overwrite an accepted release.
+Stage 4B-R1A is accepted on protected main through PR #166 and exact merge-head
+CI. For R1B, the owner selected option `E1`: the exact experiment namespace is
+`exp_<32 lowercase hex>`. That explicit owner ratification, not any helper,
+narrative example, or rejected fixture, is the wire-schema authority.
+
+R1B publishes immutable registry `0.2.0`, implements and meta-tests all three
+schema-language `0.2.0` additions, and preserves R0 artifact bytes and
+validator behavior. Its explicit R1 authority supports exactly three event
+types: epoch plus reservation-only campaign and experiment allocation. The
+other 34 events remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`. Registry acceptance
+does not implement append, storage, allocation uniqueness, parent existence,
+authorization, ordering, campaign execution, protected access, or research
+interpretation. Each later schema-promotion batch must publish a new immutable,
+monotonically versioned registry artifact and digest rather than overwrite an
+accepted release.
 
 ## Verified Implementation Baseline
 
@@ -276,7 +290,9 @@ verify a dataset. Stage 4a defines the accepted trial-ledger contract but does
 not enforce it. Stage 4B-R0 only makes its one exact event and every
 incomplete/unknown event machine-detectable and fail closed. Stage 4B-R1A
 selects the versioned minimal allocation/registration architecture but still
-promotes no event. Additional
+promotes no event. Stage 4B-R1B adds shape validation for only reservation-only
+campaign/experiment allocation; it does not implement the stateful ledger.
+Additional
 blockers include incomplete runtime trial retention,
 absent dependence/multiplicity/overfit controls, and diagnostic-only
 cost/capacity assumptions. See `docs/current_roadmap.md` for the prioritized
@@ -289,25 +305,29 @@ SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
 
 At the last verification, PR #148 was an independent Draft governance PR from
 an older base that changed only `AGENTS.md`. It was not a predecessor for PRs
-#158-#165. The Stage 4B-R1A design slice does not edit `AGENTS.md`,
+#158-#166. The Stage 4B-R1B implementation slice does not edit `AGENTS.md`,
 merge/close that draft, or overwrite its policy.
 
 ## Next Safe Stage
 
-Complete the design-only Stage 4B-R1A slice in the current tree. Run focused
-documentation and baseline gates, obtain terminal exact-head GitHub CI, request
-final current-head Codex review once, resolve actionable findings only on a
-changed head, use only the normal protected merge path, and verify exact
-merge-head CI. Do not enable auto-merge or merge before every CI check and the
-final current-head review are complete.
+Complete Stage 4B-R1B in the current isolated worktree. Preserve R0
+byte/hash/behavior/package parity; publish the separate immutable `0.2.0`
+authority; validate all three closed DSL additions; keep the exact E1
+experiment namespace; and promote only reservation-only
+`CAMPAIGN_ALLOCATED` and `EXPERIMENT_ALLOCATED`. Require independent positive
+fixtures, literal digest and event-set oracles, subject/scope/namespace
+killers, arbitrary-promotion rejection, focused and full validation,
+independent read-only review, exact-head CI, one final current-head Codex
+review, normal protected merge, and exact merge-head CI. Do not enable
+auto-merge or merge while CI or review is pending.
 
-After R1A is accepted on protected main, begin a separate R1B branch and
-worktree. Add a separate versioned R1 authority and promote only exact
-reservation-only `CAMPAIGN_ALLOCATED` and `EXPERIMENT_ALLOCATED` schemas.
-Preserve R0 byte/hash/package parity, keep the other 34 events incomplete, and
-require independent positive fixtures plus killing subject/scope vectors. Do
-not add append storage, campaign execution, family/sample registration,
-binding, trial allocation, access, or research interpretation in R1B.
+After R1B is accepted on protected main, begin a separate R1C design-first
+branch. R1C must select the exact trial-family namespace, exact retrievable
+family-definition authority and versioning, acceptance/reviewer-independence
+architecture, anti-reset/currentness policy, and finite shared direct-scope
+bound before promoting `TRIAL_FAMILY_REGISTERED`. Those materially different
+valid choices require a new owner decision; do not infer them from helpers or
+narrative examples.
 
 Do not call the registry accepted until all 37 events have exact schemas and no
 incomplete or wildcard entry remains.

@@ -1,0 +1,51 @@
+{
+  "fixture_id": "experiment_trial_ledger_allocation_events_v1_golden",
+  "campaign_allocated": {
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "event_schema_version": "ledger_event_v1",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_00000000000000000000000000000010",
+    "sequence": 1,
+    "event_id": "evt_00000000000000000000000000000012",
+    "operation_id": "opn_00000000000000000000000000000013",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "event_type": "CAMPAIGN_ALLOCATED",
+    "subject_type": "campaign",
+    "subject_id": "cmp_00000000000000000000000000000011",
+    "occurred_at": "2026-07-28T01:00:00Z",
+    "recorded_at": "2026-07-28T01:00:00Z",
+    "actor_id": "act_00000000000000000000000000000017",
+    "previous_event_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "payload": {
+      "campaign_scope_ids": [
+        "cmp_00000000000000000000000000000011"
+      ]
+    }
+  },
+  "experiment_allocated": {
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "event_schema_version": "ledger_event_v1",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_00000000000000000000000000000010",
+    "sequence": 2,
+    "event_id": "evt_00000000000000000000000000000015",
+    "operation_id": "opn_00000000000000000000000000000016",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "event_type": "EXPERIMENT_ALLOCATED",
+    "subject_type": "experiment",
+    "subject_id": "exp_00000000000000000000000000000014",
+    "occurred_at": "2026-07-28T01:00:01Z",
+    "recorded_at": "2026-07-28T01:00:01Z",
+    "actor_id": "act_00000000000000000000000000000017",
+    "previous_event_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "payload": {
+      "campaign_scope_ids": [
+        "cmp_00000000000000000000000000000011"
+      ]
+    }
+  }
+}

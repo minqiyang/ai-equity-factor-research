@@ -1,4 +1,4 @@
-"""Stage 4B-R0 fail-closed ledger event-schema registry support.
+"""Versioned fail-closed ledger event-schema registry support.
 
 This module validates only the registry meta-contract and event schemas that
 the registry marks ``FROZEN_SUPPORTED``. It does not append events, implement
@@ -14,10 +14,37 @@ import json
 import re
 
 
-_REGISTRY_RESOURCE = "schemas/experiment_trial_ledger_payload_schema_registry_v1.json"
-_DIGEST_RESOURCE = (
-    "schemas/experiment_trial_ledger_payload_schema_registry_v1.sha256"
-)
+_PACKAGED_REGISTRY_RESOURCES = {
+    "0.1.0": (
+        "schemas/experiment_trial_ledger_payload_schema_registry_v1.json",
+        "schemas/experiment_trial_ledger_payload_schema_registry_v1.sha256",
+    ),
+    "0.2.0": (
+        "schemas/experiment_trial_ledger_payload_schema_registry_v2.json",
+        "schemas/experiment_trial_ledger_payload_schema_registry_v2.sha256",
+    ),
+}
+_REGISTRY_PROFILES = {
+    "0.1.0": {
+        "registry_schema_id": (
+            "experiment_trial_ledger_payload_schema_registry_v1"
+        ),
+        "schema_language_id": "ledger_closed_schema_dsl_v1",
+        "schema_language_version": "0.1.0",
+        "local_constraint_predicates": ["path_equals_path"],
+    },
+    "0.2.0": {
+        "registry_schema_id": (
+            "experiment_trial_ledger_payload_schema_registry_v2"
+        ),
+        "schema_language_id": "ledger_closed_schema_dsl_v1",
+        "schema_language_version": "0.2.0",
+        "local_constraint_predicates": [
+            "array_contains_path",
+            "path_equals_path",
+        ],
+    },
+}
 _SAFE_INTEGER_MIN = -(2**53) + 1
 _SAFE_INTEGER_MAX = (2**53) - 1
 _TOP_LEVEL_KEYS = {
@@ -51,6 +78,9 @@ _VECTOR_ID_PATTERN = re.compile(r"[a-z][a-z0-9_]*\Z")
 _LOWER_SHA256_PATTERN = re.compile(r"[0-9a-f]{64}\Z")
 _TYPED_ID_PREFIX_PATTERN = re.compile(r"[a-z][a-z0-9]{2,7}\Z")
 _TYPED_ID_BODY_PATTERN = re.compile(r"[0-9a-f]{32}\Z")
+_SAFE_PUBLIC_ID_PATTERN = re.compile(
+    r"[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?\Z"
+)
 _TIMESTAMP_PATTERN = re.compile(
     r"([0-9]{4})-([0-9]{2})-([0-9]{2})"
     r"T([0-9]{2}):([0-9]{2}):([0-9]{2})(?:\.([0-9]+))?Z\Z"
@@ -257,6 +287,7 @@ def _validate_schema_node(
     *,
     context: str,
     referenced_types: set[str],
+    schema_language_version: str,
 ) -> None:
     mapping = _require_mapping(node, context=context)
     kind = _require_string(mapping.get("kind"), context=f"{context}.kind")
@@ -292,6 +323,12 @@ def _validate_schema_node(
         return
 
     if kind in {"sha256", "ledger_v1_utc_timestamp"}:
+        _require_exact_keys(mapping, {"kind"}, context=context)
+        return
+
+    if kind == "safe_public_id":
+        if schema_language_version != "0.2.0":
+            _fail("INVALID_REGISTRY", f"{context} uses unknown schema kind {kind!r}")
         _require_exact_keys(mapping, {"kind"}, context=context)
         return
 
@@ -333,6 +370,7 @@ def _validate_schema_node(
                 child,
                 context=f"{context}.properties.{name}",
                 referenced_types=referenced_types,
+                schema_language_version=schema_language_version,
             )
         return
 
@@ -369,6 +407,7 @@ def _validate_schema_node(
             exact["items"],
             context=f"{context}.items",
             referenced_types=referenced_types,
+            schema_language_version=schema_language_version,
         )
         return
 
@@ -395,7 +434,73 @@ def _validate_schema_node(
             exact["schema"],
             context=f"{context}.schema",
             referenced_types=referenced_types,
+            schema_language_version=schema_language_version,
         )
+        return
+
+    if kind == "tagged_union":
+        if schema_language_version != "0.2.0":
+            _fail("INVALID_REGISTRY", f"{context} uses unknown schema kind {kind!r}")
+        exact = _require_exact_keys(
+            mapping,
+            {"discriminator", "kind", "variants"},
+            context=context,
+        )
+        discriminator = _require_string(
+            exact["discriminator"],
+            context=f"{context}.discriminator",
+        )
+        if _TYPE_NAME_PATTERN.fullmatch(discriminator) is None:
+            _fail(
+                "INVALID_REGISTRY",
+                f"{context}.discriminator has invalid syntax",
+            )
+        variants = _require_mapping(
+            exact["variants"], context=f"{context}.variants"
+        )
+        if len(variants) < 2:
+            _fail(
+                "INVALID_REGISTRY",
+                f"{context}.variants must contain at least two branches",
+            )
+        for tag, branch in variants.items():
+            if _TYPE_NAME_PATTERN.fullmatch(tag) is None:
+                _fail("INVALID_REGISTRY", f"{context} has invalid variant tag")
+            _validate_schema_node(
+                branch,
+                context=f"{context}.variants.{tag}",
+                referenced_types=referenced_types,
+                schema_language_version=schema_language_version,
+            )
+            branch_mapping = _require_mapping(
+                branch, context=f"{context}.variants.{tag}"
+            )
+            if branch_mapping.get("kind") != "closed_object":
+                _fail(
+                    "INVALID_REGISTRY",
+                    f"{context}.variants.{tag} must be a closed_object",
+                )
+            properties = _require_mapping(
+                branch_mapping["properties"],
+                context=f"{context}.variants.{tag}.properties",
+            )
+            required = _require_list(
+                branch_mapping["required"],
+                context=f"{context}.variants.{tag}.required",
+            )
+            if discriminator not in required:
+                _fail(
+                    "INVALID_REGISTRY",
+                    f"{context}.variants.{tag} must require the discriminator",
+                )
+            expected_discriminator = {"kind": "literal", "value": tag}
+            if not _same_json_value(
+                properties.get(discriminator), expected_discriminator
+            ):
+                _fail(
+                    "INVALID_REGISTRY",
+                    f"{context}.variants.{tag} has a mismatched discriminator",
+                )
         return
 
     _fail("INVALID_REGISTRY", f"{context} uses unknown schema kind {kind!r}")
@@ -433,6 +538,57 @@ def _named_type_references(
         _named_type_references(
             mapping["schema"], definitions=definitions, seen=seen
         )
+    elif kind == "tagged_union":
+        for branch in mapping["variants"].values():
+            _named_type_references(
+                branch, definitions=definitions, seen=seen
+            )
+
+
+def _schemas_at_path(
+    schema: object,
+    path: Sequence[str],
+    *,
+    definitions: Mapping[str, object],
+) -> list[dict[str, object]] | None:
+    node = _require_mapping(schema, context="event schema")
+    seen_names: set[str] = set()
+    while node["kind"] == "named":
+        name = node["name"]
+        if name not in definitions or name in seen_names:
+            return None
+        seen_names.add(name)
+        node = _require_mapping(definitions[name], context="named type")
+    if not path:
+        return [node]
+    if node["kind"] == "nullable":
+        return _schemas_at_path(
+            node["schema"],
+            path,
+            definitions=definitions,
+        )
+    if node["kind"] == "tagged_union":
+        resolved: list[dict[str, object]] = []
+        for branch in node["variants"].values():
+            branch_schemas = _schemas_at_path(
+                branch,
+                path,
+                definitions=definitions,
+            )
+            if branch_schemas is None:
+                return None
+            resolved.extend(branch_schemas)
+        return resolved
+    if node["kind"] != "closed_object":
+        return None
+    child = node["properties"].get(path[0])
+    if child is None:
+        return None
+    return _schemas_at_path(
+        child,
+        path[1:],
+        definitions=definitions,
+    )
 
 
 def _schema_path_exists(
@@ -441,31 +597,105 @@ def _schema_path_exists(
     *,
     definitions: Mapping[str, object],
 ) -> bool:
-    node = _require_mapping(schema, context="event schema")
-    seen_names: set[str] = set()
-    while node["kind"] in {"named", "nullable"}:
-        if node["kind"] == "named":
-            name = node["name"]
-            if name not in definitions or name in seen_names:
-                return False
-            seen_names.add(name)
-            node = _require_mapping(
-                definitions[name], context="named type"
-            )
-        else:
-            node = _require_mapping(node["schema"], context="nullable schema")
-    if not path:
-        return True
-    if node["kind"] != "closed_object":
-        return False
-    child = node["properties"].get(path[0])
-    if child is None:
-        return False
-    return _schema_path_exists(
-        child,
-        path[1:],
+    return _schemas_at_path(
+        schema,
+        path,
         definitions=definitions,
+    ) is not None
+
+
+def _expanded_schema(
+    schema: object,
+    *,
+    definitions: Mapping[str, object],
+    seen: frozenset[str] = frozenset(),
+) -> dict[str, object]:
+    node = _require_mapping(schema, context="schema")
+    kind = node["kind"]
+    if kind == "named":
+        name = node["name"]
+        if name in seen or name not in definitions:
+            _fail("INVALID_REGISTRY", f"schema type cycle or unknown type at {name}")
+        return _expanded_schema(
+            definitions[name],
+            definitions=definitions,
+            seen=seen | {name},
+        )
+    if kind == "closed_object":
+        return {
+            "kind": kind,
+            "properties": {
+                name: _expanded_schema(child, definitions=definitions, seen=seen)
+                for name, child in node["properties"].items()
+            },
+            "required": list(node["required"]),
+        }
+    if kind == "array":
+        return {
+            "kind": kind,
+            "collection_semantics": node["collection_semantics"],
+            "items": _expanded_schema(
+                node["items"], definitions=definitions, seen=seen
+            ),
+            "min_items": node["min_items"],
+            "max_items": node["max_items"],
+        }
+    if kind == "nullable":
+        return {
+            "kind": kind,
+            "schema": _expanded_schema(
+                node["schema"], definitions=definitions, seen=seen
+            ),
+        }
+    if kind == "tagged_union":
+        return {
+            "kind": kind,
+            "discriminator": node["discriminator"],
+            "variants": {
+                tag: _expanded_schema(branch, definitions=definitions, seen=seen)
+                for tag, branch in node["variants"].items()
+            },
+        }
+    return dict(node)
+
+
+def _schemas_are_compatible(
+    left: object,
+    right: object,
+    *,
+    definitions: Mapping[str, object],
+) -> bool:
+    return _same_json_value(
+        _expanded_schema(left, definitions=definitions),
+        _expanded_schema(right, definitions=definitions),
     )
+
+
+def _schema_is_scalar(
+    schema: object,
+    *,
+    definitions: Mapping[str, object],
+) -> bool:
+    expanded = _expanded_schema(schema, definitions=definitions)
+    kind = expanded["kind"]
+    if kind == "nullable":
+        return _schema_is_scalar(
+            expanded["schema"],
+            definitions={},
+        )
+    if kind == "enum":
+        return all(
+            not isinstance(value, (dict, list))
+            for value in expanded["values"]
+        )
+    return kind in {
+        "ledger_v1_utc_timestamp",
+        "literal",
+        "safe_integer",
+        "safe_public_id",
+        "sha256",
+        "typed_id",
+    }
 
 
 def _validate_constraint(
@@ -475,6 +705,7 @@ def _validate_constraint(
     allowed_predicates: set[str],
     event_schema: object,
     definitions: Mapping[str, object],
+    schema_language_version: str,
 ) -> str:
     constraint = _require_exact_keys(
         value,
@@ -496,12 +727,32 @@ def _validate_constraint(
     )
     if predicate not in allowed_predicates:
         _fail("INVALID_REGISTRY", f"{context} uses an unknown predicate")
-    left_path = _require_unique_strings(
-        constraint["left_path"], context=f"{context}.left_path"
-    )
-    right_path = _require_unique_strings(
-        constraint["right_path"], context=f"{context}.right_path"
-    )
+    if schema_language_version == "0.1.0":
+        left_path = _require_unique_strings(
+            constraint["left_path"], context=f"{context}.left_path"
+        )
+        right_path = _require_unique_strings(
+            constraint["right_path"], context=f"{context}.right_path"
+        )
+    else:
+        left_path = [
+            _require_string(item, context=f"{context}.left_path[{index}]")
+            for index, item in enumerate(
+                _require_list(
+                    constraint["left_path"],
+                    context=f"{context}.left_path",
+                )
+            )
+        ]
+        right_path = [
+            _require_string(item, context=f"{context}.right_path[{index}]")
+            for index, item in enumerate(
+                _require_list(
+                    constraint["right_path"],
+                    context=f"{context}.right_path",
+                )
+            )
+        ]
     if not left_path or not right_path:
         _fail("INVALID_REGISTRY", f"{context} paths must not be empty")
     if not _schema_path_exists(
@@ -512,6 +763,43 @@ def _validate_constraint(
         event_schema, right_path, definitions=definitions
     ):
         _fail("INVALID_REGISTRY", f"{context}.right_path does not resolve")
+    if predicate == "array_contains_path":
+        left_schemas = _schemas_at_path(
+            event_schema,
+            left_path,
+            definitions=definitions,
+        )
+        right_schemas = _schemas_at_path(
+            event_schema,
+            right_path,
+            definitions=definitions,
+        )
+        if left_schemas is None or right_schemas is None:
+            _fail("INVALID_REGISTRY", f"{context} paths do not resolve")
+        if any(schema["kind"] != "array" for schema in left_schemas):
+            _fail(
+                "INVALID_REGISTRY",
+                f"{context}.left_path must resolve to a non-null array",
+            )
+        if any(
+            not _schema_is_scalar(schema, definitions=definitions)
+            for schema in right_schemas
+        ):
+            _fail(
+                "INVALID_REGISTRY",
+                f"{context}.right_path must resolve to a scalar",
+            )
+        for left_schema in left_schemas:
+            for right_schema in right_schemas:
+                if not _schemas_are_compatible(
+                    left_schema["items"],
+                    right_schema,
+                    definitions=definitions,
+                ):
+                    _fail(
+                        "INVALID_REGISTRY",
+                        f"{context} has incompatible array/scalar schemas",
+                    )
     return constraint_id
 
 
@@ -606,16 +894,24 @@ def _validate_conformance_vectors(
 
 
 def validate_registry(value: object) -> dict[str, object]:
-    """Validate the exact Stage 4B-R0 registry meta-contract."""
+    """Validate one exact supported registry-release meta-contract."""
+    candidate = _require_mapping(value, context="schema registry")
+    registry_version = _require_string(
+        candidate.get("registry_version"),
+        context="schema registry.registry_version",
+    )
+    profile = _REGISTRY_PROFILES.get(registry_version)
+    if profile is None:
+        _fail("INVALID_REGISTRY", "unsupported registry version")
     registry = _require_exact_keys(
-        value, _TOP_LEVEL_KEYS, context="schema registry"
+        candidate, _TOP_LEVEL_KEYS, context="schema registry"
     )
     _require_ascii_tree(registry)
     expected_literals = {
-        "registry_schema_id": "experiment_trial_ledger_payload_schema_registry_v1",
-        "registry_version": "0.1.0",
-        "schema_language_id": "ledger_closed_schema_dsl_v1",
-        "schema_language_version": "0.1.0",
+        "registry_schema_id": profile["registry_schema_id"],
+        "registry_version": registry_version,
+        "schema_language_id": profile["schema_language_id"],
+        "schema_language_version": profile["schema_language_version"],
         "canonicalization_id": "pit_canonical_json_v1",
         "ledger_schema_version": "experiment_trial_ledger_v1",
         "event_identity_projection_id": "ledger_event_identity_v1",
@@ -638,7 +934,7 @@ def validate_registry(value: object) -> dict[str, object]:
         context="local_constraint_predicates",
         pattern=_TYPE_NAME_PATTERN,
     )
-    if predicates != ["path_equals_path"]:
+    if predicates != profile["local_constraint_predicates"]:
         _fail("INVALID_REGISTRY", "unexpected local constraint predicate set")
 
     definitions = _require_mapping(
@@ -654,6 +950,7 @@ def validate_registry(value: object) -> dict[str, object]:
             schema,
             context=f"type_definitions.{name}",
             referenced_types=referenced_types,
+            schema_language_version=profile["schema_language_version"],
         )
 
     supported_types: list[str] = []
@@ -696,6 +993,7 @@ def validate_registry(value: object) -> dict[str, object]:
             entry["event_schema"],
             context=f"{context}.event_schema",
             referenced_types=referenced_types,
+            schema_language_version=profile["schema_language_version"],
         )
         constraints = _require_list(
             entry["local_constraints"],
@@ -709,6 +1007,7 @@ def validate_registry(value: object) -> dict[str, object]:
                 allowed_predicates=set(predicates),
                 event_schema=entry["event_schema"],
                 definitions=definitions,
+                schema_language_version=profile["schema_language_version"],
             )
             if constraint_id in constraint_ids:
                 _fail("INVALID_REGISTRY", "duplicate local constraint ID")
@@ -780,10 +1079,18 @@ def registry_digest(registry: object) -> str:
     return hashlib.sha256(canonical_registry_bytes(registry)).hexdigest()
 
 
-def _packaged_registry_digest() -> str:
+def _packaged_registry_resources(registry_version: str) -> tuple[str, str]:
+    resources_for_version = _PACKAGED_REGISTRY_RESOURCES.get(registry_version)
+    if resources_for_version is None:
+        _fail("INVALID_REGISTRY", "unsupported packaged registry version")
+    return resources_for_version
+
+
+def _packaged_registry_digest(registry_version: str) -> str:
+    _, digest_resource = _packaged_registry_resources(registry_version)
     digest_text = (
         resources.files("ledger")
-        .joinpath(_DIGEST_RESOURCE)
+        .joinpath(digest_resource)
         .read_text(encoding="ascii")
         .strip()
     )
@@ -793,10 +1100,12 @@ def _packaged_registry_digest() -> str:
 
 
 def _require_packaged_registry_authority(registry: object) -> None:
-    if registry_digest(registry) != _packaged_registry_digest():
+    validated = validate_registry(registry)
+    registry_version = validated["registry_version"]
+    if registry_digest(validated) != _packaged_registry_digest(registry_version):
         _fail(
             "REGISTRY_DIGEST_MISMATCH",
-            "registry is not the packaged digest-bound R0 authority",
+            "registry is not the packaged digest-bound release authority",
         )
 
 
@@ -817,11 +1126,17 @@ def load_registry_bytes(
 
 def load_default_registry() -> dict[str, object]:
     """Load the packaged R0 registry and verify its external digest sidecar."""
+    return load_registry_release("0.1.0")
+
+
+def load_registry_release(registry_version: str) -> dict[str, object]:
+    """Load one explicitly selected packaged registry release and digest."""
+    registry_resource, _ = _packaged_registry_resources(registry_version)
     package_root = resources.files("ledger")
-    raw = package_root.joinpath(_REGISTRY_RESOURCE).read_bytes()
+    raw = package_root.joinpath(registry_resource).read_bytes()
     return load_registry_bytes(
         raw,
-        expected_digest=_packaged_registry_digest(),
+        expected_digest=_packaged_registry_digest(registry_version),
     )
 
 
@@ -892,6 +1207,13 @@ def _validate_value(
         ):
             _fail("INVALID_EVENT", f"{context} has the wrong typed-ID syntax")
         return
+    if kind == "safe_public_id":
+        if (
+            not isinstance(value, str)
+            or _SAFE_PUBLIC_ID_PATTERN.fullmatch(value) is None
+        ):
+            _fail("INVALID_EVENT", f"{context} is not a safe public ID")
+        return
     if kind == "sha256":
         if (
             not isinstance(value, str)
@@ -933,6 +1255,20 @@ def _validate_value(
                     definitions=definitions,
                     context=f"{context}.{name}",
                 )
+        return
+    if kind == "tagged_union":
+        if not isinstance(value, dict):
+            _fail("INVALID_EVENT", f"{context} must be a tagged object")
+        discriminator = node["discriminator"]
+        tag = value.get(discriminator)
+        if not isinstance(tag, str) or tag not in node["variants"]:
+            _fail("INVALID_EVENT", f"{context} has an unknown discriminator")
+        _validate_value(
+            node["variants"][tag],
+            value,
+            definitions=definitions,
+            context=context,
+        )
         return
     if kind == "array":
         if not isinstance(value, list):
@@ -1026,6 +1362,16 @@ def validate_event(
                     "INVALID_EVENT",
                     f"constraint failed: {constraint['constraint_id']}",
                 )
+        elif predicate == "array_contains_path":
+            items = _read_path(value, constraint["left_path"])
+            scalar = _read_path(value, constraint["right_path"])
+            if not isinstance(items, list) or not any(
+                _same_json_value(item, scalar) for item in items
+            ):
+                _fail(
+                    "INVALID_EVENT",
+                    f"constraint failed: {constraint['constraint_id']}",
+                )
         else:
             _fail("INVALID_REGISTRY", "unknown local constraint predicate")
     return value
@@ -1041,7 +1387,7 @@ def validate_raw_event_bytes(
 
 
 def run_conformance_vectors(registry: object) -> dict[str, str]:
-    """Execute the registry-bound synthetic R0 vectors and return stable codes."""
+    """Execute one registry release's bound synthetic vectors."""
     validated = validate_registry(registry)
     _require_packaged_registry_authority(validated)
     outcomes: dict[str, str] = {}

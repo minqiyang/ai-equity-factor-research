@@ -1,5 +1,77 @@
 # Troubleshooting Log
 
+## 2026-07-28 - R1B Full Gate Caught A Stale Contract-Phrase Oracle
+
+Original failure and consequence:
+
+- After the contract was reconciled from future tense to the active R1B
+  release, the full suite had one failure because a structure test still
+  searched for the former phrase `will add`. The run otherwise reported 1000
+  passing tests and two platform-conditional skips.
+
+Correction and verification:
+
+- Updated the literal structure oracle to the current phrase `adds` without
+  weakening its exact three-capability assertion.
+- The first rerun exposed that the literal phrase was still split by a Markdown
+  line break. It again failed only that structure assertion, with 165 focused
+  tests or 1000 full-suite tests passing and the same two platform skips.
+- Reflowed the semantically unchanged contract sentence so the exact pinned
+  phrase is contiguous.
+- Reran the focused structure/registry tests and the full repository suite;
+  both passed. No source behavior, registry artifact, dependency, environment,
+  Git, or GitHub state changed because of the failed run.
+
+Prevention:
+
+- When changing a canonical contract phrase that is deliberately pinned by a
+  structure test, update the literal oracle in the same reviewable edit.
+
+## 2026-07-28 - Two Read-Only Orientation Commands Used Unsafe Assumptions
+
+Original failures and consequences:
+
+- A double-quoted `rg` pattern contained Markdown backticks. The shell treated
+  the enclosed `0.1.0` text as command substitution and printed
+  `command not found`. The remaining read-only search still ran, but its output
+  was not used as complete evidence.
+- A one-off existing-venv Python command imported `ledger` without adding the
+  source tree to its module path. It failed with
+  `ModuleNotFoundError: No module named 'ledger'` before reading or changing
+  registry state.
+- A three-range aggregate `git diff` inspection exceeded the available model
+  context and was truncated. The command was read-only and made no repository
+  or environment change; no review conclusion relied on its partial output.
+
+Investigation and correction:
+
+- Confirmed all three commands were read-only and that none changed repository,
+  environment, dependency, Git, or GitHub state.
+- Repeated the documentation inspection with literal-safe targeted `sed`/`rg`
+  commands.
+- Repeated the registry validation with the existing project Python and an
+  explicit in-process `sys.path.insert(0, "src")`. The R1 registry validated
+  and produced its deterministic canonical digest.
+- Resumed the independent review from `docs/current_handoff.md` and
+  `docs/repo_map.md`, then inspected one bounded file range per command.
+
+Verification:
+
+- The focused R0/R1 registry suite passed 133 tests; Ruff and compilation
+  passed.
+- No dependency was installed and the worktree contained only intended R1B
+  edits.
+
+Prevention:
+
+- Do not place Markdown backticks inside a double-quoted shell argument; use a
+  literal-safe pattern or a targeted line range.
+- For one-off source-tree imports, use the test runner's configured path or an
+  explicit in-process source path rather than assuming the package is
+  installed in the selected environment.
+- Keep each independent diff-review read to one bounded file range so a
+  truncated aggregate cannot hide relevant evidence.
+
 ## 2026-07-26 - Isolated Package Build Initially Lacked Network Access
 
 Original failure and consequence:
