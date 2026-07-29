@@ -1,5 +1,52 @@
 # Engineering Log
 
+## 2026-07-29 - Stage 4B-R1D Local Sample Registration Schema
+
+- Started from protected `main` merge `68a4c4f` (PR #169) in the isolated
+  `codex/ledger-sample-registration-schema` worktree. Exact merge-head CI run
+  `30471505290` succeeded. The clean startup baseline passed 1171 tests with
+  two platform-conditional skips, Ruff, compilation, exact base/status, and
+  immutable R0/R1/R2 hash checks.
+- The owner selected bundle `R1D-A`, freezing
+  `smp_<32 lowercase hex>`, exact external Stage 3 sample-record authority,
+  separate acceptance and publication approval, reviewer independence,
+  mutually exclusive local/global/external paths, stable lineage identity,
+  monotonic single-current generations, anti-reset/overlap rules, private
+  complete records, allowlisted public projections, and the shared
+  32-campaign direct-scope maximum.
+- Added a design-first R1D contract and separate immutable registry `0.4.0`
+  artifact/digest under unchanged schema-language `0.2.0`. R1D promotes only
+  `SAMPLE_REGISTERED`, preserves R0/R1/R2, and leaves the other 32 events
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- Added independent global/direct fixtures and literal release, payload,
+  namespace, scope, public-ID, version/generation, digest, authority,
+  acceptance, privacy, duplicate/unknown-field, incomplete-event, and
+  unpublished-promotion oracles. The initial focused R1D registry run passed
+  232 tests before canonical-document structure tests were added.
+- Final focused R0/R1/R1C/R1D registry and structure validation passed 569
+  tests. The full suite passed 1404 tests with two platform-conditional
+  wide-`longdouble` skips. Ruff and compileall for
+  `src`/`tests`/`research`/`lean` passed.
+- No-isolation source/sdist/wheel validation reproduced byte-identical R0, R1,
+  R2, and R3 package resources and identical `0.4.0` conformance outcomes.
+  No dependency was installed or added. The check reused
+  `build==1.5.0`, `setuptools==83.0.0`, `wheel==0.47.0`, and
+  `packaging==26.2` from the existing project environment at
+  `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv`;
+  its purpose was package-resource parity, and it changed no dependency file
+  or persistent environment. Generated egg-info and temporary package
+  artifacts were removed or kept outside the repository.
+- Deterministic repo-map regeneration, Skill audit, JSON parsing, immutable
+  registry hashes, privacy/path, hidden-Unicode/control-character, cleanup,
+  and diff gates passed. A final self-adversarial read-only review verified
+  that the v3-to-v4 registry delta is limited to release metadata, `sample_id`,
+  `SAMPLE_REGISTERED`, and its vectors; it found no actionable P1/P2.
+- This release adds no external retrieval, acceptance/publication-currentness
+  runtime, binding event, append/storage backend, private data, research trial,
+  protected access, brokerage, order, paper, or live behavior. Final full,
+  package, privacy, and review evidence is recorded above without claiming
+  external authority enforcement or formal sample use.
+
 ## 2026-07-28 - Stage 4B-R1C Trial-Family Registration Schema
 
 - Started from protected `main` merge `a6f7d43` (PR #167) in the isolated

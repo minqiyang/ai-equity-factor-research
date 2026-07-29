@@ -46,6 +46,7 @@ def test_required_governance_files_exist() -> None:
         "docs/experiment_trial_ledger_schema_registry_contract.md",
         "docs/experiment_trial_ledger_allocation_registration_schema_contract.md",
         "docs/experiment_trial_ledger_trial_family_registration_schema_contract.md",
+        "docs/experiment_trial_ledger_sample_registration_schema_contract.md",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
@@ -76,9 +77,11 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "3. Point-in-time data methodology",
         "4b-R1A. Allocation/registration architecture decision",
         "4b-R1C. Trial-family registration schema",
+        "4b-R1D. Sample registration schema",
         "`docs/point_in_time_data_methodology_contract.md`",
         "`docs/experiment_trial_ledger_allocation_registration_schema_contract.md`",
         "`docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`",
+        "`docs/experiment_trial_ledger_sample_registration_schema_contract.md`",
         "Target construction currently lives in `src/backtest/portfolio.py`",
         "`historical_evaluation`, not a pristine holdout",
         "request `@codex review` once on the",
@@ -95,18 +98,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Stage 2 Timing Decision",
         "## Stage 3 Data Methodology Decision",
         "## Accepted Stage 4a Experiment and Trial Ledger Decision",
-        "## Accepted R0/R1A/R1B And Active R1C Registration Release",
+        "## Accepted R0/R1A/R1B/R1C And Active R1D Registration Release",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Complete Stage 4B-R1C in the current isolated worktree",
+        "Complete Stage 4B-R1D in the current isolated worktree",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "1003 passing tests" in roadmap
-    assert "Current base validation reported 1003 tests passed" in handoff
+    assert "1171 passing tests" in roadmap
+    assert "Current base validation reported 1171 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -215,7 +218,7 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
         "| 2b. Signal/execution timing implementation | "
         "Complete on protected main via PR #162"
     ) in roadmap
-    assert "Complete Stage 4B-R1C in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1D in the current isolated worktree" in handoff
 
 
 def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
@@ -368,7 +371,11 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 4b-R1C. Trial-family registration schema | "
-        "Active in the current tree; owner selected bundle R1C-A"
+        "Complete on protected main via PR #169"
+    ) in roadmap
+    assert (
+        "| 4b-R1D. Sample registration schema | "
+        "Active in the current tree; owner selected bundle R1D-A"
     ) in roadmap
 
 
@@ -1265,15 +1272,197 @@ def test_trial_family_registration_r1c_freezes_owner_bundle_and_release() -> Non
     ) in roadmap
     assert (
         "| 4b-R1C. Trial-family registration schema | "
-        "Active in the current tree; owner selected bundle R1C-A"
+        "Complete on protected main via PR #169"
     ) in roadmap
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1C-A`" in normalized_handoff
     assert "leaves the other 33 events" in normalized_handoff
-    assert "Complete Stage 4B-R1C in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1D in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1C-A" in " ".join(specification.split())
     assert (
-        "Active Stage 4B-R1C-A trial-family registration authority" in repo_map
+        "Accepted Stage 4B-R1C-A trial-family registration authority" in repo_map
+    )
+
+
+def test_sample_registration_r1d_freezes_owner_bundle_and_release() -> None:
+    contract_path = (
+        PROJECT_ROOT
+        / "docs/experiment_trial_ledger_sample_registration_schema_contract.md"
+    )
+    contract = contract_path.read_text(encoding="utf-8")
+    normalized_contract = " ".join(contract.split())
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
+        encoding="utf-8"
+    )
+    repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
+    registry_path = (
+        PROJECT_ROOT
+        / "src/ledger/schemas/"
+        "experiment_trial_ledger_payload_schema_registry_v4.json"
+    )
+    sidecar_path = registry_path.with_suffix(".sha256")
+    fixture_path = (
+        PROJECT_ROOT
+        / "tests/fixtures/"
+        "experiment_trial_ledger_sample_registration_v1_golden.json"
+    )
+    registry = json.loads(registry_path.read_text(encoding="ascii"))
+    fixture = json.loads(fixture_path.read_text(encoding="ascii"))
+
+    for phrase in [
+        "Contract ID: `experiment_trial_ledger_sample_registration_schema_r1d`",
+        "Contract version: `0.4.0`",
+        "Owner decision: option `R1D-A`",
+        "Exact ledger-local sample namespace: `smp_<32 lowercase hex>`",
+        "registry schema ID `experiment_trial_ledger_payload_schema_registry_v4`",
+        "registry version `0.4.0`",
+        "unchanged schema-language version `0.2.0`",
+        "The other 32 events remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`",
+        "`CAMPAIGN_ENTITY_BOUND` and `STAGE3_SAMPLE_REFERENCE_BOUND` remain incomplete for R1E",
+        "`subject_type` exactly `sample`",
+        "empty means a ledger-global local registration",
+        "one through 32 entries means a direct local registration",
+        "complete repository-external canonical sample records",
+        "The accepted resolver key is the exact tuple",
+        "A retrieval miss, ambiguous record, digest mismatch, schema mismatch, noncanonical record, or hash-only stand-in fails closed",
+        "the reviewer must be distinct from both the sample-record producer and the `SAMPLE_REGISTERED.actor_id`",
+        "A digest is not publication safe merely because it is non-reversible",
+        "direct local `SAMPLE_REGISTERED`",
+        "ledger-global local `SAMPLE_REGISTERED`",
+        "later campaign-scoped `STAGE3_SAMPLE_REFERENCE_BOUND`",
+        "without backfilling a synthetic `SAMPLE_REGISTERED`",
+        "one canonical sample lineage and representation path has exactly one ledger-local `sample_id`",
+        "Acceptance generations are positive safe integers and strictly increase",
+        "exactly one accepted generation is current",
+        "Aliases, clones, new campaign IDs, reruns, result access, or reclassification must not allocate a new sample identity or reset exposure history",
+        "an overlapping window cannot manufacture pristine holdout status",
+        "Trial count, execution-attempt count, and protected-sample access remain zero",
+        "four reminders at 30-minute intervals",
+    ]:
+        assert phrase in normalized_contract
+
+    expected_supported = [
+        "LEDGER_EPOCH_CREATED",
+        "CAMPAIGN_ALLOCATED",
+        "EXPERIMENT_ALLOCATED",
+        "TRIAL_FAMILY_REGISTERED",
+        "SAMPLE_REGISTERED",
+    ]
+    expected_payload_fields = [
+        "campaign_scope_ids",
+        "sample_acceptance_decision_id",
+        "sample_acceptance_generation",
+        "sample_acceptance_record_sha256",
+        "sample_acceptance_schema_version",
+        "sample_authority_id",
+        "sample_authority_registry_sha256",
+        "sample_authority_version",
+        "sample_public_projection_id",
+        "sample_public_projection_schema_version",
+        "sample_public_projection_sha256",
+        "sample_publication_approval_generation",
+        "sample_publication_approval_id",
+        "sample_publication_approval_record_sha256",
+        "sample_publication_approval_schema_version",
+        "sample_record_canonicalization_id",
+        "sample_record_id",
+        "sample_record_schema_version",
+        "sample_record_sha256",
+        "sample_record_version",
+    ]
+    assert registry["registry_schema_id"] == (
+        "experiment_trial_ledger_payload_schema_registry_v4"
+    )
+    assert registry["registry_version"] == "0.4.0"
+    assert registry["registry_status"] == "SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY"
+    assert registry["schema_language_version"] == "0.2.0"
+    assert [item["event_type"] for item in registry["event_schemas"]] == (
+        expected_supported
+    )
+    assert len(registry["incomplete_event_types"]) == 32
+    assert set(registry["incomplete_event_types"]) == (
+        set(registry["closed_event_vocabulary"]) - set(expected_supported)
+    )
+    assert registry["type_definitions"]["sample_id"] == {
+        "kind": "typed_id",
+        "prefix": "smp",
+    }
+    sample_schema = next(
+        item
+        for item in registry["event_schemas"]
+        if item["event_type"] == "SAMPLE_REGISTERED"
+    )
+    assert sample_schema["schema_status"] == "FROZEN_SUPPORTED"
+    sample_schema = sample_schema["event_schema"]
+    assert sample_schema["properties"]["subject_type"] == {
+        "kind": "literal",
+        "value": "sample",
+    }
+    assert sample_schema["properties"]["subject_id"] == {
+        "kind": "named",
+        "name": "sample_id",
+    }
+    payload_schema = sample_schema["properties"]["payload"]
+    assert payload_schema["required"] == expected_payload_fields
+    assert list(payload_schema["properties"]) == expected_payload_fields
+    assert payload_schema["properties"]["campaign_scope_ids"] == {
+        "kind": "array",
+        "collection_semantics": "sorted_unique",
+        "items": {"kind": "named", "name": "campaign_id"},
+        "min_items": 0,
+        "max_items": 32,
+    }
+    assert sidecar_path.read_text(encoding="ascii").strip() == (
+        "3a1c17be6dc6d20f512429b4ff2457be4f28472050a99a5f97eee16a9dd57ab4"
+    )
+    assert hashlib.sha256(registry_path.read_bytes()).hexdigest() == (
+        "1562852a4b95f867f7843818f31a0672949afb187ef84291ccac030e105ef46d"
+    )
+    assert hashlib.sha256(sidecar_path.read_bytes()).hexdigest() == (
+        "fc34bc6d5183fc977e863fda183b40fd4252bed073cfa04e567cb784aa0b7845"
+    )
+
+    assert fixture["fixture_id"] == (
+        "experiment_trial_ledger_sample_registration_v1_golden"
+    )
+    assert set(fixture) == {
+        "fixture_id",
+        "global_sample_registered",
+        "direct_sample_registered",
+    }
+    for key in ("global_sample_registered", "direct_sample_registered"):
+        event = fixture[key]
+        assert event["event_type"] == "SAMPLE_REGISTERED"
+        assert event["subject_type"] == "sample"
+        assert re.fullmatch(r"smp_[0-9a-f]{32}", event["subject_id"])
+        assert list(event["payload"]) == expected_payload_fields
+
+    for canonical_doc in [roadmap, handoff, specification, repo_map]:
+        assert (
+            "docs/experiment_trial_ledger_sample_registration_schema_contract.md"
+            in canonical_doc
+        )
+    assert (
+        "| 4b-R1C. Trial-family registration schema | "
+        "Complete on protected main via PR #169"
+    ) in roadmap
+    assert (
+        "| 4b-R1D. Sample registration schema | "
+        "Active in the current tree; owner selected bundle R1D-A"
+    ) in roadmap
+    normalized_handoff = " ".join(handoff.split())
+    assert "the owner selected bundle `R1D-A`" in normalized_handoff
+    assert "leaves the other 32 events" in normalized_handoff
+    assert "Complete Stage 4B-R1D in the current isolated worktree" in handoff
+    assert "owner-selected Stage 4B-R1D-A" in " ".join(specification.split())
+    assert (
+        "Active Stage 4B-R1D-A local sample registration authority" in repo_map
     )
 
 

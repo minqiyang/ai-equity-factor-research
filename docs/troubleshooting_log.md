@@ -1,5 +1,49 @@
 # Troubleshooting Log
 
+## 2026-07-29 - R1D Handoff Patch Output Was Truncated
+
+Original failure and consequence:
+
+- A large `apply_patch` result for the R1D handoff exceeded the available tool
+  response context and was truncated. The partial response could not establish
+  whether the intended authority section had landed.
+
+Correction:
+
+- No success was inferred from the truncated result.
+- Re-read only the targeted handoff ranges with bounded `sed`, confirmed that
+  the R1D authority section had landed exactly once, and used small
+  context-specific patches for the remaining stale PR-interaction and
+  next-stage text.
+
+Verification:
+
+- The handoff now identifies accepted R1C, active R1D-A, registry `0.4.0`,
+  exactly five supported and 32 incomplete events, and R1E as the later
+  binding-event gate.
+- The first combined focused gate correctly found two stale milestone
+  assertions: an R1 test still treated now-published `0.4.0` as unknown, and a
+  structure test still called R1C active. They were advanced without weakening
+  the R0-default or unknown-future-release checks. A first corrective patch
+  also introduced visible over-indentation; collection failed immediately, the
+  exact lines were inspected, and the indentation was corrected.
+- The first `git add` could not create the linked-worktree `index.lock` because
+  the sandbox permits repository content writes but not writes under the main
+  repository's `.git/worktrees` metadata. The exact same bounded 17-file stage
+  was retried with the required Git metadata permission; no broader path or
+  destructive Git operation was used.
+- The rerun passed 569 focused registry/structure tests, Ruff, and compilation.
+- The bounded follow-up reads and patches produced non-truncated terminal
+  status.
+- No dependency, GitHub state, private data, or protected history was changed
+  by the failed-to-observe response.
+
+Prevention:
+
+- Keep documentation patches and verification reads narrowly targeted.
+- Treat a truncated patch response as unknown state and inspect the exact
+  target before retrying.
+
 ## 2026-07-28 - R1C Orientation And Documentation Commands Needed Narrow Retries
 
 Original failures and consequences:

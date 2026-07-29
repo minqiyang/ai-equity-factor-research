@@ -62,6 +62,20 @@ anti-reset rules. A separate immutable registry `0.3.0` promotes only
 R0/R1 bytes and behavior. Local schema acceptance proves only closed event
 shape; retrieval, authority, acceptance currentness, role independence,
 history, and append behavior remain fail-closed stateful requirements.
+`docs/experiment_trial_ledger_sample_registration_schema_contract.md` defines
+the owner-selected Stage 4B-R1D-A local sample-registration authority. It
+freezes `smp_<32 lowercase hex>`, the existing direct-scope maximum of 32, an
+exact digest-pinned repository-external Stage 3 sample authority, a separate
+non-self-issued acceptance record, allowlisted public projection and
+publication-approval references, single-current generations, mutually
+exclusive local/global/external representation paths, and anti-reset overlap
+semantics. A separate immutable registry `0.4.0` promotes only
+`SAMPLE_REGISTERED`, keeps both binding events and the other 30 events
+incomplete, and preserves R0/R1/R2 bytes and behavior. Local schema acceptance
+proves only closed event shape; retrieval, authority, acceptance and
+publication currentness, role independence, path exclusivity, exposure
+history, prior allocation, and append behavior remain fail-closed stateful
+requirements.
 
 ## Current Phase and Boundary
 
