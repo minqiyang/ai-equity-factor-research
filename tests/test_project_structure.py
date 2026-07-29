@@ -3767,37 +3767,53 @@ def test_review_required_prs_complete_current_head_review_before_merge() -> None
         .read_text(encoding="utf-8")
         .split()
     )
-    workflow_skill = " ".join(
-        (PROJECT_ROOT / ".agents/skills/staged-quant-workflow/SKILL.md")
-        .read_text(encoding="utf-8")
-        .split()
-    )
     roadmap = " ".join(
         (PROJECT_ROOT / "docs/current_roadmap.md")
         .read_text(encoding="utf-8")
         .split()
     )
 
-    for text in [controller, workflow_skill]:
-        assert (
-            "Do not enable auto-merge or attempt a merge while required checks "
-            "or an applicable current-head Codex review is pending."
-        ) in text
-        assert (
-            "completed on the current head with no unresolved actionable "
-            "findings"
-        ) in text
-        assert text.index("post `@codex review` once") < text.index(
-            "Do not enable auto-merge or attempt a merge"
-        )
-        assert "required checks pass, or auto-merge" not in text
-        assert "required checks pass or auto-merge" not in text
+    assert (
+        "Do not enable auto-merge or attempt a merge while required checks "
+        "or an applicable current-head Codex review is pending."
+    ) in controller
+    assert (
+        "completed on the current head with no unresolved actionable findings"
+    ) in controller
+    assert controller.index("post `@codex review` once") < controller.index(
+        "Do not enable auto-merge or attempt a merge"
+    )
+    assert "required checks pass, or auto-merge" not in controller
+    assert "required checks pass or auto-merge" not in controller
 
     assert (
         "Do not enable auto-merge or merge a review-required PR until Codex "
         "review has completed on the current head with no unresolved actionable "
         "findings."
     ) in roadmap
+
+
+def test_staged_quant_workflow_skill_is_a_thin_router() -> None:
+    skill_path = PROJECT_ROOT / ".agents/skills/staged-quant-workflow/SKILL.md"
+    workflow_skill = skill_path.read_text(encoding="utf-8")
+    normalized_skill = " ".join(workflow_skill.split())
+
+    assert len(workflow_skill.splitlines()) <= 40
+    for path in [
+        "AGENTS.md",
+        "docs/current_handoff.md",
+        "docs/codex_long_running_controller.md",
+        "docs/current_roadmap.md",
+    ]:
+        assert f"`{path}`" in normalized_skill
+
+    assert "Continue from the handoff" in normalized_skill
+    assert "This Skill grants no additional authority" in normalized_skill
+    assert "user's explicit authorization" in normalized_skill
+    assert "Keep workflow policy" in normalized_skill
+    assert "gh pr " not in normalized_skill
+    assert "git " not in normalized_skill
+    assert "auto-merge" not in normalized_skill
 
 
 def test_tracking_error_design_freezes_stage_two_contract() -> None:

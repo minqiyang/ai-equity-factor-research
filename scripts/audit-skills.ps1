@@ -11,7 +11,7 @@ if (-not (Test-Path -LiteralPath $rootPath)) {
     throw "Skill root not found: $SkillRoot"
 }
 
-$skillFiles = Get-ChildItem -LiteralPath $rootPath -Recurse -Filter "SKILL.md" -File
+$skillFiles = Get-ChildItem -LiteralPath $rootPath -Recurse -Filter "SKILL.md" -File -Force
 
 if ($skillFiles.Count -eq 0) {
     throw "No SKILL.md files found under $SkillRoot"

@@ -14,8 +14,7 @@ profitability claims.
 
 At the start of a continuation, read `docs/current_handoff.md` first and use
 `docs/repo_map.md` for concise orientation. Then read `AGENTS.md`,
-`PROJECT_SPEC.md`, `docs/current_roadmap.md`, this controller, and
-`.agents/skills/staged-quant-workflow/SKILL.md`. Read
+`PROJECT_SPEC.md`, `docs/current_roadmap.md`, and this controller. Read
 `docs/research_program_charter.md` when selecting, designing, reviewing, or
 classifying a research-program stage.
 
@@ -30,7 +29,7 @@ decision needs source evidence. Deeper sources include:
 - `EXPERIMENT_LOG.md`
 - generated reports under `reports/`
 
-Then run the state checks from the staged workflow Skill:
+Then run these state checks:
 
 ```bash
 git fetch origin
@@ -88,7 +87,6 @@ First-pass context is limited to:
 - `PROJECT_SPEC.md`
 - `docs/current_roadmap.md`
 - `docs/codex_long_running_controller.md`
-- `.agents/skills/staged-quant-workflow/SKILL.md`
 
 Read `docs/research_program_charter.md` at Level 2 for research-program stage
 selection or evidence classification. It is policy, not a detailed stage log.
@@ -278,7 +276,7 @@ prompt clearly expects.
 Do not continue on an assumption if the ambiguity could cause a destructive
 operation, broad architecture change, product behavior change, data loss,
 security or privacy risk, new production dependency, or scope conflict with
-`AGENTS.md`, `PROJECT_SPEC.md`, this controller, or the staged workflow Skill.
+`AGENTS.md`, `PROJECT_SPEC.md`, or this controller.
 
 If a file is missing but the current prompt expects it:
 
@@ -311,8 +309,7 @@ Stop and report instead of continuing when any of these occurs:
 - tests fail in a way that cannot be fixed safely within the current scope.
 - a read-only review finds a high issue or unclear risk.
 - security, privacy, data-loss, or irreversible-operation risk appears.
-- the stage conflicts with `AGENTS.md`, `PROJECT_SPEC.md`, this controller, or
-  the staged workflow Skill.
+- the stage conflicts with `AGENTS.md`, `PROJECT_SPEC.md`, or this controller.
 - the next safe stage would require real data fetching, downloads, vendor APIs,
   credentials, live trading, brokerage integration, order execution, or a
   profitability claim.
