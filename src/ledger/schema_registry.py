@@ -550,9 +550,10 @@ def _schemas_at_path(
     path: Sequence[str],
     *,
     definitions: Mapping[str, object],
+    _seen_names: frozenset[str] = frozenset(),
 ) -> list[dict[str, object]] | None:
     node = _require_mapping(schema, context="event schema")
-    seen_names: set[str] = set()
+    seen_names = set(_seen_names)
     while node["kind"] == "named":
         name = node["name"]
         if name not in definitions or name in seen_names:
@@ -566,6 +567,7 @@ def _schemas_at_path(
             node["schema"],
             path,
             definitions=definitions,
+            _seen_names=frozenset(seen_names),
         )
     if node["kind"] == "tagged_union":
         resolved: list[dict[str, object]] = []
@@ -574,6 +576,7 @@ def _schemas_at_path(
                 branch,
                 path,
                 definitions=definitions,
+                _seen_names=frozenset(seen_names),
             )
             if branch_schemas is None:
                 return None
@@ -588,6 +591,7 @@ def _schemas_at_path(
         child,
         path[1:],
         definitions=definitions,
+        _seen_names=frozenset(seen_names),
     )
 
 

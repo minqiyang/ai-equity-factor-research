@@ -1,5 +1,44 @@
 # Troubleshooting Log
 
+## 2026-07-29 - Final R1B Review Found Nullable Named-Type Cycle Recursion
+
+Original failure and consequence:
+
+- The final exact-head Codex review on PR #167 identified one actionable P2:
+  constraint-path meta-validation reset its visited named-type state when it
+  traversed `nullable` or another recursive schema branch.
+- A targeted malformed-registry test reproduced the issue. A named type cycling
+  through `nullable` with path components remaining raised Python
+  `RecursionError` rather than the required fail-closed
+  `LedgerSchemaError("INVALID_REGISTRY", ...)`.
+- No accepted registry artifact contains such a cycle, so the defect did not
+  change R0 or R1 event acceptance. It did violate the validator's fail-closed
+  behavior for malformed caller input.
+
+Correction:
+
+- Threaded an immutable visited-name set through nullable, tagged-union, and
+  closed-object path recursion in `_schemas_at_path`.
+- Added an exact regression test that constructs the malformed nullable cycle
+  through `validate_registry()` and requires `INVALID_REGISTRY`.
+
+Verification:
+
+- The regression failed before the fix with `RecursionError` and passed after
+  the fix.
+- Focused and full repository tests, Ruff, compilation, deterministic repo-map,
+  Skill, package-parity, privacy/Unicode, cleanup, and diff gates passed again
+  before the review-fix commit was pushed.
+- No dependency was installed and no R0/R1 artifact, private data, research
+  result, append/storage runtime, brokerage, order, paper, or live behavior
+  changed.
+
+Prevention:
+
+- Recursive schema walkers must propagate cycle state through every schema
+  wrapper and branch; later whole-registry cycle checks are not a substitute
+  for safe earlier meta-validation.
+
 ## 2026-07-28 - R1B Full Gate Caught A Stale Contract-Phrase Oracle
 
 Original failure and consequence:

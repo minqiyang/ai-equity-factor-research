@@ -722,6 +722,32 @@ def test_array_contains_path_meta_contract_requires_array_and_compatible_scalar(
     )
 
 
+def test_constraint_path_nullable_named_cycle_fails_as_invalid_registry() -> None:
+    registry = _r1_registry()
+    registry["type_definitions"]["nullable_cycle"] = {
+        "kind": "nullable",
+        "schema": {"kind": "named", "name": "nullable_cycle"},
+    }
+    campaign_schema = registry["event_schemas"][1]
+    campaign_schema["event_schema"]["properties"]["subject_id"] = {
+        "kind": "closed_object",
+        "properties": {
+            "nested": {"kind": "named", "name": "nullable_cycle"},
+        },
+        "required": ["nested"],
+    }
+    campaign_schema["local_constraints"][0]["right_path"] = [
+        "subject_id",
+        "nested",
+        "leaf",
+    ]
+
+    _assert_code(
+        "INVALID_REGISTRY",
+        lambda: validate_registry(registry),
+    )
+
+
 def test_array_constraint_paths_must_exist_in_every_tagged_union_branch() -> None:
     schema = {
         "kind": "tagged_union",

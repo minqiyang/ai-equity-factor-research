@@ -23,7 +23,10 @@
   attacks, missing/unknown/null/type failures, duplicate raw properties,
   arbitrary unpublished promotion, union branches, public-ID boundaries, and
   path/schema compatibility.
-- Final validation passed 166 focused registry/structure tests and 1001 full
+- Final exact-head review found one P2 malformed-registry recursion path. The
+  fix propagates visited named-type state through every constraint-path schema
+  wrapper/branch and adds an exact nullable-cycle regression oracle.
+- Post-fix validation passed 167 focused registry/structure tests and 1002 full
   tests with two platform-conditional skips, plus Ruff, compilation,
   deterministic repo-map, Skill audit, source/sdist/wheel R0/R1 package
   parity, privacy/Unicode/control-character, cleanup, and diff gates.
