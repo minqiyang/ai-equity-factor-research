@@ -9,6 +9,18 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the bounded Stage 4B-R1I attempt-start release. The owner selected
+  bundle `R1I-A`, freezing the exact earlier attempt-allocation reference, a
+  complete digest-pinned external readiness record, separate start-actor
+  authority, reviewer/executor/allocation/plan role independence, and one
+  ledger-owned `cap_<32 lowercase hex>` one-shot execution capability
+  identity with fail-closed lost-ack, currentness, single-start, and atomic
+  consumption rules. A separate immutable registry and digest at version
+  `0.9.0` preserve R0 through R7 byte and behavior authority while promoting
+  only `ATTEMPT_STARTED`; the other 26 events remain fail closed. This adds no
+  external resolver, authority/capability service, append/storage backend,
+  executor, artifact, protected-access, private-data, research, brokerage,
+  order, paper, or live behavior.
 - Added the bounded Stage 4B-R1H attempt-allocation release. The owner selected
   bundle `R1H-A`, freezing `att_<32 lowercase hex>`, singleton campaign scope,
   exact earlier trial-allocation and initial inventory-seal evidence, a

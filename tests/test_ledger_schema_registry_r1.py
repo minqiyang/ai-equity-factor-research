@@ -261,7 +261,8 @@ def test_r0_compatibility_entry_point_does_not_silently_upgrade() -> None:
         )
     assert load_registry_release("0.7.0")["registry_version"] == "0.7.0"
     assert load_registry_release("0.8.0")["registry_version"] == "0.8.0"
-    _assert_code("INVALID_REGISTRY", lambda: load_registry_release("0.9.0"))
+    assert load_registry_release("0.9.0")["registry_version"] == "0.9.0"
+    _assert_code("INVALID_REGISTRY", lambda: load_registry_release("0.10.0"))
 
 
 def test_r1_rejects_every_nonpromoted_and_unknown_event_before_action() -> None:

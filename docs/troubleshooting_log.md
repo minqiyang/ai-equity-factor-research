@@ -1,5 +1,83 @@
 # Troubleshooting Log
 
+## 2026-07-29 - R1I Linked-Worktree Branch And Interpreter Recovery
+
+Original failures and consequences:
+
+- The first R1I branch rename could not update linked-worktree Git logs under
+  the main repository's `.git/worktrees` metadata. It left the original branch
+  name intact.
+- A bare `python` digest-check command failed because this shell has no
+  `python` executable on `PATH`. It made no repository change.
+- The first hidden-Unicode scan inspected whole modified files and therefore
+  flagged two pre-existing `é` negative-test literals as if they were new R1I
+  additions. It made no repository change.
+- The first exact 18-file `git add` could not create the linked-worktree
+  `index.lock` under the main repository's Git metadata. It staged no file.
+- The first post-creation `gh pr view 176` query requested broad nested PR
+  metadata in one response. Its tool output exceeded the available context and
+  was truncated, so the partial response was not accepted as evidence of PR
+  identity, scope, head, or check state.
+- The first split-query retry assembled `gh` argument arrays into unquoted
+  shell strings. Spaces and jq punctuation were reinterpreted by the shell;
+  three read-only metadata queries failed before reaching GitHub. The separately
+  quoted CI query succeeded, but its result applied to the superseded head.
+- After rebasing, three focused-test invocations used a nested execution path
+  with an effective roughly 30-second lifetime. Each was terminated before its
+  terminal pytest summary (at 87%, 87%, and 96% respectively), so none was
+  accepted as validation evidence.
+
+Correction:
+
+- Retried only the exact linked-worktree branch rename with permission to
+  update Git metadata; it succeeded as `codex/ledger-attempt-start-schema`.
+- Re-ran the digest check with the existing project interpreter at
+  `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv/bin/python`.
+- Re-scoped the Unicode/control scan to added lines relative to `HEAD`, while
+  scanning every line of new files.
+- Retried only the exact 18-file stage with permission to update the linked
+  index.
+- Replaced the broad PR query with separate bounded metadata, file-scope,
+  commit, and check-state queries.
+- Re-issued each bounded query with explicit shell quoting instead of joining
+  argument arrays.
+- Re-ran the same focused suite in a reusable direct execution session and
+  polled it to a terminal exit.
+
+Verification:
+
+- At the time of the failed local commands, the isolated worktree remained
+  based on exact protected merge `b42b911`; no protected history or GitHub
+  state was changed by either failure. It was later rebased normally onto
+  protected `26bc9a8` after an independent README-only mainline change.
+- Initial R1I-focused validation passed 225 tests.
+- The corrected scan covered all 18 changed/new files and found zero new
+  non-ASCII, bidi, zero-width, non-breaking-space, or control characters.
+- The exact retry staged only the intended R1I files; no unrelated path was
+  added.
+- No PR conclusion or external mutation was based on the truncated GitHub
+  response.
+- No PR conclusion was based on the failed split queries or the superseded-head
+  CI result.
+- The terminal direct-session retry passed all 2229 focused tests; no partial
+  pytest output was reported as a pass.
+- No failed command installed a dependency, accessed private data, or changed
+  a persistent environment.
+
+Prevention:
+
+- Use the exact project interpreter for repository checks in this shell.
+- Distinguish pre-existing negative Unicode fixtures from newly added bytes by
+  comparing added lines to the exact base.
+- Expect linked-worktree branch operations to require narrowly scoped Git
+  metadata permission.
+- Keep post-creation GitHub verification split into bounded queries and treat
+  truncated output as unknown state.
+- Preserve each jq program as one quoted command argument; do not reconstruct
+  shell commands by joining unescaped argument arrays.
+- Use a reusable direct execution session for validation expected to exceed
+  30 seconds, and require the terminal exit code and pytest summary.
+
 ## 2026-07-29 - R1H Bounded-Output And Interpreter Recovery
 
 Original failures and consequences:

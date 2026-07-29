@@ -1,5 +1,68 @@
 # Engineering Log
 
+## 2026-07-29 - Stage 4B-R1I Attempt Start Schema
+
+- Started from protected `main` merge `b42b911` (PR #174) in the isolated
+  `codex/ledger-attempt-start-schema` worktree. Exact merge-head CI run
+  `30489691309` succeeded. The clean startup baseline passed 2838 tests with
+  two platform-conditional skips, Ruff, compilation, exact-base status, and
+  immutable R0-R7 hash inspection.
+- A read-only dependency/risk graph over all 27 incomplete events selected
+  `ATTEMPT_STARTED` as the unique smallest strict compute-path successor.
+  Campaign amendment remains optional, protected-access intent remains an
+  independent higher-risk capability root, and terminal/artifact/closure
+  events remain downstream. The owner selected bundle `R1I-A`.
+- Added a design-first R1I contract, an independent positive start fixture,
+  and a separate immutable registry `0.9.0` artifact/digest under unchanged
+  schema-language `0.2.0`. R1I promotes only `ATTEMPT_STARTED`, preserves
+  R0-R7, and leaves the other 26 events
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- The event binds exact attempt/trial/campaign/allocation identity, a complete
+  external readiness record, separate current start authority, and one
+  ledger-owned `cap_<32 lowercase hex>` one-shot execution-capability identity
+  with complete private external record. Stateful rules require role
+  independence, durable append plus atomic capability mint, exact lost-ack
+  replay, exactly one start, and one successful atomic consumption before any
+  executor begins.
+- Added literal release, payload, namespace, scope, source, readiness,
+  authority, capability, duplicate/unknown/private-field, incomplete-event,
+  and unpublished-promotion oracles. Initial R1I-focused validation passed 225
+  tests.
+- This release adds no resolver, authority/currentness/capability service,
+  append/storage backend, executor, terminal/artifact/access event, private
+  data, research attempt, brokerage, order, paper, or live behavior.
+- Final focused R0/R1/R1C/R1D/R1E/R1F/R1G/R1H/R1I registry and structure
+  validation passed 2229 tests. The full suite passed 3064 tests with two
+  platform-conditional wide-`longdouble` skips. Ruff, compileall for
+  `src`/`tests`/`research`/`lean`, deterministic repo-map regeneration, and
+  the Skill audit passed.
+- No-isolation source/sdist/wheel validation reproduced byte-identical R0
+  through R8 package resources and identical R1I digest,
+  supported/incomplete partitions, default-R0 selection, and conformance
+  outcomes. No dependency was installed or added. The check reused
+  `build==1.5.0`, `setuptools==83.0.0`, `wheel==0.47.0`, and
+  `packaging==26.2` from the existing project environment at
+  `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv`;
+  its purpose was package-resource parity, and it changed no dependency file
+  or persistent environment. Build metadata and artifacts remained in an
+  external temporary copy that was removed after validation.
+- JSON parsing, exact immutable prior-release hashes, exact bounded v8-to-v9
+  succession, privacy/credential, added-line hidden-Unicode/control-character,
+  cleanup, and diff gates passed. Generated compile caches were removed. A
+  self-adversarial read-only review corrected one ambiguous sentence so the
+  contract now states the required allocation-then-validation-then-start
+  ordering explicitly; it found no remaining actionable P1/P2 issue.
+- Before final exact-head gates, protected `main` advanced to `26bc9a8` through
+  one independent README-only change. The R1I branch rebased cleanly onto that
+  exact protected base; no R1I file overlapped the intervening change.
+- Post-rebase validation re-passed 2229 focused tests and the full 3064-test
+  suite with the same two platform skips, plus Ruff, compileall, deterministic
+  repo-map, Skill audit, added-line Unicode/control, cleanup, and diff checks.
+  The rebased `src` tree and `pyproject.toml` object IDs remained exactly
+  `e3308a5` and `044f02b`, identical to the already package-validated R1I head,
+  so the no-isolation source/sdist/wheel evidence was not invalidated or
+  needlessly rebuilt.
+
 ## 2026-07-29 - Stage 4B-R1H Attempt Allocation Schema
 
 - Started from protected `main` merge `520ed65` (PR #173) in the isolated

@@ -15,6 +15,82 @@ investment performance.
 
 ---
 
+## 2026-07-29 - Select R1I-A Attempt Start Authority
+
+Context:
+
+- Stage 4B-R1H is accepted on protected `main` through PR #174 at `b42b911`;
+  exact merge-head CI run `30489691309` passed.
+- A read-only dependency/risk graph over the remaining 27 incomplete events
+  selected `ATTEMPT_STARTED` as the unique smallest strict compute-path
+  successor. The campaign-amendment pair remains optional, protected-access
+  intent is an independent higher-risk capability root, and terminal attempt,
+  trial, artifact, and closure events remain downstream.
+- Existing authorities froze durable start immediately before execution but
+  did not freeze exact readiness, permission, one-shot capability,
+  role-independence, lost-ack, or double-execution semantics. The owner
+  selected bundle `R1I-A`.
+
+Decision:
+
+- Promote only `ATTEMPT_STARTED`; keep every terminal, artifact, access,
+  exposure, closure, review, promotion, adjudication, supersession, and
+  campaign-amendment event incomplete.
+- Use the existing `att_<32 lowercase hex>` attempt identity as subject and
+  one campaign ID as sorted-unique scope. Bind the exact earlier
+  `ATTEMPT_ALLOCATED` event ID/hash and semantic-trial ID.
+- Pin one complete repository-external canonical
+  `attempt_start_readiness_record_v1` through an immutable digest-pinned
+  authority catalog. Require literal `READY`, exact current
+  plan/executor/environment/input evidence, and distinct effective principals
+  for readiness issuer/reviewer, executor, allocation actor, plan issuer, and
+  plan reviewer.
+- Pin a separate current `attempt_start_authority_v1` actor-authority record.
+- Mint one ledger-owned `cap_<32 lowercase hex>` identity and complete private
+  `attempt_execution_capability_record_v1` atomically with the start append.
+  Keep redemption secret/material repository-external. Require one atomic
+  consumption before execution, exactly one start per attempt, and fail-closed
+  expired/revoked/wrong-executor/concurrent/double consumption.
+- Exact lost-ack replay of the same operation and request returns the same
+  event and capability identity. Changed requests conflict; aliases, retries,
+  reruns, new campaigns, record generations, and restarts never reset start or
+  consumption history.
+- Publish immutable registry `0.9.0` under unchanged schema-language `0.2.0`,
+  preserve R0 through R7 bytes/behavior/default selection, and leave the
+  other 26 events `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+
+Rationale:
+
+- Attempt start is the smallest event that advances the accepted compute path
+  without inventing terminal evidence, artifact identity, protected-access
+  permission, or private result fields.
+- A complete readiness record makes exact validation and current executor
+  inputs retrievable without leaking them into the public event.
+- A ledger-owned one-shot capability plus atomic consumption separates durable
+  authorization from code execution and closes lost-ack/double-start races at
+  the future runtime boundary.
+- Separate readiness review and start authority avoid self-certified
+  execution permission.
+
+Consequences:
+
+- R1I may support exactly eleven events while the other 26 remain incomplete.
+- Local schema acceptance remains syntax-only and cannot prove source order,
+  record retrieval, readiness, independence, authority, currentness,
+  idempotency, atomic mint, single consumption, durable append, execution,
+  access, artifact production, or research behavior.
+- Private-data access, research execution, brokerage, order, paper, and live
+  trading impacts remain zero.
+
+Follow-up:
+
+- Add an independent positive fixture plus literal namespace, source,
+  readiness, authority, capability, privacy, currentness, single-start,
+  lost-ack, prior-release, package-parity, incomplete-event, and unpublished-
+  promotion oracles.
+- After protected R1I completion, analyze the remaining 26-event graph before
+  choosing the smallest strict successor.
+
 ## 2026-07-29 - Select R1H-A Attempt Allocation Authority
 
 Context:
