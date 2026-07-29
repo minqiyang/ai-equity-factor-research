@@ -90,7 +90,10 @@ IMPORTANT_FILES = [
     ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),
     ("docs/codex_long_running_controller.md", "Continuation and stop-condition controller."),
-    (".agents/skills/staged-quant-workflow/SKILL.md", "Reusable staged workflow Skill."),
+    (
+        ".agents/skills/staged-quant-workflow/SKILL.md",
+        "Thin invocation router for the canonical staged workflow documents.",
+    ),
     (
         "PROJECT_SPEC.md",
         "Research scope, evidence layers, timing rules, assumptions, and non-goals.",
