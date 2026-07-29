@@ -15,6 +15,76 @@ investment performance.
 
 ---
 
+## 2026-07-29 - Select R1G-A Initial Campaign Inventory Seal Authority
+
+Context:
+
+- Stage 4B-R1F is accepted on protected `main` through PR #172 at `d9ac67e`;
+  exact merge-head CI run `30482706983` passed.
+- A read-only dependency/risk graph over the remaining 29 incomplete events
+  found that `CAMPAIGN_INVENTORY_SEALED` is the unique smallest prerequisite
+  after `TRIAL_ALLOCATED` and before either `ATTEMPT_ALLOCATED` or
+  `ACCESS_INTENT`.
+- Stage 4a deliberately did not freeze the inventory wire representation,
+  exact authority/currentness model, role independence, or finite
+  campaign-trial bound. The owner selected bundle `R1G-A`.
+
+Decision:
+
+- Promote only `CAMPAIGN_INVENTORY_SEALED`; keep amendment, attempt, access,
+  disposition, artifact, closure, review, promotion, adjudication, and
+  supersession events incomplete.
+- Use the existing campaign as subject with singleton campaign scope and bind
+  its exact earlier allocation event.
+- Pin one complete repository-external canonical
+  `campaign_inventory_record_v1` through an immutable digest-pinned authority
+  catalog. The record binds the ordered all-and-only earlier trial allocation
+  and definition evidence, experiment/family/sample relations, budgets,
+  variation axes, access budget, and frozen policies.
+- Pin a separate acceptance record whose reviewer differs from the inventory
+  issuer, seal actor, accepted trial-definition issuers, and accepted private
+  input producers. Pin the seal actor's separate current authority record.
+- Bound one initial inventory to 1 through 4096 semantic trials. A larger
+  campaign requires a versioned owner decision; truncation, aliasing, or
+  multiple synthetic initial seals are forbidden.
+- Bind the exact nested nonrecursive
+  `campaign_inventory_preseal_head_v1`; locally enforce subject/scope,
+  ledger, and previous-hash equality while keeping predecessor currentness,
+  sequence-plus-one, uniqueness, retrieval, ordering, and atomicity as
+  mandatory stateful fail-closed checks.
+- Publish immutable registry `0.7.0` under unchanged schema-language `0.2.0`,
+  preserve R0 through R5 bytes/behavior/default selection, and leave the other
+  28 events `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+
+Rationale:
+
+- Sealing the initial all-trial inventory is the narrowest event that advances
+  the accepted partial order without prematurely choosing attempt or protected
+  access identity/capability semantics.
+- An external complete record keeps the event bounded while requiring
+  retrievable all-and-only evidence rather than a hash-only assertion.
+- Separate acceptance and seal authority prevent preregistration review,
+  record issuance, and append permission from collapsing into one
+  self-certified claim.
+- The 4096 bound is finite and reviewable while remaining a schema ceiling,
+  not a research budget recommendation.
+
+Consequences:
+
+- R1G may support exactly nine events while the other 28 remain incomplete.
+- Local schema acceptance remains syntax-only and cannot be called a sealed
+  campaign or append/runtime proof.
+- Trial execution, attempt, protected-access, private-data, dependency, and
+  trading impacts remain zero.
+
+Follow-up:
+
+- Add independent standard and maximum positive fixtures plus literal
+  payload, scope, authority, count, pre-seal, duplicate, incomplete-event,
+  prior-release, package-parity, and unpublished-promotion oracles.
+- After protected R1G completion, analyze the remaining 28-event graph before
+  choosing between the attempt-allocation and protected-access paths.
+
 ## 2026-07-29 - Select R1F-A Semantic Trial Allocation Authority
 
 Context:
