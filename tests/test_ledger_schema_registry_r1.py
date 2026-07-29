@@ -261,7 +261,7 @@ def test_r0_compatibility_entry_point_does_not_silently_upgrade() -> None:
         )
     _assert_code(
         "INVALID_REGISTRY",
-        lambda: load_registry_release("0.3.0"),
+        lambda: load_registry_release("0.4.0"),
     )
 
 

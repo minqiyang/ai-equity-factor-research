@@ -1,5 +1,89 @@
 # Troubleshooting Log
 
+## 2026-07-28 - R1C Orientation And Documentation Commands Needed Narrow Retries
+
+Original failures and consequences:
+
+- The first R1C worktree creation attempt could not resolve merge
+  `a6f7d43` because that protected merge object was not yet present locally.
+  No worktree or branch was created by the failed attempt.
+- One combined read-only orientation command exceeded the available response
+  context and was truncated. No conclusion relied on the partial output.
+- The first draft-registry validation used the shared project virtual
+  environment without exposing this isolated worktree's `src` tree and failed
+  with `ModuleNotFoundError: No module named 'ledger'`.
+- An `apply_patch` result was itself truncated, leaving its success status
+  uncertain. A later large handoff patch also failed atomically because one
+  context paragraph did not match. Treating either as successful without
+  checking could have duplicated or partially omitted authority text.
+- While the first R1C pull request was being created, independent PR #168
+  advanced `main` from `a6f7d43` to `4ac5adb`. The new PR snapshot therefore
+  reported `mergeable=false` against a newer base even though the R1C commit
+  itself had passed local gates.
+- The first same-repository PR-body update passed
+  `maintainer_can_modify=true`. GitHub rejected it with HTTP 422 because that
+  option applies only to cross-repository fork collaboration. The R1C branch,
+  PR head, title, and existing body were unchanged by the failed request.
+
+Correction:
+
+- Fetched `origin/main`, then created the R1C worktree from the same exact merge
+  SHA and reran the clean startup baseline.
+- Repeated orientation with bounded, targeted `sed` and `rg` reads.
+- Repeated registry validation and every worktree-focused Python test with
+  `PYTHONPATH=src`; the draft registry validated and produced canonical digest
+  `d0e3c08ed5699c8fd6078afb6d7c0a513bbc20b306bad630b175abd09e695f85`.
+- Inspected the exact target after the truncated patch result, confirmed the
+  successor note had landed once, and split the stale handoff update into
+  small context-specific patches after the large patch failed atomically.
+- Fetched the new protected main, confirmed PR #168's six-file scope and the
+  exact three-file R1C overlap, rebased R1C normally without conflict,
+  regenerated the repo map, and reran focused/full/lint/compile/Skill/package
+  gates before replacing only the R1C remote branch head.
+- Repeated the PR metadata update without `maintainer_can_modify`; the body
+  update then succeeded against the unchanged exact R1C head.
+
+Verification:
+
+- The worktree remained on exact base `a6f7d43` until intentional R1C edits.
+- The first combined focused R0/R1/R1C/structure run reported 331 passing
+  tests and one new structure-oracle failure. The oracle had encoded the array
+  keyword from memory as `sorted_unique: true`; the frozen DSL actually uses
+  `collection_semantics: "sorted_unique"`. The implementation and existing
+  behavior tests were correct. The literal structure oracle was corrected to
+  the exact published DSL node before rerunning the same focused gate.
+- Self-adversarial review found that the first R1C contract draft had
+  accidentally changed the selected currentness policy in two directions:
+  `strictly monotonic` became mandatory `+1`, while `exactly one current
+  accepted generation` became `at most one`. The draft had not been committed
+  or published. The contract and every canonical reference/oracle were restored
+  to the exact owner-selected policy before final validation.
+- The same review found that the draft had copied the selected 32-campaign
+  direct-scope maximum onto the separate `depends_on` graph and mentioned an
+  unselected revocation mechanism. Both extrapolations were removed: the
+  dependency cardinality belongs to the digest-pinned external authority
+  schema, and R1C currentness uses explicit supersession only.
+- The earlier focused R0/R1/R1C registry and structure run passed 302 tests.
+- On the rebased PR #168 base, the final focused gate passed 336 tests and the
+  full suite passed 1171 tests with two platform-conditional skips.
+- No failed command installed a dependency, changed GitHub state, accessed
+  private data, or altered protected history.
+
+Prevention:
+
+- Fetch the exact protected merge object before creating a new isolated stage
+  worktree.
+- Keep orientation output bounded and never use truncated output as complete
+  review evidence.
+- In linked worktrees that share an editable project environment, set
+  `PYTHONPATH=src` so imports resolve to the active worktree.
+- When tool output obscures patch status or a large patch misses context,
+  inspect the exact target and retry with small, idempotent hunks.
+- Copy exact schema-language nodes from the immutable artifact into literal
+  structure oracles rather than reconstructing their key names from memory.
+- Do not send `maintainer_can_modify` when updating metadata on a same-repo PR;
+  reserve it for a cross-repository fork PR.
+
 ## 2026-07-29 - Final R1B Review Found Nullable Named-Type Cycle Recursion
 
 Original failure and consequence:

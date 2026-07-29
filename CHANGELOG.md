@@ -9,6 +9,17 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the bounded Stage 4B-R1C trial-family registration release. The owner
+  selected bundle `R1C-A`, freezing `fam_<32 lowercase hex>`, an immutable
+  external family-definition catalog/record tuple, a separate digest-pinned
+  acceptance record with reviewer independence, stable family identity,
+  monotonic current generations, explicit `supersedes`/`depends_on` relations,
+  anti-reset rules, and a common direct-scope maximum of 32. A separate
+  immutable registry and digest at version `0.3.0` preserve R0/R1 byte and
+  behavior authority while promoting only `TRIAL_FAMILY_REGISTERED`; the other
+  33 events remain fail closed. This adds no retrieval, authority runtime,
+  append/storage backend, dependency, research trial, protected access,
+  private data, or trading behavior.
 - Added the bounded Stage 4B-R1B schema release. The owner ratified
   `exp_<32 lowercase hex>` as the exact experiment namespace; a separate,
   immutable registry and digest at version `0.2.0` preserve R0 byte-for-byte

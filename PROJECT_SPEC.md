@@ -50,6 +50,18 @@ keeps the other 34 events `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`, and preserves
 the R0 artifacts, default entry point, and behavior. Shape validation does not
 implement allocation, append, parent existence, uniqueness, authorization,
 campaign execution, or research interpretation.
+`docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`
+defines the owner-selected Stage 4B-R1C-A trial-family registration authority.
+It freezes `fam_<32 lowercase hex>`, a common direct-scope maximum of 32,
+retrieval of complete repository-external canonical family definitions through
+an exact digest-pinned authority tuple, a separate immutable acceptance record
+with reviewer independence, stable global family identity, monotonic current
+acceptance generations, explicit `supersedes`/`depends_on` relations, and
+anti-reset rules. A separate immutable registry `0.3.0` promotes only
+`TRIAL_FAMILY_REGISTERED`, keeps the other 33 events incomplete, and preserves
+R0/R1 bytes and behavior. Local schema acceptance proves only closed event
+shape; retrieval, authority, acceptance currentness, role independence,
+history, and append behavior remain fail-closed stateful requirements.
 
 ## Current Phase and Boundary
 

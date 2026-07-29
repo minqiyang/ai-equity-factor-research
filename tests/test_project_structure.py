@@ -45,6 +45,7 @@ def test_required_governance_files_exist() -> None:
         "docs/experiment_trial_ledger_contract.md",
         "docs/experiment_trial_ledger_schema_registry_contract.md",
         "docs/experiment_trial_ledger_allocation_registration_schema_contract.md",
+        "docs/experiment_trial_ledger_trial_family_registration_schema_contract.md",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
@@ -74,8 +75,10 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "2b. Signal/execution timing implementation",
         "3. Point-in-time data methodology",
         "4b-R1A. Allocation/registration architecture decision",
+        "4b-R1C. Trial-family registration schema",
         "`docs/point_in_time_data_methodology_contract.md`",
         "`docs/experiment_trial_ledger_allocation_registration_schema_contract.md`",
+        "`docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`",
         "Target construction currently lives in `src/backtest/portfolio.py`",
         "`historical_evaluation`, not a pristine holdout",
         "request `@codex review` once on the",
@@ -92,18 +95,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Stage 2 Timing Decision",
         "## Stage 3 Data Methodology Decision",
         "## Accepted Stage 4a Experiment and Trial Ledger Decision",
-        "## Accepted R0/R1A And Active R1B Allocation Release",
+        "## Accepted R0/R1A/R1B And Active R1C Registration Release",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Complete Stage 4B-R1B in the current isolated worktree",
+        "Complete Stage 4B-R1C in the current isolated worktree",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "913 passing tests" in roadmap
-    assert "Starting validation: 913 tests passed" in handoff
+    assert "1003 passing tests" in roadmap
+    assert "Current base validation reported 1003 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -212,7 +215,7 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
         "| 2b. Signal/execution timing implementation | "
         "Complete on protected main via PR #162"
     ) in roadmap
-    assert "Complete Stage 4B-R1B in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1C in the current isolated worktree" in handoff
 
 
 def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
@@ -361,7 +364,11 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 4b-R1B. Campaign/experiment allocation schemas | "
-        "Active in the current tree; owner selected namespace option E1"
+        "Complete on protected main via PR #167"
+    ) in roadmap
+    assert (
+        "| 4b-R1C. Trial-family registration schema | "
+        "Active in the current tree; owner selected bundle R1C-A"
     ) in roadmap
 
 
@@ -1045,7 +1052,7 @@ def test_allocation_registration_r1b_freezes_e1_and_versioned_release() -> None:
     ) in roadmap
     assert (
         "| 4b-R1B. Campaign/experiment allocation schemas | "
-        "Active in the current tree; owner selected namespace option E1"
+        "Complete on protected main via PR #167"
     ) in roadmap
     assert "preserve R0 registry JSON and its sidecar byte-for-byte" in handoff
     assert "owner selected option `E1`" in handoff
@@ -1063,8 +1070,210 @@ def test_allocation_registration_r1b_freezes_e1_and_versioned_release() -> None:
         specification.split()
     )
     assert (
-        "Active Stage 4B-R1B campaign/experiment allocation release"
+        "Accepted Stage 4B-R1A/R1B allocation architecture and "
+        "campaign/experiment release"
         in repo_map
+    )
+
+
+def test_trial_family_registration_r1c_freezes_owner_bundle_and_release() -> None:
+    contract_path = (
+        PROJECT_ROOT
+        / "docs/experiment_trial_ledger_trial_family_registration_schema_contract.md"
+    )
+    contract = contract_path.read_text(encoding="utf-8")
+    normalized_contract = " ".join(contract.split())
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
+        encoding="utf-8"
+    )
+    repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
+    registry_path = (
+        PROJECT_ROOT
+        / "src/ledger/schemas/"
+        "experiment_trial_ledger_payload_schema_registry_v3.json"
+    )
+    sidecar_path = registry_path.with_suffix(".sha256")
+    fixture_path = (
+        PROJECT_ROOT
+        / "tests/fixtures/"
+        "experiment_trial_ledger_trial_family_registration_v1_golden.json"
+    )
+    registry = json.loads(registry_path.read_text(encoding="ascii"))
+    fixture = json.loads(fixture_path.read_text(encoding="ascii"))
+
+    for phrase in [
+        "Contract ID: `experiment_trial_ledger_trial_family_registration_schema_r1c`",
+        "Contract version: `0.3.0`",
+        "Owner decision: option `R1C-A`",
+        "Exact trial-family namespace: `fam_<32 lowercase hex>`",
+        "registry schema ID `experiment_trial_ledger_payload_schema_registry_v3`",
+        "registry version `0.3.0`",
+        "unchanged schema-language version `0.2.0`",
+        "The other 33 events remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`",
+        "`subject_type` exactly `trial_family`",
+        "empty means a ledger-global registration",
+        "one through 32 entries means a direct registration",
+        "complete repository-external canonical records",
+        "The accepted resolver key is the exact tuple",
+        "A retrieval miss, ambiguous record, digest mismatch, schema mismatch, noncanonical record, or hash-only stand-in fails closed",
+        "The registration pins a separate complete acceptance record",
+        "the reviewer must be distinct from both the definition issuer and the `TRIAL_FAMILY_REGISTERED.actor_id`",
+        "The provider-neutral currentness key is exactly",
+        "Acceptance generations are positive safe integers and strictly increase",
+        "exactly one accepted generation is current",
+        "Aliases, clones, reruns, new campaign IDs, result exposure, and post-result reclassification must reuse the same `trial_family_id`",
+        "Definition revisions keep the same `trial_family_id` and advance through `supersedes`",
+        "Genuinely distinct but dependent families use explicit `depends_on`",
+        "No record may self-certify independence",
+        "a shape-valid event whose resolver record is missing",
+        "Trial count, execution-attempt count, and protected-sample access remain zero",
+        "four reminders at 30-minute intervals",
+    ]:
+        assert phrase in normalized_contract
+
+    expected_supported = [
+        "LEDGER_EPOCH_CREATED",
+        "CAMPAIGN_ALLOCATED",
+        "EXPERIMENT_ALLOCATED",
+        "TRIAL_FAMILY_REGISTERED",
+    ]
+    expected_payload_fields = [
+        "campaign_scope_ids",
+        "family_acceptance_decision_id",
+        "family_acceptance_generation",
+        "family_acceptance_record_sha256",
+        "family_acceptance_schema_version",
+        "family_authority_id",
+        "family_authority_registry_sha256",
+        "family_authority_version",
+        "family_definition_canonicalization_id",
+        "family_definition_record_id",
+        "family_definition_record_sha256",
+        "family_definition_record_version",
+        "family_definition_schema_version",
+    ]
+    assert registry["registry_schema_id"] == (
+        "experiment_trial_ledger_payload_schema_registry_v3"
+    )
+    assert registry["registry_version"] == "0.3.0"
+    assert registry["registry_status"] == "SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY"
+    assert registry["schema_language_id"] == "ledger_closed_schema_dsl_v1"
+    assert registry["schema_language_version"] == "0.2.0"
+    assert [item["event_type"] for item in registry["event_schemas"]] == (
+        expected_supported
+    )
+    assert len(registry["incomplete_event_types"]) == 33
+    assert set(registry["incomplete_event_types"]) == (
+        set(registry["closed_event_vocabulary"]) - set(expected_supported)
+    )
+    assert registry["type_definitions"]["trial_family_id"] == {
+        "kind": "typed_id",
+        "prefix": "fam",
+    }
+    family_schema = next(
+        item
+        for item in registry["event_schemas"]
+        if item["event_type"] == "TRIAL_FAMILY_REGISTERED"
+    )
+    assert family_schema["schema_status"] == "FROZEN_SUPPORTED"
+    family_schema = family_schema["event_schema"]
+    assert family_schema["properties"]["subject_type"] == {
+        "kind": "literal",
+        "value": "trial_family",
+    }
+    assert family_schema["properties"]["subject_id"] == {
+        "kind": "named",
+        "name": "trial_family_id",
+    }
+    payload_schema = family_schema["properties"]["payload"]
+    assert payload_schema["required"] == expected_payload_fields
+    assert list(payload_schema["properties"]) == expected_payload_fields
+    assert payload_schema["properties"]["campaign_scope_ids"] == {
+        "kind": "array",
+        "items": {"kind": "named", "name": "campaign_id"},
+        "min_items": 0,
+        "max_items": 32,
+        "collection_semantics": "sorted_unique",
+    }
+    assert sidecar_path.read_text(encoding="ascii").strip() == (
+        "d0e3c08ed5699c8fd6078afb6d7c0a513bbc20b306bad630b175abd09e695f85"
+    )
+    assert hashlib.sha256(registry_path.read_bytes()).hexdigest() == (
+        "1d36c3cc5d608209cb431a9a768a1f95e24cb73f64745199670b175ffa6758dd"
+    )
+    assert hashlib.sha256(sidecar_path.read_bytes()).hexdigest() == (
+        "d9491f211a4e7d84777c82cdb6af716f4e4422ed57624a0cbff1f713bc8f8fce"
+    )
+
+    assert fixture["fixture_id"] == (
+        "experiment_trial_ledger_trial_family_registration_v1_golden"
+    )
+    assert set(fixture) == {
+        "fixture_id",
+        "global_trial_family_registered",
+        "direct_trial_family_registered",
+    }
+    assert fixture["global_trial_family_registered"]["payload"][
+        "campaign_scope_ids"
+    ] == []
+    assert len(
+        fixture["direct_trial_family_registered"]["payload"][
+            "campaign_scope_ids"
+        ]
+    ) == 2
+    for key in (
+        "global_trial_family_registered",
+        "direct_trial_family_registered",
+    ):
+        event = fixture[key]
+        assert event["event_type"] == "TRIAL_FAMILY_REGISTERED"
+        assert event["subject_type"] == "trial_family"
+        assert re.fullmatch(r"fam_[0-9a-f]{32}", event["subject_id"])
+        assert list(event["payload"]) == expected_payload_fields
+
+    r0_bytes = (
+        PROJECT_ROOT
+        / "src/ledger/schemas/"
+        "experiment_trial_ledger_payload_schema_registry_v1.json"
+    ).read_bytes()
+    r1_bytes = (
+        PROJECT_ROOT
+        / "src/ledger/schemas/"
+        "experiment_trial_ledger_payload_schema_registry_v2.json"
+    ).read_bytes()
+    assert hashlib.sha256(r0_bytes).hexdigest() == (
+        "4b78c36647621deaec15114558d827c17dae2bfa29918f4cbf2ceb2aa6b6e6d9"
+    )
+    assert hashlib.sha256(r1_bytes).hexdigest() == (
+        "d31b7a812a79618f097a50db0177e63f5246522b3b63590968172e31b71cd499"
+    )
+
+    for canonical_doc in [roadmap, handoff, specification, repo_map]:
+        assert (
+            "docs/experiment_trial_ledger_trial_family_registration_schema_contract.md"
+            in canonical_doc
+        )
+    assert (
+        "| 4b-R1B. Campaign/experiment allocation schemas | "
+        "Complete on protected main via PR #167"
+    ) in roadmap
+    assert (
+        "| 4b-R1C. Trial-family registration schema | "
+        "Active in the current tree; owner selected bundle R1C-A"
+    ) in roadmap
+    normalized_handoff = " ".join(handoff.split())
+    assert "the owner selected bundle `R1C-A`" in normalized_handoff
+    assert "leaves the other 33 events" in normalized_handoff
+    assert "Complete Stage 4B-R1C in the current isolated worktree" in handoff
+    assert "owner-selected Stage 4B-R1C-A" in " ".join(specification.split())
+    assert (
+        "Active Stage 4B-R1C-A trial-family registration authority" in repo_map
     )
 
 
