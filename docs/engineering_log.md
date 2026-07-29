@@ -1,5 +1,52 @@
 # Engineering Log
 
+## 2026-07-29 - Stage 4B-R1F Semantic Trial Allocation Schema
+
+- Started from protected `main` merge `814bf02` (PR #171) in the isolated
+  `codex/ledger-trial-allocation-schema` worktree. Exact merge-head CI run
+  `30478870434` succeeded. The clean startup baseline passed 1760 tests with
+  two platform-conditional skips, Ruff, compilation, exact-base status, and
+  immutable R0/R1/R2/R3/R4 hash checks.
+- The owner selected bundle `R1F-A`, freezing
+  `trl_<32 lowercase hex>`, singleton campaign scope, exact earlier
+  campaign/experiment/family/sample evidence, a complete canonical external
+  trial definition with separate acceptance/publication/actor-authority
+  records, closed relation and code-identity unions, and fail-closed
+  parent/currentness/independence/uniqueness/order rules.
+- Added a design-first R1F contract, independent clean-original and
+  dirty-rerun fixtures, literal child/clone cases, and a separate immutable
+  registry `0.6.0` artifact/digest under unchanged schema-language `0.2.0`.
+  R1F promotes only `TRIAL_ALLOCATED`, preserves R0/R1/R2/R3/R4, and leaves
+  the other 29 events `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- Added literal release, payload, namespace, scope, parent, definition,
+  acceptance, projection, authority, relation, code-identity,
+  duplicate/unknown-field, incomplete-event, and unpublished-promotion
+  oracles. The initial focused R1F/R1 registry run passed 525 tests before
+  canonical-document structure tests were added.
+- This release adds no resolver, authority/currentness runtime, append/storage
+  backend, private data, research trial, execution attempt, protected access,
+  brokerage, order, paper, or live behavior.
+- Final focused R0/R1/R1C/R1D/R1E/R1F registry and structure validation passed
+  1363 tests. The full suite passed 2198 tests with two
+  platform-conditional wide-`longdouble` skips. Ruff, compileall for
+  `src`/`tests`/`research`/`lean`, and whitespace validation passed.
+- No-isolation source/sdist/wheel validation reproduced byte-identical R0,
+  R1, R2, R3, R4, and R5 package resources and identical registry digests,
+  supported sets, and conformance outcomes. No dependency was installed or
+  added. The check reused `build==1.5.0`, `setuptools==83.0.0`,
+  `wheel==0.47.0`, and `packaging==26.2` from the existing project
+  environment at
+  `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv`;
+  its purpose was package-resource parity, and it changed no dependency file
+  or persistent environment. Generated egg-info was removed and temporary
+  package artifacts remained outside the repository.
+- Deterministic repo-map regeneration, Skill audit, JSON parsing, immutable
+  prior-release hashes, exact bounded v5-to-v6 succession,
+  privacy/path/hidden-Unicode/control-character, cleanup, and diff gates
+  passed. A self-adversarial read-only review separated shape-valid
+  self-source syntax from the mandatory stateful pre-append rejection and
+  found no remaining actionable P1/P2 issue.
+
 ## 2026-07-29 - Stage 4B-R1E Binding Schemas
 
 - Started from protected `main` merge `8d02e5a` (PR #170) in the isolated

@@ -35,6 +35,10 @@ _PACKAGED_REGISTRY_RESOURCES = {
         "schemas/experiment_trial_ledger_payload_schema_registry_v5.json",
         "schemas/experiment_trial_ledger_payload_schema_registry_v5.sha256",
     ),
+    "0.6.0": (
+        "schemas/experiment_trial_ledger_payload_schema_registry_v6.json",
+        "schemas/experiment_trial_ledger_payload_schema_registry_v6.sha256",
+    ),
 }
 _REGISTRY_PROFILES = {
     "0.1.0": {
@@ -81,6 +85,17 @@ _REGISTRY_PROFILES = {
     "0.5.0": {
         "registry_schema_id": (
             "experiment_trial_ledger_payload_schema_registry_v5"
+        ),
+        "schema_language_id": "ledger_closed_schema_dsl_v1",
+        "schema_language_version": "0.2.0",
+        "local_constraint_predicates": [
+            "array_contains_path",
+            "path_equals_path",
+        ],
+    },
+    "0.6.0": {
+        "registry_schema_id": (
+            "experiment_trial_ledger_payload_schema_registry_v6"
         ),
         "schema_language_id": "ledger_closed_schema_dsl_v1",
         "schema_language_version": "0.2.0",

@@ -392,8 +392,11 @@ Trial count, execution-attempt count, and protected-sample access remain zero.
 
 ## Next Gate
 
-After R1E is accepted on protected main, the next schema-family slice must be
-selected from the remaining 30 events without claiming complete registry or
-runtime acceptance. Any genuine owner-methodology gate follows the bounded
-reminder policy: four reminders at 30-minute intervals, then the heartbeat
-pauses if the owner has not replied.
+The owner selected the bounded successor in
+`docs/experiment_trial_ledger_trial_allocation_schema_contract.md`. R1F
+publishes a separate immutable registry `0.6.0`, promotes only
+`TRIAL_ALLOCATED`, and does not reinterpret this R1E authority. After R1F is
+accepted on protected main, the remaining-event dependency/risk graph is
+analyzed read-only before the smallest next family is selected. Any genuine
+owner-methodology gate follows the bounded reminder policy: four reminders at
+30-minute intervals, then the heartbeat pauses if the owner has not replied.
