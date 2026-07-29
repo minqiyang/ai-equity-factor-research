@@ -126,6 +126,21 @@ existence/order, external retrieval/currentness, reviewer independence, actor
 authority, unique monotonic ordinals, terminal retry predecessor, retry
 permission/budget, durable append, and the pre-action barrier remain
 fail-closed stateful requirements.
+`docs/experiment_trial_ledger_attempt_start_schema_contract.md` defines the
+owner-selected Stage 4B-R1I-A attempt-start authority. A separate immutable
+registry `0.9.0` preserves R0 through R7 bytes and behavior while promoting
+only `ATTEMPT_STARTED`. It binds the exact earlier attempt-allocation event,
+semantic trial, singleton campaign scope, a complete repository-external
+canonical readiness record, separate start-actor authority, and one
+ledger-owned `cap_<32 lowercase hex>` one-shot execution-capability identity
+with a complete private external record. Exact lost-ack replay returns the
+same start/capability identity, and future execution may begin only after a
+durable start plus one atomic capability consumption. Local schema acceptance
+proves only closed event shape; source order, external retrieval, literal
+readiness truth, effective-principal role independence, authority/currentness,
+single-start history, atomic capability mint, idempotency, consumption,
+durable append, execution, artifact, access, and research behavior remain
+fail-closed stateful requirements.
 
 ## Current Phase and Boundary
 

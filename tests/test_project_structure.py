@@ -50,6 +50,8 @@ def test_required_governance_files_exist() -> None:
         "docs/experiment_trial_ledger_binding_schema_contract.md",
         "docs/experiment_trial_ledger_trial_allocation_schema_contract.md",
         "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md",
+        "docs/experiment_trial_ledger_attempt_allocation_schema_contract.md",
+        "docs/experiment_trial_ledger_attempt_start_schema_contract.md",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
@@ -85,6 +87,7 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "4b-R1F. Semantic trial-allocation schema",
         "4b-R1G. Initial campaign-inventory-seal schema",
         "4b-R1H. Attempt-allocation schema",
+        "4b-R1I. Attempt-start schema",
         "`docs/point_in_time_data_methodology_contract.md`",
         "`docs/experiment_trial_ledger_allocation_registration_schema_contract.md`",
         "`docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`",
@@ -93,6 +96,7 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "`docs/experiment_trial_ledger_trial_allocation_schema_contract.md`",
         "`docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md`",
         "`docs/experiment_trial_ledger_attempt_allocation_schema_contract.md`",
+        "`docs/experiment_trial_ledger_attempt_start_schema_contract.md`",
         "Target construction currently lives in `src/backtest/portfolio.py`",
         "`historical_evaluation`, not a pristine holdout",
         "request `@codex review` once on the",
@@ -109,18 +113,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Stage 2 Timing Decision",
         "## Stage 3 Data Methodology Decision",
         "## Accepted Stage 4a Experiment and Trial Ledger Decision",
-        "## Accepted R0 Through R1G And Active R1H Attempt Allocation",
+        "## Accepted R0 Through R1H And Active R1I Attempt Start",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Complete Stage 4B-R1H in the current isolated worktree",
+        "Complete Stage 4B-R1I in the current isolated worktree",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "2496 passing tests" in roadmap
-    assert "Current base validation reported 2496 tests passed" in handoff
+    assert "2838 passing tests" in roadmap
+    assert "Current base validation reported 2838 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -229,7 +233,7 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
         "| 2b. Signal/execution timing implementation | "
         "Complete on protected main via PR #162"
     ) in roadmap
-    assert "Complete Stage 4B-R1H in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
 
 
 def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
@@ -402,7 +406,11 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 4b-R1H. Attempt-allocation schema | "
-        "Active in the current tree; owner selected bundle R1H-A"
+        "Complete on protected main via PR #174"
+    ) in roadmap
+    assert (
+        "| 4b-R1I. Attempt-start schema | "
+        "Active in the current tree; owner selected bundle R1I-A"
     ) in roadmap
 
 
@@ -1304,7 +1312,7 @@ def test_trial_family_registration_r1c_freezes_owner_bundle_and_release() -> Non
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1C-A`" in normalized_handoff
     assert "leaves the other 33 events" in normalized_handoff
-    assert "Complete Stage 4B-R1H in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1C-A" in " ".join(specification.split())
     assert (
         "Accepted Stage 4B-R1C-A trial-family registration authority" in repo_map
@@ -1486,7 +1494,7 @@ def test_sample_registration_r1d_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1D-A`" in normalized_handoff
     assert "leaves the other 32 events" in normalized_handoff
-    assert "Complete Stage 4B-R1H in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1D-A" in " ".join(specification.split())
     assert (
         "Accepted Stage 4B-R1D-A local sample registration authority" in repo_map
@@ -1677,7 +1685,7 @@ def test_binding_r1e_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1E-A`" in normalized_handoff
     assert "leaves the other 30 events" in normalized_handoff
-    assert "Complete Stage 4B-R1H in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1E-A" in " ".join(
         specification.split()
     )
@@ -1914,7 +1922,7 @@ def test_trial_allocation_r1f_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1F-A`" in normalized_handoff
     assert "leaves the other 29 events" in normalized_handoff
-    assert "Complete Stage 4B-R1H in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1F-A" in " ".join(
         specification.split()
     )
@@ -2146,7 +2154,7 @@ def test_campaign_inventory_seal_r1g_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "The owner selected bundle `R1G-A`" in normalized_handoff
     assert "leaves the other 28 events" in normalized_handoff
-    assert "Complete Stage 4B-R1H in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1G-A" in " ".join(
         specification.split()
     )
@@ -2342,16 +2350,197 @@ def test_attempt_allocation_r1h_freezes_owner_bundle_and_release() -> None:
     ) in roadmap
     assert (
         "| 4b-R1H. Attempt-allocation schema | "
-        "Active in the current tree; owner selected bundle R1H-A"
+        "Complete on protected main via PR #174"
     ) in roadmap
     normalized_handoff = " ".join(handoff.split())
     assert "The owner selected bundle `R1H-A`" in normalized_handoff
     assert "leaves the other 27 events" in normalized_handoff
-    assert "Complete Stage 4B-R1H in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1H-A" in " ".join(
         specification.split()
     )
-    assert "Active Stage 4B-R1H-A attempt-allocation authority" in repo_map
+    assert "Accepted Stage 4B-R1H-A attempt-allocation authority" in repo_map
+
+
+def test_attempt_start_r1i_freezes_owner_bundle_and_release() -> None:
+    contract_path = (
+        PROJECT_ROOT
+        / "docs/experiment_trial_ledger_attempt_start_schema_contract.md"
+    )
+    contract = contract_path.read_text(encoding="utf-8")
+    normalized_contract = " ".join(contract.split())
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
+        encoding="utf-8"
+    )
+    repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
+    registry_path = (
+        PROJECT_ROOT
+        / "src/ledger/schemas/"
+        "experiment_trial_ledger_payload_schema_registry_v9.json"
+    )
+    sidecar_path = registry_path.with_suffix(".sha256")
+    fixture_path = (
+        PROJECT_ROOT
+        / "tests/fixtures/"
+        "experiment_trial_ledger_attempt_start_v1_golden.json"
+    )
+    registry = json.loads(registry_path.read_text(encoding="ascii"))
+    fixture = json.loads(fixture_path.read_text(encoding="ascii"))
+
+    for phrase in [
+        "Contract ID: `experiment_trial_ledger_attempt_start_schema_r1i`",
+        "Contract version: `0.9.0`",
+        "Owner decision: option `R1I-A`",
+        "registry schema ID `experiment_trial_ledger_payload_schema_registry_v9`",
+        "registry version `0.9.0`",
+        "unchanged schema-language version `0.2.0`",
+        "The other 26 events remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`",
+        "`event_type` exactly `ATTEMPT_STARTED`",
+        "`subject_type` exactly `attempt`",
+        "one-item sorted-unique `payload.campaign_scope_ids`",
+        "The complete `attempt_start_readiness_record_v1` is repository-external",
+        "The reviewer must be distinct from:",
+        "The exact capability namespace is:",
+        "Exact lost-ack replay",
+        "Exactly one start is permitted per attempt",
+        "stateful checks are outside schema-language `0.2.0`",
+    ]:
+        assert phrase in normalized_contract
+
+    expected_supported = [
+        "LEDGER_EPOCH_CREATED",
+        "CAMPAIGN_ALLOCATED",
+        "EXPERIMENT_ALLOCATED",
+        "TRIAL_FAMILY_REGISTERED",
+        "SAMPLE_REGISTERED",
+        "CAMPAIGN_ENTITY_BOUND",
+        "STAGE3_SAMPLE_REFERENCE_BOUND",
+        "TRIAL_ALLOCATED",
+        "CAMPAIGN_INVENTORY_SEALED",
+        "ATTEMPT_ALLOCATED",
+        "ATTEMPT_STARTED",
+    ]
+    expected_payload_fields = [
+        "attempt_allocation_event_id",
+        "attempt_allocation_event_sha256",
+        "campaign_scope_ids",
+        "execution_capability_id",
+        "execution_capability_record_canonicalization_id",
+        "execution_capability_record_schema_version",
+        "execution_capability_record_sha256",
+        "execution_capability_record_version",
+        "readiness_authority_id",
+        "readiness_authority_registry_sha256",
+        "readiness_authority_version",
+        "readiness_record_canonicalization_id",
+        "readiness_record_id",
+        "readiness_record_schema_version",
+        "readiness_record_sha256",
+        "readiness_record_version",
+        "start_authority_generation",
+        "start_authority_id",
+        "start_authority_record_sha256",
+        "start_authority_schema_version",
+        "trial_id",
+    ]
+    assert registry["registry_schema_id"] == (
+        "experiment_trial_ledger_payload_schema_registry_v9"
+    )
+    assert registry["registry_version"] == "0.9.0"
+    assert registry["registry_status"] == "SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY"
+    assert registry["schema_language_version"] == "0.2.0"
+    assert registry["type_definitions"]["attempt_id"] == {
+        "kind": "typed_id",
+        "prefix": "att",
+    }
+    assert registry["type_definitions"]["execution_capability_id"] == {
+        "kind": "typed_id",
+        "prefix": "cap",
+    }
+    assert [item["event_type"] for item in registry["event_schemas"]] == (
+        expected_supported
+    )
+    assert len(registry["incomplete_event_types"]) == 26
+    assert set(registry["incomplete_event_types"]) == (
+        set(registry["closed_event_vocabulary"]) - set(expected_supported)
+    )
+
+    start = next(
+        item
+        for item in registry["event_schemas"]
+        if item["event_type"] == "ATTEMPT_STARTED"
+    )
+    assert start["schema_status"] == "FROZEN_SUPPORTED"
+    schema = start["event_schema"]
+    payload = schema["properties"]["payload"]
+    assert schema["properties"]["subject_type"] == {
+        "kind": "literal",
+        "value": "attempt",
+    }
+    assert schema["properties"]["subject_id"] == {
+        "kind": "named",
+        "name": "attempt_id",
+    }
+    assert list(payload["properties"]) == expected_payload_fields
+    assert payload["required"] == expected_payload_fields
+    assert payload["properties"]["campaign_scope_ids"] == {
+        "kind": "array",
+        "collection_semantics": "sorted_unique",
+        "items": {"kind": "named", "name": "campaign_id"},
+        "min_items": 1,
+        "max_items": 1,
+    }
+    assert payload["properties"]["execution_capability_id"] == {
+        "kind": "named",
+        "name": "execution_capability_id",
+    }
+    assert start["local_constraints"] == []
+
+    assert sidecar_path.read_text(encoding="ascii").strip() == (
+        "1a58c069098921a8446fd2e0452fe544e7c56e8f9e5ff392ff201cb5c177503a"
+    )
+    assert fixture["fixture_id"] == (
+        "experiment_trial_ledger_attempt_start_v1_golden"
+    )
+    assert set(fixture) == {"fixture_id", "attempt_started"}
+    event = fixture["attempt_started"]
+    assert event["event_type"] == "ATTEMPT_STARTED"
+    assert event["subject_type"] == "attempt"
+    assert re.fullmatch(r"att_[0-9a-f]{32}", event["subject_id"])
+    assert re.fullmatch(
+        r"cap_[0-9a-f]{32}",
+        event["payload"]["execution_capability_id"],
+    )
+    assert list(event["payload"]) == expected_payload_fields
+    assert len(event["payload"]["campaign_scope_ids"]) == 1
+
+    for canonical_doc in [roadmap, handoff, specification, repo_map]:
+        assert (
+            "docs/experiment_trial_ledger_attempt_start_schema_contract.md"
+            in canonical_doc
+        )
+    assert (
+        "| 4b-R1H. Attempt-allocation schema | "
+        "Complete on protected main via PR #174"
+    ) in roadmap
+    assert (
+        "| 4b-R1I. Attempt-start schema | "
+        "Active in the current tree; owner selected bundle R1I-A"
+    ) in roadmap
+    normalized_handoff = " ".join(handoff.split())
+    assert "The owner selected bundle `R1I-A`" in normalized_handoff
+    assert "leaves the other 26 events" in normalized_handoff
+    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "owner-selected Stage 4B-R1I-A" in " ".join(
+        specification.split()
+    )
+    assert "Active Stage 4B-R1I-A attempt-start authority" in repo_map
 
 
 def _ascii_jcs_golden_bytes(value: object) -> bytes:

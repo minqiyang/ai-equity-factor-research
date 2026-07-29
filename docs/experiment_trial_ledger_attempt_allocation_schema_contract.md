@@ -399,11 +399,11 @@ and protected-sample access remain zero.
 
 ## Next Gate
 
-After R1H is accepted on protected main, perform a read-only dependency/risk
-analysis over the remaining 27 incomplete events. `ATTEMPT_STARTED` is the
-strict compute-path successor, while `ACCESS_INTENT` remains the independent
-protected-access capability root and the campaign amendment pair remains an
-optional inventory branch. Continue with the smallest safe family without
-inferring exact start capability, terminal evidence, artifact identity,
-access authorization, or event boundaries. Surface only a genuine
-owner-methodology choice under the bounded reminder policy.
+Protected-main acceptance and the subsequent read-only dependency/risk graph
+selected `ATTEMPT_STARTED` as the unique smallest strict compute-path
+successor. The owner selected bundle `R1I-A`.
+`docs/experiment_trial_ledger_attempt_start_schema_contract.md` is the bounded
+successor authority. `ACCESS_INTENT` remains the independent higher-risk
+protected-access capability root, the campaign amendment pair remains an
+optional inventory branch, and terminal evidence and artifact identities
+remain separately gated.

@@ -109,7 +109,11 @@ IMPORTANT_FILES = [
     ),
     (
         "docs/experiment_trial_ledger_attempt_allocation_schema_contract.md",
-        "Active Stage 4B-R1H-A attempt-allocation authority.",
+        "Accepted Stage 4B-R1H-A attempt-allocation authority.",
+    ),
+    (
+        "docs/experiment_trial_ledger_attempt_start_schema_contract.md",
+        "Active Stage 4B-R1I-A attempt-start authority.",
     ),
     ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),

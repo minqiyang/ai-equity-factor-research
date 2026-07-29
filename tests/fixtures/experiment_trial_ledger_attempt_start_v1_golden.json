@@ -1,0 +1,47 @@
+{
+  "fixture_id": "experiment_trial_ledger_attempt_start_v1_golden",
+  "attempt_started": {
+    "actor_id": "act_000000000000000000000000000000a0",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "event_id": "evt_000000000000000000000000000000a1",
+    "event_schema_version": "ledger_event_v1",
+    "event_type": "ATTEMPT_STARTED",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_000000000000000000000000000000a2",
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "occurred_at": "2026-07-29T21:00:00Z",
+    "operation_id": "opn_000000000000000000000000000000a3",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "1616161616161616161616161616161616161616161616161616161616161616",
+    "payload": {
+      "attempt_allocation_event_id": "evt_000000000000000000000000000000a5",
+      "attempt_allocation_event_sha256": "1717171717171717171717171717171717171717171717171717171717171717",
+      "campaign_scope_ids": [
+        "cmp_000000000000000000000000000000a6"
+      ],
+      "execution_capability_id": "cap_000000000000000000000000000000a7",
+      "execution_capability_record_canonicalization_id": "pit_canonical_json_v1",
+      "execution_capability_record_schema_version": "attempt_execution_capability_record_v1",
+      "execution_capability_record_sha256": "1818181818181818181818181818181818181818181818181818181818181818",
+      "execution_capability_record_version": 2,
+      "readiness_authority_id": "attempt-readiness-authority-1",
+      "readiness_authority_registry_sha256": "1919191919191919191919191919191919191919191919191919191919191919",
+      "readiness_authority_version": 3,
+      "readiness_record_canonicalization_id": "pit_canonical_json_v1",
+      "readiness_record_id": "attempt-readiness-record-1",
+      "readiness_record_schema_version": "attempt_start_readiness_record_v1",
+      "readiness_record_sha256": "2020202020202020202020202020202020202020202020202020202020202020",
+      "readiness_record_version": 4,
+      "start_authority_generation": 5,
+      "start_authority_id": "attempt-start-authority-1",
+      "start_authority_record_sha256": "2121212121212121212121212121212121212121212121212121212121212121",
+      "start_authority_schema_version": "attempt_start_authority_v1",
+      "trial_id": "trl_000000000000000000000000000000a8"
+    },
+    "previous_event_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "recorded_at": "2026-07-29T21:00:00Z",
+    "sequence": 21,
+    "subject_id": "att_000000000000000000000000000000a4",
+    "subject_type": "attempt"
+  }
+}
