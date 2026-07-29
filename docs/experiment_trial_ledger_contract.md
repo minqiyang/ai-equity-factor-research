@@ -1114,6 +1114,14 @@ Deferred to Stage 4b or later:
   registry meta-contract, digest, duplicate-safe parser, and exact epoch
   schema only; its other 36 events remain
   `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`;
+- immutable R1 promotion releases now proceed through
+  `docs/experiment_trial_ledger_allocation_registration_schema_contract.md`,
+  `docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`,
+  `docs/experiment_trial_ledger_sample_registration_schema_contract.md`,
+  `docs/experiment_trial_ledger_binding_schema_contract.md`, and
+  `docs/experiment_trial_ledger_trial_allocation_schema_contract.md`. These
+  accepted design authorities preserve the R0 fail-closed boundary and do not
+  implement append/storage or stateful currentness;
 - physical storage backend (`sqlite3`, a deliberately single-writer event
   store, or another reviewed option);
 - transaction, locking, journaling, `fsync`, migration, backup, and recovery

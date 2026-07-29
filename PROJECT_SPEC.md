@@ -88,6 +88,19 @@ first event ID/hash. Local schema acceptance proves only event shape and
 reference syntax; retained-source bytes/digests, prior campaign allocation,
 authority/currentness, path exclusivity, anti-reset history, uniqueness, and
 append behavior remain fail-closed stateful requirements.
+`docs/experiment_trial_ledger_trial_allocation_schema_contract.md` defines the
+owner-selected Stage 4B-R1F-A semantic trial-allocation authority. A separate
+immutable registry `0.6.0` preserves R0/R1/R2/R3/R4 bytes and behavior while
+promoting only `TRIAL_ALLOCATED`. It freezes `trl_<32 lowercase hex>`, one
+singleton campaign scope, exact earlier campaign/experiment/family/sample
+evidence, a complete repository-external canonical trial definition and
+independent acceptance/publication/actor-authority records, closed
+original/child/clone/rerun relations, and closed clean-commit/dirty-tree code
+identity. Local schema acceptance proves only closed event shape; parent
+existence and order, external retrieval and currentness, reviewer
+independence, actor authority, relation acyclicity, code-byte retention,
+uniqueness, append behavior, and pre-action enforcement remain fail-closed
+stateful requirements.
 
 ## Current Phase and Boundary
 

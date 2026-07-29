@@ -9,6 +9,17 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the bounded Stage 4B-R1F semantic trial-allocation release. The owner
+  selected bundle `R1F-A`, freezing `trl_<32 lowercase hex>`, singleton
+  campaign scope, exact prior campaign/experiment/family/sample evidence, a
+  complete canonical external trial definition with separate
+  acceptance/publication/actor-authority records, and closed relation and
+  code-identity unions. A separate immutable registry and digest at version
+  `0.6.0` preserve R0/R1/R2/R3/R4 byte and behavior authority while promoting
+  only `TRIAL_ALLOCATED`; the other 29 events remain fail closed. This adds no
+  external retrieval/currentness runtime, append/storage backend, dependency,
+  private data, research trial, execution attempt, protected access, or
+  trading behavior.
 - Added the bounded Stage 4B-R1E binding release. The owner selected bundle
   `R1E-A`, freezing closed trial-family/sample and
   local-registration/external-reference campaign-binding branches, singleton

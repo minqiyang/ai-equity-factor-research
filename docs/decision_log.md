@@ -15,6 +15,72 @@ investment performance.
 
 ---
 
+## 2026-07-29 - Select R1F-A Semantic Trial Allocation Authority
+
+Context:
+
+- Stage 4B-R1E is accepted on protected `main` through PR #171 at `814bf02`;
+  exact merge-head CI run `30478870434` passed.
+- The accepted Stage 4a contract defines semantic-trial allocation and exact
+  parent/binding meaning, but the 0.5.0 registry deliberately leaves
+  `TRIAL_ALLOCATED` incomplete.
+- The owner selected bundle `R1F-A` and authorized automatic best-path analysis
+  after completion.
+
+Decision:
+
+- The exact semantic-trial namespace is `trl_<32 lowercase hex>`.
+- `TRIAL_ALLOCATED` allocates one new trial, uses a singleton campaign scope,
+  and begins with literal disposition `PLANNED`.
+- It pins exact earlier campaign/experiment/family source events and requires
+  the complete sample set in the repository-external canonical trial
+  definition to resolve through one legal current campaign path.
+- The complete definition is retrieved by an exact digest-pinned authority and
+  record tuple. Separate immutable records bind definition acceptance,
+  allowlisted public projection approval, and allocation-actor authority.
+  Acceptance review is independent of the definition issuer, allocation
+  actor, and accepted private-input producers.
+- The relation vocabulary is the closed union
+  `original`/`child`/`clone`/`rerun`. The code-identity vocabulary is the
+  closed union `clean_commit`/`dirty_tree`. Sources must be earlier, exact, and
+  acyclic; dirty-tree formal interpretation remains separately review-gated.
+- A semantic trial has at most 32 sample bindings. Identity-bearing defaults,
+  partial records, ambiguous or stale parents, mixed paths, changed retained
+  bytes, relation cycles, self-review, and post-action allocation fail closed.
+- R1F may publish immutable registry `0.6.0` under unchanged schema-language
+  `0.2.0`, promote only `TRIAL_ALLOCATED`, and preserve R0 through R4 bytes,
+  behavior, and default selection.
+
+Rationale:
+
+- A trial is the first event whose immutable definition composes allocation,
+  family, sample, timing, data, code, cost, selection, artifact, retry, and
+  privacy authorities; a closed exact record avoids laundering narrative
+  requirements into a partial wire schema.
+- Closed relation and code-identity unions make lineage and dirty-source state
+  explicit without implying that local shape validation verifies retained
+  bytes or runtime state.
+- Separate acceptance, publication, and actor-authority records keep method
+  review, public disclosure, and permission from collapsing into one
+  self-issued assertion.
+
+Consequences:
+
+- R1F's owner-methodology gate is cleared. Registry `0.6.0` may support
+  exactly eight events while the other 29 remain
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- Trial execution, attempt, protected-access, private-data, dependency, and
+  trading impacts remain zero.
+
+Follow-up:
+
+- Add independent clean-original and dirty-rerun fixtures plus literal
+  child/clone positives and complete namespace/parent/authority/relation/code/
+  privacy/scope killing evidence.
+- After protected R1F completion, analyze the remaining event dependency/risk
+  graph and automatically proceed with the smallest best next slice unless a
+  genuine owner-only architecture choice is encountered.
+
 ## 2026-07-29 - Select R1E-A Binding Authority
 
 Context:
