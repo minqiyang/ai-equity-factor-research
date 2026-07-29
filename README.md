@@ -56,16 +56,6 @@ defines future manifest, universe, corporate-action, field, privacy, and
 holdout-access requirements. Accepting that contract does not verify a dataset
 or authorize formal historical interpretation.
 
-## Project records
-
-- [`docs/current_roadmap.md`](docs/current_roadmap.md) — canonical implementation status and open gaps
-- [`docs/research_program_charter.md`](docs/research_program_charter.md) — long-term evidence policy, promotion gates, and authorization boundaries
-- [`docs/point_in_time_data_methodology_contract.md`](docs/point_in_time_data_methodology_contract.md) — provider-agnostic Stage 3 data and holdout-evidence contract
-- [`PROJECT_SPEC.md`](PROJECT_SPEC.md) — objectives, assumptions, factor ideas, and backtesting principles
-- [`EXPERIMENT_LOG.md`](EXPERIMENT_LOG.md) — diagnostic/legacy experiment record; not the immutable all-trial ledger
-- [`reports/experiment_registry.md`](reports/experiment_registry.md) — deterministic index of committed experiment logs
-- [`docs/current_handoff.md`](docs/current_handoff.md) — current verified workflow state and next stage
-- [`docs/full_repository_conformance_audit_2026-07-11.md`](docs/full_repository_conformance_audit_2026-07-11.md) — latest full conformance audit
 
 ## Quality gates
 
