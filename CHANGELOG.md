@@ -9,6 +9,17 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the bounded Stage 4B-R1H attempt-allocation release. The owner selected
+  bundle `R1H-A`, freezing `att_<32 lowercase hex>`, singleton campaign scope,
+  exact earlier trial-allocation and initial inventory-seal evidence, a
+  complete digest-pinned external attempt plan, separate independent
+  acceptance and allocation-actor authorities, and closed first-attempt/retry
+  relations with monotonic policy-bounded ordinals. A separate immutable
+  registry and digest at version `0.8.0` preserve R0 through R6 byte and
+  behavior authority while promoting only `ATTEMPT_ALLOCATED`; the other 27
+  events remain fail closed. This adds no retrieval/currentness runtime,
+  append/storage backend, dependency, attempt start/execution, artifact,
+  private data, protected access, or trading behavior.
 - Added the bounded Stage 4B-R1G campaign-inventory seal release. The owner
   selected bundle `R1G-A`, freezing singleton campaign scope, exact campaign
   allocation, a complete digest-pinned external canonical inventory, separate

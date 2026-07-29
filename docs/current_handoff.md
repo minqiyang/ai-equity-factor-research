@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-29 for the Stage 4B-R1G campaign-inventory-seal release.
+Updated: 2026-07-29 for the Stage 4B-R1H attempt-allocation release.
 
 ## Canonical State
 
@@ -24,21 +24,23 @@ Updated: 2026-07-29 for the Stage 4B-R1G campaign-inventory-seal release.
   `docs/experiment_trial_ledger_binding_schema_contract.md`.
 - Accepted Stage 4B-R1F authority:
   `docs/experiment_trial_ledger_trial_allocation_schema_contract.md`.
-- Active Stage 4B-R1G authority:
+- Accepted Stage 4B-R1G authority:
   `docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md`.
+- Active Stage 4B-R1H authority:
+  `docs/experiment_trial_ledger_attempt_allocation_schema_contract.md`.
 - Active roadmap: `docs/current_roadmap.md`.
 - Short operational controller: `docs/codex_long_running_controller.md`.
-- Current protected `origin/main`: `d9ac67e`, the verified merge of Stage
-  4B-R1F PR #172. Exact merge-head CI run `30482706983` succeeded.
-- Current base validation reported 2198 tests passed with two
-  platform-conditional wide-`longdouble` skips. The isolated R1G startup
+- Current protected `origin/main`: `520ed65`, the verified merge of Stage
+  4B-R1G PR #173. Exact merge-head CI run `30485940985` succeeded.
+- Current base validation reported 2496 tests passed with two
+  platform-conditional wide-`longdouble` skips. The isolated R1H startup
   baseline also passed Ruff, compilation, exact-base status, and prior
   registry-artifact hash inspection.
-- Current R1G implementation is design-first in the isolated worktree. Final
-  local validation passed 1661 focused registry/structure tests and 2496 full
+- Current R1H implementation is design-first in the isolated worktree. Final
+  local validation passed 2003 focused registry/structure tests and 2838 full
   tests with the same two platform-conditional skips, plus Ruff, compileall,
-  deterministic repo-map, Skill audit, immutable R0-R5 hashes, exact bounded
-  v6-to-v7 succession, source/sdist/wheel package parity and packaged
+  deterministic repo-map, Skill audit, immutable R0-R6 hashes, exact bounded
+  v7-to-v8 succession, source/sdist/wheel package parity and packaged
   conformance, privacy/Unicode/control/cleanup/diff, and self-adversarial
   review with no remaining actionable P1/P2 finding.
 - Stage 1 split isolation and Stage 2 signal/execution timing are complete on
@@ -87,6 +89,12 @@ Updated: 2026-07-29 for the Stage 4B-R1G campaign-inventory-seal release.
   `30481526688`, and one clean final current-head Codex review. It normally
   protected-merged without auto-merge/admin bypass at `d9ac67e`; exact
   merge-head CI run `30482706983` succeeded.
+- Stage 4B-R1G PR #173 passed 2496 tests with two platform-conditional skips,
+  Ruff, compilation, deterministic repo-map, Skill audit, source/sdist/wheel
+  R0-R6 package parity, privacy/Unicode/control/diff gates, exact-head CI run
+  `30485367220`, and one clean final current-head Codex review. It normally
+  protected-merged without auto-merge/admin bypass at `520ed65`; exact
+  merge-head CI run `30485940985` succeeded.
 - The accepted Stage 4a contract freezes ledger evidence semantics only. The existing
   JSON writer and registry remain diagnostic/legacy; no append-only runtime,
   backend, private ledger, campaign, or formal interpretation is implemented.
@@ -229,7 +237,7 @@ The current schema-v1 JSON logs cannot prove these properties and remain
 dependency, migrated log, research trial, private access, or generated
 performance evidence.
 
-## Accepted R0 Through R1F And Active R1G Inventory Seal
+## Accepted R0 Through R1G And Active R1H Attempt Allocation
 
 Six non-overlapping read-only audits found that Stage 4a intentionally froze
 only the common event envelope and `LEDGER_EPOCH_CREATED` payload. Exact
@@ -455,6 +463,43 @@ authority/currentness, predecessor-head truth, sequence arithmetic, unique
 seal, atomic append, or pre-action ordering; every such stateful use remains
 fail closed.
 
+R1G is accepted on protected main through PR #173 and exact merge-head CI run
+`30485940985`. The remaining-event dependency/risk graph selected
+`ATTEMPT_ALLOCATED` as the unique smallest compute-path prerequisite after the
+inventory seal. The amendment pair is optional, `ATTEMPT_STARTED` and terminal
+attempt/trial/artifact events depend on allocation, and `ACCESS_INTENT` is an
+independent higher-risk capability/security root. The owner selected bundle
+`R1H-A`. That explicit selection freezes:
+
+- exact attempt IDs `att_<32 lowercase hex>`, attempt subject identity, and
+  singleton campaign scope;
+- exact earlier trial-allocation and initial campaign-inventory-seal event
+  IDs/hashes;
+- a complete repository-external canonical `attempt_plan_record_v1`,
+  retrieved through an immutable digest-pinned authority tuple;
+- an all-and-only expected-output inventory digest inside that complete plan;
+- one separate acceptance record whose reviewer differs from the plan issuer,
+  accepted trial-definition issuer, allocation actor, and relevant private
+  input producers;
+- one separate current attempt-allocation actor authority record;
+- closed `first_attempt` and `retry` relation branches, with ordinal 1 for the
+  first branch and an exact prior terminal attempt reference for retry;
+- new attempt identity per retry, strictly monotonic ordinal within the
+  accepted trial retry policy/budget, and no alias/clone/rerun/new-campaign/
+  post-result reset; and
+- an allocation-only event boundary that cannot start validation, execution,
+  artifact production, or protected access.
+
+`docs/experiment_trial_ledger_attempt_allocation_schema_contract.md` records
+the exact R1H authority. R1H publishes a new immutable registry `0.8.0` under
+unchanged schema-language `0.2.0`, supports exactly the nine prior events plus
+`ATTEMPT_ALLOCATED`, and leaves the other 27 events
+`SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`. Its local shape validator cannot prove
+parent existence/order, retained bytes, external retrieval, role independence,
+currentness, authority, unique/monotonic ordinal history, terminal retry
+predecessor, retry permission/budget, durable append, or the pre-action
+barrier; every such stateful use remains fail closed.
+
 ## Verified Implementation Baseline
 
 - Strict local CSV validation and metadata inventory; no downloader.
@@ -500,7 +545,9 @@ and Stage 4B-R1E adds global-entity/external-sample binding shapes with exact
 source references. Stage 4B-R1F adds semantic trial-allocation shape with exact
 parent, definition, relation, and code-identity references. Stage 4B-R1G adds
 the initial campaign-inventory-seal shape with exact external inventory,
-acceptance, seal-authority, bounded-count, and pre-seal references. These
+acceptance, seal-authority, bounded-count, and pre-seal references. Stage
+4B-R1H adds attempt-allocation shape with exact trial/seal, external plan,
+acceptance/actor-authority, expected-output, and first/retry references. These
 releases pin external authority and currentness
 references but do not implement the stateful ledger. Additional blockers
 include incomplete runtime trial retention,
@@ -515,7 +562,7 @@ SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
 
 At the last verification, PR #148 was an independent Draft governance PR from
 an older base that changed only `AGENTS.md`. It was not a predecessor for PRs
-#158-#172. The Stage 4B-R1G implementation slice does not edit `AGENTS.md`,
+#158-#173. The Stage 4B-R1H implementation slice does not edit `AGENTS.md`,
 merge/close that draft, or overwrite its policy. Independent thin-router PR
 #168 merged at `4ac5adb` while the first R1C head was being published. Its
 overlap was limited to `docs/repo_map.md`, `scripts/repo_map.py`, and
@@ -526,21 +573,22 @@ local gates before updating its remote head.
 
 ## Next Safe Stage
 
-Complete Stage 4B-R1G in the current isolated worktree. Preserve R0-R5
-byte/hash/behavior/package parity; publish the separate immutable `0.7.0`
-authority; keep exact R1G-A campaign identity/scope, campaign allocation,
-external inventory/acceptance/seal-authority tuples, 4096-trial bound, and
-pre-seal anchor; and promote only `CAMPAIGN_INVENTORY_SEALED`. Require
-independent standard/maximum positive fixtures, literal scope/authority/count/
-preseal oracles, arbitrary-promotion rejection, focused and full validation,
-self-adversarial read-only review, exact-head CI, one final current-head Codex
-review, normal protected merge, and exact merge-head CI. Do not enable
-auto-merge or merge while CI or review is pending.
+Complete Stage 4B-R1H in the current isolated worktree. Preserve R0-R6
+byte/hash/behavior/package parity; publish the separate immutable `0.8.0`
+authority; keep exact R1H-A attempt identity/scope, trial/seal sources,
+external plan/acceptance/allocation-authority tuples, expected-output digest,
+and closed first/retry relation; and promote only `ATTEMPT_ALLOCATED`. Require
+independent first/retry positive fixtures, literal namespace/source/authority/
+acceptance/relation/ordinal/currentness/anti-reset oracles,
+arbitrary-promotion rejection, focused and full validation, self-adversarial
+read-only review, exact-head CI, one final current-head Codex review, normal
+protected merge, and exact merge-head CI. Do not enable auto-merge or merge
+while CI or review is pending.
 
-After R1G is accepted on protected main, perform a read-only dependency/risk
-analysis over the remaining 28 incomplete events. Continue with the smallest
-safe next family without inferring exact attempt or access identity,
-capability, authority, or event boundaries.
+After R1H is accepted on protected main, perform a read-only dependency/risk
+analysis over the remaining 27 incomplete events. Continue with the smallest
+safe next family without inferring exact attempt-start capability, terminal
+evidence, artifact identity, access authorization, or event boundaries.
 
 Do not call the registry accepted until all 37 events have exact schemas and no
 incomplete or wildcard entry remains.

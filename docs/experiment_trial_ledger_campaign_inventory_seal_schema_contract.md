@@ -336,11 +336,14 @@ Trial execution count, attempt count, and protected-sample access remain zero.
 
 ## Next Gate
 
-After R1G is accepted on protected main, perform a read-only dependency/risk
-analysis over the remaining 28 incomplete events. The next strict
-partial-order prerequisite is expected to be `ATTEMPT_ALLOCATED` for
-validation/execution or `ACCESS_INTENT` for protected access; their exact
-identity, authority, capability, and event-boundary choices must not be
-inferred from helpers or narrative field lists. Continue with the smallest
-safe family, surfacing only a genuine owner-methodology choice under the
-bounded reminder policy.
+The transition out of R1G required a read-only dependency/risk analysis over
+the remaining 28 incomplete events. That analysis selected
+`ATTEMPT_ALLOCATED` as the smallest strict compute-path prerequisite; the
+owner selected the bounded successor in
+`docs/experiment_trial_ledger_attempt_allocation_schema_contract.md`.
+R1H publishes a separate immutable registry `0.8.0`, promotes only
+`ATTEMPT_ALLOCATED`, and does not reinterpret this R1G authority. After R1H is
+accepted on protected main, the next analysis covers the remaining 27
+incomplete events before the smallest next family is selected. A genuinely
+material architecture choice receives a concise owner memo and the bounded
+reminder policy; otherwise continuation remains automatic.

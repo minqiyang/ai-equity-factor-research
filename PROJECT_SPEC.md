@@ -113,6 +113,19 @@ record retrieval, all-and-only inventory completeness, reviewer independence,
 authority/currentness, predecessor-head comparison, exact sequence arithmetic,
 single-seal uniqueness, atomic append, and pre-action enforcement remain
 fail-closed stateful requirements.
+`docs/experiment_trial_ledger_attempt_allocation_schema_contract.md` defines
+the owner-selected Stage 4B-R1H-A attempt-allocation authority. A separate
+immutable registry `0.8.0` preserves R0 through R6 bytes and behavior while
+promoting only `ATTEMPT_ALLOCATED`. It freezes
+`att_<32 lowercase hex>`, singleton campaign scope, exact earlier
+trial-allocation and initial inventory-seal evidence, a complete
+repository-external canonical attempt plan, separate independent acceptance
+and allocation-actor authority records, and closed first-attempt/retry
+relations. Local schema acceptance proves only closed event shape; source
+existence/order, external retrieval/currentness, reviewer independence, actor
+authority, unique monotonic ordinals, terminal retry predecessor, retry
+permission/budget, durable append, and the pre-action barrier remain
+fail-closed stateful requirements.
 
 ## Current Phase and Boundary
 
