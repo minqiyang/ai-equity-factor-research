@@ -1,0 +1,126 @@
+{
+  "fixture_id": "experiment_trial_ledger_binding_events_v1_golden",
+  "trial_family_global_bound": {
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "event_schema_version": "ledger_event_v1",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_00000000000000000000000000000040",
+    "sequence": 8,
+    "event_id": "evt_00000000000000000000000000000041",
+    "operation_id": "opn_00000000000000000000000000000042",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "event_type": "CAMPAIGN_ENTITY_BOUND",
+    "subject_type": "trial_family",
+    "subject_id": "fam_00000000000000000000000000000043",
+    "occurred_at": "2026-07-29T18:00:00Z",
+    "recorded_at": "2026-07-29T18:00:00Z",
+    "actor_id": "act_00000000000000000000000000000044",
+    "previous_event_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "payload": {
+      "campaign_scope_ids": [
+        "cmp_00000000000000000000000000000045"
+      ],
+      "source_registration_event_id": "evt_00000000000000000000000000000046",
+      "source_registration_event_sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    }
+  },
+  "sample_global_local_bound": {
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "event_schema_version": "ledger_event_v1",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_00000000000000000000000000000040",
+    "sequence": 9,
+    "event_id": "evt_00000000000000000000000000000047",
+    "operation_id": "opn_00000000000000000000000000000048",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+    "event_type": "CAMPAIGN_ENTITY_BOUND",
+    "subject_type": "sample",
+    "subject_id": "smp_00000000000000000000000000000049",
+    "occurred_at": "2026-07-29T18:00:01Z",
+    "recorded_at": "2026-07-29T18:00:01Z",
+    "actor_id": "act_00000000000000000000000000000044",
+    "previous_event_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+    "payload": {
+      "campaign_scope_ids": [
+        "cmp_0000000000000000000000000000004a"
+      ],
+      "source_kind": "local_registration",
+      "source_registration_event_id": "evt_0000000000000000000000000000004b",
+      "source_registration_event_sha256": "6666666666666666666666666666666666666666666666666666666666666666"
+    }
+  },
+  "stage3_sample_reference_bound": {
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "event_schema_version": "ledger_event_v1",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_00000000000000000000000000000040",
+    "sequence": 10,
+    "event_id": "evt_0000000000000000000000000000004c",
+    "operation_id": "opn_0000000000000000000000000000004d",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+    "event_type": "STAGE3_SAMPLE_REFERENCE_BOUND",
+    "subject_type": "sample",
+    "subject_id": "smp_0000000000000000000000000000004e",
+    "occurred_at": "2026-07-29T18:00:02Z",
+    "recorded_at": "2026-07-29T18:00:02Z",
+    "actor_id": "act_00000000000000000000000000000044",
+    "previous_event_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+    "payload": {
+      "campaign_scope_ids": [
+        "cmp_0000000000000000000000000000004f"
+      ],
+      "sample_acceptance_decision_id": "external-sample-acceptance-1",
+      "sample_acceptance_generation": 2,
+      "sample_acceptance_record_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+      "sample_acceptance_schema_version": "stage3_sample_acceptance_v1",
+      "sample_authority_id": "stage3-sample-authority-public-1",
+      "sample_authority_registry_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sample_authority_version": 3,
+      "sample_public_projection_id": "external-sample-public-projection-1",
+      "sample_public_projection_schema_version": "public_redacted_projection_v1",
+      "sample_public_projection_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "sample_publication_approval_generation": 4,
+      "sample_publication_approval_id": "external-sample-publication-approval-1",
+      "sample_publication_approval_record_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "sample_publication_approval_schema_version": "sample_public_projection_approval_v1",
+      "sample_record_canonicalization_id": "pit_canonical_json_v1",
+      "sample_record_id": "stage3-external-sample-record-1",
+      "sample_record_schema_version": "stage3_sample_record_v1",
+      "sample_record_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "sample_record_version": 5
+    }
+  },
+  "sample_external_origin_reused": {
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "event_schema_version": "ledger_event_v1",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_00000000000000000000000000000040",
+    "sequence": 11,
+    "event_id": "evt_00000000000000000000000000000050",
+    "operation_id": "opn_00000000000000000000000000000051",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "event_type": "CAMPAIGN_ENTITY_BOUND",
+    "subject_type": "sample",
+    "subject_id": "smp_0000000000000000000000000000004e",
+    "occurred_at": "2026-07-29T18:00:03Z",
+    "recorded_at": "2026-07-29T18:00:03Z",
+    "actor_id": "act_00000000000000000000000000000044",
+    "previous_event_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "payload": {
+      "campaign_scope_ids": [
+        "cmp_00000000000000000000000000000052"
+      ],
+      "source_kind": "external_reference",
+      "source_reference_event_id": "evt_0000000000000000000000000000004c",
+      "source_reference_event_sha256": "abababababababababababababababababababababababababababababababab"
+    }
+  }
+}

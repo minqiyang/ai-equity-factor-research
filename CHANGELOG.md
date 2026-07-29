@@ -9,6 +9,18 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the bounded Stage 4B-R1E binding release. The owner selected bundle
+  `R1E-A`, freezing closed trial-family/sample and
+  local-registration/external-reference campaign-binding branches, singleton
+  campaign scope, exact source event ID/hash, one campaign-scoped external
+  Stage 3 sample-reference origin, and stable cross-campaign reuse of the same
+  external-origin `sample_id`. A separate immutable registry and digest at
+  version `0.5.0` preserve R0/R1/R2/R3 byte and behavior authority while
+  promoting only `CAMPAIGN_ENTITY_BOUND` and
+  `STAGE3_SAMPLE_REFERENCE_BOUND`; the other 30 events remain fail closed.
+  This adds no source resolver, currentness/path runtime, append/storage
+  backend, dependency, private data, research trial, protected access, or
+  trading behavior.
 - Added the bounded Stage 4B-R1D local sample-registration release. The owner
   selected bundle `R1D-A`, freezing `smp_<32 lowercase hex>`, the common
   32-campaign direct-scope maximum, a digest-pinned external Stage 3

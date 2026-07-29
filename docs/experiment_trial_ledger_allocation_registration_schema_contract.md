@@ -476,13 +476,24 @@ bounds, and private/public projection rules are accepted.
 
 ## Binding Reference Architecture
 
-`CAMPAIGN_ENTITY_BOUND` will bind one existing ledger-global registration to
-one already allocated campaign. Its future exact payload must include:
+`CAMPAIGN_ENTITY_BOUND` binds one existing entity identity to one already
+allocated campaign. R1E-A retains the outer closed `subject_type` union and
+freezes these source alternatives:
+
+- `trial_family` binds an empty-scope ledger-global
+  `TRIAL_FAMILY_REGISTERED`;
+- sample `local_registration` binds an empty-scope ledger-global
+  `SAMPLE_REGISTERED`; and
+- sample `external_reference` reuses an existing external-origin `sample_id`
+  by binding the exact earlier `STAGE3_SAMPLE_REFERENCE_BOUND` event that
+  first allocated it.
+
+Its exact payload includes:
 
 - singleton `campaign_scope_ids`;
-- one closed tagged-union branch;
-- exact source registration event ID; and
-- exact source registration event SHA-256.
+- one closed top-level subject branch;
+- for the sample branch, one nested closed `source_kind` branch; and
+- the exact selected source event ID and SHA-256.
 
 The selected branch determines the subject namespace and required source event
 type. Shape validation may check syntax and branch consistency only.
@@ -492,7 +503,9 @@ Stateful validation must prove that the source event:
 - exists earlier in the same ledger epoch;
 - has retained bytes matching the referenced event ID and recomputed digest;
 - has the required registration event type and matching subject;
-- used empty campaign scope;
+- used empty campaign scope when the source is a global local registration;
+- is the exact first campaign-scoped Stage 3 reference when the sample source
+  is external;
 - is not paired with a competing direct or external path; and
 - precedes every consuming trial or access.
 
@@ -502,7 +515,15 @@ already allocated campaign. A later cross-campaign reuse decision must prevent
 the same external record from being reintroduced under unrelated local
 identities to reset exposure or dependence history.
 
-Both binding events remain incomplete in R1A and R1B.
+R1E-A resolves that later reuse decision: the first
+`STAGE3_SAMPLE_REFERENCE_BOUND` remains the sole allocation of the
+external-origin local identity, and each later campaign reuses the same
+`sample_id` only through the sample `external_reference` branch of
+`CAMPAIGN_ENTITY_BOUND`. No synthetic `SAMPLE_REGISTERED`, new per-campaign
+identity, origin-path switch, or external-tuple substitution is permitted.
+`docs/experiment_trial_ledger_binding_schema_contract.md` is the exact R1E
+successor authority. Both binding events remained incomplete in R1A through
+R1D.
 
 ## Local Shape Versus Stateful Ledger Rules
 

@@ -186,7 +186,12 @@ Each referenced sample independently uses exactly one of these legal paths:
    `sample_id` used by the trial and binds it to the exact external registry
    authority, external sample-record ID, schema/contract version, immutable
    record SHA-256, and accepted review/decision reference. That binding
-   precedes `TRIAL_ALLOCATED`.
+   precedes `TRIAL_ALLOCATED`. For each later campaign that reuses the same
+   external-origin sample lineage, `CAMPAIGN_ENTITY_BOUND` names that same
+   `sample_id`, the later campaign, and the exact first
+   `STAGE3_SAMPLE_REFERENCE_BOUND` event ID/hash. The first Stage 3 event
+   remains the sole identity allocation; later campaign bindings do not
+   synthesize local registration or allocate a replacement identity.
 
 For either direct path, `campaign_scope_ids` is sorted and unique, may list
 multiple affected campaigns, and must contain this campaign. For either
@@ -201,13 +206,18 @@ nullability, unions, and nested schemas.
 
 A direct registration cannot also have `CAMPAIGN_ENTITY_BOUND`; an external
 Stage 3 representation cannot also have either local registration path for
-the same ledger-local sample ID. A binding to a different registration event,
-entity, campaign, external version, or digest is mismatched. Every referenced
-parent must therefore have exactly one completed legal path in the same
-verified ledger epoch, except that the external Stage 3 record remains in its
-accepted registry and is represented by the immutable local reference
-binding. Dangling, ambiguous, mismatched, later-created, or path-order-invalid
-parents fail before commit and also fail closure verification.
+the same ledger-local sample ID. An external-origin identity may have later
+campaign bindings only when each binding references the exact first Stage 3
+event and retains the same external authority, record, acceptance,
+projection, publication-approval, lineage, overlap, and exposure history. A
+binding to a different registration/reference event, entity, campaign source,
+external version, or digest is mismatched. Every referenced parent must
+therefore have exactly one completed legal origin path in the same verified
+ledger epoch, except that the external Stage 3 record remains in its accepted
+registry and is represented by the immutable local reference binding.
+Dangling, ambiguous, mismatched, later-created, origin-switching, or
+path-order-invalid parents fail before commit and also fail closure
+verification.
 
 For a trial:
 

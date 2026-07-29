@@ -1,5 +1,52 @@
 # Engineering Log
 
+## 2026-07-29 - Stage 4B-R1E Binding Schemas
+
+- Started from protected `main` merge `8d02e5a` (PR #170) in the isolated
+  `codex/ledger-campaign-entity-stage3-reference-bindings` worktree. Exact
+  merge-head CI run `30475306672` succeeded. The clean startup baseline passed
+  1404 tests with two platform-conditional skips, Ruff, compilation,
+  exact-base status, and immutable R0/R1/R2/R3 hash checks.
+- The owner selected bundle `R1E-A`, freezing closed trial-family/sample and
+  local-registration/external-reference campaign-binding branches, singleton
+  campaign scope, exact source event ID/hash, one campaign-scoped external
+  Stage 3 sample-origin event, stable cross-campaign external sample identity,
+  and fail-closed prior-allocation/source/currentness/path/anti-reset rules.
+- Added a design-first R1E contract, four independent positive fixtures, and a
+  separate immutable registry `0.5.0` artifact/digest under unchanged
+  schema-language `0.2.0`. R1E promotes only `CAMPAIGN_ENTITY_BOUND` and
+  `STAGE3_SAMPLE_REFERENCE_BOUND`, preserves R0/R1/R2/R3, and leaves the other
+  30 events `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- Added literal release, outer/nested-union, field, namespace,
+  singleton-scope, source-reference, authority, acceptance, privacy,
+  duplicate/unknown-field, incomplete-event, and unpublished-promotion
+  oracles. The initial focused R1E registry run passed 336 tests before
+  canonical-document structure tests were added.
+- This release adds no source resolver, external retrieval,
+  authority/currentness runtime, append/storage backend, private data,
+  research trial, protected access, brokerage, order, paper, or live behavior.
+- Final focused registry/structure validation passed 925 tests. The full suite
+  passed 1760 tests with two platform-conditional wide-`longdouble` skips.
+  Ruff and compileall for `src`/`tests`/`research`/`lean` passed.
+- No-isolation source/sdist/wheel validation reproduced byte-identical R0, R1,
+  R2, R3, and R4 package resources and identical `0.5.0` conformance
+  outcomes. No dependency was installed or added. The check reused
+  `build==1.5.0`, `setuptools==83.0.0`, `wheel==0.47.0`, and
+  `packaging==26.2` from the existing project environment at
+  `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv`;
+  its purpose was package-resource parity, and it changed no dependency file
+  or persistent environment. Generated egg-info was removed and temporary
+  package artifacts remained outside the repository.
+- Deterministic repo-map regeneration, Skill audit, JSON parsing, immutable
+  prior-release hashes, v4-to-v5 mechanical succession, privacy/path,
+  hidden-Unicode/control-character, cleanup, and diff gates passed. A final
+  self-adversarial read-only review tightened literal duplicate-envelope
+  killing evidence and found no remaining actionable P1/P2 issue. It verified
+  that the v4-to-v5 registry delta is limited to release metadata, two closed
+  event schemas, and five conformance vectors; that the Stage 3 tuple and
+  binding envelopes exactly inherit R1D; and that no runtime, private-data, or
+  research behavior entered the release.
+
 ## 2026-07-29 - Stage 4B-R1D Local Sample Registration Schema
 
 - Started from protected `main` merge `68a4c4f` (PR #169) in the isolated

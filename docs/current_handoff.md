@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-29 for the Stage 4B-R1D sample registration release.
+Updated: 2026-07-29 for the Stage 4B-R1E binding release.
 
 ## Canonical State
 
@@ -18,14 +18,16 @@ Updated: 2026-07-29 for the Stage 4B-R1D sample registration release.
   `docs/experiment_trial_ledger_allocation_registration_schema_contract.md`.
 - Accepted Stage 4B-R1C authority:
   `docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`.
-- Active Stage 4B-R1D authority:
+- Accepted Stage 4B-R1D authority:
   `docs/experiment_trial_ledger_sample_registration_schema_contract.md`.
+- Active Stage 4B-R1E authority:
+  `docs/experiment_trial_ledger_binding_schema_contract.md`.
 - Active roadmap: `docs/current_roadmap.md`.
 - Short operational controller: `docs/codex_long_running_controller.md`.
-- Current protected `origin/main`: `68a4c4f`, the verified merge of Stage
-  4B-R1C PR #169. Exact merge-head CI run `30471505290` succeeded.
-- Current base validation reported 1171 tests passed with two
-  platform-conditional wide-`longdouble` skips. The isolated R1D startup
+- Current protected `origin/main`: `8d02e5a`, the verified merge of Stage
+  4B-R1D PR #170. Exact merge-head CI run `30475306672` succeeded.
+- Current base validation reported 1404 tests passed with two
+  platform-conditional wide-`longdouble` skips. The isolated R1E startup
   baseline also passed Ruff, compilation, exact-base status, and prior
   registry-artifact hash inspection.
 - Stage 1 split isolation and Stage 2 signal/execution timing are complete on
@@ -56,6 +58,12 @@ Updated: 2026-07-29 for the Stage 4B-R1D sample registration release.
   run `30470068227`, and one clean final current-head Codex review. It normally
   protected-merged without auto-merge/admin bypass at `68a4c4f`; exact
   merge-head CI run `30471505290` succeeded.
+- Stage 4B-R1D PR #170 passed 1404 tests with two platform-conditional skips,
+  Ruff, compilation, deterministic repo-map, Skill audit, source/sdist/wheel
+  R0/R1/R2/R3 package parity, privacy/path/Unicode/control/diff gates,
+  exact-head CI run `30474619015`, and one clean final current-head Codex
+  review. It normally protected-merged without auto-merge/admin bypass at
+  `8d02e5a`; exact merge-head CI run `30475306672` succeeded.
 - The accepted Stage 4a contract freezes ledger evidence semantics only. The existing
   JSON writer and registry remain diagnostic/legacy; no append-only runtime,
   backend, private ledger, campaign, or formal interpretation is implemented.
@@ -198,7 +206,7 @@ The current schema-v1 JSON logs cannot prove these properties and remain
 dependency, migrated log, research trial, private access, or generated
 performance evidence.
 
-## Accepted R0/R1A/R1B/R1C And Active R1D Registration Release
+## Accepted R0/R1A/R1B/R1C/R1D And Active R1E Binding Release
 
 Six non-overlapping read-only audits found that Stage 4a intentionally froze
 only the common event envelope and `LEDGER_EPOCH_CREATED` payload. Exact
@@ -332,6 +340,37 @@ currentness, prior campaign allocation, path exclusivity, overlap/exposure
 history, authorization, or append behavior; every such stateful use remains
 fail closed.
 
+R1D is accepted on protected main through PR #170 and exact merge-head CI run
+`30475306672`. For R1E, the owner selected bundle `R1E-A`. That explicit
+selection freezes:
+
+- one `CAMPAIGN_ENTITY_BOUND` event with a closed outer `subject_type` union
+  for exact `trial_family` and `sample` identities;
+- singleton campaign scope and exact source event ID/hash syntax;
+- trial-family binding only to an empty-scope global
+  `TRIAL_FAMILY_REGISTERED`;
+- a nested sample `source_kind` union separating empty-scope global
+  `SAMPLE_REGISTERED` from an exact earlier external
+  `STAGE3_SAMPLE_REFERENCE_BOUND`;
+- one campaign-scoped `STAGE3_SAMPLE_REFERENCE_BOUND` that allocates a new
+  stable `smp_<32 lowercase hex>` identity and pins the exact R1D Stage 3
+  authority, record, acceptance, public-projection, and publication-approval
+  tuple;
+- later cross-campaign external-origin reuse only through
+  `CAMPAIGN_ENTITY_BOUND` referencing the exact first Stage 3 event, never a
+  fresh identity or synthetic local registration; and
+- fail-closed prior-allocation, retained source bytes/digest/type/subject/scope,
+  currentness, unique target binding, path exclusivity, and anti-reset rules.
+
+`docs/experiment_trial_ledger_binding_schema_contract.md` records the exact
+R1E authority. R1E publishes a new immutable registry `0.5.0` under unchanged
+schema-language `0.2.0`, supports exactly epoch, both allocations, both
+registrations, and both binding events, and leaves the other 30 events
+`SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`. Its local shape validator cannot prove
+retained source truth, external retrieval, role independence, currentness,
+prior campaign allocation, path history, uniqueness, authorization, or append
+behavior; every such stateful use remains fail closed.
+
 ## Verified Implementation Baseline
 
 - Strict local CSV validation and metadata inventory; no downloader.
@@ -372,9 +411,11 @@ incomplete/unknown event machine-detectable and fail closed. Stage 4B-R1A
 selects the versioned minimal allocation/registration architecture but still
 promotes no event. Stage 4B-R1B adds shape validation for only reservation-only
 campaign/experiment allocation. Stage 4B-R1C adds local shape validation for
-only trial-family registration and pins external authority and acceptance
-references; neither release implements the stateful ledger. Additional
-blockers include incomplete runtime trial retention,
+only trial-family registration. Stage 4B-R1D adds local sample registration,
+and Stage 4B-R1E adds global-entity/external-sample binding shapes with exact
+source references. These releases pin external authority and currentness
+references but do not implement the stateful ledger. Additional blockers
+include incomplete runtime trial retention,
 absent dependence/multiplicity/overfit controls, and diagnostic-only
 cost/capacity assumptions. See `docs/current_roadmap.md` for the prioritized
 list.
@@ -386,7 +427,7 @@ SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
 
 At the last verification, PR #148 was an independent Draft governance PR from
 an older base that changed only `AGENTS.md`. It was not a predecessor for PRs
-#158-#169. The Stage 4B-R1D implementation slice does not edit `AGENTS.md`,
+#158-#170. The Stage 4B-R1E implementation slice does not edit `AGENTS.md`,
 merge/close that draft, or overwrite its policy. Independent thin-router PR
 #168 merged at `4ac5adb` while the first R1C head was being published. Its
 overlap was limited to `docs/repo_map.md`, `scripts/repo_map.py`, and
@@ -397,25 +438,23 @@ local gates before updating its remote head.
 
 ## Next Safe Stage
 
-Complete Stage 4B-R1D in the current isolated worktree. Preserve R0/R1/R2
-byte/hash/behavior/package parity; publish the separate immutable `0.4.0`
-authority; keep the exact R1D-A sample namespace, external Stage 3 authority,
-acceptance, publication approval, path exclusivity, currentness, anti-reset,
-privacy, and shared scope decisions; and promote only `SAMPLE_REGISTERED`.
-Require independent global/direct positive fixtures, literal
-digest/event-set/namespace/authority/acceptance/currentness/privacy/scope
+Complete Stage 4B-R1E in the current isolated worktree. Preserve
+R0/R1/R2/R3 byte/hash/behavior/package parity; publish the separate immutable
+`0.5.0` authority; keep the exact R1E-A subject/source unions, singleton
+campaign scope, source-event references, stable external-origin sample
+identity, prior-allocation/currentness/path-exclusivity/anti-reset decisions;
+and promote only `CAMPAIGN_ENTITY_BOUND` and
+`STAGE3_SAMPLE_REFERENCE_BOUND`. Require independent four-path positive
+fixtures, literal branch/source/event-set/namespace/authority/privacy/scope
 oracles, arbitrary-promotion rejection, focused and full validation,
 independent read-only review, exact-head CI, one final current-head Codex
 review, normal protected merge, and exact merge-head CI. Do not enable
 auto-merge or merge while CI or review is pending.
 
-After R1D is accepted on protected main, begin a separate R1E design-first
-branch. R1E must freeze the exact campaign-entity binding and external Stage 3
-sample-reference event boundaries, subjects, scopes, payloads, prior-allocation
-rules, currentness, path-exclusivity, and anti-reset enforcement before
-promoting `CAMPAIGN_ENTITY_BOUND` or `STAGE3_SAMPLE_REFERENCE_BOUND`. Do not
-infer those materially different choices from helpers, fixtures, or narrative
-examples.
+After R1E is accepted on protected main, begin a separate small schema-family
+orientation from the exact protected merge. Do not infer the next event
+family's materially different subject, payload, state, correction, access, or
+currentness choices from helpers, fixtures, or narrative examples.
 
 Do not call the registry accepted until all 37 events have exact schemas and no
 incomplete or wildcard entry remains.
