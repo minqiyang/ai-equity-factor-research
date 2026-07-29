@@ -1,5 +1,59 @@
 # Engineering Log
 
+## 2026-07-28 - Stage 4B-R1C Trial-Family Registration Schema
+
+- Started from protected `main` merge `a6f7d43` (PR #167) in the isolated
+  `codex/ledger-trial-family-registration-schema` worktree. Exact merge-head CI
+  run `30424903896` succeeded. The clean startup baseline passed 1002 tests
+  with two platform-conditional skips, Ruff, compilation, exact base/status,
+  and immutable R0/R1 hash checks.
+- While the first R1C head was being published, independent thin-router PR
+  #168 advanced protected `main` to `4ac5adb`. R1C overlapped only the generated
+  repo map, its generator, and structure tests. The R1C commit was normally
+  rebased without conflict, both scopes were verified present, the repo map was
+  regenerated, and every local gate was rerun before the remote head update.
+- The owner selected bundle `R1C-A`, freezing
+  `fam_<32 lowercase hex>`, an exact retrievable external family-definition
+  authority tuple, separate acceptance with reviewer independence, stable
+  global family identity, monotonic current generations, anti-reset rules,
+  closed `supersedes`/`depends_on` relations, and a common direct-scope maximum
+  of 32.
+- Added a design-first R1C contract and a separate immutable registry `0.3.0`
+  artifact/digest under unchanged schema-language `0.2.0`. R1C promotes only
+  `TRIAL_FAMILY_REGISTERED`, preserving R0/R1 and leaving the other 33 events
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- Added independent global/direct fixtures and literal release, payload,
+  namespace, scope, public-ID, version/generation, digest, literal-version,
+  duplicate/unknown-field, incomplete-event, and unpublished-promotion
+  oracles. The final rebased focused registry/structure run passed 336 tests.
+- Final rebased full validation passed 1171 tests with two platform-conditional
+  wide-`longdouble` skips, plus Ruff and compileall for
+  `src`/`tests`/`research`/`lean`.
+- No-isolation source/sdist/wheel validation reproduced byte-identical R0, R1,
+  and R2 package resources and identical conformance outcomes. No dependency
+  was installed or added. The check reused `build==1.5.0`,
+  `setuptools==83.0.0`, `wheel==0.47.0`, and `packaging==26.2` from the
+  existing project environment at
+  `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv`;
+  its purpose was package-resource parity, and it changed no dependency file or
+  persistent environment. Generated egg-info and temporary package artifacts
+  were removed.
+- This release adds no external retrieval, acceptance/currentness runtime,
+  append/storage backend, private data, research trial, protected access,
+  brokerage, order, paper, or live behavior. Final privacy/determinism/review
+  evidence will be appended only after those gates have actually completed.
+- Self-adversarial review caught one methodology drift before commit: the draft
+  had strengthened strictly monotonic acceptance generations to mandatory
+  `+1` steps while weakening exactly-one-current to at-most-one-current. The
+  contract, decision log, handoff, and literal oracle were corrected to the
+  owner-selected rule: strictly increasing generations and exactly one current
+  accepted generation for registration and later formal use.
+- The same review removed two further unauthorized extrapolations: the direct
+  campaign-scope maximum 32 is not reused as a `depends_on` graph bound, whose
+  finite maximum belongs to the digest-pinned external authority schema; and
+  currentness uses the selected explicit supersession rule without inventing a
+  separate revocation mechanism.
+
 ## 2026-07-28 - Stage 4B-R1B Campaign/Experiment Allocation Schemas
 
 - Started from protected `main` merge `9cf5325` (PR #166) in the isolated

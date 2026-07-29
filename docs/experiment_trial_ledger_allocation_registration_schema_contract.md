@@ -13,6 +13,13 @@ Owner decision: architecture `A`.
 Owner namespace decision: option `E1`, exact experiment namespace
 `exp_<32 lowercase hex>`.
 
+Successor note: the owner later selected `R1C-A`. The exact trial-family
+namespace, authority, acceptance, currentness, relation, scope, and registry
+`0.3.0` decisions are frozen separately in
+`docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`.
+Statements below that defer those decisions to R1C describe the historical
+R1A/R1B boundary and are not the active R1C authority.
+
 This document records the design-first Stage 4B-R1A decision and its bounded
 Stage 4B-R1B implementation amendment under the accepted
 `docs/experiment_trial_ledger_contract.md` and the protected-main

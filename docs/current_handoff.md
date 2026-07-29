@@ -1,7 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-28 for the Stage 4B-R1B campaign/experiment allocation
-release.
+Updated: 2026-07-28 for the Stage 4B-R1C trial-family registration release.
 
 ## Canonical State
 
@@ -15,14 +14,18 @@ release.
   `docs/experiment_trial_ledger_contract.md`.
 - Accepted Stage 4B-R0 registry authority:
   `docs/experiment_trial_ledger_schema_registry_contract.md`.
-- Accepted Stage 4B-R1A and active Stage 4B-R1B authority:
+- Accepted Stage 4B-R1A/R1B authority:
   `docs/experiment_trial_ledger_allocation_registration_schema_contract.md`.
+- Active Stage 4B-R1C authority:
+  `docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`.
 - Active roadmap: `docs/current_roadmap.md`.
 - Short operational controller: `docs/codex_long_running_controller.md`.
-- Verified starting `origin/main`: `9cf5325`, the protected merge of PR #166.
-- Starting validation: 913 tests passed with two platform-conditional
-  wide-`longdouble` skips; Ruff, compilation, and exact merge-head GitHub CI
-  passed.
+- Current protected `origin/main`: `4ac5adb`, the merge of independent
+  thin-router PR #168. R1C originally started from verified PR #167 merge
+  `a6f7d43`, then was normally rebased onto `4ac5adb` after `main` advanced.
+- Current base validation reported 1003 tests passed with two
+  platform-conditional wide-`longdouble` skips. The rebased R1C head passed its
+  own focused/full, Ruff, compilation, Skill, and package gates.
 - Stage 1 split isolation and Stage 2 signal/execution timing are complete on
   protected main. Stage 3 methodology is accepted; it does not accept a
   provider, dataset, license, universe, field, benchmark, or historical claim.
@@ -38,6 +41,13 @@ release.
   diff gates, three independent post-fix reviews, exact-head CI, one final
   current-head Codex review, protected merge, and exact merge-head GitHub CI
   at `9cf5325`.
+- Stage 4B-R1B PR #167 passed 1002 tests with two platform-conditional skips,
+  Ruff, compilation, deterministic repo-map, Skill audit, source/sdist/wheel
+  R0/R1 package parity, privacy/Unicode/control/diff gates, exact-head CI, and
+  final current-head Codex review. Its first review found one nullable
+  named-type cycle P2; that issue was reproduced, fixed, regression-tested, and
+  re-reviewed before normal protected merge and exact merge-head CI at
+  `a6f7d43`.
 - The accepted Stage 4a contract freezes ledger evidence semantics only. The existing
   JSON writer and registry remain diagnostic/legacy; no append-only runtime,
   backend, private ledger, campaign, or formal interpretation is implemented.
@@ -180,7 +190,7 @@ The current schema-v1 JSON logs cannot prove these properties and remain
 dependency, migrated log, research trial, private access, or generated
 performance evidence.
 
-## Accepted R0/R1A And Active R1B Allocation Release
+## Accepted R0/R1A/R1B And Active R1C Registration Release
 
 Six non-overlapping read-only audits found that Stage 4a intentionally froze
 only the common event envelope and `LEDGER_EPOCH_CREATED` payload. Exact
@@ -252,6 +262,35 @@ interpretation. Each later schema-promotion batch must publish a new immutable,
 monotonically versioned registry artifact and digest rather than overwrite an
 accepted release.
 
+R1B is accepted on protected main through PR #167 and exact merge-head CI run
+`30424903896`. For R1C, the owner selected bundle `R1C-A`. That explicit
+selection, not any helper, fixture, or narrative example, freezes:
+
+- exact `trial_family_id` namespace `fam_<32 lowercase hex>`;
+- an immutable versioned authority catalog plus complete repository-external
+  canonical family records retrieved by an exact digest-pinned tuple;
+- a separate immutable acceptance record whose reviewer is distinct from both
+  the definition issuer and registration actor;
+- stable global family identity, strictly monotonic acceptance generations,
+  exactly one current accepted generation, explicit supersession, and
+  currentness checks before registration, trial allocation, attempt execution,
+  and protected access;
+- no alias, clone, rerun, new campaign, or post-result reclassification reset;
+- `supersedes` for definition generations and `depends_on` across distinct
+  families, with no self-declared `independent_of`; and
+- a common direct-scope maximum of 32 campaign IDs for family and later local
+  sample registration.
+
+`docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`
+records the exact R1C authority. R1C publishes a new immutable registry
+`0.3.0` under unchanged schema-language `0.2.0`, supports exactly epoch,
+campaign allocation, experiment allocation, and trial-family registration,
+and leaves the other 33 events `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`. Its local
+shape validator cannot prove external retrieval, catalog/record authority,
+reviewer independence, currentness, anti-reset history, prior campaign
+allocation, uniqueness, authorization, or append behavior; every such
+stateful use remains fail closed.
+
 ## Verified Implementation Baseline
 
 - Strict local CSV validation and metadata inventory; no downloader.
@@ -291,8 +330,9 @@ not enforce it. Stage 4B-R0 only makes its one exact event and every
 incomplete/unknown event machine-detectable and fail closed. Stage 4B-R1A
 selects the versioned minimal allocation/registration architecture but still
 promotes no event. Stage 4B-R1B adds shape validation for only reservation-only
-campaign/experiment allocation; it does not implement the stateful ledger.
-Additional
+campaign/experiment allocation. Stage 4B-R1C adds local shape validation for
+only trial-family registration and pins external authority and acceptance
+references; neither release implements the stateful ledger. Additional
 blockers include incomplete runtime trial retention,
 absent dependence/multiplicity/overfit controls, and diagnostic-only
 cost/capacity assumptions. See `docs/current_roadmap.md` for the prioritized
@@ -305,29 +345,34 @@ SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
 
 At the last verification, PR #148 was an independent Draft governance PR from
 an older base that changed only `AGENTS.md`. It was not a predecessor for PRs
-#158-#166. The Stage 4B-R1B implementation slice does not edit `AGENTS.md`,
-merge/close that draft, or overwrite its policy.
+#158-#167. The Stage 4B-R1C implementation slice does not edit `AGENTS.md`,
+merge/close that draft, or overwrite its policy. Independent thin-router PR
+#168 merged at `4ac5adb` while the first R1C head was being published. Its
+overlap was limited to `docs/repo_map.md`, `scripts/repo_map.py`, and
+`tests/test_project_structure.py`; there was no R1C contract, registry,
+fixture, loader, or focused behavior-test overlap. R1C was normally rebased
+onto that merge, retained both scopes, regenerated the repo map, and reran all
+local gates before updating its remote head.
 
 ## Next Safe Stage
 
-Complete Stage 4B-R1B in the current isolated worktree. Preserve R0
-byte/hash/behavior/package parity; publish the separate immutable `0.2.0`
-authority; validate all three closed DSL additions; keep the exact E1
-experiment namespace; and promote only reservation-only
-`CAMPAIGN_ALLOCATED` and `EXPERIMENT_ALLOCATED`. Require independent positive
-fixtures, literal digest and event-set oracles, subject/scope/namespace
-killers, arbitrary-promotion rejection, focused and full validation,
-independent read-only review, exact-head CI, one final current-head Codex
-review, normal protected merge, and exact merge-head CI. Do not enable
-auto-merge or merge while CI or review is pending.
+Complete Stage 4B-R1C in the current isolated worktree. Preserve R0/R1
+byte/hash/behavior/package parity; publish the separate immutable `0.3.0`
+authority; keep the exact R1C-A family namespace, authority, acceptance,
+currentness, relation, anti-reset, and scope decisions; and promote only
+`TRIAL_FAMILY_REGISTERED`. Require independent global/direct positive fixtures,
+literal digest/event-set/namespace/authority/acceptance/scope oracles,
+arbitrary-promotion rejection, focused and full validation, independent
+read-only review, exact-head CI, one final current-head Codex review, normal
+protected merge, and exact merge-head CI. Do not enable auto-merge or merge
+while CI or review is pending.
 
-After R1B is accepted on protected main, begin a separate R1C design-first
-branch. R1C must select the exact trial-family namespace, exact retrievable
-family-definition authority and versioning, acceptance/reviewer-independence
-architecture, anti-reset/currentness policy, and finite shared direct-scope
-bound before promoting `TRIAL_FAMILY_REGISTERED`. Those materially different
-valid choices require a new owner decision; do not infer them from helpers or
-narrative examples.
+After R1C is accepted on protected main, begin a separate R1D design-first
+branch. R1D must select the exact local sample namespace, exact Stage 3
+sample-reference authority, local/external registration representation,
+alias/currentness policy, privacy projection, and event boundaries before
+promoting any sample or binding event. Do not infer those materially different
+choices from helpers, fixtures, or narrative examples.
 
 Do not call the registry accepted until all 37 events have exact schemas and no
 incomplete or wildcard entry remains.

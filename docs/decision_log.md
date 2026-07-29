@@ -15,6 +15,74 @@ investment performance.
 
 ---
 
+## 2026-07-28 - Select R1C-A Trial-Family Registration Authority
+
+Context:
+
+- Stage 4B-R1B is accepted on protected `main` through PR #167 at `a6f7d43`;
+  exact merge-head CI run `30424903896` passed.
+- R1A/R1B deliberately deferred the exact family namespace, retrievable
+  definition authority, acceptance/reviewer-independence model,
+  anti-reset/currentness policy, relation vocabulary, and shared direct-scope
+  maximum because helpers, fixtures, and narrative examples are not
+  wire-schema or methodology authorities.
+- The owner selected the recommended bundle `R1C-A`.
+
+Decision:
+
+- The exact `trial_family_id` namespace is `fam_<32 lowercase hex>`.
+- Family definitions use an immutable versioned authority catalog plus complete
+  repository-external canonical records retrieved by one exact
+  schema/canonicalization/catalog/record digest-pinned tuple. Retrieval miss,
+  ambiguity, schema mismatch, noncanonical bytes, or digest mismatch fails
+  closed.
+- Acceptance is a separate immutable canonical record. Its reviewer must be
+  distinct from both the definition issuer and registration actor and it binds
+  the exact definition tuple and global/direct campaign scope.
+- Global multiplicity-family identity is stable. Acceptance generations are
+  strictly monotonic, exactly one accepted generation is current, supersession
+  is explicit, and currentness is required before registration, trial
+  allocation, attempt execution, and protected access.
+- Aliases, clones, reruns, new campaigns, result exposure, and post-result
+  reclassification do not reset identity or counts. Definition generations use
+  `supersedes`; distinct dependent families use `depends_on`; no record may
+  self-declare `independent_of`.
+- Direct family scope is limited to 32 campaign IDs. The same maximum applies
+  to later local sample registration.
+- R1C may publish a separate immutable registry `0.3.0` under unchanged
+  schema-language `0.2.0` and promote only `TRIAL_FAMILY_REGISTERED`.
+
+Rationale:
+
+- Complete retrievable records prevent hash-only preregistration stand-ins.
+- Separate acceptance and role independence prevent self-review from becoming
+  formal authority.
+- Stable identity and currentness rules prevent multiplicity resets through
+  naming, cloning, reruns, campaign changes, or post-result relabeling.
+- The finite shared scope bound keeps direct registration auditable while
+  retaining global registration plus explicit binding for broad reuse.
+
+Consequences:
+
+- R1C's owner-methodology gate is cleared. The other 33 event types remain
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- Local schema acceptance proves event shape and pinned references only; it
+  does not retrieve records, authenticate roles, determine currentness, enforce
+  anti-reset history, allocate campaigns, append events, or authorize research.
+- Trial, execution-attempt, protected-access, private-data, dependency, and
+  trading impacts remain zero.
+- Future owner-methodology gates use at most four owner-facing reminders at
+  30-minute intervals. If no owner answer follows the fourth reminder, the
+  heartbeat pauses instead of emitting repeated quiet status messages.
+
+Follow-up:
+
+- Add independent global/direct fixtures and literal namespace, authority,
+  acceptance, currentness, relation, and scope killing oracles.
+- Prove byte/behavior/package parity for immutable R0 and R1 releases.
+- After protected R1C completion, open a separate R1D owner gate for the exact
+  sample and Stage 3 reference authority.
+
 ## 2026-07-28 - Ratify The Experiment Allocation Namespace
 
 Context:
