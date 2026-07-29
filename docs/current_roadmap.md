@@ -1,9 +1,9 @@
 # Current Roadmap
 
-Updated: 2026-07-29 for the Stage 4B-R1G campaign-inventory-seal release.
+Updated: 2026-07-29 for the Stage 4B-R1H attempt-allocation release.
 
-Current protected-main base: `d9ac67e`, the verified merge of Stage 4B-R1F
-PR #172. Its exact merge-head CI run `30482706983` succeeded.
+Current protected-main base: `520ed65`, the verified merge of Stage 4B-R1G
+PR #173. Its exact merge-head CI run `30485940985` succeeded.
 
 This is the canonical roadmap. `docs/research_program_charter.md` defines the
 long-term evidence policy. Older checkpoints, gap refreshes, plans, and audits
@@ -62,7 +62,7 @@ fail-closed parent/currentness/uniqueness/order rules. R1F publishes immutable
 registry `0.6.0`, promotes only `TRIAL_ALLOCATED`, and adds no append,
 authority, retrieval, execution, access, research, or trading runtime.
 `docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md` is
-the active Stage 4B-R1G authority. The owner selected bundle `R1G-A`, freezing
+the accepted Stage 4B-R1G authority. The owner selected bundle `R1G-A`, freezing
 campaign subject and singleton scope, a complete digest-pinned external
 `campaign_inventory_record_v1`, separate independent acceptance and seal-actor
 authority, a 4096-trial schema/review bound, and the exact nonrecursive
@@ -70,6 +70,16 @@ authority, a 4096-trial schema/review bound, and the exact nonrecursive
 `0.7.0`, promotes only `CAMPAIGN_INVENTORY_SEALED`, and adds no record
 resolver, append/storage, currentness, attempt, access, research, or trading
 runtime.
+`docs/experiment_trial_ledger_attempt_allocation_schema_contract.md` is the
+active Stage 4B-R1H authority. The owner selected bundle `R1H-A`, freezing
+exact `att_<32 lowercase hex>` attempt identity, singleton campaign scope,
+exact earlier trial-allocation and initial inventory-seal evidence, a complete
+digest-pinned external `attempt_plan_record_v1`, separate independent
+acceptance and allocation-actor authority, and closed first-attempt/retry
+relations with monotonic policy-bounded ordinals and no reset. R1H publishes
+immutable registry `0.8.0`, promotes only `ATTEMPT_ALLOCATED`, and adds no
+record resolver, append/storage, attempt-start/execution, artifact, access,
+research, or trading runtime.
 
 ## Objective
 
@@ -97,10 +107,10 @@ authorized.
 | Private diagnostics | Local-only EODHD validation and factor diagnostics on a fixed cohort; not accepted point-in-time real-data interpretation. |
 | LEAN | Non-executing metadata/signal scaffold only; no algorithm runtime, parity evidence, brokerage, orders, paper, or live path. |
 
-Protected main has a reported baseline of 2198 passing tests with two
-platform-conditional wide-`longdouble` skips after PR #172. Stages 1-3, Stage
+Protected main has a reported baseline of 2496 passing tests with two
+platform-conditional wide-`longdouble` skips after PR #173. Stages 1-3, Stage
 4a, Stage 4B-R0, Stage 4B-R1A, Stage 4B-R1B, Stage 4B-R1C, Stage 4B-R1D, and
-Stage 4B-R1E, and Stage 4B-R1F are complete.
+Stage 4B-R1E, Stage 4B-R1F, and Stage 4B-R1G are complete.
 Stage 4a defines the accepted ledger contract and deterministic synthetic event
 fixture; Stage 4B-R0 adds only a fail-closed registry foundation. Neither
 implements
@@ -187,7 +197,8 @@ timing, holdout, statistical, or public-documentation findings above.
 | 4b-R1D. Sample registration schema | Complete on protected main via PR #170 | Publish immutable registry `0.4.0` under unchanged schema-language `0.2.0`; preserve R0/R1/R2 bytes and behavior; promote only `SAMPLE_REGISTERED` with exact `smp_<32 lowercase hex>` subject IDs, bounded global/direct campaign scope, pinned Stage 3 record and separate acceptance references, and allowlisted projection/publication-approval references. Keep local/global/external paths exclusive and both binding events incomplete for R1E. | Registry `0.4.0` supports exactly epoch, campaign allocation, experiment allocation, trial-family registration, and sample registration while leaving the other 32 events incomplete. Independent fixtures and literal namespace/authority/acceptance/currentness/privacy/scope oracles, R0/R1/R2/package parity, focused/full gates, exact-head CI, final current-head review, protected merge, and exact merge-head CI passed. Local shape acceptance is not proof of retrieval, reviewer independence, publication approval, currentness, path exclusivity, exposure history, or append behavior. |
 | 4b-R1E. Campaign-entity and Stage 3 sample-reference binding schemas | Complete on protected main via PR #171 | Publish immutable registry `0.5.0` under unchanged schema-language `0.2.0`; preserve R0/R1/R2/R3 bytes and behavior; promote only `CAMPAIGN_ENTITY_BOUND` and `STAGE3_SAMPLE_REFERENCE_BOUND`. Use closed trial-family/sample and local/external source branches, singleton campaign scope, exact source-event references, stable external-origin sample identity, and fail-closed prior-allocation/currentness/path/anti-reset rules. | Registry `0.5.0` supports exactly seven events and leaves the other 30 incomplete. Independent four-path fixtures, literal branch/source/namespace/scope/authority/privacy oracles, prior-release and package parity, 925 focused and 1760 full tests with two platform skips, exact-head CI, one final current-head review, protected merge, and exact merge-head CI passed. Local shape acceptance is not proof of retained source bytes, authority, currentness, path history, uniqueness, or append behavior. |
 | 4b-R1F. Semantic trial-allocation schema | Complete on protected main via PR #172 | Publish immutable registry `0.6.0` under unchanged schema-language `0.2.0`; preserve R0/R1/R2/R3/R4 bytes and behavior; promote only `TRIAL_ALLOCATED`. Use exact trial identity, singleton campaign scope, exact prior parent/source references, complete canonical trial-definition and independent acceptance/publication/actor-authority tuples, and closed relation/code-identity unions. | Registry `0.6.0` supports exactly eight events and leaves the other 29 incomplete. Independent original/rerun fixtures plus literal child/clone cases, namespace/parent/authority/relation/code/privacy/scope killers, prior-release and package parity, focused/full gates, exact-head CI, one final current-head review, protected merge, and exact merge-head CI passed. Local shape acceptance is not represented as proof of parent existence/order, retained bytes, authority/currentness, relation acyclicity, uniqueness, append, or research behavior. |
-| 4b-R1G. Initial campaign-inventory-seal schema | Active in the current tree; owner selected bundle R1G-A | Publish immutable registry `0.7.0` under unchanged schema-language `0.2.0`; preserve R0-R5 bytes and behavior; promote only `CAMPAIGN_INVENTORY_SEALED`. Use campaign subject and singleton scope, exact campaign allocation, a complete external canonical inventory record with independent acceptance and seal authority, a 4096-trial bound, and the exact nonrecursive pre-seal head. | Registry `0.7.0` must support exactly nine events and leave the other 28 incomplete. Independent standard/maximum fixtures, literal scope/authority/count/preseal killers, prior-release and package parity, focused/full gates, exact-head CI, one final current-head review, protected merge, and exact merge-head CI must pass. Local shape acceptance must not be represented as proof of record retrieval, all-and-only completeness, reviewer independence, currentness, source/order, unique seal, atomic append, or research behavior. |
+| 4b-R1G. Initial campaign-inventory-seal schema | Complete on protected main via PR #173 | Publish immutable registry `0.7.0` under unchanged schema-language `0.2.0`; preserve R0-R5 bytes and behavior; promote only `CAMPAIGN_INVENTORY_SEALED`. Use campaign subject and singleton scope, exact campaign allocation, a complete external canonical inventory record with independent acceptance and seal authority, a 4096-trial bound, and the exact nonrecursive pre-seal head. | Registry `0.7.0` supports exactly nine events and leaves the other 28 incomplete. Independent standard/maximum fixtures, literal scope/authority/count/preseal killers, prior-release and package parity, 1661 focused and 2496 full tests with two platform skips, exact-head CI, one final current-head review, protected merge, and exact merge-head CI passed. Local shape acceptance is not represented as proof of record retrieval, all-and-only completeness, reviewer independence, currentness, source/order, unique seal, atomic append, or research behavior. |
+| 4b-R1H. Attempt-allocation schema | Active in the current tree; owner selected bundle R1H-A | Publish immutable registry `0.8.0` under unchanged schema-language `0.2.0`; preserve R0-R6 bytes and behavior; promote only `ATTEMPT_ALLOCATED`. Use exact attempt identity, singleton campaign scope, exact earlier trial/seal references, a complete external canonical attempt plan with independent acceptance and allocation authority, and closed first/retry branches with policy-bounded monotonic ordinals. | Registry `0.8.0` must support exactly ten events and leave the other 27 incomplete. Independent first/retry fixtures, literal namespace/source/authority/acceptance/relation/ordinal killers, prior-release and package parity, focused/full gates, exact-head CI, one final current-head review, protected merge, and exact merge-head CI must pass. Local shape acceptance must not be represented as proof of source existence/order, plan retrieval, role independence, currentness, terminal predecessor, retry permission/budget, durable append, execution, artifact, access, or research behavior. |
 | 4b. Experiment/trial ledger implementation | Blocked by complete 37-event payload-registry acceptance and later runtime architecture decisions | Freeze exact schemas in separately reviewed event-family batches, then close 37-of-37 coverage without incomplete, wildcard, open-object, or free-string stand-ins. Only afterward implement the accepted contract in a separate namespace with atomic allocation, append-only events, restart/concurrency/tamper tests, protected-access capability enforcement, campaign completeness, and safe projection. Material backend/private-location/recovery/checkpoint-currentness architecture choices require a separately recorded owner decision. | Complete registry coverage rejects every missing, unknown, or incompletely specified event before append. Later behavioral tests prove no silent overwrite, backfilled holdout laundering, failed-before-write loss, retry hiding, prefix/tail truncation, currentness rollback, checkpoint fork, or private projection leak. |
 | 5. Statistical validation | Blocked by Stage 4b | Add descriptive, dependence-aware, bootstrap, placebo, multiplicity, DSR, PBO, and stability controls in design-first increments. | Registered inference policy and deterministic synthetic/golden tests pass. |
 | 6. Canonical factor registry | Blocked by Stages 3-5 | Register interpretable price/volume baselines first; fundamentals wait for filing-availability support. | Formula, direction, source, fields, lag, parameters, fixture, tests, limitations, and trial family are complete. |

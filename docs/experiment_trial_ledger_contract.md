@@ -1118,9 +1118,10 @@ Deferred to Stage 4b or later:
   `docs/experiment_trial_ledger_allocation_registration_schema_contract.md`,
   `docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`,
   `docs/experiment_trial_ledger_sample_registration_schema_contract.md`,
-  `docs/experiment_trial_ledger_binding_schema_contract.md`, and
-  `docs/experiment_trial_ledger_trial_allocation_schema_contract.md`, and
-  `docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md`.
+  `docs/experiment_trial_ledger_binding_schema_contract.md`,
+  `docs/experiment_trial_ledger_trial_allocation_schema_contract.md`,
+  `docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md`, and
+  `docs/experiment_trial_ledger_attempt_allocation_schema_contract.md`.
   These versioned design authorities preserve the R0 fail-closed boundary and
   do not implement append/storage or stateful currentness;
 - physical storage backend (`sqlite3`, a deliberately single-writer event

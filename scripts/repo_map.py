@@ -105,7 +105,11 @@ IMPORTANT_FILES = [
     ),
     (
         "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md",
-        "Active Stage 4B-R1G-A initial campaign-inventory-seal authority.",
+        "Accepted Stage 4B-R1G-A initial campaign-inventory-seal authority.",
+    ),
+    (
+        "docs/experiment_trial_ledger_attempt_allocation_schema_contract.md",
+        "Active Stage 4B-R1H-A attempt-allocation authority.",
     ),
     ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),

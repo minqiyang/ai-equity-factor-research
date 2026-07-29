@@ -15,6 +15,76 @@ investment performance.
 
 ---
 
+## 2026-07-29 - Select R1H-A Attempt Allocation Authority
+
+Context:
+
+- Stage 4B-R1G is accepted on protected `main` through PR #173 at `520ed65`;
+  exact merge-head CI run `30485940985` passed.
+- A read-only dependency/risk graph over the remaining 28 incomplete events
+  selected `ATTEMPT_ALLOCATED` as the smallest strict prerequisite before
+  attempt start, protected access, terminal evidence, and artifact
+  disposition.
+- Stage 4a and R1G deliberately did not freeze attempt identity, plan
+  authority, retry relations, or actor authority. The owner selected bundle
+  `R1H-A`.
+
+Decision:
+
+- Promote only `ATTEMPT_ALLOCATED`; keep attempt start, protected access,
+  terminal, artifact, disposition, closure, review, promotion, adjudication,
+  supersession, and campaign-amendment events incomplete.
+- Use `att_<32 lowercase hex>` as the exact attempt namespace, `attempt` as
+  subject type, and one campaign ID as the sorted-unique scope.
+- Bind the exact earlier `TRIAL_ALLOCATED` and initial
+  `CAMPAIGN_INVENTORY_SEALED` event ID/hash pairs.
+- Pin one complete repository-external canonical `attempt_plan_record_v1`
+  through an immutable digest-pinned authority catalog. Pin a separate
+  immutable acceptance whose reviewer differs from the plan issuer,
+  trial-definition issuer, allocation actor, and relevant private-input
+  producers. Pin a separate current attempt-allocation actor authority.
+- Use a closed `first_attempt`/`retry` tagged union. First attempt has literal
+  ordinal 1. Retry has ordinal at least 2 and exact prior terminal attempt
+  event ID/hash, requires a new attempt ID, and follows a monotonic
+  policy-bounded ordinal under the same accepted trial.
+- Forbid alias, clone, rerun, new-campaign, and post-result reclassification
+  resets. Require source, retrieval, acceptance, role-independence,
+  currentness, uniqueness, terminal-predecessor, retry-policy/budget, and
+  pre-action checks to fail closed.
+- Publish immutable registry `0.8.0` under unchanged schema-language `0.2.0`,
+  preserve R0 through R6 bytes/behavior/default selection, and leave the
+  other 27 events `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+
+Rationale:
+
+- Attempt allocation is the narrowest event that advances the accepted
+  partial order without granting execution or protected-access capability.
+- A complete external plan keeps private operational detail out of the public
+  event while retaining exact retrievability and digest authority.
+- Separate acceptance and actor authority prevent plan issuance, review, and
+  append permission from collapsing into self-certified evidence.
+- Closed first/retry branches make ordinal and predecessor rules reviewable
+  without inventing later start, terminal, or artifact wire schemas.
+
+Consequences:
+
+- R1H may support exactly ten events while the other 27 remain incomplete.
+- Local schema acceptance remains syntax-only and cannot prove source
+  existence/order, plan retrieval, independence, currentness, retry
+  permission, durable append, execution, access, artifact production, or
+  research behavior.
+- Private-data access, research execution, brokerage, order, paper, and live
+  trading impacts remain zero.
+
+Follow-up:
+
+- Add independent first-attempt and retry fixtures plus literal namespace,
+  source, authority, acceptance, relation, ordinal, currentness, anti-reset,
+  incomplete-event, prior-release, package-parity, and unpublished-promotion
+  oracles.
+- After protected R1H completion, analyze the remaining 27-event graph before
+  choosing the next event family.
+
 ## 2026-07-29 - Select R1G-A Initial Campaign Inventory Seal Authority
 
 Context:

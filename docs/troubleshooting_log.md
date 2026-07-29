@@ -1,5 +1,74 @@
 # Troubleshooting Log
 
+## 2026-07-29 - R1H Bounded-Output And Interpreter Recovery
+
+Original failures and consequences:
+
+- A broad R1G registry-schema inspection expanded the 4096-value finite-count
+  enum and exceeded the bounded tool output. No R1H design decision relied on
+  the truncated output.
+- A combined roadmap/log orientation read exceeded the bounded output. The
+  partial result was not treated as complete evidence.
+- A bare `python` orientation command failed because this shell has no
+  `python` executable on `PATH`; it made no repository change.
+- The first R1H digest probe omitted `PYTHONPATH=src` and failed with
+  `ModuleNotFoundError: ledger`; it did not write the registry or sidecar.
+- The `apply_patch` response for the R1H handoff next-stage update was
+  truncated, so the tool response alone could not prove whether the patch had
+  landed.
+- The first final branch rename could not update linked-worktree Git logs
+  under the main repository's `.git/worktrees` metadata. It left the original
+  branch name intact.
+- The first exact 19-file `git add` could not create the linked-worktree
+  `index.lock` under the same Git metadata directory. No file was partially
+  staged by that failed attempt.
+- The first combined focused gate passed 2002 tests and found one
+  documentation-structure assertion that expected a noncontiguous paraphrase
+  of the `ATTEMPT_STARTED` boundary rather than the contract's exact wording.
+
+Correction:
+
+- Replaced broad reads with exact `rg`, bounded `sed`, and targeted JSON-path
+  inspection.
+- Used the existing project interpreter with `env PYTHONPATH=src`.
+- Repeated the digest probe with the exact import path; it produced the
+  intended canonical registry digest and sidecar.
+- Re-read only the exact handoff `Next Safe Stage` range and confirmed the
+  R1H text had landed exactly once before continuing.
+- Retried only the exact linked-worktree branch rename with permission to
+  update Git metadata; it succeeded as
+  `codex/ledger-attempt-allocation-schema`.
+- Retried only the exact 19-file stage with permission to update the linked
+  index; it succeeded without adding unrelated files.
+- Aligned the structure oracle to the contract's exact contiguous
+  `ATTEMPT_STARTED` pre-execution-boundary wording without weakening the
+  requirement that the event remain incomplete.
+
+Verification:
+
+- The isolated worktree remains based on exact protected merge `520ed65`; no
+  protected history, unrelated branch, or GitHub state was changed by the
+  failed reads or commands.
+- Registry `0.8.0` validates under unchanged schema-language `0.2.0`, supports
+  ten events, and leaves 27 events incomplete.
+- Its canonical registry digest is
+  `3c71399f9ee8de51b6bd401dc409865c672d12a97cc00057c6de26445c0c538f`.
+- Initial R1H-focused validation passed 341 tests.
+- After the exact documentation-oracle correction, final focused validation
+  passed 2003 tests and the full suite passed 2838 tests with the two expected
+  platform-conditional skips.
+- No failed command installed a dependency, accessed private data, or changed
+  a persistent environment.
+
+Prevention:
+
+- Avoid broad serialization of finite enumerations; inspect only required
+  paths and counts.
+- Use the exact project interpreter and `PYTHONPATH=src` for repository
+  modules.
+- Treat every truncated tool response as unknown state until the exact target
+  is re-read.
+
 ## 2026-07-29 - R1G Linked-Worktree Metadata And Bounded-Output Recovery
 
 Original failures and consequences:

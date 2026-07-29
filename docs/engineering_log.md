@@ -1,5 +1,56 @@
 # Engineering Log
 
+## 2026-07-29 - Stage 4B-R1H Attempt Allocation Schema
+
+- Started from protected `main` merge `520ed65` (PR #173) in the isolated
+  `codex/ledger-attempt-allocation-schema` worktree. Exact merge-head CI run
+  `30485940985` succeeded. The clean startup baseline passed 2496 tests with
+  two platform-conditional skips, Ruff, compilation, exact-base status, and
+  immutable R0-R6 hash inspection.
+- A read-only dependency/risk graph over all 28 incomplete events selected
+  `ATTEMPT_ALLOCATED` as the smallest strict prerequisite before attempt
+  start, protected access, terminal evidence, and artifact disposition. The
+  owner selected bundle `R1H-A`.
+- Added a design-first R1H contract, independent first-attempt and retry
+  fixtures, and a separate immutable registry `0.8.0` artifact/digest under
+  unchanged schema-language `0.2.0`. R1H promotes only
+  `ATTEMPT_ALLOCATED`, preserves R0-R6, and leaves the other 27 events
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- The event uses exact attempt identity and singleton campaign scope; binds
+  earlier trial allocation and initial inventory seal; pins a complete
+  external attempt plan, independent acceptance, current allocation-actor
+  authority, and expected-output digest; and uses closed first/retry branches
+  with policy-bounded monotonic ordinals.
+- Added literal release, payload, namespace, scope, source, authority,
+  acceptance, relation, ordinal, duplicate/unknown-field, incomplete-event,
+  and unpublished-promotion oracles. Initial focused R1H validation passed
+  341 tests after advancing the older R1 compatibility test to accept
+  published `0.8.0` while retaining rejection of unknown future `0.9.0`.
+- This release adds no resolver, authority/currentness runtime, append/storage
+  backend, attempt start/execution, protected access, artifact production,
+  private data, research trial, brokerage, order, paper, or live behavior.
+- Final focused R0/R1/R1C/R1D/R1E/R1F/R1G/R1H registry and structure
+  validation passed 2003 tests. The full suite passed 2838 tests with two
+  platform-conditional wide-`longdouble` skips. Ruff, compileall for
+  `src`/`tests`/`research`/`lean`, deterministic repo-map regeneration, and
+  the Skill audit passed.
+- No-isolation source/sdist/wheel validation reproduced byte-identical R0
+  through R7 package resources and identical R1H digest, supported/incomplete
+  partitions, default-R0 selection, and conformance outcomes. No dependency
+  was installed or added. The check reused `build==1.5.0`,
+  `setuptools==83.0.0`, `wheel==0.47.0`, and `packaging==26.2` from the
+  existing project environment at
+  `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv`;
+  its purpose was package-resource parity, and it changed no dependency file
+  or persistent environment. Build metadata and artifacts remained in an
+  external temporary copy.
+- JSON parsing, exact immutable prior-release hashes, exact bounded v7-to-v8
+  succession, privacy/credential, hidden-Unicode/control-character, cleanup,
+  and diff gates passed. Generated compile caches were removed. A
+  self-adversarial read-only review corrected one stale handoff claim that
+  still called completed local gates pending and one roadmap list-grammar
+  defect; it found no remaining actionable P1/P2 issue.
+
 ## 2026-07-29 - Stage 4B-R1G Initial Campaign Inventory Seal Schema
 
 - Started from protected `main` merge `d9ac67e` (PR #172) in the isolated
