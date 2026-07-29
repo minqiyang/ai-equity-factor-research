@@ -9,6 +9,17 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the bounded Stage 4B-R1G campaign-inventory seal release. The owner
+  selected bundle `R1G-A`, freezing singleton campaign scope, exact campaign
+  allocation, a complete digest-pinned external canonical inventory, separate
+  independent acceptance and seal-actor authorities, a 1-to-4096 trial
+  schema/review bound, and the exact nonrecursive pre-seal ledger head. A
+  separate immutable registry and digest at version `0.7.0` preserve
+  R0/R1/R2/R3/R4/R5 byte and behavior authority while promoting only
+  `CAMPAIGN_INVENTORY_SEALED`; the other 28 events remain fail closed. This
+  adds no retrieval/currentness runtime, append/storage backend, dependency,
+  private data, research trial, attempt, protected access, or trading
+  behavior.
 - Added the bounded Stage 4B-R1F semantic trial-allocation release. The owner
   selected bundle `R1F-A`, freezing `trl_<32 lowercase hex>`, singleton
   campaign scope, exact prior campaign/experiment/family/sample evidence, a

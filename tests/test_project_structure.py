@@ -49,6 +49,7 @@ def test_required_governance_files_exist() -> None:
         "docs/experiment_trial_ledger_sample_registration_schema_contract.md",
         "docs/experiment_trial_ledger_binding_schema_contract.md",
         "docs/experiment_trial_ledger_trial_allocation_schema_contract.md",
+        "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
@@ -82,12 +83,14 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "4b-R1D. Sample registration schema",
         "4b-R1E. Campaign-entity and Stage 3 sample-reference binding schemas",
         "4b-R1F. Semantic trial-allocation schema",
+        "4b-R1G. Initial campaign-inventory-seal schema",
         "`docs/point_in_time_data_methodology_contract.md`",
         "`docs/experiment_trial_ledger_allocation_registration_schema_contract.md`",
         "`docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`",
         "`docs/experiment_trial_ledger_sample_registration_schema_contract.md`",
         "`docs/experiment_trial_ledger_binding_schema_contract.md`",
         "`docs/experiment_trial_ledger_trial_allocation_schema_contract.md`",
+        "`docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md`",
         "Target construction currently lives in `src/backtest/portfolio.py`",
         "`historical_evaluation`, not a pristine holdout",
         "request `@codex review` once on the",
@@ -104,18 +107,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Stage 2 Timing Decision",
         "## Stage 3 Data Methodology Decision",
         "## Accepted Stage 4a Experiment and Trial Ledger Decision",
-        "## Accepted R0/R1A/R1B/R1C/R1D/R1E And Active R1F Trial Allocation",
+        "## Accepted R0 Through R1F And Active R1G Inventory Seal",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Complete Stage 4B-R1F in the current isolated worktree",
+        "Complete Stage 4B-R1G in the current isolated worktree",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "1760 passing tests" in roadmap
-    assert "Current base validation reported 1760 tests passed" in handoff
+    assert "2198 passing tests" in roadmap
+    assert "Current base validation reported 2198 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -224,7 +227,7 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
         "| 2b. Signal/execution timing implementation | "
         "Complete on protected main via PR #162"
     ) in roadmap
-    assert "Complete Stage 4B-R1F in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1G in the current isolated worktree" in handoff
 
 
 def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
@@ -389,7 +392,11 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 4b-R1F. Semantic trial-allocation schema | "
-        "Active in the current tree; owner selected bundle R1F-A"
+        "Complete on protected main via PR #172"
+    ) in roadmap
+    assert (
+        "| 4b-R1G. Initial campaign-inventory-seal schema | "
+        "Active in the current tree; owner selected bundle R1G-A"
     ) in roadmap
 
 
@@ -1291,7 +1298,7 @@ def test_trial_family_registration_r1c_freezes_owner_bundle_and_release() -> Non
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1C-A`" in normalized_handoff
     assert "leaves the other 33 events" in normalized_handoff
-    assert "Complete Stage 4B-R1F in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1G in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1C-A" in " ".join(specification.split())
     assert (
         "Accepted Stage 4B-R1C-A trial-family registration authority" in repo_map
@@ -1473,7 +1480,7 @@ def test_sample_registration_r1d_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1D-A`" in normalized_handoff
     assert "leaves the other 32 events" in normalized_handoff
-    assert "Complete Stage 4B-R1F in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1G in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1D-A" in " ".join(specification.split())
     assert (
         "Accepted Stage 4B-R1D-A local sample registration authority" in repo_map
@@ -1664,7 +1671,7 @@ def test_binding_r1e_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1E-A`" in normalized_handoff
     assert "leaves the other 30 events" in normalized_handoff
-    assert "Complete Stage 4B-R1F in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1G in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1E-A" in " ".join(
         specification.split()
     )
@@ -1896,17 +1903,250 @@ def test_trial_allocation_r1f_freezes_owner_bundle_and_release() -> None:
     ) in roadmap
     assert (
         "| 4b-R1F. Semantic trial-allocation schema | "
-        "Active in the current tree; owner selected bundle R1F-A"
+        "Complete on protected main via PR #172"
     ) in roadmap
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1F-A`" in normalized_handoff
     assert "leaves the other 29 events" in normalized_handoff
-    assert "Complete Stage 4B-R1F in the current isolated worktree" in handoff
+    assert "Complete Stage 4B-R1G in the current isolated worktree" in handoff
     assert "owner-selected Stage 4B-R1F-A" in " ".join(
         specification.split()
     )
     assert (
-        "Active Stage 4B-R1F-A semantic trial-allocation authority" in repo_map
+        "Accepted Stage 4B-R1F-A semantic trial-allocation authority" in repo_map
+    )
+
+
+def test_campaign_inventory_seal_r1g_freezes_owner_bundle_and_release() -> None:
+    contract_path = (
+        PROJECT_ROOT
+        / "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md"
+    )
+    contract = contract_path.read_text(encoding="utf-8")
+    normalized_contract = " ".join(contract.split())
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
+        encoding="utf-8"
+    )
+    repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
+    registry_path = (
+        PROJECT_ROOT
+        / "src/ledger/schemas/"
+        "experiment_trial_ledger_payload_schema_registry_v7.json"
+    )
+    sidecar_path = registry_path.with_suffix(".sha256")
+    fixture_path = (
+        PROJECT_ROOT
+        / "tests/fixtures/"
+        "experiment_trial_ledger_campaign_inventory_seal_v1_golden.json"
+    )
+    registry = json.loads(registry_path.read_text(encoding="ascii"))
+    fixture = json.loads(fixture_path.read_text(encoding="ascii"))
+
+    for phrase in [
+        "Contract ID: `experiment_trial_ledger_campaign_inventory_seal_schema_r1g`",
+        "Contract version: `0.7.0`",
+        "Owner decision: option `R1G-A`",
+        "registry schema ID `experiment_trial_ledger_payload_schema_registry_v7`",
+        "registry version `0.7.0`",
+        "unchanged schema-language version `0.2.0`",
+        "The other 28 events remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`",
+        "`CAMPAIGN_INVENTORY_SEALED` creates no new campaign or trial identity",
+        "`subject_type` exactly `campaign`",
+        "one-item sorted-unique `payload.campaign_scope_ids`",
+        "The complete `campaign_inventory_record_v1` is repository-external",
+        "ordered all-and-only set of 1 through 4096 semantic trial entries",
+        "Its reviewer must be distinct from:",
+        "The maximum of 4096 semantic trials is a schema/review bound",
+        "`campaign_inventory_preseal_head_v1`",
+        "require the seal sequence to equal `predecessor_sequence + 1`",
+        "Exactly one initial `CAMPAIGN_INVENTORY_SEALED` is legal",
+        "`CAMPAIGN_AMENDMENT_PROPOSED`",
+        "`CAMPAIGN_INVENTORY_AMENDED`",
+        "local schema `ACCEPT`",
+        "Trial execution count, attempt count, and protected-sample access remain zero",
+    ]:
+        assert phrase in normalized_contract
+
+    expected_supported = [
+        "LEDGER_EPOCH_CREATED",
+        "CAMPAIGN_ALLOCATED",
+        "EXPERIMENT_ALLOCATED",
+        "TRIAL_FAMILY_REGISTERED",
+        "SAMPLE_REGISTERED",
+        "CAMPAIGN_ENTITY_BOUND",
+        "STAGE3_SAMPLE_REFERENCE_BOUND",
+        "TRIAL_ALLOCATED",
+        "CAMPAIGN_INVENTORY_SEALED",
+    ]
+    expected_payload_fields = [
+        "campaign_allocation_event_id",
+        "campaign_allocation_event_sha256",
+        "campaign_scope_ids",
+        "inventory_acceptance_decision_id",
+        "inventory_acceptance_generation",
+        "inventory_acceptance_record_sha256",
+        "inventory_acceptance_schema_version",
+        "inventory_authority_id",
+        "inventory_authority_registry_sha256",
+        "inventory_authority_version",
+        "inventory_record_canonicalization_id",
+        "inventory_record_id",
+        "inventory_record_schema_version",
+        "inventory_record_version",
+        "preseal_head",
+        "seal_authority_generation",
+        "seal_authority_id",
+        "seal_authority_record_sha256",
+        "seal_authority_schema_version",
+        "sealed_semantic_trial_count",
+        "sealed_trial_inventory_sha256",
+    ]
+    assert registry["registry_schema_id"] == (
+        "experiment_trial_ledger_payload_schema_registry_v7"
+    )
+    assert registry["registry_version"] == "0.7.0"
+    assert registry["registry_status"] == "SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY"
+    assert registry["schema_language_version"] == "0.2.0"
+    assert [item["event_type"] for item in registry["event_schemas"]] == (
+        expected_supported
+    )
+    assert len(registry["incomplete_event_types"]) == 28
+    assert set(registry["incomplete_event_types"]) == (
+        set(registry["closed_event_vocabulary"]) - set(expected_supported)
+    )
+
+    seal = next(
+        item
+        for item in registry["event_schemas"]
+        if item["event_type"] == "CAMPAIGN_INVENTORY_SEALED"
+    )
+    assert seal["schema_status"] == "FROZEN_SUPPORTED"
+    schema = seal["event_schema"]
+    payload = schema["properties"]["payload"]
+    assert schema["properties"]["subject_type"] == {
+        "kind": "literal",
+        "value": "campaign",
+    }
+    assert schema["properties"]["subject_id"] == {
+        "kind": "named",
+        "name": "campaign_id",
+    }
+    assert list(payload["properties"]) == expected_payload_fields
+    assert payload["required"] == expected_payload_fields
+    assert payload["properties"]["campaign_scope_ids"] == {
+        "kind": "array",
+        "collection_semantics": "sorted_unique",
+        "items": {"kind": "named", "name": "campaign_id"},
+        "min_items": 1,
+        "max_items": 1,
+    }
+    count = payload["properties"]["sealed_semantic_trial_count"]
+    assert count["kind"] == "enum"
+    assert len(count["values"]) == 4096
+    assert set(count["values"]) == set(range(1, 4097))
+    preseal = payload["properties"]["preseal_head"]
+    assert list(preseal["properties"]) == [
+        "anchor_schema_version",
+        "ledger_id",
+        "predecessor_event_sha256",
+        "predecessor_sequence",
+    ]
+    assert seal["local_constraints"] == [
+        {
+            "constraint_id": "inventory_campaign_subject_in_scope",
+            "predicate": "array_contains_path",
+            "left_path": ["payload", "campaign_scope_ids"],
+            "right_path": ["subject_id"],
+        },
+        {
+            "constraint_id": "inventory_preseal_ledger_matches_envelope",
+            "predicate": "path_equals_path",
+            "left_path": ["payload", "preseal_head", "ledger_id"],
+            "right_path": ["ledger_id"],
+        },
+        {
+            "constraint_id": "inventory_preseal_hash_matches_previous",
+            "predicate": "path_equals_path",
+            "left_path": [
+                "payload",
+                "preseal_head",
+                "predecessor_event_sha256",
+            ],
+            "right_path": ["previous_event_sha256"],
+        },
+    ]
+
+    assert sidecar_path.read_text(encoding="ascii").strip() == (
+        "1d85424d1ee60dcc9523a52c56b22080b47aebb4275551a7ea9ee38e8e28d710"
+    )
+    assert fixture["fixture_id"] == (
+        "experiment_trial_ledger_campaign_inventory_seal_v1_golden"
+    )
+    assert set(fixture) == {
+        "fixture_id",
+        "standard_inventory_sealed",
+        "maximum_inventory_sealed",
+    }
+    assert (
+        fixture["standard_inventory_sealed"]["payload"][
+            "sealed_semantic_trial_count"
+        ]
+        == 2
+    )
+    assert (
+        fixture["maximum_inventory_sealed"]["payload"][
+            "sealed_semantic_trial_count"
+        ]
+        == 4096
+    )
+    for event in fixture.values():
+        if not isinstance(event, dict):
+            continue
+        assert event["event_type"] == "CAMPAIGN_INVENTORY_SEALED"
+        assert event["subject_type"] == "campaign"
+        assert re.fullmatch(r"cmp_[0-9a-f]{32}", event["subject_id"])
+        assert list(event["payload"]) == expected_payload_fields
+        assert (
+            event["payload"]["campaign_scope_ids"][0] == event["subject_id"]
+        )
+        assert (
+            event["payload"]["preseal_head"]["ledger_id"]
+            == event["ledger_id"]
+        )
+        assert (
+            event["payload"]["preseal_head"]["predecessor_event_sha256"]
+            == event["previous_event_sha256"]
+        )
+
+    for canonical_doc in [roadmap, handoff, specification, repo_map]:
+        assert (
+            "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md"
+            in canonical_doc
+        )
+    assert (
+        "| 4b-R1F. Semantic trial-allocation schema | "
+        "Complete on protected main via PR #172"
+    ) in roadmap
+    assert (
+        "| 4b-R1G. Initial campaign-inventory-seal schema | "
+        "Active in the current tree; owner selected bundle R1G-A"
+    ) in roadmap
+    normalized_handoff = " ".join(handoff.split())
+    assert "The owner selected bundle `R1G-A`" in normalized_handoff
+    assert "leaves the other 28 events" in normalized_handoff
+    assert "Complete Stage 4B-R1G in the current isolated worktree" in handoff
+    assert "owner-selected Stage 4B-R1G-A" in " ".join(
+        specification.split()
+    )
+    assert (
+        "Active Stage 4B-R1G-A initial campaign-inventory-seal authority"
+        in repo_map
     )
 
 

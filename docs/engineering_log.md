@@ -1,5 +1,58 @@
 # Engineering Log
 
+## 2026-07-29 - Stage 4B-R1G Initial Campaign Inventory Seal Schema
+
+- Started from protected `main` merge `d9ac67e` (PR #172) in the isolated
+  `codex/ledger-campaign-inventory-seal-schema` worktree. Exact merge-head CI
+  run `30482706983` succeeded. The clean startup baseline passed 2198 tests
+  with two platform-conditional skips, Ruff, compilation, exact-base status,
+  and immutable R0-R5 hash inspection.
+- A read-only dependency/risk graph over all 29 incomplete events selected
+  `CAMPAIGN_INVENTORY_SEALED` as the unique smallest prerequisite after trial
+  allocation and before attempt allocation or protected-access intent. The
+  owner selected bundle `R1G-A`.
+- Added a design-first R1G contract, independent standard-count and
+  maximum-count fixtures, and a separate immutable registry `0.7.0`
+  artifact/digest under unchanged schema-language `0.2.0`. R1G promotes only
+  `CAMPAIGN_INVENTORY_SEALED`, preserves R0-R5, and leaves the other 28 events
+  `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- The event pins exact campaign allocation, a complete external canonical
+  inventory record, separate independent acceptance, seal-actor authority,
+  singleton scope, a 4096-trial schema/review bound, and the exact
+  nonrecursive pre-seal head. Local constraints enforce campaign membership,
+  nested ledger equality, and previous-hash equality; all-and-only
+  completeness, retrieval, role independence, currentness,
+  predecessor/sequence truth, unique seal, and atomic append remain stateful
+  fail-closed requirements.
+- Added literal release, payload, campaign/scope, authority, acceptance,
+  count, pre-seal, duplicate/unknown-field, incomplete-event, and
+  unpublished-promotion oracles. Initial focused registry validation passed
+  after advancing the older R1 compatibility test from published `0.6.0` to
+  published `0.7.0` while retaining rejection of unknown future `0.8.0`.
+- This release adds no resolver, authority/currentness runtime, append/storage
+  backend, campaign seal operation, trial execution, attempt, protected
+  access, private data, brokerage, order, paper, or live behavior.
+- Final focused R0/R1/R1C/R1D/R1E/R1F/R1G registry and structure validation
+  passed 1661 tests. The full suite passed 2496 tests with two
+  platform-conditional wide-`longdouble` skips. Ruff, compileall for
+  `src`/`tests`/`research`/`lean`, whitespace validation, deterministic
+  repo-map regeneration, and the Skill audit passed.
+- No-isolation source/sdist/wheel validation reproduced byte-identical R0
+  through R6 package resources and identical R1G digest, supported/incomplete
+  partitions, and conformance outcomes. No dependency was installed or added.
+  The check reused `build==1.5.0`, `setuptools==83.0.0`, `wheel==0.47.0`, and
+  `packaging==26.2` from the existing project environment at
+  `/Users/rhapsoul/Documents/Codex/projects/equity-factor-research/.venv`;
+  its purpose was package-resource parity, and it changed no dependency file
+  or persistent environment. Generated egg-info was removed and temporary
+  package artifacts remained outside the repository.
+- JSON parsing, exact immutable prior-release hashes, exact bounded
+  v6-to-v7 succession, privacy/path/hidden-Unicode/control-character,
+  cleanup, and diff gates passed. Self-adversarial read-only review corrected
+  two documentation-currentness mismatches, documented the closed-enum
+  encoding of the finite count bound, and found no remaining actionable P1/P2
+  issue.
+
 ## 2026-07-29 - Stage 4B-R1F Semantic Trial Allocation Schema
 
 - Started from protected `main` merge `814bf02` (PR #171) in the isolated

@@ -428,9 +428,15 @@ Trial execution count, attempt count, and protected-sample access remain zero.
 
 ## Next Gate
 
-After R1F is accepted on protected main, perform a read-only dependency/risk
-analysis over the remaining 29 incomplete events. Continue with the smallest
-event family that unblocks the next partial-order dependency without inventing
-wire fields. A genuinely material architecture choice receives a concise
-owner memo and the bounded reminder policy; otherwise continue automatically
-through the same immutable-release and protected-merge gates.
+The transition out of R1F required the workflow to perform a read-only
+dependency/risk analysis over the remaining 29 incomplete events. That
+analysis selected the bounded successor in
+`docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md`.
+The owner selected the bounded successor in
+`docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md`.
+R1G publishes a separate immutable registry `0.7.0`, promotes only
+`CAMPAIGN_INVENTORY_SEALED`, and does not reinterpret this R1F authority. After
+R1G is accepted on protected main, the next analysis covers the remaining 28
+incomplete events before the smallest next family is selected. A genuinely
+material architecture choice receives a concise owner memo and the bounded
+reminder policy; otherwise continuation remains automatic.

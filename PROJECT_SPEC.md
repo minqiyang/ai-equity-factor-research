@@ -101,6 +101,18 @@ existence and order, external retrieval and currentness, reviewer
 independence, actor authority, relation acyclicity, code-byte retention,
 uniqueness, append behavior, and pre-action enforcement remain fail-closed
 stateful requirements.
+`docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md`
+defines the owner-selected Stage 4B-R1G-A initial campaign-inventory-seal
+authority. A separate immutable registry `0.7.0` preserves R0 through R5 bytes
+and behavior while promoting only `CAMPAIGN_INVENTORY_SEALED`. It pins a
+complete repository-external canonical inventory record, separate independent
+acceptance, seal-actor authority, exact campaign allocation, singleton scope,
+the nonrecursive `campaign_inventory_preseal_head_v1`, and a 4096-trial
+schema/review bound. Local schema acceptance proves only closed event shape;
+record retrieval, all-and-only inventory completeness, reviewer independence,
+authority/currentness, predecessor-head comparison, exact sequence arithmetic,
+single-seal uniqueness, atomic append, and pre-action enforcement remain
+fail-closed stateful requirements.
 
 ## Current Phase and Boundary
 

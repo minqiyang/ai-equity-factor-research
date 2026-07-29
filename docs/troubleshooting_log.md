@@ -1,5 +1,68 @@
 # Troubleshooting Log
 
+## 2026-07-29 - R1G Linked-Worktree Metadata And Bounded-Output Recovery
+
+Original failures and consequences:
+
+- The first branch rename could not update linked-worktree Git metadata under
+  the main repository's `.git/worktrees` directory because the sandbox only
+  permitted content writes. The branch remained unchanged by that failed
+  attempt.
+- A broad controller/roadmap orientation read exceeded the available response
+  context and was truncated. No design decision relied on the partial output.
+- The `apply_patch` response for the new engineering-log entry was truncated,
+  so the tool response alone could not prove whether the entry had landed.
+- The first repo-map/focused-test command used bare `python`, which was not on
+  this shell's path. Its exact retry used the existing project environment.
+- The first focused-test retry named the historical R0 test file as
+  `tests/test_ledger_schema_registry_r0.py`; the actual retained file is
+  `tests/test_ledger_schema_registry.py`, so no tests ran in that retry.
+- The first focused registry run passed 871 tests and found one expected stale
+  compatibility assertion: the older R1 test still rejected newly published
+  release `0.7.0`.
+- The first package conformance statistics probe requested a nonexistent
+  `supported_event_types` summary key after byte parity had already passed.
+  The actual supported schema collection is `event_schemas`.
+
+Correction:
+
+- Retried only the exact branch rename with permission to update linked
+  worktree metadata; it succeeded as
+  `codex/ledger-campaign-inventory-seal-schema`.
+- Repeated the orientation with narrow, targeted reads from the canonical
+  controller, roadmap, handoff, and registry sources.
+- Inspected the top of `docs/engineering_log.md`, confirmed that the R1G entry
+  had landed exactly once, and did not reapply it.
+- Reused the existing project interpreter, corrected the exact retained test
+  filename, and reran the intended focused gate.
+- Advanced the compatibility test to accept explicit published `0.7.0` while
+  retaining fail-closed rejection of unknown future release `0.8.0`.
+- Repeated the source/sdist/wheel conformance probe using
+  `event_schemas`; all three carriers then reported the same digest,
+  nine supported schemas, 28 incomplete events, and identical outcomes.
+
+Verification:
+
+- The isolated R1G worktree remained based on exact protected merge
+  `d9ac67e`, and no protected history or unrelated branch was changed.
+- The R1G registry validates as release `0.7.0` under unchanged schema-language
+  `0.2.0`, supports nine events, and leaves 28 events incomplete.
+- The generated R1G canonical registry digest is
+  `1d85424d1ee60dcc9523a52c56b22080b47aebb4275551a7ea9ee38e8e28d710`.
+- Final focused validation passed 1661 tests; the full suite passed 2496 tests
+  with the two expected platform-conditional skips.
+- No failed command installed a dependency, changed GitHub state, accessed
+  private data, or altered protected history.
+
+Prevention:
+
+- Use narrowly scoped permission escalation only for linked-worktree Git
+  metadata changes.
+- Cap orientation reads, and treat truncated tool output as unknown state until
+  the exact target is re-read.
+- Keep compatibility tests explicit about the newest published release and one
+  unknown future release.
+
 ## 2026-07-29 - R1D Handoff Patch Output Was Truncated
 
 Original failure and consequence:

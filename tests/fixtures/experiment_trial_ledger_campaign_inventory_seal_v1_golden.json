@@ -1,0 +1,101 @@
+{
+  "fixture_id": "experiment_trial_ledger_campaign_inventory_seal_v1_golden",
+  "standard_inventory_sealed": {
+    "actor_id": "act_00000000000000000000000000000070",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "event_id": "evt_00000000000000000000000000000071",
+    "event_schema_version": "ledger_event_v1",
+    "event_type": "CAMPAIGN_INVENTORY_SEALED",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_00000000000000000000000000000072",
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "occurred_at": "2026-07-29T19:30:00Z",
+    "operation_id": "opn_00000000000000000000000000000073",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "payload": {
+      "campaign_allocation_event_id": "evt_00000000000000000000000000000074",
+      "campaign_allocation_event_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "campaign_scope_ids": [
+        "cmp_00000000000000000000000000000075"
+      ],
+      "inventory_acceptance_decision_id": "campaign-inventory-acceptance-1",
+      "inventory_acceptance_generation": 2,
+      "inventory_acceptance_record_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "inventory_acceptance_schema_version": "campaign_inventory_acceptance_v1",
+      "inventory_authority_id": "campaign-inventory-authority-1",
+      "inventory_authority_registry_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "inventory_authority_version": 3,
+      "inventory_record_canonicalization_id": "pit_canonical_json_v1",
+      "inventory_record_id": "campaign-inventory-record-1",
+      "inventory_record_schema_version": "campaign_inventory_record_v1",
+      "inventory_record_version": 4,
+      "preseal_head": {
+        "anchor_schema_version": "campaign_inventory_preseal_head_v1",
+        "ledger_id": "ldg_00000000000000000000000000000072",
+        "predecessor_event_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "predecessor_sequence": 17
+      },
+      "seal_authority_generation": 5,
+      "seal_authority_id": "campaign-inventory-seal-authority-1",
+      "seal_authority_record_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "seal_authority_schema_version": "campaign_inventory_seal_authority_v1",
+      "sealed_semantic_trial_count": 2,
+      "sealed_trial_inventory_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "previous_event_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "recorded_at": "2026-07-29T19:30:00Z",
+    "sequence": 18,
+    "subject_id": "cmp_00000000000000000000000000000075",
+    "subject_type": "campaign"
+  },
+  "maximum_inventory_sealed": {
+    "actor_id": "act_00000000000000000000000000000076",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "event_id": "evt_00000000000000000000000000000077",
+    "event_schema_version": "ledger_event_v1",
+    "event_type": "CAMPAIGN_INVENTORY_SEALED",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_00000000000000000000000000000078",
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "occurred_at": "2026-07-29T19:31:00Z",
+    "operation_id": "opn_00000000000000000000000000000079",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "payload": {
+      "campaign_allocation_event_id": "evt_0000000000000000000000000000007a",
+      "campaign_allocation_event_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+      "campaign_scope_ids": [
+        "cmp_0000000000000000000000000000007b"
+      ],
+      "inventory_acceptance_decision_id": "campaign-inventory-acceptance-max",
+      "inventory_acceptance_generation": 8,
+      "inventory_acceptance_record_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+      "inventory_acceptance_schema_version": "campaign_inventory_acceptance_v1",
+      "inventory_authority_id": "campaign-inventory-authority-1",
+      "inventory_authority_registry_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "inventory_authority_version": 3,
+      "inventory_record_canonicalization_id": "pit_canonical_json_v1",
+      "inventory_record_id": "campaign-inventory-record-max",
+      "inventory_record_schema_version": "campaign_inventory_record_v1",
+      "inventory_record_version": 9,
+      "preseal_head": {
+        "anchor_schema_version": "campaign_inventory_preseal_head_v1",
+        "ledger_id": "ldg_00000000000000000000000000000078",
+        "predecessor_event_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "predecessor_sequence": 4098
+      },
+      "seal_authority_generation": 10,
+      "seal_authority_id": "campaign-inventory-seal-authority-2",
+      "seal_authority_record_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+      "seal_authority_schema_version": "campaign_inventory_seal_authority_v1",
+      "sealed_semantic_trial_count": 4096,
+      "sealed_trial_inventory_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "previous_event_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "recorded_at": "2026-07-29T19:31:00Z",
+    "sequence": 4099,
+    "subject_id": "cmp_0000000000000000000000000000007b",
+    "subject_type": "campaign"
+  }
+}
