@@ -85,7 +85,7 @@ IMPORTANT_FILES = [
     ),
     (
         "docs/experiment_trial_ledger_allocation_registration_schema_contract.md",
-        "Active Stage 4B-R1A allocation/registration architecture-A decision.",
+        "Active Stage 4B-R1B campaign/experiment allocation release.",
     ),
     ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),

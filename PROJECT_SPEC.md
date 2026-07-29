@@ -42,6 +42,14 @@ versioned closed R1 schema-language path, and requirements for future exact
 reference-based family and Stage 3 sample authorities. R1A accepts neither
 authority and is design-only: it promotes no event, creates no trial or
 access, and leaves Stage 4b runtime and Stage 5 blocked.
+The same contract now contains the bounded Stage 4B-R1B implementation
+authority. The owner ratified `exp_<32 lowercase hex>` as the exact experiment
+namespace. A separate immutable registry/schema-language `0.2.0` release
+supports only epoch plus reservation-only campaign and experiment allocation,
+keeps the other 34 events `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`, and preserves
+the R0 artifacts, default entry point, and behavior. Shape validation does not
+implement allocation, append, parent existence, uniqueness, authorization,
+campaign execution, or research interpretation.
 
 ## Current Phase and Boundary
 

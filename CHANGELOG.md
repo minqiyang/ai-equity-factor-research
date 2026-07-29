@@ -9,6 +9,16 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the bounded Stage 4B-R1B schema release. The owner ratified
+  `exp_<32 lowercase hex>` as the exact experiment namespace; a separate,
+  immutable registry and digest at version `0.2.0` preserve R0 byte-for-byte
+  while supporting exactly epoch plus reservation-only
+  `CAMPAIGN_ALLOCATED` and `EXPERIMENT_ALLOCATED`. Explicit release selection,
+  independent fixtures, subject/scope/namespace attacks, arbitrary-promotion
+  rejection, and complete `tagged_union`, `array_contains_path`, and
+  `safe_public_id` meta-tests keep the other 34 events fail closed. This adds
+  no append/storage runtime, dependency, campaign, trial, attempt, protected
+  access, private data, or trading behavior.
 - Added the design-only Stage 4B-R1A allocation/registration architecture-A
   contract. It preserves the accepted R0 authority byte-for-byte, retains the
   37-event vocabulary, selects reservation-only campaign/experiment

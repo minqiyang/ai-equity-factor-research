@@ -15,6 +15,52 @@ investment performance.
 
 ---
 
+## 2026-07-28 - Ratify The Experiment Allocation Namespace
+
+Context:
+
+- Stage 4B-R1A is accepted on protected `main` through PR #166 at
+  `9cf5325`; exact merge-head CI passed.
+- Architecture A deliberately deferred the experiment prefix because helpers,
+  narrative examples, and rejected fixtures are not wire-schema authorities.
+- R1B cannot promote `EXPERIMENT_ALLOCATED` without one exact owner-ratified
+  typed namespace.
+
+Decision:
+
+- The owner selected option `E1`.
+- The exact `experiment_id` wire namespace is
+  `exp_<32 lowercase hex>`.
+- This owner decision, not any pre-existing helper or fixture, is the authority
+  for the prefix.
+- R1B may use the namespace only in its separate immutable registry `0.2.0`
+  authority and exact `EXPERIMENT_ALLOCATED` schema.
+
+Rationale:
+
+- `exp_` is a short, type-specific namespace that remains disjoint from the
+  accepted `cmp_` campaign namespace and the other frozen ledger-owned types.
+- Explicit ratification prevents accidental promotion of non-authoritative
+  documentation or test data into a production wire contract.
+
+Consequences:
+
+- R1B's final owner-methodology gate is cleared.
+- The decision authorizes only typed syntax. It does not prove allocation,
+  uniqueness, parent existence, authorization, append order, preregistration,
+  or any research action.
+- Trial-family and sample prefixes remain unresolved owner decisions for later
+  releases. Their events remain `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+- Trial, execution-attempt, protected-access, private-data, and trading impacts
+  remain zero.
+
+Follow-up:
+
+- Publish and validate the separate R1 registry/digest without changing R0
+  bytes or behavior.
+- Meta-test all three schema-language `0.2.0` additions and keep the other 34
+  events fail closed.
+
 ## 2026-07-28 - Select Versioned Minimal Allocation/Registration Architecture
 
 Context:

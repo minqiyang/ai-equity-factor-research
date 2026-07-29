@@ -1,13 +1,20 @@
-# Experiment and Trial Ledger Allocation/Registration R1A Contract
+# Experiment and Trial Ledger Allocation/Registration R1A/R1B Contract
 
 Contract ID:
 `experiment_trial_ledger_allocation_registration_schema_r1a`.
 
-Contract version: `0.1.0`.
+R1B amendment ID:
+`experiment_trial_ledger_allocation_registration_schema_r1b`.
+
+Contract version: `0.2.0`.
 
 Owner decision: architecture `A`.
 
-This document records the design-first Stage 4B-R1A decision under the accepted
+Owner namespace decision: option `E1`, exact experiment namespace
+`exp_<32 lowercase hex>`.
+
+This document records the design-first Stage 4B-R1A decision and its bounded
+Stage 4B-R1B implementation amendment under the accepted
 `docs/experiment_trial_ledger_contract.md` and the protected-main
 `docs/experiment_trial_ledger_schema_registry_contract.md`. Its publication
 state is determined by protected-main history and `docs/current_handoff.md`,
@@ -19,6 +26,13 @@ registry bytes, or implement a ledger runtime. No event becomes append-valid in
 R1A. `LEDGER_EPOCH_CREATED` remains the sole `FROZEN_SUPPORTED` event, and the
 other 36 known event types remain
 `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
+
+R1B does not reinterpret that historical R1A state. It publishes a separate
+immutable registry authority whose only additional supported events are
+reservation-only `CAMPAIGN_ALLOCATED` and `EXPERIMENT_ALLOCATED`. The R1B
+registry remains `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY` because the other 34
+events remain incomplete. Registry shape acceptance is not append
+authorization and does not implement any stateful ledger rule.
 
 ## Evidence State and Non-Authorization
 
@@ -165,14 +179,16 @@ avoids a hash-only definition stand-in.
 
 The allocated, registered, or bound logical entity is the event subject. The
 following subject and namespace decisions are frozen for later exact schemas.
-Only the campaign prefix is already accepted. R1A does not infer the
-experiment, trial-family, or sample prefix from documentation helpers or
-rejected fixtures:
+The campaign prefix was accepted in R1A. The owner selected option `E1` for
+the experiment prefix before R1B implementation. That ratification, rather
+than any documentation helper, narrative example, or rejected fixture, is the
+sole authority for `exp_`. R1A/R1B still do not infer the trial-family or
+sample prefix:
 
 | Event | Exact subject type | Subject ID role | Namespace status |
 | --- | --- | --- | --- |
 | `CAMPAIGN_ALLOCATED` | `campaign` | newly reserved `campaign_id` | accepted `cmp_<32 lowercase hex>` |
-| `EXPERIMENT_ALLOCATED` | `experiment` | newly reserved `experiment_id` | exact prefix deferred to the R1B owner gate |
+| `EXPERIMENT_ALLOCATED` | `experiment` | newly reserved `experiment_id` | owner-ratified `exp_<32 lowercase hex>` |
 | `TRIAL_FAMILY_REGISTERED` | `trial_family` | newly registered `trial_family_id` | exact prefix deferred to the R1C owner gate |
 | `SAMPLE_REGISTERED` | `sample` | newly registered local `sample_id` | exact prefix deferred to the R1D owner gate |
 | `CAMPAIGN_ENTITY_BOUND` | `trial_family` or `sample` | existing global entity identity | must match the later accepted family or sample namespace |
@@ -225,8 +241,8 @@ stateful partial-order rules do not become shape-validation claims.
 
 ## Schema Language Version 0.2.0
 
-The future R1 authority will extend the closed R0 schema language in one
-versioned amendment. It will add only these capabilities:
+The R1 authority extends the closed R0 schema language in one
+versioned amendment. It adds only these capabilities:
 
 ```text
 tagged_union
@@ -236,7 +252,35 @@ safe_public_id
 
 ### `tagged_union`
 
-A `tagged_union` node has:
+A `tagged_union` node has the exact machine shape:
+
+```json
+{
+  "kind": "tagged_union",
+  "discriminator": "entity_kind",
+  "variants": {
+    "sample": {
+      "kind": "closed_object",
+      "properties": {
+        "entity_kind": {"kind": "literal", "value": "sample"}
+      },
+      "required": ["entity_kind"]
+    },
+    "trial_family": {
+      "kind": "closed_object",
+      "properties": {
+        "entity_kind": {"kind": "literal", "value": "trial_family"}
+      },
+      "required": ["entity_kind"]
+    }
+  }
+}
+```
+
+The discriminator is one schema property name. `variants` is an exact object
+with at least two keys matching `[a-z][a-z0-9_]*`. Each variant is directly a
+`closed_object`; it must require the discriminator and define that property as
+the exact literal equal to its variant key. A `tagged_union` therefore has:
 
 - one required discriminator property;
 - two or more explicitly named closed variants;
@@ -261,12 +305,18 @@ meta-validation must prove:
 - both paths exist in every applicable closed branch.
 
 Combined with `min_items = 1` and `max_items = 1`, it expresses exact singleton
-membership. `CAMPAIGN_ALLOCATED` will use it to bind `subject_id` to
+membership. `CAMPAIGN_ALLOCATED` uses it to bind `subject_id` to
 `payload.campaign_scope_ids`.
 
 Constraint paths remain ordered path components; repeated property names in a
 nested path are legal. Path components must not be subjected to a
 collection-uniqueness rule.
+
+The predicate uses the same exact four-field constraint object as
+`path_equals_path`: `constraint_id`, `predicate`, `left_path`, and
+`right_path`. For `array_contains_path`, `left_path` is the array and
+`right_path` is the scalar. Runtime validation accepts only when one array item
+is type-sensitively equal to the scalar.
 
 ### `safe_public_id`
 
@@ -277,6 +327,8 @@ the exact grammar:
 [a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?
 ```
 
+Its exact machine node is `{"kind":"safe_public_id"}` with no parameters.
+
 It rejects uppercase, whitespace, slash, backslash, colon, query or fragment
 delimiters, percent escapes, `@`, non-ASCII, and path-like or URI-like values.
 It is a syntactic reference token only; it does not establish existence,
@@ -286,19 +338,34 @@ No generic object, free string, opaque metadata, executable predicate,
 implicit default, coercion, open union, file/network reference, or hash-only
 semantic object is added.
 
-## First Implementable Batch: R1B
+## R1B Promotion Batch
 
-After R1A is accepted, the first implementation batch may promote only
+After R1A acceptance, the first implementation batch promotes only
 `CAMPAIGN_ALLOCATED` and `EXPERIMENT_ALLOCATED` in the separate R1 registry.
 The R1 registry will then contain three supported events and 34 incomplete
 events, so its overall status remains
 `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`.
 
+The immutable R1B release identity is:
+
+- artifact
+  `src/ledger/schemas/experiment_trial_ledger_payload_schema_registry_v2.json`;
+- its external `.sha256` sidecar;
+- registry schema ID
+  `experiment_trial_ledger_payload_schema_registry_v2`;
+- registry version `0.2.0`;
+- schema-language ID `ledger_closed_schema_dsl_v1`; and
+- schema-language version `0.2.0`.
+
+The compatibility `load_default_registry()` entry point remains bound to R0.
+R1B authority must be selected explicitly as packaged registry version
+`0.2.0`; a self-consistent caller mutation does not become authoritative.
+
 Both events inherit the exact 18-field Stage 4A common envelope. They require:
 
 - their exact event and subject literals from this contract;
-- the accepted campaign namespace and an owner-ratified exact experiment
-  namespace;
+- the accepted `cmp_<32 lowercase hex>` campaign namespace and the
+  owner-ratified `exp_<32 lowercase hex>` experiment namespace;
 - non-Boolean safe-integer sequence greater than zero;
 - non-null lowercase `previous_event_sha256`;
 - the accepted ledger, event, operation, actor, canonicalization, timestamp,
@@ -329,8 +396,10 @@ character. Later batches may use these accepted semantics but may not silently
 complete or reinterpret them under the same schema-language version.
 
 R1B must not promote the four registration/binding events, implement append,
-or select a backend. It remains blocked until the exact experiment ID
-namespace is ratified.
+or select a backend. The owner cleared its final methodology gate by selecting
+option `E1`; this selection authorizes only the exact `exp_` wire namespace and
+does not authorize allocation runtime, a campaign, an experiment definition,
+or any research action.
 
 ## Family Definition Reference Architecture
 
