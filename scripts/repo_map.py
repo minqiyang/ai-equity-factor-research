@@ -113,7 +113,20 @@ IMPORTANT_FILES = [
     ),
     (
         "docs/experiment_trial_ledger_attempt_start_schema_contract.md",
-        "Active Stage 4B-R1I-A attempt-start authority.",
+        "Accepted Stage 4B-R1I-A attempt-start authority.",
+    ),
+    (
+        "docs/eodhd_sp500_diagnostic_campaign_contract.md",
+        "Active Track A/Track B diagnostic campaign scope authority.",
+    ),
+    (
+        "docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml",
+        "Frozen public Track A machine-readable protocol.",
+    ),
+    (
+        "docs/preregistrations/"
+        "eodhd_sp500_three_factor_trial_inventory_v1.json",
+        "Exact frozen 14-semantic-trial inventory.",
     ),
     ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
     ("docs/repo_map.md", "Generated concise repo map."),

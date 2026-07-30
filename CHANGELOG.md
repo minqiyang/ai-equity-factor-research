@@ -9,6 +9,15 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the owner-approved EODHD historical S&P 500 diagnostic campaign scope
+  reset. R1I is complete, the accepted 37-event work is preserved as optional
+  `full_ledger_profile_v1`, and the public protocol freezes exactly three
+  price-only factors and 14 semantic trials. Track A may proceed through a
+  private entitlement/license gate, blinded dataset review, bounded runner,
+  and repository-external evidence bundle without first implementing the
+  formal ledger runtime. Track B remains required before prospective
+  performance access and is limited to 8-12 conceptual event families. This
+  release changes no research runtime, data, or performance output.
 - Added the bounded Stage 4B-R1I attempt-start release. The owner selected
   bundle `R1I-A`, freezing the exact earlier attempt-allocation reference, a
   complete digest-pinned external readiness record, separate start-actor

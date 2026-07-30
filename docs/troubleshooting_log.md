@@ -1,5 +1,65 @@
 # Troubleshooting Log
 
+## 2026-07-29 - Scope-Reset Isolation And Audit Corrections
+
+Original failures and consequences:
+
+- The root checkout was `main@7ec6ec0`, 107 remote commits behind protected
+  main, with 43 modified or untracked entries. Editing or switching it would
+  have risked mixing or overwriting user work.
+- The first broad combined orientation read exceeded the bounded output. The
+  truncated sections were not accepted as complete evidence.
+- A bare `python -m pytest -q` command failed because this shell has no
+  `python` executable on `PATH`. It made no repository change and was not
+  reported as a test failure.
+- The first YAML parse check used `import yaml`, but PyYAML is not installed in
+  the existing project environment. No dependency was installed or added.
+- Initial capability/statistics audit notes accidentally relied on the stale
+  dirty checkout and its one-row private diagnostic instead of protected
+  `origin/main` and the owner's 21-row campaign protocol.
+
+Correction:
+
+- Fetched remote refs read-only, verified PR #176 through GitHub metadata, and
+  created an isolated linked worktree from exact `origin/main=6386c59`.
+- Re-read only targeted roadmap, handoff, controller, specification, and test
+  ranges after the truncated orientation command.
+- Re-ran validation with the repository's existing `.venv/bin/python`
+  interpreter.
+- Parsed the preregistration with Ruby's existing standard YAML library and
+  kept the repository dependency set unchanged.
+- Required the affected audits to restart from protected `origin/main` and the
+  exact owner prompt/preregistration. Discarded the stale-tree purge/manifest
+  concerns and the one-row/quintile/no-Sharpe statistical recommendation.
+
+Verification:
+
+- The isolated worktree started clean at `6386c59`; the root checkout remained
+  untouched.
+- Protected-main baseline validation passed 3064 tests with two skips, and
+  compileall passed.
+- The corrected YAML parse and JSON inventory validation passed; the inventory
+  contains exactly 14 unique trial IDs.
+- Corrected capability evidence recognizes the implemented purged/bounded split
+  and next-observed-close primitives while identifying the truly missing PIT
+  dataset layer, campaign orchestration, decile/statistics, baselines, and
+  evidence runner.
+- Corrected statistical design uses monthly 21-row episodes, ten deciles,
+  retained strategy metrics, exact random/bootstrap seeds, and a six-record
+  moving-block bootstrap.
+
+Prevention:
+
+- For a dirty or stale root checkout, explicitly anchor every read-only audit
+  to `origin/main` or the isolated worktree.
+- Use the exact owner artifact path when a sub-audit depends on a supplied
+  protocol.
+- Use the repository virtual-environment interpreter in linked worktrees.
+- Prefer an already available standard-library YAML parser for this
+  documentation-only artifact; do not add PyYAML solely for validation.
+- Treat truncated output and nonterminal test output as unknown, never as
+  evidence.
+
 ## 2026-07-29 - R1I Linked-Worktree Branch And Interpreter Recovery
 
 Original failures and consequences:

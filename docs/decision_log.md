@@ -15,6 +15,75 @@ investment performance.
 
 ---
 
+## 2026-07-29 - Reset To A Diagnostic-First Two-Track Program
+
+Context:
+
+- PR #176 completed R1I on protected main at `6386c59`.
+- The roadmap still required completion of the full 37-event payload registry
+  before statistical or empirical research.
+- The owner determined that event-schema, test, and PR counts had displaced
+  empirical research progress and supplied an exact EODHD historical S&P 500
+  three-factor diagnostic scope.
+- EODHD entitlement, historical-membership coverage, retention after
+  cancellation, and public derived-output permission remain unverified.
+
+Decision:
+
+- Preserve the accepted 37-event vocabulary and immutable releases as optional
+  `full_ledger_profile_v1`; do not continue R1J or one-event registry PRs.
+- Run Track A first: one `DIAGNOSTIC_ONLY` historical EODHD campaign containing
+  exactly `MOM_12_1`, `REV_1M`, `LOW_VOL_3M`, two baselines, and nine
+  factor/cost strategy trials, for 14 semantic trials total.
+- Freeze research choices in a public protocol and a separate JSON inventory.
+  Use detached hashes rather than a self-referential preregistration hash.
+- Bind cutoff, manifest, calendar, exclusions, coverage thresholds, and dataset
+  review in a blinded dataset-acceptance record. After the runner merges and
+  before any expanded-data performance access, create a detached run binding
+  over code, configuration, environment, protocol, inventory, and accepted
+  dataset hashes.
+- Require entitlement and written retention/publication permission before
+  expanded retrieval, durable retention, or public derived output. Codex must
+  not purchase an entitlement.
+- After Track A closes, implement Track B as an 8-12-conceptual-event-family
+  stateful runtime in at most one design PR and one runtime PR. More than 14
+  exact wire types requires a new owner decision.
+
+Rationale:
+
+- A public preregistration, exact trial inventory, immutable code/data/config
+  binding, all-outcome retention, content-addressed private bundle, and
+  independent review can constrain cherry-picking for a diagnostic campaign
+  without pretending to provide formal protected-access evidence.
+- A minimal stateful runtime is still needed before prospective performance
+  access or formal evidence promotion, but it need not delay the first
+  falsifiable historical diagnostic.
+- Separating protocol freeze, blinded data acceptance, and the final pre-run
+  binding prevents data-quality decisions or runner revisions from becoming
+  hidden result-dependent research choices.
+
+Consequences:
+
+- Track A may end only in one of the five allowed `*_DIAGNOSTIC` states.
+- Track A can never produce `RESEARCH_PASS`, alpha validation, profitability,
+  market-wide validity, paper readiness, or live readiness.
+- Weak, negative, mixed, invalid, and cost-erased outcomes remain valid and
+  must not stop or disappear from the campaign.
+- Track B does not block Track A, but Track B protected-access logging blocks
+  opening prospective performance.
+
+Follow-up:
+
+- Resolve the private EODHD entitlement/retention/publication gate.
+- Add the public manifest validator and complete a blinded dataset review.
+- Implement only the frozen Stage 5-MVP/6-MVP runner, then execute and
+  reconcile all 14 trials.
+- Report progress using accepted dataset, eligible assets/dates, trial
+  reconciliation, bundle completeness, conclusion, prospective months, and
+  replication status, not schema, test, or PR counts.
+
+---
+
 ## 2026-07-29 - Select R1I-A Attempt Start Authority
 
 Context:

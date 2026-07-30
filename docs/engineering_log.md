@@ -1,5 +1,58 @@
 # Engineering Log
 
+## 2026-07-29 - EODHD Diagnostic Campaign Scope Reset
+
+- Verified PR #176 merged at `6386c59` and exact merge-head CI run
+  `30492542975` succeeded. The root checkout was stale and had 43 modified or
+  untracked entries, so it was not switched, reset, cleaned, or used for PR 1.
+  Work was isolated in a temporary linked worktree on
+  `codex/eodhd-diagnostic-scope-reset` from exact `origin/main`.
+- The clean protected-main baseline passed 3064 tests with two
+  platform-conditional skips and compiled `src`, `tests`, `research`, and
+  `lean`.
+- Seven bounded read-only audits covered repository/PR state, EODHD
+  license/entitlement, constituent and delisted coverage, field adjustment
+  semantics, protected-main code capability, minimum statistical design, and
+  adversarial survivorship/identity/publication risk. No credential, vendor
+  API, private market-data row, expanded-data performance value, or purchase
+  was accessed.
+- The supplied owner prompt hashed to
+  `deff30a98216f2e7fd3ea02a38fbaac263606d6d74f9838b529ab45010451959`;
+  the supplied draft preregistration hashed to
+  `830c125be53b31be2683af954ae333093765373f6f668b5ef3856d34d434a197`.
+  The repository protocol records the reviewed corrections rather than
+  pretending the draft placeholders were already frozen.
+- Added the canonical Track A/Track B campaign contract, machine-readable
+  preregistration, and exact 14-trial JSON inventory. The protocol freezes the
+  three factors, higher-is-better directions, monthly after-close/next-close
+  timing, execution-anchored common-calendar 21-return endpoint with
+  signal-axis 22-row purge, continuous monthly-rebalanced strategy paths, zero
+  embargo, 0/10/25-bps undivided-turnover costs, deterministic random-baseline
+  seed derivation, exact common-complete-case six-month moving-block bootstrap,
+  one-sided Holm family, diagnostic metrics, and allowed final states.
+- Replaced the preregistration's open research-choice placeholders with exact
+  values. Cutoff/data/calendar identity move to a blinded dataset-acceptance
+  record; code/config/environment are linked after the runner merges in a
+  detached pre-run binding. The protocol uses a detached hash and does not try
+  to hash itself.
+- Reconciled the roadmap, handoff, specification, and controller so R1I is
+  complete, the 37-event work is optional `full_ledger_profile_v1`, Track A is
+  unblocked without the formal runtime, and Track B becomes the bounded
+  post-Track-A priority.
+- Final validation passed 3065 tests with two platform-conditional skips, the
+  38-test project-structure suite, Ruff, compilation, the Skill audit,
+  standard-library YAML parsing, the exact 14-trial JSON inventory check,
+  deterministic repo-map regeneration, diff checks, and added-content privacy
+  and hidden-Unicode scans.
+- An independent adversarial review identified and prompted correction of the
+  execution-anchored label/purge boundary, the continuous strategy-return
+  contract, bootstrap specification, deterministic baseline outputs, and
+  license-gated public projection. The final read-only rereview found no
+  actionable P1 or P2 issue.
+- This change adds no data acquisition, factor calculation, strategy runtime,
+  performance output, formal evidence, brokerage, order, paper, or live
+  behavior.
+
 ## 2026-07-29 - Stage 4B-R1I Attempt Start Schema
 
 - Started from protected `main` merge `b42b911` (PR #174) in the isolated

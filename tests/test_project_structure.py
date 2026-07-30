@@ -52,6 +52,9 @@ def test_required_governance_files_exist() -> None:
         "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md",
         "docs/experiment_trial_ledger_attempt_allocation_schema_contract.md",
         "docs/experiment_trial_ledger_attempt_start_schema_contract.md",
+        "docs/eodhd_sp500_diagnostic_campaign_contract.md",
+        "docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml",
+        "docs/preregistrations/eodhd_sp500_three_factor_trial_inventory_v1.json",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
@@ -113,18 +116,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Stage 2 Timing Decision",
         "## Stage 3 Data Methodology Decision",
         "## Accepted Stage 4a Experiment and Trial Ledger Decision",
-        "## Accepted R0 Through R1H And Active R1I Attempt Start",
+        "## Accepted R0 Through R1I And Optional Full Ledger Profile",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Complete Stage 4B-R1I in the current isolated worktree",
+        "Complete PR 1 scope and campaign reset without data access or performance",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "2838 passing tests" in roadmap
-    assert "Current base validation reported 2838 tests passed" in handoff
+    assert "3064 passing tests" in roadmap
+    assert "Current protected-main baseline: 3064 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -140,6 +143,115 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## PR Sequence",
     ]:
         assert phrase in design
+
+
+def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> None:
+    contract_path = PROJECT_ROOT / "docs/eodhd_sp500_diagnostic_campaign_contract.md"
+    preregistration_path = (
+        PROJECT_ROOT
+        / "docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml"
+    )
+    inventory_path = (
+        PROJECT_ROOT
+        / "docs/preregistrations/"
+        "eodhd_sp500_three_factor_trial_inventory_v1.json"
+    )
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
+        encoding="utf-8"
+    )
+    controller = (
+        PROJECT_ROOT / "docs/codex_long_running_controller.md"
+    ).read_text(encoding="utf-8")
+    contract = contract_path.read_text(encoding="utf-8")
+    preregistration = preregistration_path.read_text(encoding="utf-8")
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+
+    for canonical_doc in [roadmap, handoff, specification, controller]:
+        assert "docs/eodhd_sp500_diagnostic_campaign_contract.md" in canonical_doc
+
+    for phrase in [
+        "Track A - diagnostic research now",
+        "Track B - formal evidence infrastructure",
+        "`full_ledger_profile_v1`",
+        "`MOM_12_1`",
+        "`REV_1M`",
+        "`LOW_VOL_3M`",
+        "The immutable semantic-trial count is 14",
+        "`DIAGNOSTIC_ONLY`",
+        "must not embed a hash of itself",
+        "written permission",
+        "no more than 14 exact wire event types",
+    ]:
+        assert phrase in contract
+
+    for phrase in [
+        "semantic_trial_count: 14",
+        "status: PROTOCOL_FROZEN_PENDING_BLINDED_DATA_ACCEPTANCE",
+        "label_kind: execution_anchored_forward_return_v1",
+        "label_end: SIGNAL_CLOSE_PLUS_22_COMMON_CALENDAR_ROWS",
+        "horizon_purge_signal_axis_rows: 22",
+        "embargo_rows: 0",
+        "random_rank_seed: 20260729",
+        "bootstrap_seed: 20260730",
+        "block_length_monthly_records: 6",
+        "bootstrap_replicates: 20000",
+        "minimum_valid_monthly_records_for_primary_inference: 60",
+        "percentile_quantile_method: linear",
+        "multiplicity_method: HOLM",
+        "holm_stop_rule: STOP_AT_FIRST_NON_REJECTION",
+        "complete_case_rule: ALL_THREE_PRIMARY_FACTOR_RANK_ICS_VALID",
+        "rng_consumption_order: REPLICATE_MAJOR_THEN_CHRONOLOGICAL_SEGMENT",
+        "return_object: CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+        "minimum_distinct_factor_values: 10",
+        "minimum_distinct_forward_returns: 2",
+        "complete_full_37_event_profile_first: false",
+    ]:
+        assert phrase in preregistration
+
+    assert "TO_BE_FROZEN" not in preregistration
+    assert "preregistration_sha256:" not in preregistration
+    assert inventory["semantic_trial_count"] == 14
+    assert len(inventory["trials"]) == 14
+    trial_ids = [trial["trial_id"] for trial in inventory["trials"]]
+    assert len(set(trial_ids)) == 14
+    assert trial_ids[:5] == [
+        "BASELINE_EQUAL_WEIGHT_UNIVERSE",
+        "BASELINE_RANDOM_RANK_TOP_DECILE",
+        "DIAG_MOM_12_1",
+        "DIAG_REV_1M",
+        "DIAG_LOW_VOL_3M",
+    ]
+    strategy_trials = inventory["trials"][5:]
+    assert {
+        (trial["factor_id"], trial["cost_bps"]) for trial in strategy_trials
+    } == {
+        (factor_id, cost_bps)
+        for factor_id in ["MOM_12_1", "REV_1M", "LOW_VOL_3M"]
+        for cost_bps in [0, 10, 25]
+    }
+    assert inventory["trials"][1]["seed"] == 20260729
+    expected_factor_ids = ["MOM_12_1", "REV_1M", "LOW_VOL_3M"]
+    expected_baseline_outputs = [
+        "episode_21_row_return",
+        "continuous_daily_return",
+    ]
+    for baseline in inventory["trials"][:2]:
+        assert baseline["output_factor_ids"] == expected_factor_ids
+        assert baseline["output_series_per_factor"] == expected_baseline_outputs
+    assert inventory["trials"][1]["rng_seed_derivation"] == (
+        "first_16_hex_sha256("
+        "random_rank_v1|20260729|factor_id|YYYY-MM-DD)"
+    )
+    assert all(trial["type"].startswith("STRATEGY_") for trial in strategy_trials)
+    assert {
+        trial["return_contract"] for trial in strategy_trials
+    } == {"CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH"}
 
 
 def test_research_program_charter_defines_evidence_and_authorization_gates() -> None:
@@ -233,7 +345,7 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
         "| 2b. Signal/execution timing implementation | "
         "Complete on protected main via PR #162"
     ) in roadmap
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
 
 
 def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
@@ -410,7 +522,7 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 4b-R1I. Attempt-start schema | "
-        "Active in the current tree; owner selected bundle R1I-A"
+        "Complete on protected main via PR #176"
     ) in roadmap
 
 
@@ -1312,7 +1424,7 @@ def test_trial_family_registration_r1c_freezes_owner_bundle_and_release() -> Non
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1C-A`" in normalized_handoff
     assert "leaves the other 33 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1C-A" in " ".join(specification.split())
     assert (
         "Accepted Stage 4B-R1C-A trial-family registration authority" in repo_map
@@ -1494,7 +1606,7 @@ def test_sample_registration_r1d_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1D-A`" in normalized_handoff
     assert "leaves the other 32 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1D-A" in " ".join(specification.split())
     assert (
         "Accepted Stage 4B-R1D-A local sample registration authority" in repo_map
@@ -1685,7 +1797,7 @@ def test_binding_r1e_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1E-A`" in normalized_handoff
     assert "leaves the other 30 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1E-A" in " ".join(
         specification.split()
     )
@@ -1922,7 +2034,7 @@ def test_trial_allocation_r1f_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1F-A`" in normalized_handoff
     assert "leaves the other 29 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1F-A" in " ".join(
         specification.split()
     )
@@ -2154,7 +2266,7 @@ def test_campaign_inventory_seal_r1g_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "The owner selected bundle `R1G-A`" in normalized_handoff
     assert "leaves the other 28 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1G-A" in " ".join(
         specification.split()
     )
@@ -2355,7 +2467,7 @@ def test_attempt_allocation_r1h_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "The owner selected bundle `R1H-A`" in normalized_handoff
     assert "leaves the other 27 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1H-A" in " ".join(
         specification.split()
     )
@@ -2531,16 +2643,16 @@ def test_attempt_start_r1i_freezes_owner_bundle_and_release() -> None:
     ) in roadmap
     assert (
         "| 4b-R1I. Attempt-start schema | "
-        "Active in the current tree; owner selected bundle R1I-A"
+        "Complete on protected main via PR #176"
     ) in roadmap
     normalized_handoff = " ".join(handoff.split())
     assert "The owner selected bundle `R1I-A`" in normalized_handoff
     assert "leaves the other 26 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1I-A" in " ".join(
         specification.split()
     )
-    assert "Active Stage 4B-R1I-A attempt-start authority" in repo_map
+    assert "Accepted Stage 4B-R1I-A attempt-start authority" in repo_map
 
 
 def _ascii_jcs_golden_bytes(value: object) -> bytes:

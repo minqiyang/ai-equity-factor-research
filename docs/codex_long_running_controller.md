@@ -233,10 +233,29 @@ documentation, clarifies a research decision, or advances a reviewed roadmap.
 If a stage changes source code, tests, research scripts, generated reports, or
 strategy behavior, use stricter review gates than a documentation-only stage.
 
-Follow roadmap dependencies. Do not add factors while timing, point-in-time
-data, trial-ledger, or statistical prerequisites for that factor family remain
-blocked. Do not interpret historical results merely because a loader or
-diagnostic completed.
+Follow roadmap dependencies. The owner-approved Track A exception in
+`docs/eodhd_sp500_diagnostic_campaign_contract.md` permits only its exact
+three-factor, 14-trial diagnostic sequence without first completing the formal
+ledger runtime or 37-event profile. It does not authorize additional factors,
+parameter variants, formal promotion, or prospective performance access. Do
+not interpret historical results merely because a loader or diagnostic
+completed.
+
+For Track A, enforce the delivery order exactly:
+
+1. protocol and inventory freeze;
+2. private entitlement/retention/publication gate;
+3. blinded dataset-manifest review;
+4. runner implementation without result interpretation;
+5. detached pre-run binding of code, config, environment, protocol, inventory,
+   and accepted dataset hashes; and
+6. all-trial execution, bundle reconciliation, and independent review.
+
+Do not continue one-event registry expansion. Preserve existing immutable
+registry releases as optional `full_ledger_profile_v1`. After Track A closes,
+Track B is limited to 8-12 conceptual event families, at most one design PR and
+one runtime PR, and at most 14 exact wire event types without a new owner
+decision.
 
 ## Research Program Gates
 
@@ -252,7 +271,7 @@ Keep factor, strategy, portfolio, and execution evidence separate.
 - LEAN parity starts only for a `PORTFOLIO_PASS` and requires a separate scope
   decision. Paper runtime and live behavior remain unauthorized.
 
-Formal real-data interpretation is blocked until provenance/license,
+Formal real-data interpretation remains blocked until provenance/license,
 point-in-time membership, delistings/corporate actions, field semantics,
 benchmark, missing-data, sample-split, timing, cost, privacy, holdout-exposure,
 trial-accounting, and statistical-methodology gates are accepted.
@@ -262,6 +281,12 @@ Failures, invalid runs, exclusions, abandoned variants, output hashes, review
 outcomes, and protected-sample access must remain visible. A nominal holdout
 whose prior exposure cannot be disproved is `historical_evaluation` or
 `pseudo_holdout`.
+
+Track A historical output is a narrower diagnostic exception, not formal
+interpretation. It must use the campaign's detached protocol/data-binding
+freeze, retain every trial and attempt outcome, and end in one allowed
+`*_DIAGNOSTIC` state. Track B protected-access logging is mandatory before any
+prospective performance is opened.
 
 ## Low-Risk Ambiguity
 

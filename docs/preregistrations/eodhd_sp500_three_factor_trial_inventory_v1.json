@@ -1,0 +1,115 @@
+{
+  "campaign_id": "eodhd_historical_sp500_price_factor_baselines_v1",
+  "inventory_status": "PROTOCOL_FROZEN_PENDING_BLINDED_DATA_ACCEPTANCE",
+  "schema_version": "eodhd_sp500_three_factor_trial_inventory_v1",
+  "semantic_trial_count": 14,
+  "trials": [
+    {
+      "output_factor_ids": [
+        "MOM_12_1",
+        "REV_1M",
+        "LOW_VOL_3M"
+      ],
+      "output_series_per_factor": [
+        "episode_21_row_return",
+        "continuous_daily_return"
+      ],
+      "seed": null,
+      "trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE",
+      "type": "BASELINE"
+    },
+    {
+      "output_factor_ids": [
+        "MOM_12_1",
+        "REV_1M",
+        "LOW_VOL_3M"
+      ],
+      "output_series_per_factor": [
+        "episode_21_row_return",
+        "continuous_daily_return"
+      ],
+      "rng_seed_derivation": "first_16_hex_sha256(random_rank_v1|20260729|factor_id|YYYY-MM-DD)",
+      "seed": 20260729,
+      "trial_id": "BASELINE_RANDOM_RANK_TOP_DECILE",
+      "type": "BASELINE"
+    },
+    {
+      "factor_id": "MOM_12_1",
+      "trial_id": "DIAG_MOM_12_1",
+      "type": "FACTOR_DIAGNOSTIC"
+    },
+    {
+      "factor_id": "REV_1M",
+      "trial_id": "DIAG_REV_1M",
+      "type": "FACTOR_DIAGNOSTIC"
+    },
+    {
+      "factor_id": "LOW_VOL_3M",
+      "trial_id": "DIAG_LOW_VOL_3M",
+      "type": "FACTOR_DIAGNOSTIC"
+    },
+    {
+      "cost_bps": 0,
+      "factor_id": "MOM_12_1",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_MOM_12_1_0BPS",
+      "type": "STRATEGY_DIAGNOSTIC"
+    },
+    {
+      "cost_bps": 10,
+      "factor_id": "MOM_12_1",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_MOM_12_1_10BPS",
+      "type": "STRATEGY_PRIMARY"
+    },
+    {
+      "cost_bps": 25,
+      "factor_id": "MOM_12_1",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_MOM_12_1_25BPS",
+      "type": "STRATEGY_STRESS"
+    },
+    {
+      "cost_bps": 0,
+      "factor_id": "REV_1M",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_REV_1M_0BPS",
+      "type": "STRATEGY_DIAGNOSTIC"
+    },
+    {
+      "cost_bps": 10,
+      "factor_id": "REV_1M",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_REV_1M_10BPS",
+      "type": "STRATEGY_PRIMARY"
+    },
+    {
+      "cost_bps": 25,
+      "factor_id": "REV_1M",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_REV_1M_25BPS",
+      "type": "STRATEGY_STRESS"
+    },
+    {
+      "cost_bps": 0,
+      "factor_id": "LOW_VOL_3M",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_LOW_VOL_3M_0BPS",
+      "type": "STRATEGY_DIAGNOSTIC"
+    },
+    {
+      "cost_bps": 10,
+      "factor_id": "LOW_VOL_3M",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_LOW_VOL_3M_10BPS",
+      "type": "STRATEGY_PRIMARY"
+    },
+    {
+      "cost_bps": 25,
+      "factor_id": "LOW_VOL_3M",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_LOW_VOL_3M_25BPS",
+      "type": "STRATEGY_STRESS"
+    }
+  ]
+}
