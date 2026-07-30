@@ -16,8 +16,11 @@ profitability, or trading readiness.
   private entitlement/license gate, blinded dataset review, bounded runner,
   and repository-external evidence bundle without first implementing the
   formal ledger runtime. Track B remains required before prospective
-  performance access and is limited to 8-12 conceptual event families. This
-  release changes no research runtime, data, or performance output.
+  performance access and is limited to 8-12 conceptual event families. The
+  protocol also freezes decision-time eligibility independently of all future
+  availability, canonical listing-key bytes, all-in fixed-bps cost semantics,
+  and an exhaustive deterministic final-state decision tree. This release
+  changes no research runtime, data, or performance output.
 - Added the bounded Stage 4B-R1I attempt-start release. The owner selected
   bundle `R1I-A`, freezing the exact earlier attempt-allocation reference, a
   complete digest-pinned external readiness record, separate start-actor

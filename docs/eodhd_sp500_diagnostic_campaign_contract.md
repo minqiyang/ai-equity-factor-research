@@ -126,21 +126,39 @@ performance access.
 
 ### Eligibility and diagnostics
 
-Eligibility is factor-specific and requires:
+Eligibility is factor-specific and evaluated only with information known at
+the signal cutoff `t`. Decision-time eligibility requires:
 
-- point-in-time membership;
-- resolved listing lineage;
-- complete factor history;
-- finite factor, execution, and endpoint values;
-- reviewed corporate-action and terminal treatment; and
-- at least 100 eligible securities for a factor-month.
+- point-in-time membership effective and known at `t`;
+- listing lineage resolved through `t`;
+- complete factor history through `t`;
+- a finite factor value at `t`;
+- corporate actions announced or effective through `t` treated under the
+  blinded accepted policy; and
+- at least 100 decision-time eligible securities for a factor-month.
 
-A factor-month below the floor is retained as invalid. No fill or silent
-exclusion is allowed. Rank IC uses cross-sectional Spearman correlation:
-average ranks for ties followed by Pearson correlation of the two rank vectors.
-It requires at least 10 distinct finite factor values and at least 2 distinct
-finite forward returns; otherwise the factor-month is invalid. No
-winsorization, normalization, or sign reversal is applied.
+Execution-price availability, forward-endpoint availability, later halts,
+later delistings, and every other post-`t` field are forbidden inputs to
+decision-time eligibility. At `t`, the runner freezes the ordered eligible
+listing-key set, factor ranks, decile assignments, long-only target, and
+equal-weight matched-benchmark membership. Mutating any post-`t` availability
+or return field must leave those frozen objects byte-identical.
+
+Outcome observation is a separate gate. A factor-month is retained as invalid
+if any decision-time eligible listing lacks an accepted finite
+execution-to-endpoint return after the frozen lineage and terminal-event rules
+are applied; the listing is not removed from ranks, deciles, or the matched
+benchmark. A selected strategy listing without a finite accepted execution
+price invalidates the affected strategy trial, and a later missing held return
+does the same. No substitute listing, renormalization over future survivors,
+zero fill, or security-specific next observation is allowed.
+
+A factor-month below the decision-time floor is retained as invalid. No fill
+or silent exclusion is allowed. Rank IC uses cross-sectional Spearman
+correlation: average ranks for ties followed by Pearson correlation of the two
+rank vectors. It requires at least 10 distinct finite factor values and at
+least 2 distinct finite forward returns; otherwise the factor-month is
+invalid. No winsorization, normalization, or sign reversal is applied.
 
 Deciles use this exact procedure:
 
@@ -156,6 +174,32 @@ are `mean(D{k+1}) - mean(D{k})` for `k=1..9`; monotonicity share is the fraction
 of those nine differences that are nonnegative, and `fully_monotone` is true
 only when all nine are nonnegative. The diagnostic spread is
 `mean(D10) - mean(D1)`.
+
+The canonical listing-lineage byte encoding is
+`listing_lineage_key_bytes_v1`. It is:
+
+1. the ASCII magic bytes `listing_lineage_key_v1` followed by one zero byte;
+2. `exchange` normalized to Unicode NFC, encoded as UTF-8, and prefixed by its
+   unsigned 32-bit big-endian byte length;
+3. `ticker` encoded by the same NFC/UTF-8/length rule;
+4. `effective_from` as exactly ten ASCII bytes in strict Gregorian
+   `YYYY-MM-DD` form; and
+5. one zero byte for a null/open `effective_to`, or one byte with value 1
+   followed by its strict ten-byte ASCII `YYYY-MM-DD` value.
+
+Exchange and ticker must be nonempty Unicode scalar strings and must not
+contain control characters. Dates must round-trip through strict Gregorian
+date parsing. There is no trimming, case folding, locale collation, or
+delimiter-based serialization. Ascending byte order means lexicographic order
+over unsigned bytes. This same encoding controls factor-value ties, factor
+turnover alignment, and random-baseline input order.
+
+The key is frozen when the listing first becomes decision-time eligible.
+`effective_to` means the lineage endpoint known at that first eligibility
+cutoff; it is null when no endpoint was then known. A later halt, removal,
+symbol change, delisting, or provider backfill cannot rewrite the frozen key.
+The subsequently observed actual endpoint remains separate interval/audit
+metadata and is tested by the post-`t` mutation oracle.
 
 Factor turnover is target-to-target top-decile turnover, not a cost model:
 align the union of canonical listing keys, assign zero to absent or nonselected
@@ -195,11 +239,14 @@ with the resulting liquidation turnover and cash return retained. A missing or
 unresolved held-security return invalidates the affected strategy trial; it is
 never filled with zero.
 
-The primary benchmark is the continuous equal-weight contemporaneous eligible
-universe for the matching factor-month under the same execution/reset/cost-free
-calendar. The secondary benchmark is an EODHD adjusted-close SPY return proxy
-over the identical daily intervals. Missing benchmark dates invalidate the
-comparison; they are not filled.
+The primary benchmark is the continuous equal-weight decision-time eligible
+universe frozen at the matching factor signal close under the same
+execution/reset/cost-free calendar. Its membership is not recomputed from
+future execution or endpoint availability. The secondary benchmark is an
+EODHD adjusted-close SPY return proxy over the identical daily intervals.
+Missing constituent execution or held returns, or missing SPY benchmark dates,
+invalidate the comparison; they do not change benchmark membership and are not
+filled.
 
 Each baseline semantic trial emits an exact output matrix with rows
 `MOM_12_1`, `REV_1M`, and `LOW_VOL_3M` and columns
@@ -215,8 +262,21 @@ eligible listing keys in ascending byte order, and apply one permutation. No
 global mutable RNG stream or iteration-order dependence is allowed.
 
 Cost cases are exactly 0, 10, and 25 bps. Ten bps is primary. Zero bps is
-diagnostic only. Strategy cost is `turnover * bps / 10000` at the execution
-close and the first portfolio return begins after that close.
+diagnostic only. Each scalar is an all-in fixed-bps diagnostic execution-cost
+proxy that bundles commission, bid-ask spread, slippage, exchange/regulatory
+fees, and other ordinary execution friction. No separate commission, spread,
+slippage, fee, tax, borrow, market-impact, capacity, or participation-rate
+charge may be added. This is not a calibrated fill or capacity model.
+
+Strategy cost is `turnover * bps / 10000`, deducted once from portfolio equity
+at the execution close; the first market return begins after that close. The
+hand-calculated fixtures are:
+
+| Turnover | 0 bps | 10 bps | 25 bps |
+| ---: | ---: | ---: | ---: |
+| 0.4 | 0.0 | 0.0004 | 0.0010 |
+| 1.0 | 0.0 | 0.0010 | 0.0025 |
+| 2.0 | 0.0 | 0.0020 | 0.0050 |
 
 ## Frozen Statistical Minimum
 
@@ -378,13 +438,38 @@ the child artifacts but does not hash itself. A detached root record binds the
   count, attempt count, per-trial status, environment, and final
   classification.
 
-Allowed final states are:
+Final-state assignment is an ordered, mutually exclusive, exhaustive decision
+tree. Evaluate it in this order:
 
-- `INVALID_DIAGNOSTIC`;
-- `INCONCLUSIVE_DIAGNOSTIC`;
-- `NEGATIVE_DIAGNOSTIC`;
-- `MIXED_DIAGNOSTIC`; and
-- `POSITIVE_DIAGNOSTIC`.
+1. `INVALID_DIAGNOSTIC` if any hard-validity gate fails: protocol or detached
+   binding preceded by result exposure; dataset acceptance other than
+   `DIAGNOSTIC_READY`; a hash, inventory, or bundle-integrity failure; anything
+   other than exactly 14 terminally reconciled semantic trials and all required
+   outputs; a pre-frozen membership/identity/terminal invalidation threshold
+   exceeded; a required strategy execution/held-return path invalid; or a Holm
+   rejection paired with a nonpositive observed mean Rank IC.
+2. Otherwise, `INCONCLUSIVE_DIAGNOSTIC` if any pre-frozen realized coverage
+   threshold fails or the common complete-case primary sample contains fewer
+   than 60 monthly records.
+3. Otherwise, define `holm_supported(f)` as a Holm rejection for factor `f`
+   with observed common-complete-case mean Rank IC strictly greater than zero.
+   Define `economically_supported(f)` as strictly positive net annualized
+   active return for that factor's long-only strategy at both 10 and 25 bps.
+   Define `robustness_supported(f)` as strictly positive leave-one-year-out
+   mean Rank IC for every required omission and a strictly greater than 0.5
+   fraction of calendar-year mean Rank IC values above zero. Exact zero fails
+   each strict-positive predicate.
+4. `POSITIVE_DIAGNOSTIC` if at least one factor satisfies all three support
+   predicates.
+5. Otherwise, `MIXED_DIAGNOSTIC` if at least one factor is Holm-supported.
+6. Otherwise, `NEGATIVE_DIAGNOSTIC` if all three observed
+   common-complete-case mean Rank IC values are strictly below zero.
+7. Otherwise, `INCONCLUSIVE_DIAGNOSTIC`.
+
+Strategy and robustness predicates are coherence requirements for the final
+diagnostic label, not new discovery hypotheses. They do not change the
+three-test Holm family. These labels remain `DIAGNOSTIC_ONLY`; none is a
+research-pass, profitability, or deployment claim.
 
 ## Prospective Confirmation and Track B
 

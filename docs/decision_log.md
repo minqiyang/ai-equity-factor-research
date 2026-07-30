@@ -15,6 +15,54 @@ investment performance.
 
 ---
 
+## 2026-07-29 - Freeze Decision-Time Eligibility And Diagnostic Classification
+
+Context:
+
+- Final review of PR #177 found that the first protocol draft allowed future
+  execution/endpoint availability inside the only eligibility definition.
+- The draft enumerated five final states without an exhaustive assignment
+  rule, left listing-key byte serialization implementation-dependent, and did
+  not say whether fixed-bps costs were all-in or composable.
+
+Decision:
+
+- Freeze factor ranks, deciles, long-only targets, and matched-benchmark
+  membership using only information known at signal close `t`. Future
+  availability or return mutations cannot change those objects.
+- Treat missing future outcomes only through explicit invalidation. Do not
+  drop, substitute, or renormalize over future survivors.
+- Use `listing_lineage_key_bytes_v1`: NFC UTF-8 length-prefixed exchange and
+  ticker, strict ASCII dates, and a tagged null/present interval end. Freeze
+  the key at first decision-time eligibility so later endpoints cannot rewrite
+  historical order or identity.
+- Interpret 0/10/25 bps as mutually exclusive all-in diagnostic execution-cost
+  cases. No separate commission, spread, slippage, fee, impact, or capacity
+  charge may be added.
+- Assign the five final states with the ordered decision tree in the canonical
+  campaign contract and preregistration. Hard-validity failure precedes
+  coverage insufficiency; positive classification requires Holm, 10/25-bps
+  economic, and frozen robustness coherence.
+
+Rationale:
+
+- Signal targets and benchmark membership must be invariant to halts,
+  delistings, missing endpoints, and provider backfills that occur after the
+  signal cutoff.
+- Canonical bytes, fixed cost composition, and exhaustive classification
+  predicates prevent implementation- or result-dependent choices after the
+  protocol freeze.
+
+Consequences:
+
+- Missing selected execution prices or held returns can make the diagnostic
+  invalid; this is preferable to silent survivorship conditioning.
+- Exact zero fails every strict-positive economic or robustness predicate.
+- Economic and robustness predicates constrain the final diagnostic label but
+  do not create new discovery hypotheses outside the three-factor Holm family.
+
+---
+
 ## 2026-07-29 - Reset To A Diagnostic-First Two-Track Program
 
 Context:

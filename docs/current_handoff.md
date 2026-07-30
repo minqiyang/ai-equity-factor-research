@@ -36,6 +36,13 @@ Updated: 2026-07-29 for the EODHD diagnostic campaign scope reset.
 - Short operational controller: `docs/codex_long_running_controller.md`.
 - Current protected `origin/main`: `6386c59`, the protected merge of PR #176.
   Its exact merge-head CI run `30492542975` succeeded.
+- PR #177 is the current open scope-reset gate on
+  `codex/eodhd-diagnostic-scope-reset`; it is not merged. Its initial
+  exact-head CI passed, but final review of `3df9a21` found two P1 and two P2
+  protocol gaps. The current branch remediation separates signal-time
+  eligibility from future outcomes, freezes canonical listing-key bytes and
+  all-in cost semantics, and adds exhaustive deterministic final-state rules.
+  It must pass new exact-head CI and final review before any protected merge.
 - Current protected-main baseline: 3064 tests passed with two
   platform-conditional wide-`longdouble` skips. The PR #176 release also
   passed Ruff, compileall, deterministic repo-map, Skill audit, immutable

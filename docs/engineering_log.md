@@ -49,6 +49,18 @@
   contract, bootstrap specification, deterministic baseline outputs, and
   license-gated public projection. The final read-only rereview found no
   actionable P1 or P2 issue.
+- The later GitHub final review of PR #177 at `3df9a21` found two P1 and two P2
+  issues that the local rereview missed: future-conditioned eligibility,
+  subjective final-state assignment, unspecified listing-key bytes, and
+  ambiguous cost composition. The remediation freezes a decision-time-only
+  universe and mutation invariance, exact byte encoding with golden fixtures,
+  all-in costs with hand-calculated fixtures, and an exhaustive ordered
+  classification oracle covering every allowed state and boundary.
+- Review-fix validation passed 42 focused project-structure tests and the full
+  3069-test suite with two platform-conditional skips, plus Ruff, compilation,
+  standard-library YAML parsing, exact 14-trial JSON validation, the Skill
+  audit, deterministic repo-map regeneration, package sdist/wheel build,
+  diff checks, and added-line privacy and Unicode/control scans.
 - This change adds no data acquisition, factor calculation, strategy runtime,
   performance output, formal evidence, brokerage, order, paper, or live
   behavior.

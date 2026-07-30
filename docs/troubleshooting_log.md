@@ -1,5 +1,61 @@
 # Troubleshooting Log
 
+## 2026-07-29 - PR 177 Final-Review Protocol Remediation
+
+Original failures and consequences:
+
+- The first exact-head GitHub Codex review of PR #177 found two P1 and two P2
+  protocol gaps after the local adversarial rereview had reported no
+  actionable issue. The draft conditioned eligibility on future execution and
+  endpoint availability, enumerated final states without deterministic
+  assignment, left listing-key bytes implementation-dependent, and did not
+  define whether fixed-bps costs were all-in.
+- The first two focused-test reruns used literal assertions that crossed
+  Markdown wrap boundaries. Each failed one string-presence assertion while
+  the behavioral oracles passed; neither failure was accepted as validation.
+- The first isolated package build could not resolve the package index inside
+  the network-restricted sandbox while creating its temporary build
+  environment. It changed no tracked file and did not establish a build
+  result.
+
+Correction:
+
+- Split decision-time eligibility from outcome observation. Freeze ranks,
+  deciles, targets, and matched-benchmark membership at signal close and route
+  all later missingness through explicit invalidation.
+- Added a versioned NFC/UTF-8/length-prefixed listing-key encoding, immutable
+  first-eligibility endpoint semantics, and golden fixtures for ASCII,
+  decomposed/composed Unicode, strict dates, and null ends.
+- Defined every bps case as one all-in diagnostic cost with no separately
+  added friction and added hand-calculated turnover fixtures.
+- Added an ordered final-state decision tree plus a table-driven reference
+  oracle covering hard-invalid, coverage/minimum-sample, strict-zero,
+  negative, mixed, and positive boundaries.
+- Shortened the two brittle phrase checks to stable same-line fragments.
+- Re-ran the same isolated build with approved network access only for its
+  temporary setuptools/wheel requirements.
+
+Verification:
+
+- Thread-aware GraphQL inspection confirmed exactly four current unresolved
+  review threads before editing.
+- The corrected focused suite passed 42 tests. The full suite passed 3069
+  tests with two platform-conditional skips.
+- Ruff, compileall, standard-library YAML parsing, exact 14-trial JSON
+  validation, Skill audit, deterministic repo-map regeneration, sdist/wheel
+  build, diff checks, and added-line privacy and Unicode/control scans passed.
+
+Prevention:
+
+- Treat future availability as an outcome state, never as a decision-time
+  membership or ranking input.
+- Require every preregistered result label to have an exhaustive ordered
+  assignment oracle before result access.
+- Freeze both serialization bytes and economic cost composition, not only
+  logical field names and scalar rates.
+- Keep Markdown literal assertions short enough that line wrapping cannot
+  create false structural-test failures.
+
 ## 2026-07-29 - Scope-Reset Isolation And Audit Corrections
 
 Original failures and consequences:

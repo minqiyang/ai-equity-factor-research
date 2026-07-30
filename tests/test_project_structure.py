@@ -1,4 +1,5 @@
 from copy import deepcopy
+from datetime import date
 import hashlib
 from importlib import resources
 import json
@@ -10,6 +11,133 @@ import unicodedata
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _listing_lineage_key_bytes_v1(
+    exchange: str,
+    ticker: str,
+    effective_from: str,
+    effective_to: str | None,
+) -> bytes:
+    def encode_text(value: str) -> bytes:
+        if not isinstance(value, str) or not value:
+            raise ValueError("listing-key text must be a nonempty string")
+        normalized = unicodedata.normalize("NFC", value)
+        if any(unicodedata.category(character).startswith("C") for character in normalized):
+            raise ValueError("listing-key text must not contain control characters")
+        encoded = normalized.encode("utf-8")
+        return len(encoded).to_bytes(4, byteorder="big", signed=False) + encoded
+
+    def encode_date(value: str) -> bytes:
+        if date.fromisoformat(value).isoformat() != value or len(value) != 10:
+            raise ValueError("listing-key date must be strict YYYY-MM-DD")
+        return value.encode("ascii")
+
+    end = (
+        b"\x00"
+        if effective_to is None
+        else b"\x01" + encode_date(effective_to)
+    )
+    return (
+        b"listing_lineage_key_v1\x00"
+        + encode_text(exchange)
+        + encode_text(ticker)
+        + encode_date(effective_from)
+        + end
+    )
+
+
+def _decision_time_objects(
+    records: list[dict[str, object]],
+) -> tuple[tuple[bytes, ...], tuple[tuple[bytes, float], ...]]:
+    eligible = [
+        record
+        for record in records
+        if record["membership_known_at_t"]
+        and record["lineage_resolved_through_t"]
+        and record["factor_history_complete_through_t"]
+    ]
+    ordered = sorted(
+        eligible,
+        key=lambda record: (
+            -float(record["factor_value_at_t"]),
+            bytes(record["listing_key_bytes"]),
+        ),
+    )
+    base, remainder = divmod(len(ordered), 10)
+    top_count = base + (1 if remainder else 0)
+    target = tuple(
+        (bytes(record["listing_key_bytes"]), 1.0 / top_count)
+        for record in ordered[:top_count]
+    )
+    benchmark = tuple(
+        sorted(
+            (
+                (bytes(record["listing_key_bytes"]), 1.0 / len(ordered))
+                for record in ordered
+            ),
+            key=lambda item: item[0],
+        )
+    )
+    return tuple(key for key, _ in target), benchmark
+
+
+def _classify_diagnostic(
+    *,
+    hard_valid: bool,
+    prefrozen_coverage_met: bool,
+    common_months: int,
+    mean_rank_ics: tuple[float, float, float],
+    holm_rejections: tuple[bool, bool, bool],
+    active_return_10bps: tuple[float, float, float],
+    active_return_25bps: tuple[float, float, float],
+    positive_year_fractions: tuple[float, float, float],
+    all_loyo_means_positive: tuple[bool, bool, bool],
+) -> str:
+    if not hard_valid or any(
+        rejected and mean_rank_ic <= 0
+        for rejected, mean_rank_ic in zip(
+            holm_rejections, mean_rank_ics, strict=True
+        )
+    ):
+        return "INVALID_DIAGNOSTIC"
+    if not prefrozen_coverage_met or common_months < 60:
+        return "INCONCLUSIVE_DIAGNOSTIC"
+
+    holm_supported = tuple(
+        rejected and mean_rank_ic > 0
+        for rejected, mean_rank_ic in zip(
+            holm_rejections, mean_rank_ics, strict=True
+        )
+    )
+    coherent = tuple(
+        supported
+        and return_10bps > 0
+        and return_25bps > 0
+        and positive_year_fraction > 0.5
+        and loyo_positive
+        for (
+            supported,
+            return_10bps,
+            return_25bps,
+            positive_year_fraction,
+            loyo_positive,
+        ) in zip(
+            holm_supported,
+            active_return_10bps,
+            active_return_25bps,
+            positive_year_fractions,
+            all_loyo_means_positive,
+            strict=True,
+        )
+    )
+    if any(coherent):
+        return "POSITIVE_DIAGNOSTIC"
+    if any(holm_supported):
+        return "MIXED_DIAGNOSTIC"
+    if all(value < 0 for value in mean_rank_ics):
+        return "NEGATIVE_DIAGNOSTIC"
+    return "INCONCLUSIVE_DIAGNOSTIC"
 
 
 def test_required_directories_exist() -> None:
@@ -187,6 +315,10 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "must not embed a hash of itself",
         "written permission",
         "no more than 14 exact wire event types",
+        "Mutating any post-`t` availability",
+        "`listing_lineage_key_bytes_v1`",
+        "all-in fixed-bps diagnostic execution-cost",
+        "ordered, mutually exclusive, exhaustive decision",
     ]:
         assert phrase in contract
 
@@ -211,6 +343,10 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "minimum_distinct_factor_values: 10",
         "minimum_distinct_forward_returns: 2",
         "complete_full_37_event_profile_first: false",
+        "version: listing_lineage_key_bytes_v1",
+        "post_t_mutation_effect_on_frozen_objects: NONE_BYTE_IDENTICAL",
+        "fixed_bps_interpretation: ALL_IN_DIAGNOSTIC_EXECUTION_COST_PROXY",
+        "evaluation: ORDERED_FIRST_MATCH_WINS_MUTUALLY_EXCLUSIVE_EXHAUSTIVE",
     ]:
         assert phrase in preregistration
 
@@ -252,6 +388,164 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
     assert {
         trial["return_contract"] for trial in strategy_trials
     } == {"CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH"}
+
+
+def test_listing_lineage_key_bytes_v1_golden_fixtures() -> None:
+    assert _listing_lineage_key_bytes_v1(
+        "XNYS", "BRK.B", "2014-01-01", None
+    ).hex() == (
+        "6c697374696e675f6c696e656167655f6b65795f763100"
+        "00000004584e59530000000542524b2e42323031342d30312d303100"
+    )
+    decomposed = _listing_lineage_key_bytes_v1(
+        "XNAS", "A\u030a", "2026-07-29", "2026-07-30"
+    )
+    assert decomposed.hex() == (
+        "6c697374696e675f6c696e656167655f6b65795f763100"
+        "00000004584e415300000002c385323032362d30372d3239"
+        "01323032362d30372d3330"
+    )
+    assert decomposed == _listing_lineage_key_bytes_v1(
+        "XNAS", "\u00c5", "2026-07-29", "2026-07-30"
+    )
+
+
+def test_decision_time_targets_ignore_future_availability_mutations() -> None:
+    records = []
+    for index in range(20):
+        records.append(
+            {
+                "listing_key_bytes": _listing_lineage_key_bytes_v1(
+                    "XNYS", f"T{index:02d}", "2018-01-01", None
+                ),
+                "membership_known_at_t": True,
+                "lineage_resolved_through_t": True,
+                "factor_history_complete_through_t": True,
+                "factor_value_at_t": float(20 - index),
+                "execution_available_after_t": True,
+                "endpoint_available_after_t": True,
+                "endpoint_return": index / 100,
+                "actual_effective_to_observed_after_t": None,
+            }
+        )
+
+    frozen_target, frozen_benchmark = _decision_time_objects(records)
+    mutated = deepcopy(records)
+    for index, record in enumerate(mutated):
+        record["execution_available_after_t"] = index % 2 == 0
+        record["endpoint_available_after_t"] = index % 3 == 0
+        record["endpoint_return"] = None
+        record["actual_effective_to_observed_after_t"] = "2026-07-30"
+
+    assert _decision_time_objects(mutated) == (frozen_target, frozen_benchmark)
+
+
+def test_fixed_bps_cost_fixtures_cover_every_frozen_case() -> None:
+    fixtures = {
+        0.4: {0: 0.0, 10: 0.0004, 25: 0.0010},
+        1.0: {0: 0.0, 10: 0.0010, 25: 0.0025},
+        2.0: {0: 0.0, 10: 0.0020, 25: 0.0050},
+    }
+    for turnover, cases in fixtures.items():
+        for bps, expected in cases.items():
+            assert round(turnover * bps / 10000, 10) == expected
+
+
+def test_diagnostic_final_state_assignment_is_exhaustive_at_boundaries() -> None:
+    base = {
+        "hard_valid": True,
+        "prefrozen_coverage_met": True,
+        "common_months": 60,
+        "mean_rank_ics": (0.02, -0.01, -0.02),
+        "holm_rejections": (True, False, False),
+        "active_return_10bps": (0.01, -0.01, -0.01),
+        "active_return_25bps": (0.005, -0.01, -0.01),
+        "positive_year_fractions": (0.6, 0.4, 0.4),
+        "all_loyo_means_positive": (True, False, False),
+    }
+    cases = [
+        (
+            {"hard_valid": False},
+            "INVALID_DIAGNOSTIC",
+        ),
+        (
+            {
+                "mean_rank_ics": (0.0, -0.01, -0.02),
+                "holm_rejections": (True, False, False),
+            },
+            "INVALID_DIAGNOSTIC",
+        ),
+        (
+            {"prefrozen_coverage_met": False},
+            "INCONCLUSIVE_DIAGNOSTIC",
+        ),
+        (
+            {"common_months": 59},
+            "INCONCLUSIVE_DIAGNOSTIC",
+        ),
+        (
+            {
+                "active_return_10bps": (0.0, -0.01, -0.01),
+            },
+            "MIXED_DIAGNOSTIC",
+        ),
+        (
+            {
+                "active_return_25bps": (0.0, -0.01, -0.01),
+            },
+            "MIXED_DIAGNOSTIC",
+        ),
+        (
+            {
+                "positive_year_fractions": (0.5, 0.4, 0.4),
+            },
+            "MIXED_DIAGNOSTIC",
+        ),
+        (
+            {
+                "all_loyo_means_positive": (False, False, False),
+            },
+            "MIXED_DIAGNOSTIC",
+        ),
+        (
+            {},
+            "POSITIVE_DIAGNOSTIC",
+        ),
+        (
+            {
+                "mean_rank_ics": (-0.01, -0.02, -0.03),
+                "holm_rejections": (False, False, False),
+            },
+            "NEGATIVE_DIAGNOSTIC",
+        ),
+        (
+            {
+                "mean_rank_ics": (0.0, -0.02, -0.03),
+                "holm_rejections": (False, False, False),
+            },
+            "INCONCLUSIVE_DIAGNOSTIC",
+        ),
+        (
+            {
+                "holm_rejections": (False, False, False),
+            },
+            "INCONCLUSIVE_DIAGNOSTIC",
+        ),
+    ]
+
+    observed_states = set()
+    for overrides, expected in cases:
+        observed = _classify_diagnostic(**(base | overrides))
+        observed_states.add(observed)
+        assert observed == expected
+
+    assert observed_states == {
+        "INVALID_DIAGNOSTIC",
+        "INCONCLUSIVE_DIAGNOSTIC",
+        "NEGATIVE_DIAGNOSTIC",
+        "MIXED_DIAGNOSTIC",
+        "POSITIVE_DIAGNOSTIC",
+    }
 
 
 def test_research_program_charter_defines_evidence_and_authorization_gates() -> None:

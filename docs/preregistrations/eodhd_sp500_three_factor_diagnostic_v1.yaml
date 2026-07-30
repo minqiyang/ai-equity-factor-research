@@ -53,6 +53,28 @@ identity:
     - effective_from
     - effective_to
   canonical_tie_breaker: DIAGNOSTIC_LISTING_LINEAGE_KEY
+  canonical_byte_encoding:
+    version: listing_lineage_key_bytes_v1
+    magic_ascii_then_zero_byte: listing_lineage_key_v1
+    exchange: NFC_UTF8_PREFIXED_BY_UINT32_BIG_ENDIAN_BYTE_LENGTH
+    ticker: NFC_UTF8_PREFIXED_BY_UINT32_BIG_ENDIAN_BYTE_LENGTH
+    effective_from: STRICT_GREGORIAN_YYYY_MM_DD_EXACTLY_10_ASCII_BYTES
+    effective_to_null: SINGLE_ZERO_BYTE
+    effective_to_present: SINGLE_0X01_BYTE_THEN_STRICT_10_BYTE_ASCII_DATE
+    effective_to_semantics: ENDPOINT_KNOWN_AT_FIRST_DECISION_TIME_ELIGIBILITY_ELSE_NULL
+    key_freeze: FIRST_DECISION_TIME_ELIGIBILITY
+    later_actual_endpoint_or_provider_backfill_rewrites_key: false
+    string_constraints: NONEMPTY_UNICODE_SCALARS_NO_CONTROL_CHARACTERS
+    transformations_forbidden:
+      - TRIMMING
+      - CASE_FOLDING
+      - LOCALE_COLLATION
+      - DELIMITER_SERIALIZATION
+    ordering: LEXICOGRAPHIC_UNSIGNED_BYTES_ASCENDING
+    uses:
+      - FACTOR_TIE_BREAK
+      - FACTOR_TURNOVER_ALIGNMENT
+      - RANDOM_BASELINE_INPUT_ORDER
   symbol_change_chain_required: true
   collision_and_gap_report_required: true
   price_continuity_only_mapping: FORBIDDEN
@@ -90,6 +112,41 @@ universe:
   minimum_factor_history: FACTOR_SPECIFIC
   factor_month_minimum_eligible_securities: 100
   claim_scope: HISTORICAL_SP500_MEMBERS_ONLY
+
+decision_time_eligibility:
+  evaluation_cutoff: SIGNAL_CLOSE_T
+  allowed_inputs:
+    - POINT_IN_TIME_MEMBERSHIP_EFFECTIVE_AND_KNOWN_AT_T
+    - LISTING_LINEAGE_RESOLVED_THROUGH_T
+    - COMPLETE_FACTOR_HISTORY_THROUGH_T
+    - FINITE_FACTOR_VALUE_AT_T
+    - CORPORATE_ACTION_POLICY_INFORMATION_KNOWN_AT_T
+  forbidden_inputs:
+    - EXECUTION_PRICE_AVAILABILITY_AFTER_T
+    - FORWARD_ENDPOINT_AVAILABILITY
+    - LATER_HALT_OR_DELISTING
+    - ANY_POST_T_RETURN_OR_AVAILABILITY_FIELD
+  frozen_at_t:
+    - ORDERED_ELIGIBLE_LISTING_KEY_SET
+    - FACTOR_RANKS
+    - DECILE_ASSIGNMENTS
+    - LONG_ONLY_TARGET
+    - MATCHED_BENCHMARK_MEMBERSHIP
+  post_t_mutation_effect_on_frozen_objects: NONE_BYTE_IDENTICAL
+  minimum_eligible_securities: 100
+
+outcome_availability:
+  diagnostic_missing_execution_to_endpoint_return:
+    action: INVALIDATE_FACTOR_MONTH
+    membership_or_target_recomputation: FORBIDDEN
+  selected_strategy_missing_execution_price:
+    action: INVALIDATE_AFFECTED_STRATEGY_TRIAL
+    substitute_or_renormalize: FORBIDDEN
+  strategy_missing_held_return:
+    action: INVALIDATE_AFFECTED_STRATEGY_TRIAL
+  matched_benchmark_missing_constituent_execution_or_return:
+    action: INVALIDATE_COMPARISON
+    membership_recomputation: FORBIDDEN
 
 calendar_and_timing:
   calendar: XNYS_VERSION_BOUND_IN_BLINDED_DATA_ACCEPTANCE
@@ -172,8 +229,11 @@ strategy:
   first_earned_return: EXECUTION_CLOSE_TO_NEXT_COMMON_CALENDAR_CLOSE
   final_target_without_later_execution: INVALID_FOR_CONTINUOUS_STRATEGY
   invalid_rebalance_action: ZERO_TARGET_AT_NEXT_EXECUTION
+  selected_target_missing_execution_price: INVALIDATE_AFFECTED_STRATEGY_TRIAL
   missing_held_return: INVALIDATE_AFFECTED_STRATEGY_TRIAL
-  primary_benchmark: FACTOR_MATCHED_CONTINUOUS_EQUAL_WEIGHT_ELIGIBLE_UNIVERSE
+  primary_benchmark: FACTOR_MATCHED_CONTINUOUS_EQUAL_WEIGHT_DECISION_TIME_ELIGIBLE_UNIVERSE
+  primary_benchmark_membership_freeze: SIGNAL_CLOSE_T
+  future_availability_membership_recomputation: FORBIDDEN
   secondary_benchmark: SPY_ADJUSTED_CLOSE_PROXY_ON_IDENTICAL_DAILY_INTERVALS
   missing_benchmark_return: INVALIDATE_COMPARISON
   shorting: false
@@ -188,6 +248,35 @@ strategy:
     - 25
   primary_cost_bps: 10
   cost_formula: turnover * bps / 10000
+  cost_application: DEDUCT_ONCE_FROM_PORTFOLIO_EQUITY_AT_EXECUTION_CLOSE
+  fixed_bps_interpretation: ALL_IN_DIAGNOSTIC_EXECUTION_COST_PROXY
+  included_components:
+    - COMMISSION
+    - BID_ASK_SPREAD
+    - SLIPPAGE
+    - EXCHANGE_AND_REGULATORY_FEES
+    - OTHER_ORDINARY_EXECUTION_FRICTION
+  separately_added_components: NONE
+  excluded_models:
+    - TAX
+    - BORROW
+    - MARKET_IMPACT
+    - CAPACITY
+    - PARTICIPATION_RATE
+    - CALIBRATED_FILL
+  cost_fixtures:
+    turnover_0_4:
+      bps_0: 0.0
+      bps_10: 0.0004
+      bps_25: 0.0010
+    turnover_1_0:
+      bps_0: 0.0
+      bps_10: 0.0010
+      bps_25: 0.0025
+    turnover_2_0:
+      bps_0: 0.0
+      bps_10: 0.0020
+      bps_25: 0.0050
   zero_cost_interpretation: DIAGNOSTIC_ONLY
 
 trials:
@@ -308,6 +397,42 @@ allowed_final_states:
   - NEGATIVE_DIAGNOSTIC
   - MIXED_DIAGNOSTIC
   - POSITIVE_DIAGNOSTIC
+
+final_state_assignment:
+  evaluation: ORDERED_FIRST_MATCH_WINS_MUTUALLY_EXCLUSIVE_EXHAUSTIVE
+  hard_validity_gates:
+    protocol_and_detached_binding_precede_result_exposure: REQUIRED
+    dataset_acceptance: DIAGNOSTIC_READY
+    hashes_inventory_bundle_integrity: VALID
+    semantic_trials: EXACTLY_14_TERMINALLY_RECONCILED_WITH_ALL_REQUIRED_OUTPUTS
+    prefrozen_membership_identity_terminal_thresholds: NOT_EXCEEDED
+    required_strategy_execution_and_held_return_paths: VALID
+    holm_rejection_with_nonpositive_observed_mean_rank_ic: INVALID
+  realized_coverage_gate:
+    prefrozen_thresholds: ALL_MET
+    minimum_common_complete_case_monthly_records: 60
+  factor_predicates:
+    holm_supported: HOLM_REJECT_AND_OBSERVED_COMMON_CASE_MEAN_RANK_IC_STRICTLY_GT_ZERO
+    economically_supported: NET_ANNUALIZED_ACTIVE_RETURN_STRICTLY_GT_ZERO_AT_BOTH_10_AND_25_BPS
+    robustness_supported:
+      leave_one_year_out_mean_rank_ic: STRICTLY_GT_ZERO_FOR_EVERY_REQUIRED_OMISSION
+      fraction_calendar_year_mean_rank_ic_strictly_gt_zero: STRICTLY_GT_0_5
+    exact_zero: FAILS_EVERY_STRICT_POSITIVE_PREDICATE
+  ordered_rules:
+    - state: INVALID_DIAGNOSTIC
+      when: ANY_HARD_VALIDITY_GATE_FAILS
+    - state: INCONCLUSIVE_DIAGNOSTIC
+      when: ANY_REALIZED_COVERAGE_GATE_FAILS
+    - state: POSITIVE_DIAGNOSTIC
+      when: ANY_FACTOR_IS_HOLM_AND_ECONOMICALLY_AND_ROBUSTNESS_SUPPORTED
+    - state: MIXED_DIAGNOSTIC
+      when: ANY_FACTOR_IS_HOLM_SUPPORTED
+    - state: NEGATIVE_DIAGNOSTIC
+      when: ALL_THREE_OBSERVED_COMMON_CASE_MEAN_RANK_ICS_STRICTLY_LT_ZERO
+    - state: INCONCLUSIVE_DIAGNOSTIC
+      when: OTHERWISE
+  strategy_and_robustness_create_new_hypotheses: false
+  claim_scope: DIAGNOSTIC_ONLY
 
 forbidden_claims:
   - RESEARCH_PASS
