@@ -243,6 +243,13 @@ mutation cases, or PR count as the primary measure of research progress.
 - After local validation and CI are stable, request `@codex review` once on the
   final stable head when review is required. Re-review only after an actionable
   fix changes that head.
+- Fix every safe actionable review finding inside the authorized scope without
+  waiting for owner confirmation. When only review completion is pending, use
+  one five-minute thread schedule capped at eight runs and never duplicate the
+  review request.
+- A genuinely critical owner decision uses one thirty-minute thread follow-up
+  schedule capped at four runs; no scheduled run may make the decision for the
+  owner.
 - Do not enable auto-merge or merge a review-required PR until Codex review has
   completed on the current head with no unresolved actionable findings.
 - Do not let multiple agents edit the roadmap, handoff, same factor/operator,

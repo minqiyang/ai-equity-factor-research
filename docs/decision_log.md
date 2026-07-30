@@ -15,6 +15,64 @@ investment performance.
 
 ---
 
+## 2026-07-29 - Remediate Reviews Automatically And Bound Scheduled Waits
+
+Context:
+
+- The second exact-head review of PR #177 found three actionable P2 protocol
+  gaps after the first remediation commit.
+- The prior workflow treated each review round as a potential owner stop even
+  when the finding was safe, concrete, and within the already-authorized
+  stage. It also lacked exact polling bounds for a pending Codex review or a
+  genuinely critical owner decision.
+- Draft PR #148 already edits `AGENTS.md` from an older base, but the owner
+  explicitly directed PR #177 to establish the new behavior now.
+
+Decision:
+
+- Fix actionable in-scope review findings immediately without waiting for a
+  separate owner confirmation. Revalidate, push, and request one current-head
+  rereview after each changed head.
+- While only `@codex review` is pending, use one thread-scoped schedule every
+  five minutes for at most eight runs. Do not post duplicate review requests;
+  stop early when the review completes, the head changes, or a finding arrives.
+- When a critical owner decision is genuinely required, use one thread-scoped
+  follow-up every thirty minutes for at most four runs. Never make the
+  decision on the owner's behalf, and remain paused after the fourth unanswered
+  run.
+- Freeze `LOW_VOL_3M` as the Python half-open slice `[t-62:t+1]`, exactly 63
+  returns ending at `t` from 64 price anchors.
+- Permit a zero strategy target only for three signal-time conditions: fewer
+  than 100 eligible securities, fewer than 10 distinct finite factor values,
+  or duplicate canonical listing-key bytes. Later unselected outcome
+  missingness cannot change the target, liquidation, or cash path.
+- Require the evidence bundle to contain an exact-byte YAML child whose
+  SHA-256 equals the detached protocol-freeze hash. A derived JSON file is not
+  authoritative.
+
+Rationale:
+
+- Safe review remediation is ordinary implementation work inside an authorized
+  PR, while purchases, protected access, destructive work, external scope
+  expansion, and materially different research interpretations remain owner
+  decisions.
+- Bounded scheduled waits prevent both silent abandonment and unbounded polling
+  or reminder spam.
+- Exact slices, zero-target predicates, and byte-level evidence binding remove
+  implementation-dependent behavior before result access.
+
+Consequences:
+
+- PR #148 now overlaps `AGENTS.md`; it remains untouched but must be rebased and
+  compared before future use.
+- The review schedule will be created only when the new exact head is actually
+  waiting for review. No schedule is needed while actionable findings are being
+  fixed.
+- The remediation changes protocol and governance only. It does not fetch data,
+  calculate performance, resolve review threads, or authorize merge.
+
+---
+
 ## 2026-07-29 - Freeze Decision-Time Eligibility And Diagnostic Classification
 
 Context:

@@ -3,6 +3,7 @@ from datetime import date
 import hashlib
 from importlib import resources
 import json
+import math
 from pathlib import Path
 import re
 import runpy
@@ -49,13 +50,19 @@ def _listing_lineage_key_bytes_v1(
 
 def _decision_time_objects(
     records: list[dict[str, object]],
-) -> tuple[tuple[bytes, ...], tuple[tuple[bytes, float], ...]]:
+) -> tuple[
+    tuple[tuple[bytes, float], ...],
+    tuple[tuple[bytes, float], ...],
+    float,
+]:
     eligible = [
         record
         for record in records
         if record["membership_known_at_t"]
         and record["lineage_resolved_through_t"]
         and record["factor_history_complete_through_t"]
+        and record["corporate_action_policy_known_at_t"]
+        and math.isfinite(float(record["factor_value_at_t"]))
     ]
     ordered = sorted(
         eligible,
@@ -64,12 +71,26 @@ def _decision_time_objects(
             bytes(record["listing_key_bytes"]),
         ),
     )
-    base, remainder = divmod(len(ordered), 10)
-    top_count = base + (1 if remainder else 0)
-    target = tuple(
-        (bytes(record["listing_key_bytes"]), 1.0 / top_count)
-        for record in ordered[:top_count]
+    listing_keys = [
+        bytes(record["listing_key_bytes"]) for record in ordered
+    ]
+    distinct_factor_values = {
+        float(record["factor_value_at_t"]) for record in ordered
+    }
+    invalid_rebalance = (
+        len(ordered) < 100
+        or len(distinct_factor_values) < 10
+        or len(set(listing_keys)) != len(listing_keys)
     )
+    if invalid_rebalance:
+        target: tuple[tuple[bytes, float], ...] = ()
+    else:
+        base, remainder = divmod(len(ordered), 10)
+        top_count = base + (1 if remainder else 0)
+        target = tuple(
+            (bytes(record["listing_key_bytes"]), 1.0 / top_count)
+            for record in ordered[:top_count]
+        )
     benchmark = tuple(
         sorted(
             (
@@ -78,8 +99,9 @@ def _decision_time_objects(
             ),
             key=lambda item: item[0],
         )
-    )
-    return tuple(key for key, _ in target), benchmark
+    ) if ordered else ()
+    cash_weight = 1.0 if invalid_rebalance else 0.0
+    return target, benchmark, cash_weight
 
 
 def _classify_diagnostic(
@@ -189,6 +211,31 @@ def test_required_governance_files_exist() -> None:
 
     for file_name in required_files:
         assert (PROJECT_ROOT / file_name).is_file(), f"Missing file: {file_name}"
+
+
+def test_agents_requires_active_remediation_and_bounded_scheduled_waits() -> None:
+    agents = (PROJECT_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    controller = (
+        PROJECT_ROOT / "docs/codex_long_running_controller.md"
+    ).read_text(encoding="utf-8")
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+
+    for phrase in [
+        "Do not wait for owner confirmation before fixing an actionable review finding",
+        "five-minute intervals with at most",
+        "eight scheduled runs",
+        "thirty-minute intervals with at",
+        "most four scheduled runs",
+        "duplicate review requests",
+        "owner's behalf",
+    ]:
+        assert phrase in agents
+    assert "five-minute scheduled" in controller
+    assert "thirty-minute follow-up" in controller
+    assert "five-minute thread schedule capped at eight runs" in roadmap
+    assert "thirty-minute thread follow-up" in roadmap
 
 
 def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
@@ -319,6 +366,8 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "`listing_lineage_key_bytes_v1`",
         "all-in fixed-bps diagnostic execution-cost",
         "ordered, mutually exclusive, exhaustive decision",
+        "exact byte-for-byte copy",
+        "No other condition produces a zero target",
     ]:
         assert phrase in contract
 
@@ -347,6 +396,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "post_t_mutation_effect_on_frozen_objects: NONE_BYTE_IDENTICAL",
         "fixed_bps_interpretation: ALL_IN_DIAGNOSTIC_EXECUTION_COST_PROXY",
         "evaluation: ORDERED_FIRST_MATCH_WINS_MUTUALLY_EXCLUSIVE_EXHAUSTIVE",
+        "formula: -std(one_day_adjusted_close_returns[t-62:t+1], ddof=1)",
+        "all_other_zero_target_triggers: FORBIDDEN",
+        "byte_relation: EXACT_BYTE_FOR_BYTE_COPY",
     ]:
         assert phrase in preregistration
 
@@ -412,16 +464,17 @@ def test_listing_lineage_key_bytes_v1_golden_fixtures() -> None:
 
 def test_decision_time_targets_ignore_future_availability_mutations() -> None:
     records = []
-    for index in range(20):
+    for index in range(100):
         records.append(
             {
                 "listing_key_bytes": _listing_lineage_key_bytes_v1(
-                    "XNYS", f"T{index:02d}", "2018-01-01", None
+                    "XNYS", f"T{index:03d}", "2018-01-01", None
                 ),
                 "membership_known_at_t": True,
                 "lineage_resolved_through_t": True,
                 "factor_history_complete_through_t": True,
-                "factor_value_at_t": float(20 - index),
+                "corporate_action_policy_known_at_t": True,
+                "factor_value_at_t": float(100 - index),
                 "execution_available_after_t": True,
                 "endpoint_available_after_t": True,
                 "endpoint_return": index / 100,
@@ -429,15 +482,116 @@ def test_decision_time_targets_ignore_future_availability_mutations() -> None:
             }
         )
 
-    frozen_target, frozen_benchmark = _decision_time_objects(records)
+    frozen_target, frozen_benchmark, frozen_cash = _decision_time_objects(records)
+    selected_keys = {key for key, _ in frozen_target}
     mutated = deepcopy(records)
-    for index, record in enumerate(mutated):
-        record["execution_available_after_t"] = index % 2 == 0
-        record["endpoint_available_after_t"] = index % 3 == 0
+    for record in mutated:
+        if bytes(record["listing_key_bytes"]) in selected_keys:
+            continue
+        record["execution_available_after_t"] = False
+        record["endpoint_available_after_t"] = False
         record["endpoint_return"] = None
         record["actual_effective_to_observed_after_t"] = "2026-07-30"
 
-    assert _decision_time_objects(mutated) == (frozen_target, frozen_benchmark)
+    assert _decision_time_objects(mutated) == (
+        frozen_target,
+        frozen_benchmark,
+        frozen_cash,
+    )
+    assert frozen_cash == 0.0
+
+
+def test_zero_target_has_only_the_three_frozen_decision_time_triggers() -> None:
+    records = []
+    for index in range(100):
+        records.append(
+            {
+                "listing_key_bytes": _listing_lineage_key_bytes_v1(
+                    "XNYS", f"Z{index:03d}", "2018-01-01", None
+                ),
+                "membership_known_at_t": True,
+                "lineage_resolved_through_t": True,
+                "factor_history_complete_through_t": True,
+                "corporate_action_policy_known_at_t": True,
+                "factor_value_at_t": float(100 - index),
+            }
+        )
+
+    valid_target, _, valid_cash = _decision_time_objects(records)
+    assert len(valid_target) == 10
+    assert valid_cash == 0.0
+
+    sparse_target, _, sparse_cash = _decision_time_objects(records[:-1])
+    assert sparse_target == ()
+    assert sparse_cash == 1.0
+
+    tied = deepcopy(records)
+    for record in tied:
+        record["factor_value_at_t"] = 1.0
+    tied_target, _, tied_cash = _decision_time_objects(tied)
+    assert tied_target == ()
+    assert tied_cash == 1.0
+
+    duplicate_key = deepcopy(records)
+    duplicate_key[-1]["listing_key_bytes"] = duplicate_key[0]["listing_key_bytes"]
+    duplicate_target, _, duplicate_cash = _decision_time_objects(duplicate_key)
+    assert duplicate_target == ()
+    assert duplicate_cash == 1.0
+
+
+def test_low_vol_3m_uses_exactly_63_returns_from_64_price_anchors() -> None:
+    source_returns = tuple(index / 1000 for index in range(1, 64))
+    price_anchors = [100.0]
+    for one_day_return in source_returns:
+        price_anchors.append(price_anchors[-1] * (1.0 + one_day_return))
+
+    recovered_returns = tuple(
+        price_anchors[index] / price_anchors[index - 1] - 1.0
+        for index in range(1, len(price_anchors))
+    )
+    inclusive_t_window = recovered_returns[-63:]
+    mean_return = sum(inclusive_t_window) / len(inclusive_t_window)
+    sample_std = math.sqrt(
+        sum(
+            (one_day_return - mean_return) ** 2
+            for one_day_return in inclusive_t_window
+        )
+        / (len(inclusive_t_window) - 1)
+    )
+
+    assert len(price_anchors) == 64
+    assert len(inclusive_t_window) == 63
+    assert math.isclose(
+        -sample_std,
+        -math.sqrt(336) / 1000,
+        rel_tol=1e-12,
+        abs_tol=1e-15,
+    )
+
+
+def test_preregistration_bundle_child_binds_exact_frozen_yaml_bytes() -> None:
+    preregistration_path = (
+        PROJECT_ROOT
+        / "docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml"
+    )
+    frozen_bytes = preregistration_path.read_bytes()
+    bundle_child_bytes = bytes(frozen_bytes)
+    frozen_hash = hashlib.sha256(frozen_bytes).hexdigest()
+
+    assert bundle_child_bytes == frozen_bytes
+    assert hashlib.sha256(bundle_child_bytes).hexdigest() == frozen_hash
+    tampered_bytes = frozen_bytes.replace(
+        b"semantic_trial_count: 14",
+        b"semantic_trial_count: 15",
+        1,
+    )
+    assert tampered_bytes != frozen_bytes
+    assert hashlib.sha256(tampered_bytes).hexdigest() != frozen_hash
+    preregistration_text = frozen_bytes.decode("utf-8")
+    assert "    - eodhd_sp500_three_factor_diagnostic_v1.yaml" in (
+        preregistration_text
+    )
+    assert "    - preregistration.json" not in preregistration_text
 
 
 def test_fixed_bps_cost_fixtures_cover_every_frozen_case() -> None:

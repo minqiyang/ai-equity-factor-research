@@ -1,5 +1,86 @@
 # Troubleshooting Log
 
+## 2026-07-29 - PR 177 Second-Review And Local-Validation Recovery
+
+Original failures and consequences:
+
+- The second exact-head Codex review at `97425c0` found three P2 gaps: the
+  low-volatility slice excluded `t` and contained 62 rather than 63 returns;
+  `invalid_rebalance` did not enumerate its zero-target conditions; and the
+  required JSON preregistration child was not bound to the frozen YAML.
+- Two combined controller/roadmap reads exceeded the output budget. Their
+  truncated content was not accepted as evidence.
+- The review-comment helper was first invoked with `python`, which is not on
+  this shell's `PATH`. Its sandboxed `python3` attempt could not see the GitHub
+  keyring, and the first focused-test command incorrectly assumed the linked
+  worktree contained `.venv/bin/python`.
+- The first focused test run after editing failed one structural assertion
+  because the asserted sentence crossed a Markdown line wrap. The behavioral
+  LOW_VOL, zero-target, future-mutation, and hash oracles did not fail.
+- The first isolated sdist/wheel build could not resolve the package index in
+  the network-restricted sandbox, so it did not establish a build result.
+
+Investigation:
+
+- Re-read only the controller stop/review section and roadmap Track A/review
+  section in bounded ranges.
+- Verified GitHub CLI authentication outside the sandbox and used the bundled
+  thread-aware GraphQL helper. It reported seven unresolved threads: two
+  outdated first-round threads, two first-round threads already remediated by
+  the current head, and the three current second-round P2 findings.
+- Inspected the exact contract, YAML, target-construction test oracle, evidence
+  artifact list, handoff, and active governance text before editing.
+- Located the existing virtual environment in the preserved root checkout and
+  used its absolute interpreter path from the isolated worktree.
+
+Correction:
+
+- Pinned `LOW_VOL_3M` to `[t-62:t+1]`, exactly 63 returns and 64 anchors.
+- Enumerated the three signal-time zero-target conditions and explicitly
+  prohibited post-signal missingness from changing a nonselected security's
+  target, liquidation, or cash path.
+- Required an exact-byte YAML bundle child with a detached-hash equality rule
+  and a tampered-field hash test.
+- Added automatic in-scope review remediation plus the bounded five-minute and
+  thirty-minute scheduled-wait rules to `AGENTS.md` and aligned the controller,
+  roadmap, and handoff.
+- Replaced the brittle whole-sentence structural assertion with stable semantic
+  fragments; no production or research rule was weakened.
+- Re-ran the same isolated package build with approved network access only for
+  its declared setuptools and wheel build requirements.
+
+Verification:
+
+- The corrected focused project-structure suite passed 46 tests.
+- The full suite passed 3073 tests with two platform-conditional skips.
+- Full Ruff, compileall, Skill audit, Ruby standard-library YAML parsing, exact
+  14-trial JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+
+Remaining caveats:
+
+- GitHub review threads were read only. They were not replied to or resolved.
+- Draft PR #148 still contains an older `AGENTS.md` edit and now requires a
+  rebase plus semantic comparison before future use.
+- The five-minute review monitor is not created while findings are being fixed.
+  It is created only after the corrected exact head has stable CI and one new
+  `@codex review` request.
+
+Prevention:
+
+- Express rolling-window bounds in the implementation language's exact slice
+  convention and pair them with a hand-calculated anchor-count oracle.
+- Enumerate every state transition trigger and explicitly state which later
+  observations cannot rewrite a frozen decision.
+- Bind the actual frozen artifact bytes into the evidence bundle; do not rely
+  on an undefined format conversion.
+- Use targeted reads after the first truncation, the root virtual environment's
+  absolute interpreter path in linked worktrees, and short stable documentation
+  assertions.
+
+---
+
 ## 2026-07-29 - PR 177 Final-Review Protocol Remediation
 
 Original failures and consequences:

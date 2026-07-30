@@ -179,10 +179,11 @@ factors:
     direction: HIGHER_IS_BETTER
     required_history_price_anchors: 22
   - factor_id: LOW_VOL_3M
-    formula: -std(one_day_adjusted_close_returns[t-62:t], ddof=1)
+    formula: -std(one_day_adjusted_close_returns[t-62:t+1], ddof=1)
     direction: HIGHER_IS_BETTER
     required_return_rows: 63
     required_history_price_anchors: 64
+    slice_convention: PYTHON_HALF_OPEN_END_T_PLUS_1_INCLUDES_T
 
 factor_diagnostics:
   quantiles: 10
@@ -228,9 +229,21 @@ strategy:
   return_object: CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH
   first_earned_return: EXECUTION_CLOSE_TO_NEXT_COMMON_CALENDAR_CLOSE
   final_target_without_later_execution: INVALID_FOR_CONTINUOUS_STRATEGY
+  zero_target_decision_time_conditions:
+    - ELIGIBLE_SECURITY_COUNT_BELOW_100_AT_T
+    - DISTINCT_FINITE_FACTOR_VALUE_COUNT_BELOW_10_AT_T
+    - DUPLICATE_CANONICAL_LISTING_KEY_BYTES_AT_T
   invalid_rebalance_action: ZERO_TARGET_AT_NEXT_EXECUTION
+  all_other_zero_target_triggers: FORBIDDEN
+  later_unselected_diagnostic_outcome_failure:
+    may_invalidate_factor_month_or_comparison: true
+    strategy_target_mutation: FORBIDDEN
+    liquidation_creation: FORBIDDEN
+    cash_path_mutation: FORBIDDEN
   selected_target_missing_execution_price: INVALIDATE_AFFECTED_STRATEGY_TRIAL
+  selected_execution_failure_zero_target_rewrite: FORBIDDEN
   missing_held_return: INVALIDATE_AFFECTED_STRATEGY_TRIAL
+  missing_held_return_zero_target_rewrite: FORBIDDEN
   primary_benchmark: FACTOR_MATCHED_CONTINUOUS_EQUAL_WEIGHT_DECISION_TIME_ELIGIBLE_UNIVERSE
   primary_benchmark_membership_freeze: SIGNAL_CLOSE_T
   future_availability_membership_recomputation: FORBIDDEN
@@ -444,10 +457,16 @@ forbidden_claims:
 
 evidence_bundle:
   repository_external: true
+  frozen_preregistration_child:
+    source_path: docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml
+    bundle_path: eodhd_sp500_three_factor_diagnostic_v1.yaml
+    byte_relation: EXACT_BYTE_FOR_BYTE_COPY
+    hash_relation: CHILD_SHA256_EQUALS_DETACHED_PROTOCOL_FREEZE_SHA256
+    json_conversion_is_authoritative: false
   required_artifacts:
     - dataset_full_manifest.json
     - dataset_public_projection.json
-    - preregistration.json
+    - eodhd_sp500_three_factor_diagnostic_v1.yaml
     - trial_inventory.json
     - run_manifest.json
     - factor_diagnostics.parquet

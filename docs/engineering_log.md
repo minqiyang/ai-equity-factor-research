@@ -1,5 +1,42 @@
 # Engineering Log
 
+## 2026-07-29 - PR 177 Second-Review And Bounded-Wait Remediation
+
+- Thread-aware GitHub inspection at `97425c0` confirmed three new current P2
+  findings: `LOW_VOL_3M` used a Python half-open slice with only 62 returns;
+  the strategy did not enumerate which invalid rebalances create a zero target;
+  and the private evidence bundle required an unbound JSON preregistration
+  instead of the exact frozen YAML bytes.
+- Updated the protocol and machine-readable preregistration to use
+  `[t-62:t+1]`, exactly 63 one-day returns ending at `t` from 64 price anchors.
+- Limited zero-target construction to three decision-time states: fewer than
+  100 eligible securities, fewer than 10 distinct finite factor values, or
+  duplicate canonical listing-key bytes. Later missing outcomes for unselected
+  securities may invalidate the factor-month or comparison but cannot mutate
+  the frozen strategy target, create a liquidation, or change the cash path.
+  Missing selected execution or held-return values invalidate the strategy
+  trial without rewriting its target to zero.
+- Replaced `preregistration.json` in the required bundle children with an exact
+  byte-for-byte `eodhd_sp500_three_factor_diagnostic_v1.yaml` child whose
+  SHA-256 must equal the detached protocol-freeze hash.
+- Added deterministic off-by-one, decision-time trigger, future-missingness,
+  cash-path, and tampered-hash oracles to the project-structure suite.
+- Added the owner-directed `AGENTS.md` policy: safe actionable findings inside
+  the authorized scope are fixed without a confirmation round; pending Codex
+  review uses one five-minute thread schedule capped at eight runs; a critical
+  owner decision uses one thirty-minute follow-up capped at four runs.
+- Reconciled the controller, roadmap, handoff, decision log, and changelog.
+  Draft PR #148 remains untouched but now overlaps `AGENTS.md` and must be
+  rebased and compared before future use.
+- Focused validation passed 46 project-structure tests. The full suite passed
+  3073 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and trial-inventory parsing, deterministic repo-map regeneration,
+  `git diff --check`, privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, thread
+  resolution, merge, brokerage, paper, or live behavior was accessed or
+  performed.
+
 ## 2026-07-29 - EODHD Diagnostic Campaign Scope Reset
 
 - Verified PR #176 merged at `6386c59` and exact merge-head CI run

@@ -314,8 +314,9 @@ If a file is missing but the current prompt expects it:
 
 Stop and report instead of continuing when any of these occurs:
 
-- the required predecessor or current-stage PR requires human review, approval,
-  merge, or close decision.
+- the required predecessor or current-stage PR requires a critical owner
+  approval, merge, or close decision after applying the bounded scheduled-wait
+  policy in `AGENTS.md`.
 - the required predecessor or immediately prior stage PR is not verified
   merged; enter a paused external wait state after one status check without
   rerunning PR checks, protection queries, or baseline validation.
@@ -363,6 +364,15 @@ then post `@codex review` once on the final stable head when the change affects
 research semantics, returns, costs, benchmarks, implementation, CI, security,
 or execution scope. Re-review only when an actionable fix changes the reviewed
 head. Trivial documentation-only metadata may omit Codex review.
+
+An actionable review finding inside the authorized scope is not an owner
+decision gate. Fix it immediately, add or update its tests and durable record,
+validate and push the new exact head, and request one new current-head review.
+When only that review is pending, use one thread-scoped five-minute scheduled
+monitor capped at eight runs as required by `AGENTS.md`; never post duplicate
+review requests. A genuinely critical owner decision instead uses one
+thread-scoped thirty-minute follow-up capped at four runs. Cancel either
+schedule when its condition clears, and pause after its cap.
 
 Do not enable auto-merge or attempt a merge while required checks or an
 applicable current-head Codex review is pending. When Codex review applies, it

@@ -101,6 +101,37 @@ This repository is a serious simulated quantitative research project. AI coding 
 - When a PR has multiple meaningful commits, preserve them unless the commit history is messy.
 - Do not treat PR count or commit count as a quality metric by itself.
 
+### Review Remediation And Bounded Scheduled Waits
+
+- Do not wait for owner confirmation before fixing an actionable review finding
+  that is safe and inside the already-authorized PR or stage scope. Implement
+  the fix, add or update the relevant tests and durable logs, validate the
+  exact new head, push it, and request a new current-head review when required.
+- Continue that remediation loop until the current head has no unresolved
+  actionable finding or the finding exposes a genuinely critical owner
+  decision. Review remediation does not authorize stage expansion, data
+  purchase or access, protected-sample access, destructive work, merge,
+  deployment, brokerage behavior, or another externally visible side effect.
+- When the only remaining gate is a pending `@codex review`, create or update
+  one thread-scoped scheduled monitor at five-minute intervals with at most
+  eight scheduled runs. Each run checks the exact current head once. It must
+  not post duplicate review requests. Stop the schedule as soon as the review
+  completes, the head changes, or a finding arrives; fix actionable findings
+  immediately. If the eighth run still finds no completed review, pause and
+  report the pending gate.
+- When progress requires a genuinely critical owner decision, create or update
+  one thread-scoped scheduled follow-up at thirty-minute intervals with at
+  most four scheduled runs. Critical decisions include purchase or license
+  choices, protected-data or performance access, destructive or irreversible
+  action, externally visible scope expansion, and materially different valid
+  research interpretations. Each run checks for the owner's response and may
+  issue one concise follow-up; it must not decide on the owner's behalf. Stop
+  the schedule when the owner responds or after the fourth run, then remain
+  paused.
+- Reuse a matching active schedule instead of creating duplicates. Scheduled
+  waits never authorize repeated `@codex review` comments, repeated GitHub
+  polling outside the stated bound, protection bypass, or merge.
+
 ## Strict Prohibitions
 
 - Never claim a strategy is profitable without reproducible evidence.

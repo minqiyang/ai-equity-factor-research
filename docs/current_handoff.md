@@ -37,12 +37,16 @@ Updated: 2026-07-29 for the EODHD diagnostic campaign scope reset.
 - Current protected `origin/main`: `6386c59`, the protected merge of PR #176.
   Its exact merge-head CI run `30492542975` succeeded.
 - PR #177 is the current open scope-reset gate on
-  `codex/eodhd-diagnostic-scope-reset`; it is not merged. Its initial
-  exact-head CI passed, but final review of `3df9a21` found two P1 and two P2
-  protocol gaps. The current branch remediation separates signal-time
-  eligibility from future outcomes, freezes canonical listing-key bytes and
-  all-in cost semantics, and adds exhaustive deterministic final-state rules.
-  It must pass new exact-head CI and final review before any protected merge.
+  `codex/eodhd-diagnostic-scope-reset`; it is not merged. Initial review of
+  `3df9a21` found two P1 and two P2 protocol gaps, which commit `97425c0`
+  remediated before exact-head CI passed. The second review of `97425c0` found
+  three P2 gaps: an ambiguous 62-versus-63 return slice, an underdefined
+  zero-target trigger, and a missing exact-byte link from the bundle to the
+  frozen YAML. The current remediation fixes all three, adds the owner-directed
+  automatic review-remediation and bounded scheduled-wait policy to
+  `AGENTS.md`, and locally passes 3073 tests with two platform skips plus the
+  remaining repository gates. It must be committed, pushed, pass exact-head
+  CI, and pass final review before any protected merge.
 - Current protected-main baseline: 3064 tests passed with two
   platform-conditional wide-`longdouble` skips. The PR #176 release also
   passed Ruff, compileall, deterministic repo-map, Skill audit, immutable
@@ -621,8 +625,13 @@ SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
 
 At the last verification, PR #148 was an independent Draft governance PR from
 an older base that changed only `AGENTS.md`. It was not a predecessor for PRs
-#158-#176. The Track A scope-reset slice does not edit `AGENTS.md`, merge/close
-that draft, or overwrite its policy. Independent thin-router PR
+#158-#176. On 2026-07-29 the owner explicitly required PR #177 to add automatic
+review-remediation and bounded scheduled-wait rules to `AGENTS.md`. PR #148 is
+still neither a predecessor nor authorized for merge/close, but it now has a
+direct file overlap and stale-base conflict risk. Before any future work on
+#148, rebase it and compare its review-trigger policy against the newer
+protected-main policy; do not overwrite either change silently. Independent
+thin-router PR
 #168 merged at `4ac5adb` while the first R1C head was being published. Its
 overlap was limited to `docs/repo_map.md`, `scripts/repo_map.py`, and
 `tests/test_project_structure.py`; there was no R1C contract, registry,

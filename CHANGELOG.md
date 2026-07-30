@@ -19,8 +19,13 @@ profitability, or trading readiness.
   performance access and is limited to 8-12 conceptual event families. The
   protocol also freezes decision-time eligibility independently of all future
   availability, canonical listing-key bytes, all-in fixed-bps cost semantics,
-  and an exhaustive deterministic final-state decision tree. This release
-  changes no research runtime, data, or performance output.
+  and an exhaustive deterministic final-state decision tree. Review remediation
+  further pins the 63-return low-volatility slice, the only three decision-time
+  zero-target conditions, and an exact-byte YAML evidence child. Repository
+  governance now fixes safe in-scope review findings without owner round trips
+  and bounds pending-review schedules to eight five-minute runs and critical
+  owner-decision follow-ups to four thirty-minute runs. This release changes no
+  research runtime, data, or performance output.
 - Added the bounded Stage 4B-R1I attempt-start release. The owner selected
   bundle `R1I-A`, freezing the exact earlier attempt-allocation reference, a
   complete digest-pinned external readiness record, separate start-actor

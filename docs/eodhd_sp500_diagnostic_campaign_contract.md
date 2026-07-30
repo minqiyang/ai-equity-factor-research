@@ -65,8 +65,9 @@ The search family contains exactly:
 - `REV_1M`:
   `-(adjusted_close[t] / adjusted_close[t-21] - 1)`.
 - `LOW_VOL_3M`: the negative sample standard deviation (`ddof=1`) of the 63
-  one-day adjusted-close returns ending at `t`. This requires 64 price
-  anchors.
+  one-day adjusted-close returns ending at `t`. Under the runner's Python
+  half-open slice convention the exact return slice is `[t-62:t+1]`, which
+  includes `t` and requires exactly 64 price anchors.
 
 All factors are oriented so higher is better. No formula, direction, lookback,
 cost case, factor, model, liquidity screen, price screen, or parameter variant
@@ -233,11 +234,26 @@ returns, costs, and benchmarks use the same common calendar.
 At each execution, strategy turnover is the undivided sum of absolute changes
 from drifted pre-trade weights to the new target. The initial cash-to-target
 deployment has turnover 1.0, a complete invested-name switch has turnover 2.0,
-and no terminal liquidation is invented after the final measured return. An
-invalid factor rebalance has an explicit zero target at the next execution,
-with the resulting liquidation turnover and cash return retained. A missing or
-unresolved held-security return invalidates the affected strategy trial; it is
-never filled with zero.
+and no terminal liquidation is invented after the final measured return.
+
+Exactly three decision-time conditions make a factor rebalance invalid and
+produce a zero target at the next execution:
+
+1. fewer than 100 securities remain after the frozen signal-time eligibility
+   rules are applied;
+2. fewer than 10 distinct finite factor values remain; or
+3. the eligible set contains duplicate canonical
+   `listing_lineage_key_bytes_v1` values, so a unique target cannot be formed.
+
+No other condition produces a zero target. A later missing execution-to-
+endpoint diagnostic outcome for an unselected listing may invalidate the
+factor-month or benchmark comparison, but it cannot alter the frozen strategy
+target, create a liquidation, or change the cash path. A missing selected
+execution price or unresolved held-security return invalidates the affected
+strategy trial; it does not retroactively replace the frozen target with zero
+and is never filled or repaired through an alternate path. The zero target's
+resulting liquidation turnover and non-interest-bearing cash return are
+retained only for the three decision-time conditions above.
 
 The primary benchmark is the continuous equal-weight decision-time eligible
 universe frozen at the matching factor signal close under the same
@@ -434,9 +450,16 @@ values.
 The private bundle is repository-external and contains the artifacts listed in
 the machine-readable preregistration. `bundle_manifest.json` lists and verifies
 the child artifacts but does not hash itself. A detached root record binds the
-  bundle-manifest hash, code, configuration, data manifest, semantic-trial
-  count, attempt count, per-trial status, environment, and final
-  classification.
+bundle-manifest hash, code, configuration, data manifest, semantic-trial
+count, attempt count, per-trial status, environment, and final classification.
+
+The required preregistration child is named
+`eodhd_sp500_three_factor_diagnostic_v1.yaml` and is an exact byte-for-byte copy
+of `docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml` at the
+protocol-freeze commit. Its child SHA-256 must equal the detached
+protocol-freeze SHA-256. A derived `preregistration.json` may be retained only
+as a non-authoritative convenience artifact; it cannot replace or satisfy the
+exact-YAML child requirement.
 
 Final-state assignment is an ordered, mutually exclusive, exhaustive decision
 tree. Evaluate it in this order:
