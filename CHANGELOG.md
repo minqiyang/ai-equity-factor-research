@@ -49,7 +49,10 @@ profitability, or trading readiness.
   index draw per replicate/segment across all factors, with no second RNG pass.
   Momentum and reversal now require every referenced numerator and denominator
   anchor to be a finite, strictly positive real non-Boolean value; invalid
-  anchors are retained, excluded, and counted without repair. Repository
+  anchors are retained, excluded, and counted without repair. Their 253/22
+  lookbacks are common-calendar position spans, not contiguous-price screens:
+  exactly the two formula anchors must be observed, while an unreferenced
+  interior missing value has no factor-value or eligibility effect. Repository
   governance fixes safe in-scope review findings without owner round trips and
   keeps the task active through current-head review and remediation; only a
   genuinely critical owner-decision follow-up retains the four-run,

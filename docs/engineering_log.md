@@ -1,5 +1,26 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Twelfth-Review Interior-Missing Remediation
+
+- Exact-head Codex review of `d2ac8cd` completed with one P2: the MOM/REV
+  lookback counts could be interpreted as either common-calendar position
+  spans or contiguous observed-price requirements.
+- Replaced the ambiguous price-anchor counts with explicit 253/22 inclusive
+  common-calendar position spans, two required observed formula anchors, and a
+  rule that unreferenced interior missing or invalid prices have no factor-
+  value or eligibility effect and receive no repair.
+- Added both-factor interior-missing fixtures that preserve momentum `0.25`
+  and reversal `0.10` while proving a forbidden full-window validity gate
+  would reject the same inputs.
+- Focused project-structure validation passed 56 tests. The full suite passed
+  3083 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Eleventh-Review Factor-Anchor Remediation
 
 - Exact-head Codex review of `bc4c201` completed with one P2: momentum and

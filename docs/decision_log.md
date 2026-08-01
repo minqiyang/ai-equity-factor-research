@@ -15,6 +15,41 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Freeze Endpoint-Only MOM/REV Price Completeness
+
+Context:
+
+- The twelfth exact-head Codex review of PR #177 at `d2ac8cd` found one P2.
+  The preregistration validated the two formula anchors but described 253 and
+  22 required history price anchors, which could also be implemented as a
+  full-window contiguous-observation requirement.
+
+Decision:
+
+- Treat 253 for `MOM_12_1` and 22 for `REV_1M` as inclusive common-calendar
+  position spans needed to address the formulas, not counts of price values
+  that must all be observed.
+- Each factor consumes exactly its two referenced anchors. An interior missing
+  or invalid adjusted-close value has no factor-value or eligibility effect
+  when both referenced anchors pass the strict validity gate. It is not filled,
+  repaired, or otherwise incorporated.
+
+Rationale:
+
+- The two frozen formulas are endpoint returns. Requiring unreferenced
+  intermediate observations would silently introduce a different missingness
+  screen and could change ranks, targets, and coverage across implementations.
+
+Consequences:
+
+- Separate 253-position momentum and 22-position reversal fixtures retain
+  `0.25` and `0.10` with an interior missing value and explicitly distinguish
+  the forbidden all-prices-contiguous interpretation.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Freeze MOM_12_1 And REV_1M Anchor Validity
 
 Context:

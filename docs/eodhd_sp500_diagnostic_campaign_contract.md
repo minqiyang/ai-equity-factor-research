@@ -101,6 +101,18 @@ rows are forbidden. Golden anchors `80.0,100.0` produce momentum `0.25`, and
 reversal anchors `100.0,90.0` produce `0.10`; each anchor position is mutated
 through missing, Boolean, non-finite, zero, and negative cases.
 
+For these two endpoint-return factors, the lookback count describes common-
+calendar **positions**, not a contiguous-observed-price requirement. Momentum
+requires the 253-position index span from `t-252` through `t` so its `t-252`
+and `t-21` references are addressable; reversal requires the 22-position span
+from `t-21` through `t`. Each formula consumes exactly its two referenced
+anchors. An adjusted-close value missing or invalid at any other position has
+no effect on that factor value or its eligibility when both referenced anchors
+pass the gate. Such an interior value is not filled, repaired, or incorporated
+into the formula. Interior-missing fixtures for both factors retain momentum
+`0.25` and reversal `0.10`, while a forbidden full-window-contiguity check
+would reject them.
+
 All factors are oriented so higher is better. No formula, direction, lookback,
 cost case, factor, model, liquidity screen, price screen, or parameter variant
 may be added after the protocol freeze.

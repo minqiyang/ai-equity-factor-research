@@ -58,6 +58,17 @@ Original failures and consequences:
 - The first eleventh-round parallel privacy and Unicode scan call exceeded the
   outer tool output budget. No scan result from that call was accepted; each
   scan was rerun independently with bounded output before verification.
+- The twelfth exact-head review found that `required_history_price_anchors`
+  could imply full-window observed-price completeness even though MOM/REV use
+  only two formula endpoints. The field was not retained with an explanatory
+  comment; it was replaced by separate calendar-position-span, observed-anchor
+  count, and interior-missing-action fields plus discriminating fixtures.
+- The first twelfth-round YAML/JSON check used the repository venv, which does
+  not include PyYAML, and failed before parsing. The initial Ruby fallback then
+  checked `semantic_trial_count` at the document root instead of under
+  `campaign` and also failed without modifying files. The corrected Ruby safe
+  load permits existing `Date` scalars, disables aliases, checks the nested
+  campaign count, and reconciles all 14 JSON trial records.
 
 Investigation:
 
@@ -105,6 +116,9 @@ Correction:
   one bootstrap index draw across uncentered and null-centered distributions.
 - Applied the strict fail-closed price-anchor gate to every MOM/REV numerator
   and denominator, with per-position invalid-anchor mutations.
+- Separated MOM/REV calendar-position lookback spans from observed-price
+  completeness and froze unreferenced interior missing prices as irrelevant to
+  the endpoint-only factor values and eligibility.
 
 Verification:
 

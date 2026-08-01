@@ -456,6 +456,10 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "remediated by committed and pushed head `bc4c201`",
         "exact-head CI run `30689003562` passed",
         "The eleventh review of `bc4c201` found one P2",
+        "remediated by committed and pushed head `d2ac8cd`",
+        "exact-head CI run `30689676655` passed",
+        "The twelfth review of `d2ac8cd` found one P2",
+        "counts as common-calendar position spans",
         "not pending local authorship",
         "The actual remaining gate is exact",
         "current-head CI followed by one current-head Codex review",
@@ -506,6 +510,10 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "Every adjusted-close anchor referenced by `MOM_12_1` or `REV_1M`",
         "to both numerator and denominator anchors",
         "not enter ranks merely because the formula",
+        "lookback count describes common-",
+        "positions**, not a contiguous-observed-price requirement",
+        "Each formula consumes exactly its two referenced",
+        "Interior-missing fixtures for both factors retain momentum",
     ]:
         assert phrase in contract
 
@@ -544,6 +552,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "draw_reuse_across_distributions: SAME_ROW_INDEX_VECTOR_FOR_UNCENTERED_AND_NULL_CENTERED_TABLES",
         "rng_passes_per_replicate: ONE_NO_SECOND_CENTERED_OR_UNCENTERED_PASS",
         "price_anchor_validation: ALL_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE",
+        "lookback_common_calendar_positions: 253",
+        "lookback_common_calendar_positions: 22",
+        "required_observed_price_anchors: 2",
+        "intermediate_adjusted_close_values_required: false",
+        "interior_missing_price_action: NO_FACTOR_VALUE_EFFECT_IF_REFERENCED_ANCHORS_VALID",
         "adjusted_close_t_minus_252: 80.0",
         "adjusted_close_t: 90.0",
         "all_other_zero_target_triggers: FORBIDDEN",
@@ -1024,6 +1037,44 @@ def test_momentum_and_reversal_price_anchors_fail_closed() -> None:
         assert momentum(80.0, invalid_anchor) is None
         assert reversal(invalid_anchor, 90.0) is None
         assert reversal(100.0, invalid_anchor) is None
+
+    def momentum_from_calendar_window(
+        adjusted_close: list[object],
+    ) -> float | None:
+        if len(adjusted_close) != 253:
+            return None
+        return momentum(adjusted_close[0], adjusted_close[-22])
+
+    def reversal_from_calendar_window(
+        adjusted_close: list[object],
+    ) -> float | None:
+        if len(adjusted_close) != 22:
+            return None
+        return reversal(adjusted_close[0], adjusted_close[-1])
+
+    momentum_window: list[object] = [95.0] * 253
+    momentum_window[0] = 80.0
+    momentum_window[-22] = 100.0
+    momentum_window[100] = None
+    reversal_window: list[object] = [95.0] * 22
+    reversal_window[0] = 100.0
+    reversal_window[-1] = 90.0
+    reversal_window[10] = None
+
+    assert not all(valid_price_anchor(value) for value in momentum_window)
+    assert not all(valid_price_anchor(value) for value in reversal_window)
+    assert math.isclose(
+        momentum_from_calendar_window(momentum_window),
+        0.25,
+        abs_tol=1e-15,
+    )
+    assert math.isclose(
+        reversal_from_calendar_window(reversal_window),
+        0.10,
+        abs_tol=1e-15,
+    )
+    assert momentum_from_calendar_window(momentum_window[:-1]) is None
+    assert reversal_from_calendar_window(reversal_window[:-1]) is None
 
 
 def test_preregistration_bundle_child_binds_exact_frozen_yaml_bytes() -> None:
