@@ -435,6 +435,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "fourth review found two P2 gaps remediated by committed and pushed head `e5d72c2`",
         "exact-head CI run `30685562719` passed",
         "The fifth review of `e5d72c2` found one P2",
+        "remediated by committed and pushed head `0179ebb`",
+        "exact-head CI run `30686127537` passed",
+        "The sixth review of `0179ebb` found one P1 and one P2",
         "not pending local authorship",
         "The actual remaining gate is exact",
         "current-head CI followed by one current-head Codex review",
@@ -468,6 +471,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "required factor-matched primary-",
         "benchmark comparison is a hard-validity failure",
         "SPY is descriptive",
+        "gross_multiplier * turnover * bps / 10000",
+        "random-rank baseline's continuous path is net",
+        "beginning-period cost impact",
     ]:
         assert phrase in contract
 
@@ -506,6 +512,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "outcome_invalid_middle_target_retention: RETAIN_AS_NEXT_TURNOVER_PREDECESSOR",
         "primary_benchmark_comparison_gap_final_state: INVALID_DIAGNOSTIC_HARD_VALIDITY_FAILURE",
         "secondary_spy_comparison_final_state_role: DESCRIPTIVE_ONLY_NO_EFFECT",
+        "cost_formula: gross_multiplier * turnover * bps / 10000",
+        "cost_return_basis: BEGINNING_PERIOD_RETURN_IMPACT_OF_POST_RETURN_EQUITY_CHARGE",
+        "strategy_security_cost_at_execution: -gross_multiplier * (bps / 10000) * abs(delta_weight)",
     ]:
         assert phrase in preregistration
 
@@ -539,6 +548,33 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
     for baseline in inventory["trials"][:2]:
         assert baseline["output_factor_ids"] == expected_factor_ids
         assert baseline["output_series_per_factor"] == expected_baseline_outputs
+        assert baseline["output_contract_per_series"][
+            "episode_21_row_return"
+        ] == {
+            "cost_bps": 0,
+            "return_basis": "GROSS_COST_FREE_FACTOR_DIAGNOSTIC",
+        }
+    assert inventory["trials"][0]["output_contract_per_series"][
+        "continuous_daily_return"
+    ] == {
+        "cost_bps": 0,
+        "return_basis": "GROSS_COST_FREE",
+    }
+    assert inventory["trials"][1]["output_contract_per_series"][
+        "continuous_daily_return"
+    ] == {
+        "accounting": (
+            "POST_RETURN_EQUITY_CHARGE_AS_BEGINNING_PERIOD_RETURN_IMPACT"
+        ),
+        "cost_bps": 10,
+        "return_basis": "NET_PRIMARY",
+    }
+    assert inventory["trials"][1]["return_contract"] == (
+        "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH"
+    )
+    assert inventory["trials"][1]["turnover_convention"] == (
+        "UNDIVIDED_SUM_ABSOLUTE_WEIGHT_CHANGES_FROM_DRIFTED_WEIGHTS"
+    )
     assert inventory["trials"][1]["rng_seed_derivation"] == (
         "first_16_hex_sha256("
         "random_rank_v1|20260729|factor_id|YYYY-MM-DD)"
@@ -744,6 +780,29 @@ def test_fixed_bps_cost_fixtures_cover_every_frozen_case() -> None:
     for turnover, cases in fixtures.items():
         for bps, expected in cases.items():
             assert round(turnover * bps / 10000, 10) == expected
+
+
+def test_post_return_execution_cost_and_random_baseline_golden_fixture() -> None:
+    gross_return = 0.10
+    gross_multiplier = 1.0 + gross_return
+    turnover = 2.0
+
+    stress_cost_impact = gross_multiplier * turnover * 25 / 10000
+    stress_net_return = gross_return - stress_cost_impact
+    assert math.isclose(stress_cost_impact, 0.0055, abs_tol=1e-15)
+    assert math.isclose(stress_net_return, 0.0945, abs_tol=1e-15)
+
+    random_primary_cost_impact = gross_multiplier * turnover * 10 / 10000
+    random_primary_net_return = gross_return - random_primary_cost_impact
+    assert math.isclose(random_primary_cost_impact, 0.0022, abs_tol=1e-15)
+    assert math.isclose(random_primary_net_return, 0.0978, abs_tol=1e-15)
+
+    forbidden_pre_return_equity_cost = turnover * 10 / 10000
+    assert not math.isclose(
+        forbidden_pre_return_equity_cost,
+        random_primary_cost_impact,
+        abs_tol=1e-15,
+    )
 
 
 def test_factor_turnover_uses_immediate_frozen_scheduled_predecessor() -> None:

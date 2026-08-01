@@ -272,7 +272,9 @@ strategy:
     - 10
     - 25
   primary_cost_bps: 10
-  cost_formula: turnover * bps / 10000
+  gross_multiplier: 1 + gross_return
+  cost_formula: gross_multiplier * turnover * bps / 10000
+  cost_return_basis: BEGINNING_PERIOD_RETURN_IMPACT_OF_POST_RETURN_EQUITY_CHARGE
   cost_application: DEDUCT_ONCE_FROM_PORTFOLIO_EQUITY_AT_EXECUTION_CLOSE
   fixed_bps_interpretation: ALL_IN_DIAGNOSTIC_EXECUTION_COST_PROXY
   included_components:
@@ -289,7 +291,7 @@ strategy:
     - CAPACITY
     - PARTICIPATION_RATE
     - CALIBRATED_FILL
-  cost_fixtures:
+  unit_gross_multiplier_cost_fixtures:
     turnover_0_4:
       bps_0: 0.0
       bps_10: 0.0004
@@ -302,6 +304,20 @@ strategy:
       bps_0: 0.0
       bps_10: 0.0020
       bps_25: 0.0050
+  nonzero_incoming_return_cost_fixture:
+    gross_return: 0.10
+    gross_multiplier: 1.10
+    turnover: 2.0
+    bps: 25
+    beginning_period_cost_impact: 0.0055
+    net_return: 0.0945
+  random_rank_primary_cost_fixture:
+    gross_return: 0.10
+    gross_multiplier: 1.10
+    turnover: 2.0
+    bps: 10
+    beginning_period_cost_impact: 0.0022
+    net_return: 0.0978
   zero_cost_interpretation: DIAGNOSTIC_ONLY
 
 trials:
@@ -383,7 +399,8 @@ inference:
   contribution_rules:
     rank_ic_year: n_year * mean_ic_year / total_complete_case_months
     strategy_security_gross_daily: pre_return_weight * security_daily_return
-    strategy_security_cost_at_execution: -(bps / 10000) * abs(delta_weight)
+    strategy_security_cost_at_execution: -gross_multiplier * (bps / 10000) * abs(delta_weight)
+    strategy_security_cost_sum: -gross_multiplier * turnover * bps / 10000
     compounded_annual_return_contribution_claim: FORBIDDEN
   final_state_robustness:
     rank_ic_input_table: PRIMARY_COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_TABLE

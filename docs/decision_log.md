@@ -15,6 +15,50 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Align Diagnostic Costs And Freeze Random-Baseline Cost Basis
+
+Context:
+
+- The sixth exact-head Codex review of PR #177 at `0179ebb` found one P1 and
+  one P2. The campaign formula omitted the accepted post-return gross
+  multiplier, and the random-rank continuous baseline did not state whether
+  its return was gross or net at a frozen cost rate.
+
+Decision:
+
+- On each rebalance row, apply held-position incoming returns first, then
+  charge execution cost against post-return equity at the ending close. As a
+  beginning-period return impact, cost is
+  `gross_multiplier * turnover * bps / 10000` and net row return is gross row
+  return minus that impact.
+- Multiply every security-level cost contribution by the same gross
+  multiplier so the contributions sum exactly to the portfolio cost impact.
+- Keep both baselines' 21-row episodic outputs gross and cost-free. Keep the
+  equal-weight continuous baseline gross and cost-free. Freeze the random-rank
+  continuous baseline as net at the primary 10-bps all-in cost case, using the
+  same drifted-weight turnover and execution-to-execution accounting as factor
+  strategies.
+- Do not emit random-baseline 0-bps or 25-bps continuous variants. The baseline
+  remains one semantic trial and the complete inventory remains exactly 14.
+
+Rationale:
+
+- The accepted Stage 2 timing authority charges at the close after the row's
+  incoming return. Omitting the gross multiplier understates a post-gain
+  charge and overstates a post-loss charge relative to that contract.
+- A single cost-frozen random strategy baseline is reproducible and comparable
+  to the campaign's primary strategy case without creating a hidden parameter
+  search.
+
+Consequences:
+
+- Hand-calculated fixtures cover a nonzero 10% incoming return, turnover 2.0,
+  the 25-bps factor stress case, and the 10-bps random-baseline primary case.
+- No data, performance, trial execution, extra semantic trial, merge,
+  brokerage, paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Freeze Benchmark-Comparison Final-State Routing
 
 Context:

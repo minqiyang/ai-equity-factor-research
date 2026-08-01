@@ -30,7 +30,12 @@ profitability, or trading readiness.
   retained as descriptive-only evidence with no final-state effect. Factor
   turnover always uses the immediately preceding
   scheduled frozen decision-time target, so an outcome-invalid middle month
-  cannot make later turnover skip to the last outcome-valid target. Repository
+  cannot make later turnover skip to the last outcome-valid target. Execution
+  cost now follows the accepted post-return-equity order and includes the
+  gross multiplier in both portfolio and security-level return impacts. The
+  random-rank continuous baseline is frozen net at the primary 10-bps case,
+  while episodic baseline diagnostics remain gross and cost-free; the semantic
+  inventory remains exactly 14. Repository
   governance fixes safe in-scope review findings without owner round trips and
   keeps the task active through current-head review and remediation; only a
   genuinely critical owner-decision follow-up retains the four-run,

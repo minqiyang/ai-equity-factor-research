@@ -1,5 +1,30 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Sixth-Review Cost-Accounting Remediation
+
+- Exact-head Codex review of `0179ebb` completed with one P1 and one P2: the
+  fixed-bps formula omitted post-return growth, and the random-rank baseline's
+  continuous return had no frozen cost basis.
+- Aligned portfolio and security-level costs to the accepted execution timing:
+  held incoming return, gross multiplier, drifted turnover, post-return equity
+  charge, then beginning-period net-return impact.
+- Froze the equal-weight baseline as cost-free and the random-rank continuous
+  baseline as net at primary 10 bps while keeping both 21-row episode outputs
+  gross and cost-free. The random baseline remains one semantic trial and the
+  inventory remains exactly 14.
+- Added discriminating nonzero-return fixtures: 10% gross return and turnover
+  2.0 produce 0.0055 cost impact at 25 bps and 0.0022 at the random baseline's
+  10 bps. A forbidden pre-return-equity computation produces a different
+  value.
+- Focused project-structure validation passed 51 tests. The full suite passed
+  3078 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Fifth-Review Benchmark Routing Remediation
 
 - Exact-head Codex review of `e5d72c2` completed with one P2: invalid primary

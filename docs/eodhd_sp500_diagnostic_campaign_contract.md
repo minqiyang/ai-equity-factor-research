@@ -296,7 +296,15 @@ Each baseline semantic trial emits an exact output matrix with rows
 `MOM_12_1`, `REV_1M`, and `LOW_VOL_3M` and columns
 `episode_21_row_return` and `continuous_daily_return`. These factor-matched
 series remain one frozen baseline trial each and do not create extra hypotheses
-or semantic trials.
+or semantic trials. Both baselines' episodic 21-row outputs are gross,
+cost-free factor diagnostics. The equal-weight baseline's continuous path is
+also gross and cost-free. The random-rank baseline's continuous path is net at
+the primary 10-bps all-in fixed-cost case; it does not emit 0-bps or 25-bps
+continuous alternatives, and this fixed output basis does not add a semantic
+trial. Its path uses the same continuous execution-to-execution return
+contract, undivided drifted-weight turnover, post-return-equity cost order,
+initial deployment turnover, and no-terminal-liquidation rule as each factor
+strategy.
 
 For the random-rank baseline, derive a separate RNG for each factor/month as
 follows: SHA-256 the ASCII string
@@ -312,15 +320,28 @@ fees, and other ordinary execution friction. No separate commission, spread,
 slippage, fee, tax, borrow, market-impact, capacity, or participation-rate
 charge may be added. This is not a calibrated fill or capacity model.
 
-Strategy cost is `turnover * bps / 10000`, deducted once from portfolio equity
-at the execution close; the first market return begins after that close. The
-hand-calculated fixtures are:
+On every rebalance row, first apply the incoming close-to-close held-position
+return. Then charge cost against that post-return equity at the ending
+execution close. Expressed as an impact on beginning-period return, strategy
+cost is `gross_multiplier * turnover * bps / 10000`, where
+`gross_multiplier = 1 + gross_return`; net row return is gross return minus
+that impact. This is the accepted
+`after_close_signal_next_observed_close_v1` accounting order. The initial
+deployment row has no preceding held-position market return. The following
+unit-gross-multiplier fixtures isolate the turnover-rate multiplication:
 
 | Turnover | 0 bps | 10 bps | 25 bps |
 | ---: | ---: | ---: | ---: |
 | 0.4 | 0.0 | 0.0004 | 0.0010 |
 | 1.0 | 0.0 | 0.0010 | 0.0025 |
 | 2.0 | 0.0 | 0.0020 | 0.0050 |
+
+A nonzero-incoming-return rebalance fixture freezes the accounting basis: at
+10% gross return, gross multiplier 1.10, turnover 2.0, and 25 bps, the
+beginning-period cost impact is `1.10 * 2.0 * 0.0025 = 0.0055`, so net return
+is `0.0945`. For the random-rank continuous baseline's primary 10-bps basis,
+the same gross return and turnover produce cost impact `0.0022` and net return
+`0.0978`.
 
 ## Frozen Statistical Minimum
 
@@ -397,7 +418,10 @@ execution cost also reported separately.
 Year contribution to mean Rank IC is `n_year * mean_ic_year / N` and sums to
 the full-sample mean. Security gross contribution on daily return `d` is
 `pre_return_weight[i,d] * security_return[i,d]`; security cost contribution at
-an execution is `-(bps / 10000) * abs(delta_weight[i])`. Aggregate these
+an execution is
+`-gross_multiplier[d] * (bps / 10000) * abs(delta_weight[i])`. The security
+cost contributions sum to the negative beginning-period cost impact
+`-gross_multiplier[d] * turnover[d] * bps / 10000`. Aggregate these
 arithmetic daily contributions by security and calendar year. They sum to the
 corresponding daily gross return and execution cost series, not to compounded
 annual return. Rank IC has no additive per-security contribution claim.

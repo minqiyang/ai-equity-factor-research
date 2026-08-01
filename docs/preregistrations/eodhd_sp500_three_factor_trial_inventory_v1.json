@@ -14,6 +14,16 @@
         "episode_21_row_return",
         "continuous_daily_return"
       ],
+      "output_contract_per_series": {
+        "continuous_daily_return": {
+          "cost_bps": 0,
+          "return_basis": "GROSS_COST_FREE"
+        },
+        "episode_21_row_return": {
+          "cost_bps": 0,
+          "return_basis": "GROSS_COST_FREE_FACTOR_DIAGNOSTIC"
+        }
+      },
       "seed": null,
       "trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE",
       "type": "BASELINE"
@@ -28,9 +38,22 @@
         "episode_21_row_return",
         "continuous_daily_return"
       ],
+      "output_contract_per_series": {
+        "continuous_daily_return": {
+          "accounting": "POST_RETURN_EQUITY_CHARGE_AS_BEGINNING_PERIOD_RETURN_IMPACT",
+          "cost_bps": 10,
+          "return_basis": "NET_PRIMARY"
+        },
+        "episode_21_row_return": {
+          "cost_bps": 0,
+          "return_basis": "GROSS_COST_FREE_FACTOR_DIAGNOSTIC"
+        }
+      },
       "rng_seed_derivation": "first_16_hex_sha256(random_rank_v1|20260729|factor_id|YYYY-MM-DD)",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
       "seed": 20260729,
       "trial_id": "BASELINE_RANDOM_RANK_TOP_DECILE",
+      "turnover_convention": "UNDIVIDED_SUM_ABSOLUTE_WEIGHT_CHANGES_FROM_DRIFTED_WEIGHTS",
       "type": "BASELINE"
     },
     {

@@ -22,6 +22,22 @@ Original failures and consequences:
   The next two retries found the same line-wrap and capitalization issue in
   the handoff's committed-head and remaining-gate phrases. Both benchmark
   final-state behavior fixtures passed throughout.
+- The sixth-round helper retrieval reported output truncation at the outer
+  tool layer. The complete JSON file had been written successfully, so its
+  validity and exact two new review threads were checked with bounded `jq`
+  reads before it was used.
+- The temporary worktree had neither a `python` alias nor pytest installed in
+  Homebrew `python3`; both commands failed before collecting tests. Validation
+  resumed with the repository's existing virtual-environment interpreter.
+- A piped full-suite run completed without returning its final output chunk,
+  so it was not counted. A direct full-suite rerun returned an exit-zero
+  summary and established the test result.
+- The first sixth-round Ruby safe-load omitted `Date` from the permitted class
+  list and rejected existing date scalars. A corrected safe-load explicitly
+  permitted `Date`, retained aliases-disabled behavior, and parsed the file.
+- The first isolated build could not resolve declared build requirements in
+  the network-restricted sandbox. The identical build was rerun with approved
+  dependency-download access and succeeded without publishing artifacts.
 
 Investigation:
 
@@ -52,11 +68,17 @@ Correction:
 - Split the benchmark-routing assertion into stable adjacent semantic
   fragments and normalized handoff whitespace before checking its full
   semantic phrases; no protocol or handoff rule was weakened.
+- Used the repository virtual environment for every evidentiary Python check,
+  required an explicit final pytest summary, and reran YAML/build checks with
+  the narrow environment permissions their declared dependencies required.
+- Aligned both aggregate and security-level cost effects to the accepted gross
+  multiplier and froze the random-rank continuous baseline at primary 10 bps
+  without expanding the 14-trial inventory.
 
 Verification:
 
-- The latest corrected focused structure suite passed 50 tests and the full
-  suite passed 3077 tests with two platform-conditional skips. Full Ruff,
+- The latest corrected focused structure suite passed 51 tests and the full
+  suite passed 3078 tests with two platform-conditional skips. Full Ruff,
   compileall, Skill audit, YAML and JSON parsing, deterministic repo-map
   regeneration, `git diff --check`, added-line privacy and Unicode/control
   scans, and isolated sdist/wheel build passed.
