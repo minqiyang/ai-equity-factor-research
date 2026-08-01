@@ -94,11 +94,14 @@ re-enter this gate before acting on a different PR or changed scope.
   and resolve only the addressed thread; leave an unverified or disputed thread
   open and stop. Publication, thread-write, and review-request actions still pass
   through the External Authorization Gate; remediation cannot expand the stage.
-- A review-required PR is technically merge-eligible only when the requested
-  Codex review has completed on the exact current head with no actionable
-  findings, no review thread remains unresolved, and all required checks and
-  formal reviews pass. Pending, missing, or head-mismatched Codex review evidence
-  is ineligible.
+- No PR is technically merge-eligible while its current head has any unresolved
+  actionable finding from any review channel, including PR-level comments or
+  independent audits that do not create a resolvable thread.
+- A review-required PR is additionally technically merge-eligible only when the
+  requested Codex review has completed on the exact current head with no
+  actionable findings, no review thread remains unresolved, and all required
+  checks and formal reviews pass. Pending, missing, or head-mismatched Codex
+  review evidence is ineligible.
 - Technical eligibility alone never grants merge authority; full-lifecycle or
   explicit merge authorization must also be current for that same PR and scope.
 

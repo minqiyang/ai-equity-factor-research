@@ -7979,6 +7979,10 @@ def test_controller_applies_same_pr_lifecycle_authorization() -> None:
         "no actionable findings",
         "no review thread remains unresolved",
         "all required checks and formal reviews pass",
+        "No PR is technically merge-eligible while its current head has any "
+        "unresolved actionable finding from any review channel",
+        "PR-level comments or independent audits",
+        "do not create a resolvable thread",
         "Pending, missing, or head-mismatched Codex review evidence is ineligible",
         "Technical eligibility alone never grants merge authority",
         "full-lifecycle",

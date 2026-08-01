@@ -16,6 +16,10 @@
 - Exact-head review `4836054644` of `d3375f6` found that thread resolution was
   missing from the lifecycle grant. Commit `0f432ae` added that bounded action.
   Re-review `4836073605` then required this durable engineering record.
+- Re-review `4836085616` of `26de916` found that the eligibility wording could
+  miss actionable PR-level or independent-audit findings without inline threads.
+  The general no-unresolved-actionable-finding gate now covers every review
+  channel, whether or not GitHub exposes a resolvable thread.
 - Project-structure validation passed 74 tests. The full suite passed 3,101
   tests with two platform-conditional `longdouble` skips. Ruff, compileall,
   Skill audit, deterministic repo-map regeneration, whitespace checks, and
