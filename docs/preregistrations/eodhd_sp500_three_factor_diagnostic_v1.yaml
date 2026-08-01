@@ -599,7 +599,7 @@ inference:
       LOW_VOL_3M: 0.06
     rejected_factor_ids:
       - REV_1M
-  dependence_aware_method: OVERLAPPING_NONCIRCULAR_MOVING_BLOCK_BOOTSTRAP
+  dependence_aware_method: OVERLAPPING_CIRCULAR_MOVING_BLOCK_BOOTSTRAP_WITHIN_SEGMENT
   bootstrap_unit: COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_RECORD
   complete_case_rule: ALL_THREE_PRIMARY_FACTOR_RANK_ICS_VALID
   missing_record_breaks_segment: true
@@ -608,16 +608,20 @@ inference:
     - PURGED_MONTH
     - INVALID_OR_MISSING_MONTH
     - LEAVE_ONE_YEAR_OUT_GAP
-  block_sampling: OVERLAPPING_NONCIRCULAR_UNIFORM_WITH_REPLACEMENT
+  block_sampling: OVERLAPPING_CIRCULAR_STARTS_UNIFORM_WITH_REPLACEMENT_WITHIN_SEGMENT
   segment_block_length: 6_IF_SEGMENT_LENGTH_GT_6_ELSE_1
   short_segment_rule: LENGTH_2_THROUGH_6_DRAW_N_SINGLE_ROW_BLOCKS_UNIFORMLY_WITH_REPLACEMENT
   singleton_segment_rule: DRAW_ONLY_INDEX_ZERO_RETAIN_FIXED_SINGLETON
   blocks_drawn_per_segment: ceil(segment_length / segment_block_length)
   concatenation: CHRONOLOGICAL_SEGMENT_ORDER_THEN_TRUNCATE_EACH_SEGMENT
+  circular_index_rule: (START_PLUS_OFFSET)_MOD_SEGMENT_LENGTH
+  circular_wrap_scope: WITHIN_CURRENT_SEGMENT_ONLY_NEVER_ACROSS_SEGMENT_BOUNDARY
+  tail_truncation_rule: RETAIN_FIRST_SEGMENT_LENGTH_ROWS_AFTER_CONCATENATING_FULL_CIRCULAR_BLOCKS
+  uniform_marginal_row_weight: REQUIRED_EACH_RETAINED_ROW_EXPECTED_INCLUSION_ONE_PER_SEGMENT_REPLICATE
   fold_weighting: RETAINED_COMPLETE_CASE_MONTH_COUNT
   joint_factor_draws: true
   rng_consumption_order: REPLICATE_MAJOR_THEN_CHRONOLOGICAL_SEGMENT
-  block_start_draw_api: GENERATOR_INTEGERS_LOW_0_HIGH_N_MINUS_L_PLUS_1_SIZE_CEIL_N_OVER_L_ENDPOINT_FALSE
+  block_start_draw_api: GENERATOR_INTEGERS_LOW_0_HIGH_N_SIZE_CEIL_N_OVER_L_ENDPOINT_FALSE
   short_segment_resampling_support: AT_LEAST_ONE_SEGMENT_LENGTH_GE_2_AND_AT_LEAST_TWO_DISTINCT_NULL_BOOTSTRAP_MEANS_PER_FACTOR
   degenerate_resampling_action: PRIMARY_INFERENCE_INVALID_NO_HOLM_SUPPORT_RETAIN_COUNTS
   draw_reuse_across_distributions: SAME_ROW_INDEX_VECTOR_FOR_UNCENTERED_AND_NULL_CENTERED_TABLES
@@ -637,13 +641,42 @@ inference:
       - 0.035
       - -0.001
     starts_by_replicate_then_segment:
-      - [[0, 0], [0, 1]]
-      - [[0, 2], [1, 0]]
-      - [[0, 1], [1, 1]]
+      - [[2, 2], [3, 4]]
+      - [[2, 7], [6, 0]]
+      - [[0, 3], [4, 6]]
     row_indices_by_replicate:
-      - [0, 1, 2, 3, 4, 5, 0, 1, 8, 9, 10, 11, 12, 13, 9]
-      - [0, 1, 2, 3, 4, 5, 2, 3, 9, 10, 11, 12, 13, 14, 8]
-      - [0, 1, 2, 3, 4, 5, 1, 2, 9, 10, 11, 12, 13, 14, 9]
+      - [2, 3, 4, 5, 6, 7, 2, 3, 11, 12, 13, 14, 8, 9, 12]
+      - [2, 3, 4, 5, 6, 7, 7, 0, 14, 8, 9, 10, 11, 12, 8]
+      - [0, 1, 2, 3, 4, 5, 3, 4, 12, 13, 14, 8, 9, 10, 14]
+    uncentered_means_by_replicate_factor_order:
+      - [0.074, 0.033, 0.0003333333333333334]
+      - [0.07066666666666667, 0.034666666666666665, -0.00033333333333333294]
+      - [0.068, 0.036000000000000004, -0.0030000000000000005]
+    null_centered_means_by_replicate_factor_order:
+      - [0.0039999999999999975, -0.0020000000000000035, 0.0013333333333333335]
+      - [0.0006666666666666636, -0.0003333333333333359, 0.0006666666666666673]
+      - [-0.0020000000000000057, 0.000999999999999998, -0.002]
+  bootstrap_nonmultiple_segment_null_mean_golden_fixture:
+    record_count: 63
+    segment_lengths: [7, 7, 7, 7, 7, 7, 7, 7, 7]
+    block_length: 6
+    factor_columns:
+      MOM_12_1: row_index / 100
+      REV_1M: ((row_index % 5) - 2) / 100
+      LOW_VOL_3M: ((row_index * row_index) % 11) / 100
+    exhaustive_draws: ALL_49_ORDERED_PAIRS_OF_STARTS_0_THROUGH_6_PER_SEGMENT
+    expected_circular_row_inclusion_weights_each_segment: [1, 1, 1, 1, 1, 1, 1]
+    expected_global_null_mean_factor_order:
+      - 7.401486830834377e-17
+      - 4.2679704567683347e-19
+      - 9.141717365465079e-18
+    expected_global_null_mean_absolute_tolerance: 1.0e-15
+    forbidden_noncircular_row_inclusion_weights_each_segment: [1, 1.5, 1, 1, 1, 1, 0.5]
+    forbidden_noncircular_global_null_mean_factor_order:
+      - -0.0035714285714285128
+      - 3.441911658684141e-19
+      - 0.00023809523809524734
+    forbidden_noncircular_action: REJECT_AS_TRUNCATION_BIASED_NOT_NULL_CENTERED
   long_segment_block_length_monthly_records: 6
   bootstrap_replicates: 20000
   minimum_valid_monthly_records_for_primary_inference: 60

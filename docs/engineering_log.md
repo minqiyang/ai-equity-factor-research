@@ -1,5 +1,29 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Twenty-Fourth-Review Circular-Bootstrap Remediation
+
+- Exact-head Codex review `4834551495` of `2c6b827` completed with one P1:
+  non-circular length-six blocks plus tail truncation assigned unequal expected
+  row weights when segment length was not divisible by six, invalidating the
+  intended globally centered null expectation.
+- Replaced the long-segment rule with circular starts drawn uniformly from all
+  positions. Each block wraps only within its own segment; the concatenated
+  draw is still truncated to `n`, but every local row now has expected
+  inclusion weight exactly one. Short segments retain their frozen one-row
+  resampling and singleton behavior.
+- Updated the seeded shared-draw fixture and added a 63-record exhaustive
+  golden over nine length-seven segments. It proves circular unit weights and
+  centered-null expectation while rejecting the former
+  `[1,1.5,1,1,1,1,0.5]` weights and nonzero MOM/LOW_VOL expected null means.
+- Focused project-structure validation passed 71 tests. The full suite passed
+  3098 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, `git diff
+  --check`, privacy, non-ASCII, and hidden-Unicode/control scans passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Twenty-Third-Review Baseline-Episode Remediation
 
 - Exact-head Codex review `4834522202` of `93adce5` completed with one P2: the

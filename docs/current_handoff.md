@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the twenty-third PR #177 review-remediation round.
+Updated: 2026-07-31 for the twenty-fourth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -177,12 +177,21 @@ Updated: 2026-07-31 for the twenty-third PR #177 review-remediation round.
   returns, and invalidates the whole episode on any invalid target return
   without survivor renormalization or continuous-path reuse. A short-month
   fixture distinguishes the required `0.01` episode from a forbidden `0.10`
-  monthly-reset slice and is not pending local authorship. The actual remaining
-  gate is exact-head CI on the
-  current head, followed by one current-head Codex review; every finding
-  restarts that remediation loop. Do not repeat commit or push work from an old
-  handoff instruction; resolve current `HEAD`, remote head, CI, and review
-  state.
+  monthly-reset slice and is not pending local authorship. That gap was
+  remediated by committed and pushed head `2c6b827`; exact-head CI run
+  `30697181943` passed. The twenty-fourth review of `2c6b827` found one P1:
+  non-circular length-six blocks followed by tail truncation gave unequal row
+  inclusion weights whenever segment length was not divisible by six, so a
+  globally centered null table could still have a nonzero bootstrap mean. The
+  current branch-head snapshot draws circular starts uniformly across every
+  position, wraps only inside the current segment, and retains the first `n`
+  concatenated rows. Each row therefore has expected inclusion weight one.
+  A 63-record fixture exhaustively checks nine seven-row segments and rejects
+  the former `[1,1.5,1,1,1,1,0.5]` marginal weights and their nonzero MOM and
+  LOW_VOL null means. The actual remaining gate is exact-head CI on the current
+  head, followed by one current-head Codex review; every finding restarts that
+  remediation loop. Do not repeat commit or push work from an old handoff
+  instruction; resolve current `HEAD`, remote head, CI, and review state.
 - Current protected-main baseline: 3064 tests passed with two
   platform-conditional wide-`longdouble` skips. The PR #176 release also
   passed Ruff, compileall, deterministic repo-map, Skill audit, immutable

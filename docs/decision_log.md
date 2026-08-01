@@ -15,6 +15,51 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Use Circular Within-Segment Blocks For Uniform Null Weighting
+
+Context:
+
+- The twenty-fourth exact-head Codex review of PR #177 at `2c6b827` found one
+  P1. For `n>6`, the prior non-circular start set `0..n-L` combined with
+  `ceil(n/L)` blocks and tail truncation did not give every row equal expected
+  inclusion when `n` was not divisible by `L=6`.
+- With `n=7`, the expected local weights were
+  `[1,1.5,1,1,1,1,0.5]`, so global null centering did not guarantee that the
+  expected resampled null mean was zero.
+
+Decision:
+
+- For every long segment, draw starts uniformly from all `n` positions and map
+  each block offset by `(start + offset) mod n`. Circular wrap is confined to
+  that segment and may not cross any fold, purge, missing-month, or
+  leave-one-year-out boundary.
+- Continue drawing `ceil(n/L)` blocks and retain the first `n` concatenated
+  rows. If `n=qL+r`, the full blocks contribute expected weight `qL/n` per row
+  and the retained circular prefix contributes `r/n`, for exact total expected
+  weight one.
+- Preserve the previously frozen one-row resampling for segment lengths two
+  through six and the fixed singleton rule.
+
+Rationale:
+
+- Uniform marginal row weights make the expected resampled mean of the globally
+  centered table zero while retaining length-six local dependence and all
+  segment boundaries.
+- Re-centering each bootstrap statistic would add a different inferential rule;
+  the circular construction removes the bias directly and remains auditable.
+
+Consequences:
+
+- The seeded shared-draw fixture now freezes circular starts, complete row
+  vectors, and both uncentered and null-centered mean matrices.
+- A separate 63-record fixture exhaustively enumerates all 49 ordered start
+  pairs in each of nine seven-row segments, proves unit expected row weights,
+  and rejects the former non-circular MOM and LOW_VOL null-mean offsets.
+- No data, performance, trial execution, factor, cost case, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Separate Baseline Episodes From Continuous Resets
 
 Context:

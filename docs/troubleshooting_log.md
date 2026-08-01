@@ -181,6 +181,12 @@ Original failures and consequences:
   continuous path. The episode now holds its signal-time target through
   `e+21` regardless of an earlier monthly reset, and invalid constituents fail
   the whole weighted diagnostic instead of changing its universe.
+- The twenty-fourth review exposed truncation bias in the long-segment
+  bootstrap: non-circular starts plus a partial final block gave a seven-row
+  segment expected weights `[1,1.5,1,1,1,1,0.5]`. The fix uses circular starts
+  across all positions, confines wrap to the current segment, and adds a
+  63-record exhaustive null-mean golden rather than relying on seeded spot
+  draws alone.
 
 Investigation:
 

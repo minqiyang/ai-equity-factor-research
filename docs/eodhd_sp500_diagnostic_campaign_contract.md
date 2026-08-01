@@ -626,8 +626,8 @@ factor order is `REV_1M,LOW_VOL_3M,MOM_12_1`; the multiplied values are
 and stops at `LOW_VOL_3M`.
 
 The dependence-aware method applies to the three primary mean Rank IC effects.
-It is an overlapping, non-circular moving-block bootstrap over a common
-complete-case monthly Rank IC table:
+It is an overlapping circular moving-block bootstrap within each segment of a
+common complete-case monthly Rank IC table:
 
 - long-segment block length: 6 monthly records, with the short-segment rule
   below;
@@ -650,15 +650,24 @@ complete-case monthly Rank IC table:
   blocks uniformly with replacement from all `n` positions, producing genuine
   within-segment resampling instead of copying the full segment. A singleton
   uses `L=1` and necessarily retains its only row;
-- enumerate overlapping non-circular block starts `0..n-L`, draw `ceil(n/L)`
-  starts uniformly with replacement, concatenate the selected blocks, and
-  truncate to the first `n` rows;
+- enumerate every circular block start `0..n-1`, draw `ceil(n/L)` starts
+  uniformly with replacement, map each block offset to
+  `(start + offset) mod n`, concatenate the selected blocks, and retain the
+  first `n` rows. Circular wrap remains inside the current segment and may
+  never cross a fold, purge, invalid/missing-month, or leave-one-year-out gap;
+- this circular start rule gives every retained row expected inclusion weight
+  exactly one even when `n` is not divisible by `L`: each of the `q` complete
+  retained blocks contributes `L/n` and the final retained prefix of length
+  `r` contributes `r/n`, where `qL+r=n`. The former non-circular start rule
+  plus tail truncation is forbidden because it gives boundary rows unequal
+  marginal weights and can make the globally centered null mean nonzero;
 - use identical block-start draws for all three columns, concatenate the
   resampled segments, and compute the unweighted mean across all retained rows,
   so a fold's weight equals its retained complete-case month count;
 - for each replicate and segment, call NumPy `Generator.integers` once with
-  `low=0`, `high=n-L+1`, `size=ceil(n/L)`, and `endpoint=False`; concatenate
-  and truncate that segment's row indices exactly as above;
+  `low=0`, `high=n`, `size=ceil(n/L)`, and `endpoint=False`; apply the circular
+  index rule, concatenate, and truncate that segment's row indices exactly as
+  above;
 - reuse that exact row-index vector jointly for all three factor columns and
   for both the uncentered table used by interval resamples and the globally
   null-centered table used by p-value resamples. There is one RNG pass per
@@ -677,9 +686,19 @@ complete-case monthly Rank IC table:
 The shared-draw golden fixture uses seed `20260730`, three replicates, segment
 lengths 8 and 7, block length 6, and row-index factor columns
 `i/100`, `(14-i)/200`, and `((i%4)-1.5)/100`. Its starts by replicate/segment
-are `[[0,0],[0,1]]`, `[[0,2],[1,0]]`, and `[[0,1],[1,1]]`. The golden test
+are `[[2,2],[3,4]]`, `[[2,7],[6,0]]`, and `[[0,3],[4,6]]`. The golden test
 freezes each complete 15-row index vector and both uncentered and null-centered
 mean matrices from those same rows, so a second RNG pass cannot pass.
+
+The nonmultiple-segment null-mean golden fixture uses 63 records in nine
+seven-record segments with block length 6 and exhaustively enumerates all 49
+ordered circular-start pairs per segment. Every local row has expected
+inclusion weight exactly `1`, and the expected mean of each globally centered
+factor is zero within absolute floating tolerance `1e-15`. The forbidden
+non-circular rule has expected local weights `[1,1.5,1,1,1,1,0.5]` and, for
+the frozen fixture columns, nonzero MOM and LOW_VOL null means. This fixture
+rejects the truncation-biased implementation even if seeded spot draws happen
+to look plausible.
 
 The short-segment golden fixture uses 60 records in ten consecutive six-record
 segments. Every segment therefore uses six one-row draws with replacement.

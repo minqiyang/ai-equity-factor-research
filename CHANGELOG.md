@@ -47,6 +47,11 @@ profitability, or trading readiness.
   Diagnostic endpoint returns likewise use fail-closed adjusted-close simple
   returns. Bootstrap interval and null distributions now share one exact block-
   index draw per replicate/segment across all factors, with no second RNG pass.
+  Long segments now use circular starts over every within-segment position;
+  wrapping never crosses a segment boundary, and truncation preserves uniform
+  expected row inclusion even when segment length is not divisible by six. A
+  63-record exhaustive golden rejects the former non-circular boundary weights
+  and nonzero centered-null expectation.
   Momentum and reversal now require every referenced numerator and denominator
   anchor to be a finite, strictly positive real non-Boolean value; invalid
   anchors are retained, excluded, and counted without repair. Their 253/22

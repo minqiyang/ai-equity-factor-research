@@ -2,6 +2,7 @@ from copy import deepcopy
 from datetime import date, datetime, timezone
 import hashlib
 from importlib import resources
+import itertools
 import json
 import math
 from numbers import Real
@@ -587,6 +588,10 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "detached run binding completion",
         "The twentieth review of `e6c7ad5` found one P2",
         "immutable historical seed plus an append-only prospective chain",
+        "remediated by committed and pushed head `2c6b827`",
+        "exact-head CI run `30697181943` passed",
+        "The twenty-fourth review of `2c6b827` found one P1",
+        "Each row therefore has expected inclusion weight one",
         "not pending local authorship",
         "The actual remaining gate is exact-head CI on the current head",
         "followed by one current-head Codex review",
@@ -685,6 +690,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "freezes once, campaign-wide, at the earliest signal cutoff",
         "per-factor freeze or re-encoding is forbidden",
         "For `2<=n<=6`, set `L=1`",
+        "overlapping circular moving-block bootstrap within each segment",
+        "expected inclusion weight",
+        "nonmultiple-segment null-mean golden fixture uses 63 records",
         "short-segment golden fixture uses 60 records",
         "resampling support is degenerate",
     ]:
@@ -707,6 +715,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "holm_stop_rule: STOP_AT_FIRST_NON_REJECTION",
         "complete_case_rule: ALL_THREE_PRIMARY_FACTOR_RANK_ICS_VALID",
         "rng_consumption_order: REPLICATE_MAJOR_THEN_CHRONOLOGICAL_SEGMENT",
+        "dependence_aware_method: OVERLAPPING_CIRCULAR_MOVING_BLOCK_BOOTSTRAP_WITHIN_SEGMENT",
+        "circular_index_rule: (START_PLUS_OFFSET)_MOD_SEGMENT_LENGTH",
+        "uniform_marginal_row_weight: REQUIRED_EACH_RETAINED_ROW_EXPECTED_INCLUSION_ONE_PER_SEGMENT_REPLICATE",
+        "record_count: 63",
+        "forbidden_noncircular_action: REJECT_AS_TRUNCATION_BIASED_NOT_NULL_CENTERED",
         "return_object: CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
         "minimum_distinct_factor_values: 10",
         "minimum_distinct_forward_returns: 2",
@@ -2465,13 +2478,13 @@ def test_bootstrap_reuses_segment_draws_for_both_distributions() -> None:
             block_length = 6 if segment_length > 6 else 1
             starts = rng.integers(
                 low=0,
-                high=segment_length - block_length + 1,
+                high=segment_length,
                 size=math.ceil(segment_length / block_length),
                 endpoint=False,
             )
             local_indices = np.concatenate(
                 [
-                    np.arange(start, start + block_length)
+                    (int(start) + np.arange(block_length)) % segment_length
                     for start in starts
                 ]
             )[:segment_length]
@@ -2488,9 +2501,9 @@ def test_bootstrap_reuses_segment_draws_for_both_distributions() -> None:
         for replicate in replicate_segment_indices
     )
     expected_replicate_indices = (
-        (0, 1, 2, 3, 4, 5, 0, 1, 8, 9, 10, 11, 12, 13, 9),
-        (0, 1, 2, 3, 4, 5, 2, 3, 9, 10, 11, 12, 13, 14, 8),
-        (0, 1, 2, 3, 4, 5, 1, 2, 9, 10, 11, 12, 13, 14, 9),
+        (2, 3, 4, 5, 6, 7, 2, 3, 11, 12, 13, 14, 8, 9, 12),
+        (2, 3, 4, 5, 6, 7, 7, 0, 14, 8, 9, 10, 11, 12, 8),
+        (0, 1, 2, 3, 4, 5, 3, 4, 12, 13, 14, 8, 9, 10, 14),
     )
     uncentered_means = np.asarray(
         [factor_table[list(indices)].mean(axis=0) for indices in replicate_indices]
@@ -2503,16 +2516,16 @@ def test_bootstrap_reuses_segment_draws_for_both_distributions() -> None:
     )
     expected_uncentered_means = np.asarray(
         [
-            [0.058666666666666666, 0.04066666666666667, -0.004333333333333333],
-            [0.06466666666666666, 0.03766666666666667, -0.001],
-            [0.064, 0.038000000000000006, -0.0016666666666666668],
+            [0.074, 0.033, 0.0003333333333333334],
+            [0.07066666666666667, 0.034666666666666665, -0.00033333333333333294],
+            [0.068, 0.036000000000000004, -0.0030000000000000005],
         ]
     )
     expected_null_centered_means = np.asarray(
         [
-            [-0.011333333333333334, 0.0056666666666666645, -0.0033333333333333335],
-            [-0.005333333333333331, 0.0026666666666666635, 0.0],
-            [-0.006, 0.0029999999999999975, -0.0006666666666666661],
+            [0.0039999999999999975, -0.0020000000000000035, 0.0013333333333333335],
+            [0.0006666666666666636, -0.0003333333333333359, 0.0006666666666666673],
+            [-0.0020000000000000057, 0.000999999999999998, -0.002],
         ]
     )
 
@@ -2541,6 +2554,91 @@ def test_bootstrap_reuses_segment_draws_for_both_distributions() -> None:
         draw_replicate_indices() for _ in range(3)
     )
     assert forbidden_second_pass_indices != replicate_segment_indices
+
+
+def test_circular_bootstrap_nonmultiple_segments_center_null_mean() -> None:
+    segment_length = 7
+    block_length = 6
+    segment_count = 9
+    record_count = segment_length * segment_count
+    row_index = np.arange(record_count, dtype=float)
+    factor_table = np.column_stack(
+        (
+            row_index / 100.0,
+            ((row_index % 5.0) - 2.0) / 100.0,
+            ((row_index * row_index) % 11.0) / 100.0,
+        )
+    )
+    null_centered_table = factor_table - factor_table.mean(axis=0)
+
+    def expected_local_inclusion_weights(
+        starts: range,
+        *,
+        circular: bool,
+    ) -> np.ndarray:
+        inclusion_counts = np.zeros(segment_length)
+        for first_start, second_start in itertools.product(starts, repeat=2):
+            blocks = []
+            for start in (first_start, second_start):
+                indices = start + np.arange(block_length)
+                if circular:
+                    indices %= segment_length
+                blocks.append(indices)
+            sampled = np.concatenate(blocks)[:segment_length]
+            np.add.at(inclusion_counts, sampled, 1)
+        return inclusion_counts / (len(starts) ** 2)
+
+    def expected_global_null_mean(weights: np.ndarray) -> np.ndarray:
+        expected_sum = np.zeros(3)
+        for segment_start in range(0, record_count, segment_length):
+            segment = null_centered_table[
+                segment_start : segment_start + segment_length
+            ]
+            expected_sum += (weights[:, None] * segment).sum(axis=0)
+        return expected_sum / record_count
+
+    circular_weights = expected_local_inclusion_weights(
+        range(segment_length),
+        circular=True,
+    )
+    circular_null_mean = expected_global_null_mean(circular_weights)
+    forbidden_noncircular_weights = expected_local_inclusion_weights(
+        range(segment_length - block_length + 1),
+        circular=False,
+    )
+    forbidden_noncircular_null_mean = expected_global_null_mean(
+        forbidden_noncircular_weights
+    )
+
+    assert record_count == 63
+    np.testing.assert_array_equal(circular_weights, np.ones(segment_length))
+    np.testing.assert_allclose(circular_null_mean, np.zeros(3), atol=1e-15)
+    np.testing.assert_allclose(
+        circular_null_mean,
+        [
+            7.401486830834377e-17,
+            4.2679704567683347e-19,
+            9.141717365465079e-18,
+        ],
+        rtol=0.0,
+        atol=1e-30,
+    )
+    np.testing.assert_array_equal(
+        forbidden_noncircular_weights,
+        [1.0, 1.5, 1.0, 1.0, 1.0, 1.0, 0.5],
+    )
+    np.testing.assert_allclose(
+        forbidden_noncircular_null_mean,
+        [
+            -0.0035714285714285128,
+            3.441911658684141e-19,
+            0.00023809523809524734,
+        ],
+        rtol=0.0,
+        atol=1e-18,
+    )
+    assert abs(forbidden_noncircular_null_mean[0]) > 1e-3
+    assert abs(forbidden_noncircular_null_mean[2]) > 1e-4
 
 
 def test_short_bootstrap_segments_resample_60_records_nondegenerately() -> None:
