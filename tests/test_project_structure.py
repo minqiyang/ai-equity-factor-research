@@ -485,6 +485,7 @@ def test_governance_documents_define_unique_policy_owners() -> None:
         "re-query an unchanged gate",
         "final stable current head",
         "technically merge-eligible",
+        "perform the normal protected PR merge without another prompt",
     ]:
         assert controller_only_token in normalized["controller"]
         assert all(
@@ -511,6 +512,32 @@ def test_governance_documents_define_unique_policy_owners() -> None:
 
     assert "No repository file grants authority to" in authority
     assert "explicit user or higher-level authorization" in authority
+    assert "create or publish a PR" in authority
+    assert "normal protected lifecycle for that same PR" in authority
+    assert "The user may revoke that lifecycle authorization" in authority
+    assert "Lifecycle authorization never covers another PR" in authority
+
+    for authorized_lifecycle_action in [
+        "readiness transition",
+        "required review request",
+        "in-scope remediation publication",
+        "eligible normal merge",
+    ]:
+        assert authorized_lifecycle_action in authority
+
+    for excluded_lifecycle_scope in [
+        "another PR",
+        "scope expansion",
+        "auto-merge",
+        "administrative or protection bypass",
+        "deployment",
+        "private data",
+        "credentials",
+        "brokerage",
+        "destructive action",
+    ]:
+        assert excluded_lifecycle_scope in authority
+
     assert "../AGENTS.md#authority-and-scope" in controller_scope
     assert "It grants no authority" in controller_scope
     assert "Eligibility is not authorization" in controller_scope
@@ -519,6 +546,19 @@ def test_governance_documents_define_unique_policy_owners() -> None:
     assert "explicit action-and-scope authorization" in authorization_gate
     assert "successful checks do not grant authority" in authorization_gate
     assert "stop after local validation" in authorization_gate
+    assert "same-PR lifecycle authorization defined in `AGENTS.md`" in (
+        authorization_gate
+    )
+    assert "apply the lifecycle below to that PR" in authorization_gate
+    assert "re-enter this gate" in authorization_gate
+
+    for duplicated_lifecycle_action in [
+        "publish it",
+        "transition it to Ready",
+        "request required review",
+        "perform the normal protected merge",
+    ]:
+        assert duplicated_lifecycle_action not in authorization_gate
 
     for duplicated_inventory in [
         "pushes, PR writes, comments",
@@ -540,7 +580,6 @@ def test_governance_documents_define_unique_policy_owners() -> None:
 
     for stale_grant in [
         "may enable github auto-merge",
-        "perform a normal protected pr merge",
         "may automatically push",
         "thread-scoped monitor at five-minute",
         "thirty-minute intervals",
@@ -7913,7 +7952,7 @@ def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:
     assert "docs/eodhd_sp500_diagnostic_campaign_contract.md" in controller
 
 
-def test_controller_owns_review_lifecycle_without_granting_merge_authority() -> None:
+def test_controller_applies_same_pr_lifecycle_authorization() -> None:
     controller = (
         PROJECT_ROOT / "docs/codex_long_running_controller.md"
     ).read_text(encoding="utf-8")
@@ -7924,15 +7963,20 @@ def test_controller_owns_review_lifecycle_without_granting_merge_authority() -> 
     for phrase in [
         "Automatic Review disabled",
         "Drafts get no request",
+        "Mark it Ready",
         "`@codex review`",
         "required CI stabilize",
         "final stable current head",
         "unchanged head",
         "actionable fix changes the head",
         "metadata-only edits may omit it",
-        "current head has no unresolved actionable finding",
-        "all required checks and reviews pass",
-        "never grants merge authority",
+        "Codex review has completed on the exact current head",
+        "no actionable findings",
+        "no review thread remains unresolved",
+        "all required checks and formal reviews pass",
+        "Pending, missing, or head-mismatched Codex review evidence is ineligible",
+        "Technical eligibility alone never grants merge authority",
+        "full-lifecycle",
         "External Authorization Gate",
     ]:
         assert phrase in review_lifecycle
@@ -7953,8 +7997,20 @@ def test_controller_owns_review_lifecycle_without_granting_merge_authority() -> 
     assert review_lifecycle.index("final stable current head") < review_lifecycle.index(
         "technically merge-eligible"
     )
+    assert review_lifecycle.index("actionable fix changes the head") < (
+        review_lifecycle.index("Codex review has completed on the exact current head")
+    )
     assert "may enable GitHub auto-merge" not in review_lifecycle
-    assert "perform a normal protected PR merge" not in review_lifecycle
+
+    protected_merge = " ".join(
+        _markdown_section(controller, "Protected Merge Eligibility").split()
+    )
+    assert "full-lifecycle authorization is current" in protected_merge
+    assert "perform the normal protected PR merge without another prompt" in (
+        protected_merge
+    )
+    assert "Auto-merge remains a separate action" in protected_merge
+    assert "administrative override or protection bypass" in protected_merge
 
 
 def test_staged_quant_workflow_skill_is_a_thin_router() -> None:

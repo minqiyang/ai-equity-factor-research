@@ -11,6 +11,14 @@ research-safety review standards.
   comment or review request, enable auto-merge, merge, close, deploy, access
   private data, or take destructive action. Each requires explicit user or
   higher-level authorization for that action and scope.
+- Unless the user narrows the request, an explicit instruction to create or
+  publish a PR authorizes the normal protected lifecycle for that same PR:
+  readiness transition, required review request, in-scope remediation
+  publication, and eligible normal merge. The user may revoke that lifecycle
+  authorization at any time.
+- Lifecycle authorization never covers another PR, scope expansion, auto-merge,
+  administrative or protection bypass, deployment, private data, credentials,
+  brokerage, or destructive action.
 - Local-edit authorization is not publication authorization; approval for a
   named PR or remediation does not expand its stage or file scope.
 - Never direct-push or direct-merge to `main`, bypass protections, checks,

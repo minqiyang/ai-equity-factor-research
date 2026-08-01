@@ -61,6 +61,10 @@ external, sensitive, or destructive operations. Workflow eligibility and
 successful checks do not grant authority. Without explicit action-and-scope
 authorization, stop after local validation.
 
+When the same-PR lifecycle authorization defined in `AGENTS.md` is current,
+apply the lifecycle below to that PR. Otherwise, stop after local validation and
+re-enter this gate before acting on a different PR or changed scope.
+
 ## Predecessor PR Gate
 
 - If a required predecessor is not verified merged, check once, report one gate
@@ -76,6 +80,10 @@ authorization, stop after local validation.
 - Keep GitHub Codex Automatic Review disabled. Drafts get no request; an explicit
   `@codex review` is sent once only after validation and required CI stabilize on
   the final stable current head.
+- For a full-lifecycle-authorized PR, use Draft while scope or validation is
+  unstable. Mark it Ready once scope is final, local validation passes, no known
+  blocker remains, and any checks available only after Ready can safely begin.
+  Do not request review until required exact-head CI has stabilized.
 - Review is required for research semantics, returns, costs, benchmarks,
   implementation, CI, security, data handling, or execution scope. Trivial
   spelling, date, count, or equivalent metadata-only edits may omit it.
@@ -84,9 +92,13 @@ authorization, stop after local validation.
 - A safe actionable finding may be fixed locally inside the already-authorized
   scope. Push and review-request actions still pass through the External
   Authorization Gate; a remediation authorization cannot expand the stage.
-- A review-required PR is technically merge-eligible only when its current head
-  has no unresolved actionable finding and all required checks and reviews pass.
-  Technical eligibility never grants merge authority or action authorization.
+- A review-required PR is technically merge-eligible only when the requested
+  Codex review has completed on the exact current head with no actionable
+  findings, no review thread remains unresolved, and all required checks and
+  formal reviews pass. Pending, missing, or head-mismatched Codex review evidence
+  is ineligible.
+- Technical eligibility alone never grants merge authority; full-lifecycle or
+  explicit merge authorization must also be current for that same PR and scope.
 
 ## Waiting And Follow-Up
 
@@ -103,6 +115,11 @@ Technical eligibility requires low/clear risk, expected author/head owner,
 verified protections, checks and reviews, conflict/queue state, and file scope.
 Pending or unverifiable evidence is ineligible; eligibility never authorizes
 auto-merge or merge.
+
+When full-lifecycle authorization is current and every technical condition
+passes, perform the normal protected PR merge without another prompt. Never use
+an administrative override or protection bypass. Auto-merge remains a separate
+action and requires separate explicit authorization.
 
 ## Stop Conditions
 
