@@ -88,6 +88,19 @@ The simple-return golden fixture builds 64 anchors from returns
 `-0.017765781758667692`. An invalid-anchor mutation fixture covers missing,
 Boolean, non-finite, zero, and negative anchors.
 
+Every adjusted-close anchor referenced by `MOM_12_1` or `REV_1M` is subject
+to the same pre-division scalar gate: it must be a real numeric scalar other
+than a Boolean, present, finite, and strictly greater than zero. This applies
+to both numerator and denominator anchors, so a zero or negative numerator may
+not enter ranks merely because the formula would otherwise return a finite
+number. If any referenced anchor fails, retain the factor value for that
+listing/signal date as invalid/missing, exclude the listing from that factor's
+decision-time eligible set, and count the exact reason. Zero fill, forward or
+backward fill, interpolation, clipping, absolute-value repair, and alternate
+rows are forbidden. Golden anchors `80.0,100.0` produce momentum `0.25`, and
+reversal anchors `100.0,90.0` produce `0.10`; each anchor position is mutated
+through missing, Boolean, non-finite, zero, and negative cases.
+
 All factors are oriented so higher is better. No formula, direction, lookback,
 cost case, factor, model, liquidity screen, price screen, or parameter variant
 may be added after the protocol freeze.

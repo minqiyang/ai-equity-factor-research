@@ -453,6 +453,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "remediated by committed and pushed head `a5b6695`",
         "CI run `30688393600` passed on that exact head",
         "The tenth review of `a5b6695` found two P2",
+        "remediated by committed and pushed head `bc4c201`",
+        "exact-head CI run `30689003562` passed",
+        "The eleventh review of `bc4c201` found one P2",
         "not pending local authorship",
         "The actual remaining gate is exact",
         "current-head CI followed by one current-head Codex review",
@@ -500,6 +503,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "diagnostic forward return is the **simple** adjusted-close return",
         "reuse that exact row-index vector jointly",
         "There is one RNG pass per",
+        "Every adjusted-close anchor referenced by `MOM_12_1` or `REV_1M`",
+        "to both numerator and denominator anchors",
+        "not enter ranks merely because the formula",
     ]:
         assert phrase in contract
 
@@ -537,6 +543,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "invalid_forward_anchor_action: INVALIDATE_AND_RETAIN_FACTOR_MONTH_OUTCOME_WITH_REASON_COUNT",
         "draw_reuse_across_distributions: SAME_ROW_INDEX_VECTOR_FOR_UNCENTERED_AND_NULL_CENTERED_TABLES",
         "rng_passes_per_replicate: ONE_NO_SECOND_CENTERED_OR_UNCENTERED_PASS",
+        "price_anchor_validation: ALL_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE",
+        "adjusted_close_t_minus_252: 80.0",
+        "adjusted_close_t: 90.0",
         "all_other_zero_target_triggers: FORBIDDEN",
         "byte_relation: EXACT_BYTE_FOR_BYTE_COPY",
         "rank_ic_input_table: PRIMARY_COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_TABLE",
@@ -952,6 +961,69 @@ def test_diagnostic_forward_return_is_simple_and_fail_closed() -> None:
     for invalid_anchor in invalid_anchors:
         assert diagnostic_forward_return(invalid_anchor, 121.0) is None
         assert diagnostic_forward_return(100.0, invalid_anchor) is None
+
+
+def test_momentum_and_reversal_price_anchors_fail_closed() -> None:
+    def valid_price_anchor(anchor: object) -> bool:
+        return (
+            not isinstance(anchor, bool)
+            and isinstance(anchor, Real)
+            and math.isfinite(float(anchor))
+            and float(anchor) > 0.0
+        )
+
+    def momentum(
+        adjusted_close_t_minus_252: object,
+        adjusted_close_t_minus_21: object,
+    ) -> float | None:
+        if not all(
+            valid_price_anchor(anchor)
+            for anchor in (
+                adjusted_close_t_minus_252,
+                adjusted_close_t_minus_21,
+            )
+        ):
+            return None
+        return (
+            float(adjusted_close_t_minus_21)
+            / float(adjusted_close_t_minus_252)
+            - 1.0
+        )
+
+    def reversal(
+        adjusted_close_t_minus_21: object,
+        adjusted_close_t: object,
+    ) -> float | None:
+        if not all(
+            valid_price_anchor(anchor)
+            for anchor in (
+                adjusted_close_t_minus_21,
+                adjusted_close_t,
+            )
+        ):
+            return None
+        return -(
+            float(adjusted_close_t)
+            / float(adjusted_close_t_minus_21)
+            - 1.0
+        )
+
+    assert math.isclose(momentum(80.0, 100.0), 0.25, abs_tol=1e-15)
+    assert math.isclose(reversal(100.0, 90.0), 0.10, abs_tol=1e-15)
+
+    invalid_anchors: tuple[object, ...] = (
+        None,
+        True,
+        float("nan"),
+        float("inf"),
+        0.0,
+        -1.0,
+    )
+    for invalid_anchor in invalid_anchors:
+        assert momentum(invalid_anchor, 100.0) is None
+        assert momentum(80.0, invalid_anchor) is None
+        assert reversal(invalid_anchor, 90.0) is None
+        assert reversal(100.0, invalid_anchor) is None
 
 
 def test_preregistration_bundle_child_binds_exact_frozen_yaml_bytes() -> None:

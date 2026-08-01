@@ -47,7 +47,9 @@ profitability, or trading readiness.
   Diagnostic endpoint returns likewise use fail-closed adjusted-close simple
   returns. Bootstrap interval and null distributions now share one exact block-
   index draw per replicate/segment across all factors, with no second RNG pass.
-  Repository
+  Momentum and reversal now require every referenced numerator and denominator
+  anchor to be a finite, strictly positive real non-Boolean value; invalid
+  anchors are retained, excluded, and counted without repair. Repository
   governance fixes safe in-scope review findings without owner round trips and
   keeps the task active through current-head review and remediation; only a
   genuinely critical owner-decision follow-up retains the four-run,

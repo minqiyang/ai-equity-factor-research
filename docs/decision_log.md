@@ -15,6 +15,39 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Freeze MOM_12_1 And REV_1M Anchor Validity
+
+Context:
+
+- The eleventh exact-head Codex review of PR #177 at `bc4c201` found one P2.
+  Momentum and reversal had no strict price-anchor validity or invalid-value
+  policy, so corrupt zero, negative, or Boolean numerators could still produce
+  finite factor values.
+
+Decision:
+
+- Require every adjusted-close anchor referenced by `MOM_12_1` and `REV_1M`
+  to be present, finite, strictly positive, real, and non-Boolean before any
+  division. The rule applies equally to numerator and denominator anchors.
+- If any anchor fails, retain the listing/signal-date factor value as invalid/
+  missing, exclude the listing from factor-specific decision-time eligibility,
+  and count the exact reason. No fill, interpolation, clipping, absolute-value
+  repair, or alternate row is allowed.
+
+Rationale:
+
+- A finite formula output is not sufficient evidence that its provider price
+  anchors are valid. Corrupt anchors must not enter ranks, deciles, or targets.
+
+Consequences:
+
+- Golden fixtures freeze momentum `80->100` as `0.25` and reversal `100->90`
+  as `0.10`, then mutate each anchor position through every invalid class.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Freeze Diagnostic Forward Returns And Shared Bootstrap Draws
 
 Context:

@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the tenth PR #177 review-remediation round.
+Updated: 2026-07-31 for the eleventh PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -60,11 +60,18 @@ Updated: 2026-07-31 for the tenth PR #177 review-remediation round.
   containing this handoff freezes a fail-closed simple endpoint return and one
   shared bootstrap row-index draw across factors and both distributions, with
   no second RNG pass. It includes endpoint and segmented shared-draw golden
-  fixtures, retains the exact 14-trial inventory, and is not pending local
-  authorship. The actual remaining gate is exact current-head CI followed by
-  one current-head Codex review; every finding restarts that remediation loop.
-  Do not repeat commit or push work from an old handoff instruction; resolve
-  current `HEAD`, remote head, CI, and review state.
+  fixtures. Those gaps were remediated by committed and pushed head `bc4c201`;
+  exact-head CI run `30689003562` passed. The eleventh review of `bc4c201`
+  found one P2: momentum and reversal anchor validation was incomplete. The
+  current branch-head snapshot containing this handoff freezes strict validity
+  for every referenced numerator and denominator, retained invalid/missing
+  factor values, factor-specific exclusion/reason counts, and no repair path.
+  It includes both-factor all-anchor mutation fixtures, retains the exact 14-
+  trial inventory, and is not pending local authorship. The actual remaining
+  gate is exact current-head CI followed by one current-head Codex review;
+  every finding restarts that remediation loop. Do not repeat commit or push
+  work from an old handoff instruction; resolve current `HEAD`, remote head,
+  CI, and review state.
 - Current protected-main baseline: 3064 tests passed with two
   platform-conditional wide-`longdouble` skips. The PR #176 release also
   passed Ruff, compileall, deterministic repo-map, Skill audit, immutable

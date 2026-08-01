@@ -1,5 +1,26 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Eleventh-Review Factor-Anchor Remediation
+
+- Exact-head Codex review of `bc4c201` completed with one P2: momentum and
+  reversal lacked the strict price-anchor validation already frozen for low
+  volatility and forward returns.
+- Required every referenced MOM/REV numerator and denominator anchor to be a
+  present, finite, strictly positive real non-Boolean scalar before division.
+  An invalid anchor retains an invalid/missing factor value, excludes and
+  counts the factor-specific listing, and permits no repair path.
+- Added `0.25` momentum and `0.10` reversal golden values plus mutations of
+  every anchor position through missing, Boolean, non-finite, zero, and
+  negative values.
+- Focused project-structure validation passed 56 tests. The full suite passed
+  3083 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Tenth-Review Return And Bootstrap Remediation
 
 - Exact-head Codex review of `a5b6695` completed with two P2 findings: the

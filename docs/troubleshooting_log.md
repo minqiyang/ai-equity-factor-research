@@ -51,6 +51,13 @@ Original failures and consequences:
   `exact-head` across a Markdown line. The forward-return and shared-bootstrap
   fixtures passed. The handoff was rephrased without a split token and the
   assertion retained the full CI/head meaning.
+- The first eleventh-round focused run failed only because a new contract
+  phrase crossed a Markdown line wrap. All MOM/REV mutation cases passed. The
+  assertion was split into stable numerator/denominator and rank-exclusion
+  fragments without weakening the rule.
+- The first eleventh-round parallel privacy and Unicode scan call exceeded the
+  outer tool output budget. No scan result from that call was accepted; each
+  scan was rerun independently with bounded output before verification.
 
 Investigation:
 
@@ -96,11 +103,13 @@ Correction:
   validity, with a simple-versus-log and invalid-anchor mutation fixture.
 - Froze diagnostic endpoint returns to fail-closed simple returns and reused
   one bootstrap index draw across uncentered and null-centered distributions.
+- Applied the strict fail-closed price-anchor gate to every MOM/REV numerator
+  and denominator, with per-position invalid-anchor mutations.
 
 Verification:
 
-- The latest corrected focused structure suite passed 55 tests and the full
-  suite passed 3082 tests with two platform-conditional skips. Full Ruff,
+- The latest corrected focused structure suite passed 56 tests and the full
+  suite passed 3083 tests with two platform-conditional skips. Full Ruff,
   compileall, Skill audit, YAML and JSON parsing, deterministic repo-map
   regeneration, `git diff --check`, added-line privacy and Unicode/control
   scans, and isolated sdist/wheel build passed.

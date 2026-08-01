@@ -185,10 +185,30 @@ factors:
   - factor_id: MOM_12_1
     formula: adjusted_close[t-21] / adjusted_close[t-252] - 1
     direction: HIGHER_IS_BETTER
+    referenced_price_anchors:
+      - T_MINUS_252
+      - T_MINUS_21
+    price_anchor_validation: ALL_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE
+    invalid_anchor_action: INVALID_MISSING_FACTOR_VALUE_EXCLUDE_LISTING_FROM_FACTOR_DECISION_TIME_ELIGIBILITY_AND_COUNT_REASON
+    invalid_anchor_repairs: FORBIDDEN_ZERO_FILL_FORWARD_FILL_BACKWARD_FILL_INTERPOLATION_CLIPPING_ABSOLUTE_VALUE_OR_ALTERNATE_ROW
+    golden_fixture:
+      adjusted_close_t_minus_252: 80.0
+      adjusted_close_t_minus_21: 100.0
+      factor_value: 0.25
     required_history_price_anchors: 253
   - factor_id: REV_1M
     formula: -(adjusted_close[t] / adjusted_close[t-21] - 1)
     direction: HIGHER_IS_BETTER
+    referenced_price_anchors:
+      - T_MINUS_21
+      - T
+    price_anchor_validation: ALL_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE
+    invalid_anchor_action: INVALID_MISSING_FACTOR_VALUE_EXCLUDE_LISTING_FROM_FACTOR_DECISION_TIME_ELIGIBILITY_AND_COUNT_REASON
+    invalid_anchor_repairs: FORBIDDEN_ZERO_FILL_FORWARD_FILL_BACKWARD_FILL_INTERPOLATION_CLIPPING_ABSOLUTE_VALUE_OR_ALTERNATE_ROW
+    golden_fixture:
+      adjusted_close_t_minus_21: 100.0
+      adjusted_close_t: 90.0
+      factor_value: 0.10
     required_history_price_anchors: 22
   - factor_id: LOW_VOL_3M
     formula: "-std([adjusted_close[d] / adjusted_close[d-1] - 1 for d=t-62..t], ddof=1)"
