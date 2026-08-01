@@ -1,5 +1,27 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Thirteenth-Review Eligibility And Freeze Remediation
+
+- Exact-head Codex review of `12cacaa` completed with two P2 findings: a
+  generic complete-history flag contradicted endpoint-only MOM/REV eligibility,
+  and the prospective start rule omitted code and dataset-policy freezes.
+- Replaced the generic gate in both machine-readable policy and the integrated
+  decision-time helper with factor-specific lookback-position and required-
+  anchor validity. Interior non-input prices cannot alter targets or benchmark
+  membership.
+- Anchored prospective counting to the maximum protocol, runner-code, and
+  dataset-policy freeze timestamp, with a strict-after boundary and no
+  backfill.
+- Added a two-factor 100-listing target/benchmark fixture and a staggered-
+  timestamp prospective-start fixture. Focused project-structure validation
+  passed 58 tests. The full suite passed 3085 tests with two platform-
+  conditional skips. Full Ruff, compileall, Skill audit, YAML and JSON parsing,
+  deterministic repo-map regeneration, `git diff --check`, added-line privacy
+  and Unicode/control scans, and isolated sdist/wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Twelfth-Review Interior-Missing Remediation
 
 - Exact-head Codex review of `d2ac8cd` completed with one P2: the MOM/REV

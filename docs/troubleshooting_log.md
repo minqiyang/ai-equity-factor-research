@@ -69,6 +69,19 @@ Original failures and consequences:
   `campaign` and also failed without modifying files. The corrected Ruby safe
   load permits existing `Date` scalars, disables aliases, checks the nested
   campaign count, and reconciles all 14 JSON trial records.
+- The thirteenth review showed that defining endpoint-only formulas was not
+  sufficient while the shared eligibility helper still tested a generic full-
+  history flag. The helper, YAML inputs, and contract were changed together,
+  and the regression fixture now exercises eligibility, target, and benchmark
+  outputs rather than only formula values.
+- The same review found the YAML prospective rule narrower than the contract.
+  Both now use the latest of all three required freeze timestamps and a strict-
+  after boundary, with a staggered timestamp fixture.
+- The first thirteenth-round push returned without diagnostic output but left
+  the remote-tracking ref unchanged. A direct retry then surfaced GitHub's
+  `Recv failure: Operation timed out`; no remote commit was partially accepted.
+  The unchanged local/remote SHAs were verified before retrying rather than
+  assuming the silent command had succeeded.
 
 Investigation:
 
@@ -119,6 +132,9 @@ Correction:
 - Separated MOM/REV calendar-position lookback spans from observed-price
   completeness and froze unreferenced interior missing prices as irrelevant to
   the endpoint-only factor values and eligibility.
+- Propagated that endpoint-only rule through the integrated decision-time
+  eligibility/target path and bound prospective counting to every required
+  freeze rather than protocol freeze alone.
 
 Verification:
 

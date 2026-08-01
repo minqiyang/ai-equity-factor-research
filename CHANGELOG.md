@@ -52,7 +52,12 @@ profitability, or trading readiness.
   anchors are retained, excluded, and counted without repair. Their 253/22
   lookbacks are common-calendar position spans, not contiguous-price screens:
   exactly the two formula anchors must be observed, while an unreferenced
-  interior missing value has no factor-value or eligibility effect. Repository
+  interior missing value has no factor-value or eligibility effect. The
+  decision-time gate now uses those same factor-specific position/anchor rules
+  rather than a contradictory full-history flag. Prospective counting starts
+  only at the first eligible signal strictly after the latest protocol, runner-
+  code, and dataset-policy freeze timestamp; prior months cannot be backfilled.
+  Repository
   governance fixes safe in-scope review findings without owner round trips and
   keeps the task active through current-head review and remediation; only a
   genuinely critical owner-decision follow-up retains the four-run,

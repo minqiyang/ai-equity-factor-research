@@ -184,7 +184,10 @@ the signal cutoff `t`. Decision-time eligibility requires:
 
 - point-in-time membership effective and known at `t`;
 - listing lineage resolved through `t`;
-- complete factor history through `t`;
+- the factor-specific common-calendar lookback position span addressable at
+  `t` and every price anchor actually referenced by that factor valid at `t`;
+- no extra observed-price completeness gate: an unreferenced interior missing
+  or invalid adjusted close cannot exclude `MOM_12_1` or `REV_1M`;
 - a finite factor value at `t`;
 - corporate actions announced or effective through `t` treated under the
   blinded accepted policy; and
@@ -683,10 +686,13 @@ research-pass, profitability, or deployment claim.
 
 ## Prospective Confirmation and Track B
 
-After the full protocol, code, and data policy are frozen, prospective
-collection starts at the first eligible monthly signal. Ingestion health and
-missing-file checks may be monitored, but factor, portfolio, and cumulative
-performance may not be viewed during accumulation.
+Prospective collection anchors to the maximum of the protocol-freeze, runner-
+code-freeze, and dataset-policy-freeze timestamps. It starts at the first
+eligible monthly signal strictly after that latest required freeze; a signal
+at the exact maximum timestamp is not prospective. No earlier month may be
+backfilled into the prospective count. Ingestion health and missing-file checks
+may be monitored, but factor, portfolio, and cumulative performance may not be
+viewed during accumulation.
 
 Six months is operational only. Twelve monthly rebalances is preliminary
 evidence only if opening it is separately authorized; opening at month 12

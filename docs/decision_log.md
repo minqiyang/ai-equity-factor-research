@@ -15,6 +15,44 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Bind Eligibility And Prospective Start To Their Full Gates
+
+Context:
+
+- The thirteenth exact-head Codex review of PR #177 at `12cacaa` found two P2
+  inconsistencies. A generic complete-history eligibility input could still
+  exclude endpoint-valid MOM/REV rows with an interior missing price, and the
+  machine-readable prospective start waited only for the protocol freeze.
+
+Decision:
+
+- Decision-time eligibility uses the factor-specific common-calendar position
+  span and only the price anchors actually referenced by that factor. There is
+  no independent full observed-price-history gate for MOM/REV.
+- Prospective counting anchors to the maximum of the protocol-freeze, runner-
+  code-freeze, and dataset-policy-freeze timestamps. The first eligible signal
+  must be strictly later than that maximum; equality is not prospective and no
+  earlier month may be backfilled.
+
+Rationale:
+
+- Factor definitions and the eligibility path must produce the same listing
+  set, ranks, targets, and benchmark membership.
+- A month observed before every required freeze cannot provide prospective
+  confirmation merely because the protocol was already committed.
+
+Consequences:
+
+- An integrated 100-listing fixture retains the endpoint-valid interior-
+  missing listing in each MOM/REV target and benchmark; a forbidden full-
+  window exclusion leaves 99 and invalidates the rebalance.
+- A staggered-freeze fixture makes a signal equal to the latest freeze
+  non-prospective and starts at the following eligible monthly signal.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Freeze Endpoint-Only MOM/REV Price Completeness
 
 Context:

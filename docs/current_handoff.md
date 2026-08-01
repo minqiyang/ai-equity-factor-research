@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the twelfth PR #177 review-remediation round.
+Updated: 2026-07-31 for the thirteenth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -72,11 +72,21 @@ Updated: 2026-07-31 for the twelfth PR #177 review-remediation round.
   anchors to be observed and valid, and gives an interior missing or invalid
   adjusted-close value no factor-value or eligibility effect. Separate MOM/
   REV interior-missing fixtures reject the forbidden full-window-contiguity
-  interpretation, retain the exact 14-trial inventory, and are not pending
-  local authorship. The actual remaining gate is exact current-head CI followed
-  by one current-head Codex review; every finding restarts that remediation
-  loop. Do not repeat commit or push work from an old handoff instruction;
-  resolve current `HEAD`, remote head, CI, and review state.
+  interpretation. That gap was remediated by committed and pushed head
+  `12cacaa`; exact-head CI run `30690253765` passed. The thirteenth review of
+  `12cacaa` found two P2 gaps: the generic complete-history eligibility gate
+  still contradicted endpoint-only MOM/REV behavior, and the machine-readable
+  prospective start did not wait for code and dataset-policy freezes. The
+  current branch-head snapshot replaces the generic gate with factor-specific
+  lookback-position and referenced-anchor validity, binds targets and benchmark
+  membership to that rule, and starts prospective counting strictly after the
+  latest protocol, runner-code, and dataset-policy freeze timestamp. It adds
+  integrated target and staggered-freeze boundary fixtures, retains the exact
+  14-trial inventory, and is not pending local authorship. The actual remaining
+  gate is exact current-head CI followed by one current-head Codex review;
+  every finding restarts that remediation loop. Do not repeat commit or push
+  work from an old handoff instruction; resolve current `HEAD`, remote head,
+  CI, and review state.
 - Current protected-main baseline: 3064 tests passed with two
   platform-conditional wide-`longdouble` skips. The PR #176 release also
   passed Ruff, compileall, deterministic repo-map, Skill audit, immutable

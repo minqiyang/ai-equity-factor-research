@@ -1,5 +1,5 @@
 from copy import deepcopy
-from datetime import date
+from datetime import date, datetime, timezone
 import hashlib
 from importlib import resources
 import json
@@ -63,7 +63,10 @@ def _decision_time_objects(
         for record in records
         if record["membership_known_at_t"]
         and record["lineage_resolved_through_t"]
-        and record["factor_history_complete_through_t"]
+        and record[
+            "factor_specific_lookback_position_span_addressable_at_t"
+        ]
+        and record["factor_specific_required_price_anchors_valid_at_t"]
         and record["corporate_action_policy_known_at_t"]
         and math.isfinite(float(record["factor_value_at_t"]))
     ]
@@ -460,6 +463,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "exact-head CI run `30689676655` passed",
         "The twelfth review of `d2ac8cd` found one P2",
         "counts as common-calendar position spans",
+        "remediated by committed and pushed head `12cacaa`",
+        "exact-head CI run `30690253765` passed",
+        "The thirteenth review of `12cacaa` found two P2",
+        "factor-specific lookback-position and referenced-anchor validity",
+        "strictly after the latest protocol, runner-code, and dataset-policy",
         "not pending local authorship",
         "The actual remaining gate is exact",
         "current-head CI followed by one current-head Codex review",
@@ -514,6 +522,10 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "positions**, not a contiguous-observed-price requirement",
         "Each formula consumes exactly its two referenced",
         "Interior-missing fixtures for both factors retain momentum",
+        "factor-specific common-calendar lookback position span addressable",
+        "no extra observed-price completeness gate",
+        "maximum of the protocol-freeze, runner-",
+        "strictly after that latest required freeze",
     ]:
         assert phrase in contract
 
@@ -557,6 +569,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "required_observed_price_anchors: 2",
         "intermediate_adjusted_close_values_required: false",
         "interior_missing_price_action: NO_FACTOR_VALUE_EFFECT_IF_REFERENCED_ANCHORS_VALID",
+        "FACTOR_SPECIFIC_LOOKBACK_COMMON_CALENDAR_POSITION_SPAN_ADDRESSABLE_AT_T",
+        "FACTOR_SPECIFIC_REFERENCED_PRICE_ANCHORS_VALID_AT_T",
+        "start_anchor_timestamp: MAXIMUM_OF_ALL_REQUIRED_FREEZE_TIMESTAMPS",
+        "start_rule: FIRST_ELIGIBLE_MONTHLY_SIGNAL_STRICTLY_AFTER_START_ANCHOR_TIMESTAMP",
+        "signal_at_exact_start_anchor_timestamp: NOT_PROSPECTIVE",
         "adjusted_close_t_minus_252: 80.0",
         "adjusted_close_t: 90.0",
         "all_other_zero_target_triggers: FORBIDDEN",
@@ -581,6 +598,7 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         assert phrase in preregistration
 
     assert "TO_BE_FROZEN" not in preregistration
+    assert "COMPLETE_FACTOR_HISTORY_THROUGH_T" not in preregistration
     assert "preregistration_sha256:" not in preregistration
     assert inventory["semantic_trial_count"] == 14
     assert len(inventory["trials"]) == 14
@@ -765,7 +783,8 @@ def test_decision_time_targets_ignore_future_availability_mutations() -> None:
                 ),
                 "membership_known_at_t": True,
                 "lineage_resolved_through_t": True,
-                "factor_history_complete_through_t": True,
+                "factor_specific_lookback_position_span_addressable_at_t": True,
+                "factor_specific_required_price_anchors_valid_at_t": True,
                 "corporate_action_policy_known_at_t": True,
                 "factor_value_at_t": float(100 - index),
                 "execution_available_after_t": True,
@@ -804,7 +823,8 @@ def test_zero_target_has_only_the_three_frozen_decision_time_triggers() -> None:
                 ),
                 "membership_known_at_t": True,
                 "lineage_resolved_through_t": True,
-                "factor_history_complete_through_t": True,
+                "factor_specific_lookback_position_span_addressable_at_t": True,
+                "factor_specific_required_price_anchors_valid_at_t": True,
                 "corporate_action_policy_known_at_t": True,
                 "factor_value_at_t": float(100 - index),
             }
@@ -830,6 +850,85 @@ def test_zero_target_has_only_the_three_frozen_decision_time_triggers() -> None:
     duplicate_target, _, duplicate_cash = _decision_time_objects(duplicate_key)
     assert duplicate_target == ()
     assert duplicate_cash == 1.0
+
+
+def test_endpoint_only_factor_windows_flow_into_decision_time_targets() -> None:
+    for factor_id, key_prefix in (("MOM_12_1", "M"), ("REV_1M", "R")):
+        records: list[dict[str, object]] = []
+        for index in range(100):
+            records.append(
+                {
+                    "factor_id": factor_id,
+                    "listing_key_bytes": _listing_lineage_key_bytes_v1(
+                        "XNYS",
+                        f"{key_prefix}{index:03d}",
+                        "2018-01-01",
+                        None,
+                    ),
+                    "membership_known_at_t": True,
+                    "lineage_resolved_through_t": True,
+                    "factor_specific_lookback_position_span_addressable_at_t": True,
+                    "factor_specific_required_price_anchors_valid_at_t": True,
+                    "unreferenced_interior_adjusted_close_missing": index == 0,
+                    "corporate_action_policy_known_at_t": True,
+                    "factor_value_at_t": float(100 - index),
+                }
+            )
+
+        missing_interior_key = bytes(records[0]["listing_key_bytes"])
+        target, benchmark, cash_weight = _decision_time_objects(records)
+        forbidden_full_window_records = [
+            record
+            for record in records
+            if not record["unreferenced_interior_adjusted_close_missing"]
+        ]
+
+        assert len(target) == 10
+        assert missing_interior_key in {key for key, _ in target}
+        assert len(benchmark) == 100
+        assert cash_weight == 0.0
+        assert _decision_time_objects(forbidden_full_window_records) == (
+            (),
+            tuple(
+                sorted(
+                    (
+                        (bytes(record["listing_key_bytes"]), 1.0 / 99.0)
+                        for record in forbidden_full_window_records
+                    ),
+                    key=lambda item: item[0],
+                )
+            ),
+            1.0,
+        )
+
+
+def test_prospective_start_uses_latest_required_freeze_boundary() -> None:
+    freeze_timestamps = {
+        "protocol": datetime(2026, 7, 29, 20, tzinfo=timezone.utc),
+        "dataset_policy": datetime(2026, 8, 10, 20, tzinfo=timezone.utc),
+        "runner_code": datetime(2026, 8, 31, 20, tzinfo=timezone.utc),
+    }
+    eligible_signal_timestamps = (
+        datetime(2026, 7, 31, 20, tzinfo=timezone.utc),
+        datetime(2026, 8, 31, 20, tzinfo=timezone.utc),
+        datetime(2026, 9, 30, 20, tzinfo=timezone.utc),
+    )
+    start_anchor = max(freeze_timestamps.values())
+    prospective_start = min(
+        signal
+        for signal in eligible_signal_timestamps
+        if signal > start_anchor
+    )
+    forbidden_protocol_only_start = min(
+        signal
+        for signal in eligible_signal_timestamps
+        if signal > freeze_timestamps["protocol"]
+    )
+
+    assert start_anchor == eligible_signal_timestamps[1]
+    assert prospective_start == eligible_signal_timestamps[2]
+    assert forbidden_protocol_only_start == eligible_signal_timestamps[0]
+    assert prospective_start != forbidden_protocol_only_start
 
 
 def test_low_vol_3m_uses_exactly_63_returns_from_64_price_anchors() -> None:

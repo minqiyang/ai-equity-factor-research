@@ -130,7 +130,8 @@ decision_time_eligibility:
   allowed_inputs:
     - POINT_IN_TIME_MEMBERSHIP_EFFECTIVE_AND_KNOWN_AT_T
     - LISTING_LINEAGE_RESOLVED_THROUGH_T
-    - COMPLETE_FACTOR_HISTORY_THROUGH_T
+    - FACTOR_SPECIFIC_LOOKBACK_COMMON_CALENDAR_POSITION_SPAN_ADDRESSABLE_AT_T
+    - FACTOR_SPECIFIC_REFERENCED_PRICE_ANCHORS_VALID_AT_T
     - FINITE_FACTOR_VALUE_AT_T
     - CORPORATE_ACTION_POLICY_INFORMATION_KNOWN_AT_T
   forbidden_inputs:
@@ -572,7 +573,13 @@ sample_classification:
     classification: HISTORICAL_EVALUATION_PERMANENT
 
 prospective_confirmation:
-  start_rule: FIRST_ELIGIBLE_MONTHLY_SIGNAL_AFTER_FULL_PROTOCOL_FREEZE
+  required_freeze_timestamps:
+    - PROTOCOL_FREEZE_TIMESTAMP
+    - RUNNER_CODE_FREEZE_TIMESTAMP
+    - DATASET_POLICY_FREEZE_TIMESTAMP
+  start_anchor_timestamp: MAXIMUM_OF_ALL_REQUIRED_FREEZE_TIMESTAMPS
+  start_rule: FIRST_ELIGIBLE_MONTHLY_SIGNAL_STRICTLY_AFTER_START_ANCHOR_TIMESTAMP
+  signal_at_exact_start_anchor_timestamp: NOT_PROSPECTIVE
   intermediate_performance_access: FORBIDDEN
   operational_checkpoint_months: 6
   preliminary_evidence_monthly_rebalances: 12
