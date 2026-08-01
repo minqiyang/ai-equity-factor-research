@@ -347,6 +347,19 @@ The invalid secondary output and missing-date count remain required bundle
 evidence; they may not be filled, omitted, or substituted with another date or
 benchmark.
 
+The two baseline trials inherit the same three decision-time invalid-rebalance
+triggers as the factor they match: fewer than 100 eligible listings, fewer than
+10 distinct finite factor values, or duplicate canonical listing keys. For any
+trigger, both the equal-weight and random-rank factor-matched output records are
+retained as invalid with a zero target and full cash. The episodic return is
+invalid/missing, never zero. The continuous path applies the zero-target
+liquidation turnover and then non-interest-bearing cash while retaining the
+invalid-month flag. The random baseline does not derive a seed or consume a
+permutation for that factor/month. The invalid output satisfies required-output
+reconciliation and inherits the factor-month coverage invalidity; it is not a
+missing trial output or a new hard-validity failure. Sparse, tied, and duplicate-
+key fixtures apply this rule to both baselines.
+
 Each baseline semantic trial emits an exact output matrix with rows
 `MOM_12_1`, `REV_1M`, and `LOW_VOL_3M` and columns
 `episode_21_row_return` and `continuous_daily_return`. These factor-matched
@@ -688,11 +701,16 @@ research-pass, profitability, or deployment claim.
 
 Prospective collection anchors to the maximum of the protocol-freeze, runner-
 code-freeze, and dataset-policy-freeze timestamps. It starts at the first
-eligible monthly signal strictly after that latest required freeze; a signal
-at the exact maximum timestamp is not prospective. No earlier month may be
-backfilled into the prospective count. Ingestion health and missing-file checks
-may be monitored, but factor, portfolio, and cumulative performance may not be
-viewed during accumulation.
+monthly signal strictly after that latest required freeze for which all three
+factor rebalances are decision-time valid: each has at least 100 eligible
+listings, at least 10 distinct finite values, and unique canonical keys. A
+signal at the exact maximum timestamp is not prospective. A later signal where
+only a subset of factors is valid is retained as an operational record but
+does not start or increment the prospective counter. Each qualifying common-
+valid signal increments the 12/24-rebalance counter once. No earlier or subset-
+valid month may be backfilled into the prospective count. Ingestion health and
+missing-file checks may be monitored, but factor, portfolio, and cumulative
+performance may not be viewed during accumulation.
 
 Six months is operational only. Twelve monthly rebalances is preliminary
 evidence only if opening it is separately authorized; opening at month 12

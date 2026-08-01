@@ -15,6 +15,45 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Freeze Common Prospective Eligibility And Invalid Baselines
+
+Context:
+
+- The fourteenth exact-head Codex review of PR #177 at `fc561e4` found two P2
+  ambiguities. Prospective counting did not aggregate the three factor-specific
+  eligibility states, and random-rank baseline behavior was undefined for the
+  three decision-time invalid-rebalance triggers.
+
+Decision:
+
+- A prospective signal qualifies only when all three factor rebalances are
+  decision-time valid: each has at least 100 eligible listings, at least 10
+  distinct finite factor values, and unique canonical keys. A subset-valid
+  signal is retained operationally but neither starts nor increments the
+  prospective counter.
+- Both equal-weight and random-rank factor-matched baseline outputs inherit the
+  same three invalid triggers. They retain an invalid output record, freeze a
+  zero target and full cash, keep episodic return invalid/missing rather than
+  zero, and carry the invalid flag through liquidation turnover and later cash.
+  Random seeds and permutations are not consumed for invalid factor months.
+
+Rationale:
+
+- One common predicate prevents different implementations from opening the
+  protected 12/24-rebalance windows in different months.
+- Baselines must not invest a sparse or non-unique sample after the matched
+  factor strategy has already failed the same decision-time gate.
+
+Consequences:
+
+- The prospective boundary fixture now includes a subset-valid month that does
+  not count. Sparse, tied, and duplicate-key fixtures apply the retained zero-
+  target behavior to both baselines and distinguish valid random draw use.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Bind Eligibility And Prospective Start To Their Full Gates
 
 Context:

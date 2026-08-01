@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the thirteenth PR #177 review-remediation round.
+Updated: 2026-07-31 for the fourteenth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -81,12 +81,22 @@ Updated: 2026-07-31 for the thirteenth PR #177 review-remediation round.
   lookback-position and referenced-anchor validity, binds targets and benchmark
   membership to that rule, and starts prospective counting strictly after the
   latest protocol, runner-code, and dataset-policy freeze timestamp. It adds
-  integrated target and staggered-freeze boundary fixtures, retains the exact
-  14-trial inventory, and is not pending local authorship. The actual remaining
-  gate is exact current-head CI followed by one current-head Codex review;
-  every finding restarts that remediation loop. Do not repeat commit or push
-  work from an old handoff instruction; resolve current `HEAD`, remote head,
-  CI, and review state.
+  integrated target and staggered-freeze boundary fixtures. Those gaps were
+  remediated by committed and pushed head `fc561e4`; exact-head CI run
+  `30690874955` passed. The fourteenth review of `fc561e4` found two P2 gaps:
+  prospective counting did not aggregate factor-specific eligibility, and the
+  random baseline did not freeze behavior for invalid factor months. The
+  current branch-head snapshot requires all three factor rebalances to be
+  decision-time valid for the prospective counter, retains subset-valid dates
+  without counting them, and gives both baselines the same retained invalid
+  zero-target/full-cash behavior for sparse, tied, or duplicate-key months.
+  Random draws are not consumed for invalid months. Integrated subset-factor
+  and three-trigger baseline fixtures retain the exact 14-trial inventory and
+  are not pending local authorship. The actual remaining gate is exact-head CI
+  on the current head, followed by one current-head Codex review; every finding
+  restarts that remediation loop. Do not repeat commit or push work from an old
+  handoff instruction; resolve current `HEAD`, remote head, CI, and review
+  state.
 - Current protected-main baseline: 3064 tests passed with two
   platform-conditional wide-`longdouble` skips. The PR #176 release also
   passed Ruff, compileall, deterministic repo-map, Skill audit, immutable

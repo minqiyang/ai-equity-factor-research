@@ -468,9 +468,14 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "The thirteenth review of `12cacaa` found two P2",
         "factor-specific lookback-position and referenced-anchor validity",
         "strictly after the latest protocol, runner-code, and dataset-policy",
+        "remediated by committed and pushed head `fc561e4`",
+        "exact-head CI run `30690874955` passed",
+        "The fourteenth review of `fc561e4` found two P2",
+        "all three factor rebalances to be decision-time valid",
+        "both baselines the same retained invalid zero-target/full-cash",
         "not pending local authorship",
-        "The actual remaining gate is exact",
-        "current-head CI followed by one current-head Codex review",
+        "The actual remaining gate is exact-head CI on the current head",
+        "followed by one current-head Codex review",
     ]:
         assert phrase in normalized_handoff
     assert "It must be committed and pushed" not in normalized_handoff
@@ -525,7 +530,10 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "factor-specific common-calendar lookback position span addressable",
         "no extra observed-price completeness gate",
         "maximum of the protocol-freeze, runner-",
-        "strictly after that latest required freeze",
+        "strictly after that latest required freeze for which all three",
+        "only a subset of factors is valid",
+        "both the equal-weight and random-rank factor-matched output records",
+        "The random baseline does not derive a seed or consume a",
     ]:
         assert phrase in contract
 
@@ -572,8 +580,14 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "FACTOR_SPECIFIC_LOOKBACK_COMMON_CALENDAR_POSITION_SPAN_ADDRESSABLE_AT_T",
         "FACTOR_SPECIFIC_REFERENCED_PRICE_ANCHORS_VALID_AT_T",
         "start_anchor_timestamp: MAXIMUM_OF_ALL_REQUIRED_FREEZE_TIMESTAMPS",
-        "start_rule: FIRST_ELIGIBLE_MONTHLY_SIGNAL_STRICTLY_AFTER_START_ANCHOR_TIMESTAMP",
+        "start_rule: FIRST_SIGNAL_STRICTLY_AFTER_START_ANCHOR_SATISFYING_SIGNAL_ELIGIBILITY_PREDICATE",
         "signal_at_exact_start_anchor_timestamp: NOT_PROSPECTIVE",
+        "signal_eligibility_predicate: ALL_THREE_FACTOR_REBALANCES_DECISION_TIME_VALID",
+        "subset_factor_eligible_signal_action: RETAIN_OPERATIONAL_RECORD_DO_NOT_START_OR_INCREMENT",
+        "rebalance_count_increment: ONE_ONLY_WHEN_SIGNAL_ELIGIBILITY_PREDICATE_TRUE",
+        "random_seed_or_permutation_consumption: NONE",
+        "episodic_return: INVALID_MISSING_NOT_ZERO",
+        "required_output_reconciliation: INVALID_OUTPUT_PRESENT_NOT_MISSING_TRIAL_OUTPUT",
         "adjusted_close_t_minus_252: 80.0",
         "adjusted_close_t: 90.0",
         "all_other_zero_target_triggers: FORBIDDEN",
@@ -912,23 +926,126 @@ def test_prospective_start_uses_latest_required_freeze_boundary() -> None:
         datetime(2026, 7, 31, 20, tzinfo=timezone.utc),
         datetime(2026, 8, 31, 20, tzinfo=timezone.utc),
         datetime(2026, 9, 30, 20, tzinfo=timezone.utc),
+        datetime(2026, 10, 30, 20, tzinfo=timezone.utc),
     )
+    factor_order = ("MOM_12_1", "REV_1M", "LOW_VOL_3M")
+    factor_validity_by_signal = {
+        eligible_signal_timestamps[0]: (True, True, True),
+        eligible_signal_timestamps[1]: (True, True, True),
+        eligible_signal_timestamps[2]: (True, True, False),
+        eligible_signal_timestamps[3]: (True, True, True),
+    }
     start_anchor = max(freeze_timestamps.values())
     prospective_start = min(
         signal
         for signal in eligible_signal_timestamps
         if signal > start_anchor
+        and all(factor_validity_by_signal[signal])
     )
     forbidden_protocol_only_start = min(
         signal
         for signal in eligible_signal_timestamps
         if signal > freeze_timestamps["protocol"]
+        and all(factor_validity_by_signal[signal])
+    )
+    forbidden_any_factor_start = min(
+        signal
+        for signal in eligible_signal_timestamps
+        if signal > start_anchor
+        and any(factor_validity_by_signal[signal])
     )
 
     assert start_anchor == eligible_signal_timestamps[1]
-    assert prospective_start == eligible_signal_timestamps[2]
+    assert len(factor_order) == 3
+    assert prospective_start == eligible_signal_timestamps[3]
     assert forbidden_protocol_only_start == eligible_signal_timestamps[0]
+    assert forbidden_any_factor_start == eligible_signal_timestamps[2]
     assert prospective_start != forbidden_protocol_only_start
+    assert prospective_start != forbidden_any_factor_start
+
+
+def test_baselines_retain_invalid_zero_targets_without_random_draws() -> None:
+    valid_records = []
+    for index in range(100):
+        valid_records.append(
+            {
+                "listing_key_bytes": _listing_lineage_key_bytes_v1(
+                    "XNYS", f"B{index:03d}", "2018-01-01", None
+                ),
+                "membership_known_at_t": True,
+                "lineage_resolved_through_t": True,
+                "factor_specific_lookback_position_span_addressable_at_t": True,
+                "factor_specific_required_price_anchors_valid_at_t": True,
+                "corporate_action_policy_known_at_t": True,
+                "factor_value_at_t": float(100 - index),
+            }
+        )
+
+    def baseline_outputs(
+        records: list[dict[str, object]],
+        baseline_id: str,
+    ) -> dict[str, object]:
+        factor_target, eligible_benchmark, cash_weight = (
+            _decision_time_objects(records)
+        )
+        if cash_weight == 1.0:
+            return {
+                "validity": "INVALID_DECISION_TIME_FACTOR_MONTH",
+                "target": (),
+                "cash_weight": 1.0,
+                "episodic_return": None,
+                "random_draw_consumed": False,
+                "output_record_retained": True,
+            }
+        target = (
+            eligible_benchmark
+            if baseline_id == "EQUAL_WEIGHT"
+            else factor_target
+        )
+        return {
+            "validity": "VALID",
+            "target": target,
+            "cash_weight": 0.0,
+            "episodic_return": "MEASURE_AFTER_OUTCOME_GATE",
+            "random_draw_consumed": baseline_id == "RANDOM_RANK",
+            "output_record_retained": True,
+        }
+
+    invalid_cases = {
+        "sparse": valid_records[:-1],
+        "tied": [
+            {**record, "factor_value_at_t": 1.0}
+            for record in valid_records
+        ],
+        "duplicate_key": [
+            *valid_records[:-1],
+            {
+                **valid_records[-1],
+                "listing_key_bytes": valid_records[0]["listing_key_bytes"],
+            },
+        ],
+    }
+    expected_invalid_output = {
+        "validity": "INVALID_DECISION_TIME_FACTOR_MONTH",
+        "target": (),
+        "cash_weight": 1.0,
+        "episodic_return": None,
+        "random_draw_consumed": False,
+        "output_record_retained": True,
+    }
+
+    assert len(baseline_outputs(valid_records, "EQUAL_WEIGHT")["target"]) == 100
+    assert len(baseline_outputs(valid_records, "RANDOM_RANK")["target"]) == 10
+    assert baseline_outputs(valid_records, "RANDOM_RANK")[
+        "random_draw_consumed"
+    ] is True
+    for records in invalid_cases.values():
+        assert baseline_outputs(records, "EQUAL_WEIGHT") == (
+            expected_invalid_output
+        )
+        assert baseline_outputs(records, "RANDOM_RANK") == (
+            expected_invalid_output
+        )
 
 
 def test_low_vol_3m_uses_exactly_63_returns_from_64_price_anchors() -> None:

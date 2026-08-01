@@ -1,5 +1,26 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Fourteenth-Review Common-Clock Baseline Remediation
+
+- Exact-head Codex review of `fc561e4` completed with two P2 findings:
+  prospective eligibility lacked a cross-factor predicate, and random-rank
+  behavior on sparse, tied, or duplicate-key months was unspecified.
+- Froze the prospective clock to all three decision-time-valid factor
+  rebalances, retaining but not counting subset-valid signals.
+- Applied the same three factor invalid-month triggers to both baselines:
+  retained invalid output, zero target, full cash, invalid/missing episodic
+  return, continuous liquidation/cash path with invalid flag, and no random
+  seed or permutation consumption.
+- Added subset-factor and sparse/tied/duplicate integrated fixtures. Focused
+  project-structure validation passed 59 tests. The full suite passed 3086
+  tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Thirteenth-Review Eligibility And Freeze Remediation
 
 - Exact-head Codex review of `12cacaa` completed with two P2 findings: a

@@ -377,6 +377,17 @@ trials:
   exact_rerun_classification: ATTEMPT_OF_EXISTING_SEMANTIC_TRIAL
 
 baselines:
+  invalid_factor_month_policy:
+    triggers: SAME_THREE_DECISION_TIME_ZERO_TARGET_TRIGGERS_AS_FACTOR_STRATEGY
+    applies_to: BOTH_EQUAL_WEIGHT_AND_RANDOM_RANK_FACTOR_MATCHED_OUTPUTS
+    output_disposition: RETAIN_INVALID_OUTPUT_RECORD
+    target: ZERO_TARGET
+    cash_weight: 1.0
+    episodic_return: INVALID_MISSING_NOT_ZERO
+    continuous_path: APPLY_ZERO_TARGET_LIQUIDATION_TURNOVER_THEN_NON_INTEREST_BEARING_CASH_WITH_INVALID_FLAG
+    random_seed_or_permutation_consumption: NONE
+    required_output_reconciliation: INVALID_OUTPUT_PRESENT_NOT_MISSING_TRIAL_OUTPUT
+    validity_role: SAME_FACTOR_MONTH_COVERAGE_INVALIDITY_NOT_NEW_HARD_VALIDITY_FAILURE
   random_rank_top_decile:
     seed_preimage: random_rank_v1|20260729|factor_id|signal_date_t_YYYY-MM-DD
     date_token: SIGNAL_DATE_T_STRICT_YYYY_MM_DD_NOT_EXECUTION_DATE
@@ -578,8 +589,12 @@ prospective_confirmation:
     - RUNNER_CODE_FREEZE_TIMESTAMP
     - DATASET_POLICY_FREEZE_TIMESTAMP
   start_anchor_timestamp: MAXIMUM_OF_ALL_REQUIRED_FREEZE_TIMESTAMPS
-  start_rule: FIRST_ELIGIBLE_MONTHLY_SIGNAL_STRICTLY_AFTER_START_ANCHOR_TIMESTAMP
+  signal_eligibility_predicate: ALL_THREE_FACTOR_REBALANCES_DECISION_TIME_VALID
+  factor_rebalance_validity: NONE_OF_THREE_DECISION_TIME_ZERO_TARGET_TRIGGERS
+  start_rule: FIRST_SIGNAL_STRICTLY_AFTER_START_ANCHOR_SATISFYING_SIGNAL_ELIGIBILITY_PREDICATE
   signal_at_exact_start_anchor_timestamp: NOT_PROSPECTIVE
+  subset_factor_eligible_signal_action: RETAIN_OPERATIONAL_RECORD_DO_NOT_START_OR_INCREMENT
+  rebalance_count_increment: ONE_ONLY_WHEN_SIGNAL_ELIGIBILITY_PREDICATE_TRUE
   intermediate_performance_access: FORBIDDEN
   operational_checkpoint_months: 6
   preliminary_evidence_monthly_rebalances: 12

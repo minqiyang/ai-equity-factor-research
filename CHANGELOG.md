@@ -57,7 +57,11 @@ profitability, or trading readiness.
   rather than a contradictory full-history flag. Prospective counting starts
   only at the first eligible signal strictly after the latest protocol, runner-
   code, and dataset-policy freeze timestamp; prior months cannot be backfilled.
-  Repository
+  That signal must have all three factor rebalances decision-time valid; a
+  subset-valid month is retained but does not increment the 12/24 clock. Both
+  baselines inherit the factor's three invalid-month triggers and retain an
+  invalid zero-target/full-cash output without treating episodic missingness as
+  zero or consuming a random permutation. Repository
   governance fixes safe in-scope review findings without owner round trips and
   keeps the task active through current-head review and remediation; only a
   genuinely critical owner-decision follow-up retains the four-run,

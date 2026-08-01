@@ -82,6 +82,20 @@ Original failures and consequences:
   `Recv failure: Operation timed out`; no remote commit was partially accepted.
   The unchanged local/remote SHAs were verified before retrying rather than
   assuming the silent command had succeeded.
+- The first fourteenth-round focused run failed only because the structural
+  assertion still named the superseded singular eligible-signal start rule.
+  The new common-factor eligibility boundary and all baseline invalid-case
+  fixtures passed. The assertion was updated to the exact frozen common-
+  predicate start rule without weakening it.
+- The post-log focused rerun then found the handoff had wrapped `current-head`
+  across a line. The handoff was rephrased as exact-head CI on the current head
+  followed by current-head review, and the assertion now checks those stable
+  semantic fragments.
+- The fourteenth review exposed two places where a locally correct rule still
+  lacked campaign-level aggregation: factor-specific eligibility had no common
+  prospective clock, and strategy invalid-month triggers did not reach the
+  baseline outputs. The fixes therefore bind each rule across its downstream
+  consumers and use integrated rather than phrase-only mutation fixtures.
 
 Investigation:
 
@@ -135,6 +149,8 @@ Correction:
 - Propagated that endpoint-only rule through the integrated decision-time
   eligibility/target path and bound prospective counting to every required
   freeze rather than protocol freeze alone.
+- Froze the prospective clock to all-three-factor decision-time validity and
+  propagated the three invalid-rebalance triggers through both baseline trials.
 
 Verification:
 
