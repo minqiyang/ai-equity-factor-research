@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the twenty-second PR #177 review-remediation round.
+Updated: 2026-07-31 for the twenty-third PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -167,7 +167,18 @@ Updated: 2026-07-31 for the twenty-second PR #177 review-remediation round.
   anchors and no repair, raw-close fallback, or separate split/dividend cash-
   flow addition. A 2-for-1 split fixture distinguishes adjusted from raw gross
   return, drifted weights, turnover, cost, and active return and is not pending
-  local authorship. The actual remaining gate is exact-head CI on the
+  local authorship. That gap was remediated by committed and pushed head
+  `93adce5`; exact-head CI run `30696493027` passed. The twenty-third review of
+  `93adce5` found one P2: baseline `episode_21_row_return` did not define
+  whether an intervening monthly execution reset the diagnostic target. The
+  current branch-head snapshot freezes the factor-matched signal-time equal-
+  weight or random-rank target, holds its execution weights statically through
+  `e+21`, aggregates exact weighted constituent adjusted-close endpoint
+  returns, and invalidates the whole episode on any invalid target return
+  without survivor renormalization or continuous-path reuse. A short-month
+  fixture distinguishes the required `0.01` episode from a forbidden `0.10`
+  monthly-reset slice and is not pending local authorship. The actual remaining
+  gate is exact-head CI on the
   current head, followed by one current-head Codex review; every finding
   restarts that remediation loop. Do not repeat commit or push work from an old
   handoff instruction; resolve current `HEAD`, remote head, CI, and review

@@ -508,6 +508,35 @@ contract, undivided drifted-weight turnover, post-return-equity cost order,
 initial deployment turnover, and no-terminal-liquidation rule as each factor
 strategy.
 
+`episode_21_row_return` is a separate overlapping diagnostic, never a slice of
+that continuous path. For each factor and valid signal month, freeze the
+factor-matched baseline target at signal close `t` using decision-time
+information only. The equal-weight baseline target contains every factor-
+specific eligible canonical key at weight `1/N`; the random-rank target is the
+already-frozen selected top-decile key set at weight `1/K`. The weights sum
+exactly to one for a valid nonempty target. Begin at next common-calendar close
+`e=t+1` and hold those exact initial weights statically through common-calendar
+close `e+21`, with no intermediate rebalance, drift reset, cost, or turnover.
+
+For every targeted constituent, compute the simple adjusted-close return
+`adjusted_close_i[e+21] / adjusted_close_i[e] - 1` under the same strict anchor,
+lineage, and terminal-event policy as the diagnostic label. The baseline
+episode gross return is exactly
+`sum(weight_i_at_e * constituent_return_i)`. If any target constituent lacks a
+valid accepted return, retain the whole baseline episode as invalid/missing
+with its exact reason. Survivor renormalization, zero/fill, cash substitution,
+an alternate row, and reuse of a continuous-path segment are forbidden.
+Overlapping later baseline episodes are retained as dependent diagnostics and
+are not compounded.
+
+The short-month fixture sets `e` to row 0, the next monthly execution to row
+20, and the episode endpoint to row 21. Two securities begin at equal weights.
+Their adjusted-close triples at `(e,next_execution,e+21)` are respectively
+`(100,110,121)` and `(100,90,81)`, so their endpoint returns are `0.21` and
+`-0.19` and the frozen-target episode return is `0.01`. A forbidden continuous-
+path slice resets to target `(1,0)` at row 20 and returns `0.10`; the episode
+must remain `0.01` even though the next execution precedes `e+21`.
+
 For the random-rank baseline, derive a separate RNG for each factor/month as
 follows: SHA-256 the ASCII string
 `random_rank_v1|20260729|<factor_id>|<signal_date_t_YYYY-MM-DD>`, using the

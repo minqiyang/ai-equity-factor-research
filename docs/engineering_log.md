@@ -1,5 +1,28 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Twenty-Third-Review Baseline-Episode Remediation
+
+- Exact-head Codex review `4834522202` of `93adce5` completed with one P2: the
+  two required baseline episode series did not bind how a 21-row diagnostic
+  behaves when the next monthly execution precedes its endpoint.
+- Added `frozen_target_execution_to_e_plus_21_v1` to the preregistration and
+  exact trial inventory. Equal-weight and random-rank targets freeze at signal
+  close, start at execution, and hold static initial weights through `e+21`.
+  Their gross cost-free episode is the weighted sum of target constituent
+  simple adjusted-close returns, not a continuous-path slice.
+- Required any invalid targeted constituent to invalidate and retain the whole
+  episode without survivor renormalization, fill, cash/zero substitution, or
+  alternate rows. Added a short-month fixture where a row-20 reset produces
+  the forbidden `0.10` path while the row-21 frozen episode remains `0.01`.
+- Focused project-structure validation passed 70 tests. The full suite passed
+  3097 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, and `git
+  diff --check` passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Twenty-Second-Review Held-Return Remediation
 
 - Exact-head Codex review `4834496727` of `9bbc2c3` completed with one P2: the

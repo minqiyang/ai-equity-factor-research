@@ -176,6 +176,11 @@ Original failures and consequences:
   simple-return policy now controls both paths, with a split fixture proving
   raw close would change gross return, drifted turnover, cost, and active
   return.
+- The twenty-third review exposed the converse path-boundary risk: a required
+  21-row baseline episode could be implemented by slicing the newly frozen
+  continuous path. The episode now holds its signal-time target through
+  `e+21` regardless of an earlier monthly reset, and invalid constituents fail
+  the whole weighted diagnostic instead of changing its universe.
 
 Investigation:
 

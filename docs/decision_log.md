@@ -15,6 +15,47 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Separate Baseline Episodes From Continuous Resets
+
+Context:
+
+- The twenty-third exact-head Codex review of PR #177 at `93adce5` found one
+  P2. Both baseline trials required `episode_21_row_return`, but target,
+  holding, aggregation, endpoint, and invalid-constituent semantics were not
+  frozen when a later monthly reset occurred before `e+21`.
+
+Decision:
+
+- For each factor-valid signal month, freeze the equal-weight eligible-universe
+  or random-rank top-decile target at signal close `t`, begin at execution
+  close `e=t+1`, and hold the exact initial weights statically through `e+21`.
+- Compute each constituent's simple adjusted-close `e` to `e+21` return and
+  aggregate exactly `sum(weight_i_at_e * constituent_return_i)`. Ignore any
+  intervening monthly execution for this episode; overlapping later episodes
+  remain separate dependent diagnostics.
+- If any targeted constituent lacks a valid accepted return, retain the whole
+  episode as invalid/missing. Forbid survivor renormalization, fill, cash/zero
+  substitution, alternate rows, and continuous-path reuse.
+
+Rationale:
+
+- A fixed-horizon factor diagnostic and a monthly-reset continuous strategy
+  answer different questions and can diverge in short exchange months.
+- Binding the exact episode calculation prevents implementations from
+  silently choosing whichever baseline path is convenient.
+
+Consequences:
+
+- The short-month fixture places the next monthly execution at row 20 before
+  endpoint row 21. The frozen episode returns `0.01`; a forbidden reset to a
+  new target at row 20 returns `0.10`.
+- Both series remain outputs of the same two baseline semantic trials; the
+  immutable semantic trial count stays 14.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Freeze Continuous Held Returns To Adjusted Close
 
 Context:

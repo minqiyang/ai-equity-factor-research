@@ -96,7 +96,12 @@ profitability, or trading readiness.
   use one adjacent common-calendar adjusted-close simple-return policy. A
   split fixture rejects raw-close return, drifted-weight, turnover, cost, and
   active-return contamination; missing anchors fail closed and separate split
-  or dividend cash-flow addition is forbidden as double counting.
+  or dividend cash-flow addition is forbidden as double counting. Baseline
+  21-row episode outputs now freeze a factor-matched signal-time target and
+  hold its execution weights statically through `e+21`, independent of an
+  intervening monthly continuous reset. Their exact weighted constituent
+  adjusted-close formula fails the whole episode on any invalid target return
+  without survivor renormalization, fill, cash, or zero substitution.
   Bootstrap segments of two through
   six rows now use genuine one-row within-segment resampling, with a
   nondegenerate-support gate that prevents false Holm support and is an

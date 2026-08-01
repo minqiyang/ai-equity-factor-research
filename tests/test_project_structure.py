@@ -669,6 +669,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "only a subset of factors is valid",
         "The equal-weight eligible-universe baseline is the same frozen target",
         "The random-rank baseline alone inherits all three factor decision-time invalid-",
+        "`episode_21_row_return` is a separate overlapping diagnostic",
+        "hold those exact initial weights statically",
+        "sum(weight_i_at_e * constituent_return_i)",
+        "Survivor renormalization, zero/fill, cash substitution,",
+        "the next execution precedes `e+21`",
         "primary benchmark are -0.0110 and -0.0125",
         "calendar-only strategy schedule includes a signal only when",
         "being excluded from",
@@ -761,6 +766,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "protected_opening_timing: STRICTLY_AFTER_THRESHOLD_OUTPUT_MATURITY_INSTANT",
         "opening_at_counter_increment_or_label_only: FORBIDDEN",
         "random_seed_or_permutation_consumption: NONE",
+        "version: frozen_target_execution_to_e_plus_21_v1",
+        "intervening_monthly_execution_before_endpoint: IGNORE_FOR_THIS_EPISODE_NO_TARGET_RESET_OR_CONTINUOUS_PATH_SLICE",
+        "aggregation_formula: sum(weight_i_at_e * constituent_return_i)",
+        "invalid_target_constituent_action: INVALID_MISSING_RETAIN_EPISODE_AND_EXACT_REASON",
+        "forbidden_continuous_path_slice_return: 0.10",
         "episodic_return: INVALID_MISSING_NOT_ZERO",
         "required_output_reconciliation: INVALID_OUTPUT_PRESENT_NOT_MISSING_TRIAL_OUTPUT",
         "key_freeze: FIRST_ANY_FACTOR_DECISION_TIME_ELIGIBILITY_CAMPAIGN_WIDE",
@@ -828,15 +838,49 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "episode_21_row_return",
         "continuous_daily_return",
     ]
-    for baseline in inventory["trials"][:2]:
+    episode_common_contract = {
+        "aggregation": (
+            "SUM_FROZEN_EXECUTION_WEIGHT_TIMES_CONSTITUENT_"
+            "SIMPLE_ADJUSTED_CLOSE_RETURN"
+        ),
+        "anchor_field": "adjusted_close",
+        "anchor_lineage_policy": "factor_anchor_lineage_v1",
+        "anchor_validation": (
+            "BOTH_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE"
+        ),
+        "cost_bps": 0,
+        "constituent_return_kind": "SIMPLE_NOT_LOG",
+        "endpoint": "EXECUTION_E_PLUS_21_COMMON_CALENDAR_ROWS",
+        "holding_rule": (
+            "STATIC_SIGNAL_TIME_TARGET_FROM_EXECUTION_E_THROUGH_E_PLUS_21_"
+            "IGNORE_INTERVENING_MONTHLY_EXECUTIONS"
+        ),
+        "invalid_constituent_action": (
+            "INVALID_MISSING_RETAIN_EPISODE_NO_SURVIVOR_RENORMALIZATION_"
+            "FILL_CASH_OR_ZERO"
+        ),
+        "return_formula": (
+            "sum(weight_i_at_e * (adjusted_close_i[e+21] / "
+            "adjusted_close_i[e] - 1))"
+        ),
+        "return_basis": "GROSS_COST_FREE_FACTOR_DIAGNOSTIC",
+    }
+    episode_target_rules = (
+        "EQUAL_WEIGHT_ALL_FACTOR_SPECIFIC_DECISION_TIME_ELIGIBLE_KEYS_"
+        "FROZEN_AT_SIGNAL_T",
+        "EQUAL_WEIGHT_FROZEN_RANDOM_RANK_TOP_DECILE_KEYS_"
+        "SELECTED_AT_SIGNAL_T",
+    )
+    for baseline, target_rule in zip(
+        inventory["trials"][:2],
+        episode_target_rules,
+        strict=True,
+    ):
         assert baseline["output_factor_ids"] == expected_factor_ids
         assert baseline["output_series_per_factor"] == expected_baseline_outputs
         assert baseline["output_contract_per_series"][
             "episode_21_row_return"
-        ] == {
-            "cost_bps": 0,
-            "return_basis": "GROSS_COST_FREE_FACTOR_DIAGNOSTIC",
-        }
+        ] == {**episode_common_contract, "target_rule": target_rule}
     assert inventory["trials"][0]["output_contract_per_series"][
         "continuous_daily_return"
     ] == {
@@ -1125,6 +1169,107 @@ def test_random_rank_top_decile_nondivisible_golden_fixture() -> None:
     assert forbidden_last_chunk != expected_selected_keys
     assert forbidden_floor_only_first_chunk == expected_selected_keys[:-1]
     assert forbidden_floor_only_first_chunk != expected_selected_keys
+
+
+def test_baseline_episode_ignores_intervening_monthly_reset() -> None:
+    def episode_return(
+        weights_at_execution: tuple[float, ...],
+        execution_adjusted_close: tuple[object, ...],
+        endpoint_adjusted_close: tuple[object, ...],
+    ) -> float | None:
+        if not (
+            weights_at_execution
+            and len(weights_at_execution) == len(execution_adjusted_close)
+            and len(weights_at_execution) == len(endpoint_adjusted_close)
+            and math.isclose(sum(weights_at_execution), 1.0, abs_tol=1e-15)
+        ):
+            return None
+        constituent_returns: list[float] = []
+        for before, after in zip(
+            execution_adjusted_close,
+            endpoint_adjusted_close,
+            strict=True,
+        ):
+            if not all(
+                not isinstance(anchor, bool)
+                and isinstance(anchor, Real)
+                and math.isfinite(float(anchor))
+                and float(anchor) > 0.0
+                for anchor in (before, after)
+            ):
+                return None
+            constituent_returns.append(float(after) / float(before) - 1.0)
+        return sum(
+            weight * constituent_return
+            for weight, constituent_return in zip(
+                weights_at_execution,
+                constituent_returns,
+                strict=True,
+            )
+        )
+
+    execution_row = 0
+    next_monthly_execution_row = 20
+    endpoint_row = 21
+    frozen_weights = (0.5, 0.5)
+    execution_prices = (100.0, 100.0)
+    next_execution_prices = (110.0, 90.0)
+    endpoint_prices = (121.0, 81.0)
+
+    frozen_episode_return = episode_return(
+        frozen_weights,
+        execution_prices,
+        endpoint_prices,
+    )
+    first_continuous_multiplier = sum(
+        weight * next_price / execution_price
+        for weight, next_price, execution_price in zip(
+            frozen_weights,
+            next_execution_prices,
+            execution_prices,
+            strict=True,
+        )
+    )
+    forbidden_reset_weights = (1.0, 0.0)
+    second_continuous_multiplier = sum(
+        weight * endpoint_price / next_price
+        for weight, endpoint_price, next_price in zip(
+            forbidden_reset_weights,
+            endpoint_prices,
+            next_execution_prices,
+            strict=True,
+        )
+    )
+    forbidden_continuous_slice_return = (
+        first_continuous_multiplier * second_continuous_multiplier - 1.0
+    )
+
+    assert execution_row < next_monthly_execution_row < endpoint_row
+    assert frozen_episode_return is not None
+    assert math.isclose(frozen_episode_return, 0.01, abs_tol=1e-15)
+    assert math.isclose(
+        forbidden_continuous_slice_return,
+        0.10,
+        abs_tol=1e-15,
+    )
+    assert not math.isclose(
+        frozen_episode_return,
+        forbidden_continuous_slice_return,
+        abs_tol=1e-15,
+    )
+
+    invalid_endpoint_prices: tuple[object, ...] = (121.0, None)
+    assert episode_return(
+        frozen_weights,
+        execution_prices,
+        invalid_endpoint_prices,
+    ) is None
+    forbidden_survivor_renormalized_return = 121.0 / 100.0 - 1.0
+    assert math.isclose(
+        forbidden_survivor_renormalized_return,
+        0.21,
+        abs_tol=1e-15,
+    )
 
 
 def test_decision_time_targets_ignore_future_availability_mutations() -> None:
