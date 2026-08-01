@@ -100,6 +100,14 @@ may be added after the protocol freeze.
 - Evaluation: 21 common-calendar close-to-close returns beginning at the
   execution close. With signal close `t` and execution close `e=t+1`, the
   endpoint is common-calendar close `e+21`.
+- The diagnostic forward return is the **simple** adjusted-close return
+  `adjusted_close[e+21] / adjusted_close[e] - 1`; a log return is forbidden.
+  Both anchors must be real numeric non-Boolean scalars that are present,
+  finite, and strictly positive. An invalid anchor invalidates and retains the
+  factor-month outcome with its reason counted; no fill, interpolation,
+  clipping, absolute-value repair, alternate row, or log fallback is allowed.
+  The golden execution/endpoint anchors `100.0` and `121.0` produce simple
+  return `0.21`, while the forbidden log return is `0.1906203596086497`.
 - A security-specific later observation must never substitute for a missing
   common-calendar execution or endpoint.
 - A label is valid only when its complete execution-to-end interval lies
@@ -439,10 +447,24 @@ complete-case monthly Rank IC table:
 - use identical block-start draws for all three columns, concatenate the
   resampled segments, and compute the unweighted mean across all retained rows,
   so a fold's weight equals its retained complete-case month count;
+- for each replicate and segment, call NumPy `Generator.integers` once with
+  `low=0`, `high=n-L+1`, `size=ceil(n/L)`, and `endpoint=False`; concatenate
+  and truncate that segment's row indices exactly as above;
+- reuse that exact row-index vector jointly for all three factor columns and
+  for both the uncentered table used by interval resamples and the globally
+  null-centered table used by p-value resamples. There is one RNG pass per
+  replicate, never separate centered/uncentered passes or pass-order choice;
 - consume RNG draws in replicate-major, then chronological-segment order;
 - primary one-sided p-value is
   `(1 + count(null_bootstrap_mean >= observed_mean)) / 20001`; and
 - uncentered resamples provide the 95% two-sided percentile interval.
+
+The shared-draw golden fixture uses seed `20260730`, three replicates, segment
+lengths 8 and 7, block length 6, and row-index factor columns
+`i/100`, `(14-i)/200`, and `((i%4)-1.5)/100`. Its starts by replicate/segment
+are `[[0,0],[0,1]]`, `[[0,2],[1,0]]`, and `[[0,1],[1,1]]`. The golden test
+freezes each complete 15-row index vector and both uncentered and null-centered
+mean matrices from those same rows, so a second RNG pass cannot pass.
 
 The run manifest records Python, NumPy, calendar, and ordered signal-index
 identities. Mean, median, sample standard deviation, and monthly ICIR

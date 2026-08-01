@@ -450,6 +450,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "remediated by committed and pushed head `86f6929`",
         "exact-head CI run `30687930346` passed",
         "The ninth review of `86f6929` found one P2",
+        "remediated by committed and pushed head `a5b6695`",
+        "CI run `30688393600` passed on that exact head",
+        "The tenth review of `a5b6695` found two P2",
         "not pending local authorship",
         "The actual remaining gate is exact",
         "current-head CI followed by one current-head Codex review",
@@ -494,6 +497,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "one-day **simple** adjusted-close returns",
         "a log return is forbidden",
         "value for that listing/signal date is retained as invalid/missing",
+        "diagnostic forward return is the **simple** adjusted-close return",
+        "reuse that exact row-index vector jointly",
+        "There is one RNG pass per",
     ]:
         assert phrase in contract
 
@@ -526,6 +532,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "one_day_return_kind: SIMPLE_NOT_LOG",
         "price_anchor_validation: REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE",
         "invalid_anchor_action: INVALID_MISSING_FACTOR_VALUE_EXCLUDE_LISTING_FROM_FACTOR_DECISION_TIME_ELIGIBILITY_AND_COUNT_REASON",
+        "forward_return_kind: SIMPLE_NOT_LOG",
+        "forward_return_formula: adjusted_close[label_end] / adjusted_close[label_start] - 1",
+        "invalid_forward_anchor_action: INVALIDATE_AND_RETAIN_FACTOR_MONTH_OUTCOME_WITH_REASON_COUNT",
+        "draw_reuse_across_distributions: SAME_ROW_INDEX_VECTOR_FOR_UNCENTERED_AND_NULL_CENTERED_TABLES",
+        "rng_passes_per_replicate: ONE_NO_SECOND_CENTERED_OR_UNCENTERED_PASS",
         "all_other_zero_target_triggers: FORBIDDEN",
         "byte_relation: EXACT_BYTE_FOR_BYTE_COPY",
         "rank_ic_input_table: PRIMARY_COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_TABLE",
@@ -899,6 +910,50 @@ def test_low_vol_3m_uses_exactly_63_returns_from_64_price_anchors() -> None:
     assert low_vol_from_anchors(price_anchors[:-1]) is None
 
 
+def test_diagnostic_forward_return_is_simple_and_fail_closed() -> None:
+    def diagnostic_forward_return(
+        execution_anchor: object,
+        endpoint_anchor: object,
+    ) -> float | None:
+        anchors = (execution_anchor, endpoint_anchor)
+        if any(
+            isinstance(anchor, bool)
+            or not isinstance(anchor, Real)
+            or not math.isfinite(float(anchor))
+            or float(anchor) <= 0.0
+            for anchor in anchors
+        ):
+            return None
+        return float(endpoint_anchor) / float(execution_anchor) - 1.0
+
+    simple_return = diagnostic_forward_return(100.0, 121.0)
+    forbidden_log_return = math.log(121.0 / 100.0)
+    assert math.isclose(simple_return, 0.21, abs_tol=1e-15)
+    assert math.isclose(
+        forbidden_log_return,
+        0.1906203596086497,
+        abs_tol=1e-15,
+    )
+    assert not math.isclose(
+        simple_return,
+        forbidden_log_return,
+        rel_tol=1e-12,
+        abs_tol=1e-15,
+    )
+
+    invalid_anchors: tuple[object, ...] = (
+        None,
+        True,
+        float("nan"),
+        float("inf"),
+        0.0,
+        -1.0,
+    )
+    for invalid_anchor in invalid_anchors:
+        assert diagnostic_forward_return(invalid_anchor, 121.0) is None
+        assert diagnostic_forward_return(100.0, invalid_anchor) is None
+
+
 def test_preregistration_bundle_child_binds_exact_frozen_yaml_bytes() -> None:
     preregistration_path = (
         PROJECT_ROOT
@@ -1036,6 +1091,104 @@ def test_holm_one_based_running_max_and_factor_mapping_golden_fixture() -> None:
     assert adjusted_sorted == (0.03, 0.06, 0.06)
     assert tuple(adjusted_factor_order) == (0.06, 0.03, 0.06)
     assert rejected_factor_ids == ("REV_1M",)
+
+
+def test_bootstrap_reuses_segment_draws_for_both_distributions() -> None:
+    factor_table = np.column_stack(
+        (
+            np.arange(15, dtype=float) / 100.0,
+            (14.0 - np.arange(15, dtype=float)) / 200.0,
+            ((np.arange(15, dtype=float) % 4.0) - 1.5) / 100.0,
+        )
+    )
+    observed_means = factor_table.mean(axis=0)
+    null_centered_table = factor_table - observed_means
+    segments = (np.arange(0, 8), np.arange(8, 15))
+    rng = np.random.Generator(np.random.PCG64DXSM(20260730))
+
+    def draw_replicate_indices() -> tuple[tuple[int, ...], ...]:
+        segment_indices = []
+        for segment in segments:
+            segment_length = len(segment)
+            block_length = min(6, segment_length)
+            starts = rng.integers(
+                low=0,
+                high=segment_length - block_length + 1,
+                size=math.ceil(segment_length / block_length),
+                endpoint=False,
+            )
+            local_indices = np.concatenate(
+                [
+                    np.arange(start, start + block_length)
+                    for start in starts
+                ]
+            )[:segment_length]
+            segment_indices.append(
+                tuple(int(index) for index in segment[local_indices])
+            )
+        return tuple(segment_indices)
+
+    replicate_segment_indices = tuple(
+        draw_replicate_indices() for _ in range(3)
+    )
+    replicate_indices = tuple(
+        tuple(index for segment in replicate for index in segment)
+        for replicate in replicate_segment_indices
+    )
+    expected_replicate_indices = (
+        (0, 1, 2, 3, 4, 5, 0, 1, 8, 9, 10, 11, 12, 13, 9),
+        (0, 1, 2, 3, 4, 5, 2, 3, 9, 10, 11, 12, 13, 14, 8),
+        (0, 1, 2, 3, 4, 5, 1, 2, 9, 10, 11, 12, 13, 14, 9),
+    )
+    uncentered_means = np.asarray(
+        [factor_table[list(indices)].mean(axis=0) for indices in replicate_indices]
+    )
+    null_centered_means = np.asarray(
+        [
+            null_centered_table[list(indices)].mean(axis=0)
+            for indices in replicate_indices
+        ]
+    )
+    expected_uncentered_means = np.asarray(
+        [
+            [0.058666666666666666, 0.04066666666666667, -0.004333333333333333],
+            [0.06466666666666666, 0.03766666666666667, -0.001],
+            [0.064, 0.038000000000000006, -0.0016666666666666668],
+        ]
+    )
+    expected_null_centered_means = np.asarray(
+        [
+            [-0.011333333333333334, 0.0056666666666666645, -0.0033333333333333335],
+            [-0.005333333333333331, 0.0026666666666666635, 0.0],
+            [-0.006, 0.0029999999999999975, -0.0006666666666666661],
+        ]
+    )
+
+    assert replicate_indices == expected_replicate_indices
+    np.testing.assert_allclose(observed_means, [0.07, 0.035, -0.001])
+    np.testing.assert_allclose(
+        uncentered_means,
+        expected_uncentered_means,
+        rtol=0.0,
+        atol=1e-15,
+    )
+    np.testing.assert_allclose(
+        null_centered_means,
+        expected_null_centered_means,
+        rtol=0.0,
+        atol=1e-15,
+    )
+    np.testing.assert_allclose(
+        null_centered_means,
+        uncentered_means - observed_means,
+        rtol=0.0,
+        atol=1e-15,
+    )
+
+    forbidden_second_pass_indices = tuple(
+        draw_replicate_indices() for _ in range(3)
+    )
+    assert forbidden_second_pass_indices != replicate_segment_indices
 
 
 def test_factor_turnover_uses_immediate_frozen_scheduled_predecessor() -> None:

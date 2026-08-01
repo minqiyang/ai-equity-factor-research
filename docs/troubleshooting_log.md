@@ -47,6 +47,10 @@ Original failures and consequences:
   assertion crossed a Markdown line wrap. The simple-return, forbidden-log,
   and invalid-anchor calculations passed. The assertion was narrowed to a
   same-line semantic fragment without weakening the protocol.
+- The first tenth-round final gate failed only because the handoff split
+  `exact-head` across a Markdown line. The forward-return and shared-bootstrap
+  fixtures passed. The handoff was rephrased without a split token and the
+  assertion retained the full CI/head meaning.
 
 Investigation:
 
@@ -90,11 +94,13 @@ Correction:
   Python `k-1` access, the sorted running maximum, and factor-order mapping.
 - Froze `LOW_VOL_3M` to simple adjacent-price returns and fail-closed anchor
   validity, with a simple-versus-log and invalid-anchor mutation fixture.
+- Froze diagnostic endpoint returns to fail-closed simple returns and reused
+  one bootstrap index draw across uncentered and null-centered distributions.
 
 Verification:
 
-- The latest corrected focused structure suite passed 53 tests and the full
-  suite passed 3080 tests with two platform-conditional skips. Full Ruff,
+- The latest corrected focused structure suite passed 55 tests and the full
+  suite passed 3082 tests with two platform-conditional skips. Full Ruff,
   compileall, Skill audit, YAML and JSON parsing, deterministic repo-map
   regeneration, `git diff --check`, added-line privacy and Unicode/control
   scans, and isolated sdist/wheel build passed.

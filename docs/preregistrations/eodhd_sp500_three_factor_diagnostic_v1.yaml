@@ -87,6 +87,18 @@ price_policy:
   factor_field: adjusted_close
   factor_field_claim: EODHD_DIVIDEND_AND_SPLIT_ADJUSTED_CLOSE_RETURN_PROXY
   forward_return_field: adjusted_close
+  forward_return_kind: SIMPLE_NOT_LOG
+  forward_return_formula: adjusted_close[label_end] / adjusted_close[label_start] - 1
+  forward_return_label_start: EXECUTION_CLOSE
+  forward_return_label_end: EXECUTION_CLOSE_PLUS_21_COMMON_CALENDAR_ROWS
+  forward_return_anchor_validation: BOTH_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE
+  invalid_forward_anchor_action: INVALIDATE_AND_RETAIN_FACTOR_MONTH_OUTCOME_WITH_REASON_COUNT
+  invalid_forward_anchor_repairs: FORBIDDEN_ZERO_FILL_FORWARD_FILL_BACKWARD_FILL_INTERPOLATION_CLIPPING_ABSOLUTE_VALUE_ALTERNATE_ROW_OR_LOG_FALLBACK
+  forward_return_golden_fixture:
+    execution_adjusted_close: 100.0
+    endpoint_adjusted_close: 121.0
+    simple_return: 0.21
+    forbidden_log_return: 0.1906203596086497
   exact_total_return_index_claim: FORBIDDEN_UNLESS_DATASET_REVIEW_VERIFIES
   raw_ohlc_use: PRIVATE_AUDIT_ONLY
   volume_use: FORBIDDEN_IN_CAMPAIGN
@@ -433,7 +445,31 @@ inference:
   fold_weighting: RETAINED_COMPLETE_CASE_MONTH_COUNT
   joint_factor_draws: true
   rng_consumption_order: REPLICATE_MAJOR_THEN_CHRONOLOGICAL_SEGMENT
+  block_start_draw_api: GENERATOR_INTEGERS_LOW_0_HIGH_N_MINUS_L_PLUS_1_SIZE_CEIL_N_OVER_L_ENDPOINT_FALSE
+  draw_reuse_across_distributions: SAME_ROW_INDEX_VECTOR_FOR_UNCENTERED_AND_NULL_CENTERED_TABLES
+  rng_passes_per_replicate: ONE_NO_SECOND_CENTERED_OR_UNCENTERED_PASS
   null_centering: SUBTRACT_EACH_FACTOR_GLOBAL_OBSERVED_COMPLETE_CASE_MEAN
+  bootstrap_shared_draw_golden_fixture:
+    replicates: 3
+    segment_lengths:
+      - 8
+      - 7
+    factor_columns:
+      MOM_12_1: row_index / 100
+      REV_1M: (14 - row_index) / 200
+      LOW_VOL_3M: ((row_index % 4) - 1.5) / 100
+    observed_means_factor_order:
+      - 0.07
+      - 0.035
+      - -0.001
+    starts_by_replicate_then_segment:
+      - [[0, 0], [0, 1]]
+      - [[0, 2], [1, 0]]
+      - [[0, 1], [1, 1]]
+    row_indices_by_replicate:
+      - [0, 1, 2, 3, 4, 5, 0, 1, 8, 9, 10, 11, 12, 13, 9]
+      - [0, 1, 2, 3, 4, 5, 2, 3, 9, 10, 11, 12, 13, 14, 8]
+      - [0, 1, 2, 3, 4, 5, 1, 2, 9, 10, 11, 12, 13, 14, 9]
   block_length_monthly_records: 6
   bootstrap_replicates: 20000
   minimum_valid_monthly_records_for_primary_inference: 60

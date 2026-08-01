@@ -15,6 +15,45 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Freeze Diagnostic Forward Returns And Shared Bootstrap Draws
+
+Context:
+
+- The tenth exact-head Codex review of PR #177 at `a5b6695` found two P2
+  ambiguities: the execution-to-endpoint diagnostic return did not distinguish
+  simple from log returns, and bootstrap centered/uncentered distributions did
+  not state whether they shared draws or consumed two RNG passes.
+
+Decision:
+
+- Define diagnostic forward return as
+  `adjusted_close[e+21] / adjusted_close[e] - 1`. Both anchors must be present,
+  finite, strictly positive real non-Boolean scalars. Invalid anchors retain
+  and invalidate the factor-month outcome with a counted reason and no repair.
+- For every bootstrap replicate and chronological segment, draw block starts
+  exactly once. Reuse the resulting row-index vector jointly for all factors,
+  the uncentered interval table, and the globally null-centered p-value table.
+- Use one RNG pass per replicate. Separate centered/uncentered passes and a
+  pass-order choice are forbidden.
+
+Rationale:
+
+- Simple and log endpoint returns produce different decile evidence from the
+  same prices.
+- Two seeded bootstrap passes produce different draws depending on pass order;
+  shared indices bind p-value and interval distributions to one immutable
+  resampling experiment.
+
+Consequences:
+
+- Separate golden fixtures distinguish endpoint simple/log returns and freeze
+  three segmented bootstrap replicates, row indices, uncentered means,
+  null-centered means, and the rejected second-pass alternative.
+- No data, performance, trial execution, additional hypothesis, merge,
+  brokerage, paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Freeze LOW_VOL_3M Simple Returns And Anchor Validity
 
 Context:

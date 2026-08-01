@@ -44,6 +44,9 @@ profitability, or trading readiness.
   `LOW_VOL_3M` now explicitly uses adjacent adjusted-close simple returns and
   requires exactly 64 finite, strictly positive real non-Boolean anchors;
   invalid anchors are retained and counted with no fill or log-return fallback.
+  Diagnostic endpoint returns likewise use fail-closed adjusted-close simple
+  returns. Bootstrap interval and null distributions now share one exact block-
+  index draw per replicate/segment across all factors, with no second RNG pass.
   Repository
   governance fixes safe in-scope review findings without owner round trips and
   keeps the task active through current-head review and remediation; only a

@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the ninth PR #177 review-remediation round.
+Updated: 2026-07-31 for the tenth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -53,16 +53,18 @@ Updated: 2026-07-31 for the ninth PR #177 review-remediation round.
   one P2 remediated by committed and pushed head `86f6929`; exact-head CI run
   `30687930346` passed. The ninth review of `86f6929` found one P2: the
   `LOW_VOL_3M` one-day return kind and invalid-anchor behavior were ambiguous.
-  The current branch-head snapshot containing this handoff freezes adjacent-
-  price simple returns, exactly 64 strictly positive finite real non-Boolean
-  anchors, retained invalid/missing factor values, counted factor-specific
-  eligibility exclusions, and forbidden repair paths. It includes a simple-
-  versus-log and invalid-anchor golden fixture, retains the exact 14-trial
-  inventory, and is not pending local authorship. The actual remaining gate is
-  exact current-head CI followed by one current-head Codex review; every
-  finding restarts that remediation loop. Do not repeat commit or push work
-  from an old handoff instruction; resolve current `HEAD`, remote head, CI, and
-  review state.
+  That finding was remediated by committed and pushed head `a5b6695`; CI run
+  `30688393600` passed on that exact head. The tenth review of `a5b6695` found two P2
+  gaps: the forward-return formula/anchors and centered-versus-uncentered
+  bootstrap draw reuse were ambiguous. The current branch-head snapshot
+  containing this handoff freezes a fail-closed simple endpoint return and one
+  shared bootstrap row-index draw across factors and both distributions, with
+  no second RNG pass. It includes endpoint and segmented shared-draw golden
+  fixtures, retains the exact 14-trial inventory, and is not pending local
+  authorship. The actual remaining gate is exact current-head CI followed by
+  one current-head Codex review; every finding restarts that remediation loop.
+  Do not repeat commit or push work from an old handoff instruction; resolve
+  current `HEAD`, remote head, CI, and review state.
 - Current protected-main baseline: 3064 tests passed with two
   platform-conditional wide-`longdouble` skips. The PR #176 release also
   passed Ruff, compileall, deterministic repo-map, Skill audit, immutable

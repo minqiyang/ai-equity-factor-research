@@ -1,5 +1,29 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Tenth-Review Return And Bootstrap Remediation
+
+- Exact-head Codex review of `a5b6695` completed with two P2 findings: the
+  diagnostic forward return had no simple/log formula or anchor validity, and
+  centered versus uncentered bootstrap draw reuse was unspecified.
+- Froze the 21-row diagnostic endpoint return to adjusted-close simple return
+  with both anchors present, finite, strictly positive, real, and non-Boolean.
+  Invalid anchors retain an invalid factor-month outcome and counted reason,
+  with every repair and log fallback forbidden.
+- Froze one block-start draw per replicate/segment and shared its exact row
+  indices across all factors and both uncentered interval and null-centered
+  p-value tables. A second RNG pass is forbidden.
+- Added endpoint-price and three-replicate segmented-bootstrap fixtures that
+  distinguish log returns, invalid anchors, separate RNG passes, index vectors,
+  and both resampled mean distributions.
+- Focused project-structure validation passed 55 tests. The full suite passed
+  3082 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Ninth-Review LOW_VOL Return Remediation
 
 - Exact-head Codex review of `86f6929` completed with one P2: the low-
