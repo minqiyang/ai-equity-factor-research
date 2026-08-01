@@ -49,8 +49,12 @@
           "return_basis": "GROSS_COST_FREE_FACTOR_DIAGNOSTIC"
         }
       },
-      "rng_seed_derivation": "first_16_hex_sha256(random_rank_v1|20260729|factor_id|YYYY-MM-DD)",
+      "permutation_rank_order": "HIGH_TO_LOW_FIRST_CHUNK_SELECTED",
+      "random_top_decile_size_rule": "N//10_PLUS_ONE_IFF_N_MOD_10_NONZERO",
+      "rng_seed_derivation": "first_16_hex_sha256(random_rank_v1|20260729|factor_id|signal_date_t_YYYY-MM-DD)",
+      "rng_seed_date_token": "SIGNAL_DATE_T_STRICT_YYYY-MM-DD_NOT_EXECUTION_DATE",
       "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "selected_target_rule": "EQUAL_WEIGHT_SELECTED_KEYS_SERIALIZED_IN_ASCENDING_CANONICAL_KEY_BYTES",
       "seed": 20260729,
       "trial_id": "BASELINE_RANDOM_RANK_TOP_DECILE",
       "turnover_convention": "UNDIVIDED_SUM_ABSOLUTE_WEIGHT_CHANGES_FROM_DRIFTED_WEIGHTS",

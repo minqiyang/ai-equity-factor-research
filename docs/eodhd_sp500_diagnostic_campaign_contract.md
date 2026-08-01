@@ -308,10 +308,29 @@ strategy.
 
 For the random-rank baseline, derive a separate RNG for each factor/month as
 follows: SHA-256 the ASCII string
-`random_rank_v1|20260729|<factor_id>|<YYYY-MM-DD>`, interpret the first 16 hex
-digits as an unsigned integer seed, initialize NumPy `PCG64DXSM`, place
-eligible listing keys in ascending byte order, and apply one permutation. No
-global mutable RNG stream or iteration-order dependence is allowed.
+`random_rank_v1|20260729|<factor_id>|<signal_date_t_YYYY-MM-DD>`, using the
+strict signal date `t`, not the later execution date. Interpret the first 16
+hex digits as an unsigned big-endian integer seed, initialize NumPy
+`PCG64DXSM`, place eligible canonical listing-key bytes in ascending unsigned-
+byte lexicographic order, and permute the integer indices `0..N-1` exactly
+once. Treat the resulting index order as high-to-low random rank. The selected
+top-decile count is `N // 10 + (1 if N % 10 else 0)`, identical to the frozen
+high-ranked-decile remainder rule. Select exactly the first such number of
+permuted indices, never the final chunk; map those keys to equal weights
+`1 / selected_count`; and serialize the target in ascending canonical-key
+order. No global mutable RNG stream, execution-date token, last-chunk
+selection, floor-only decile size, or iteration-order dependence is allowed.
+
+The non-divisible mapping fixture uses factor `MOM_12_1`, signal date
+`2026-07-29`, and 103 ascending canonical keys for `XNYS/T000` through
+`XNYS/T102`, all with `effective_from=2014-01-01` and null `effective_to`. The
+seed preimage SHA-256 is
+`4f3c72a41c74ed307cc6a86e734268f2266be31b4977ed99336462b234251e97`,
+the unsigned seed is `5709564476776574256`, and the 11 selected ticker labels
+in permutation order are `T063,T102,T092,T077,T018,T042,T025,T036,T066,T001,T094`.
+The golden test freezes the complete 103-index permutation and the selected
+canonical key bytes, so a different date token, end-of-permutation selection,
+or floor-only size cannot pass.
 
 Cost cases are exactly 0, 10, and 25 bps. Ten bps is primary. Zero bps is
 diagnostic only. Each scalar is an all-in fixed-bps diagnostic execution-cost

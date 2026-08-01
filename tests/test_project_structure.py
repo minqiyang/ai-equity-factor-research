@@ -10,6 +10,8 @@ import runpy
 import tomllib
 import unicodedata
 
+import numpy as np
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -438,6 +440,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "remediated by committed and pushed head `0179ebb`",
         "exact-head CI run `30686127537` passed",
         "The sixth review of `0179ebb` found one P1 and one P2",
+        "remediated by committed and pushed head `b8149c2`",
+        "exact-head CI run `30686852275` passed",
+        "The seventh review of `b8149c2` found one P2",
         "not pending local authorship",
         "The actual remaining gate is exact",
         "current-head CI followed by one current-head Codex review",
@@ -474,6 +479,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "gross_multiplier * turnover * bps / 10000",
         "random-rank baseline's continuous path is net",
         "beginning-period cost impact",
+        "strict signal date `t`, not the later execution date",
+        "Select exactly the first such number of",
+        "The golden test freezes the complete 103-index permutation",
     ]:
         assert phrase in contract
 
@@ -515,6 +523,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "cost_formula: gross_multiplier * turnover * bps / 10000",
         "cost_return_basis: BEGINNING_PERIOD_RETURN_IMPACT_OF_POST_RETURN_EQUITY_CHARGE",
         "strategy_security_cost_at_execution: -gross_multiplier * (bps / 10000) * abs(delta_weight)",
+        "date_token: SIGNAL_DATE_T_STRICT_YYYY_MM_DD_NOT_EXECUTION_DATE",
+        "selection: FIRST_TOP_DECILE_SIZE_PERMUTED_INDICES",
+        "top_decile_size: 11",
     ]:
         assert phrase in preregistration
 
@@ -575,9 +586,21 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
     assert inventory["trials"][1]["turnover_convention"] == (
         "UNDIVIDED_SUM_ABSOLUTE_WEIGHT_CHANGES_FROM_DRIFTED_WEIGHTS"
     )
+    assert inventory["trials"][1]["rng_seed_date_token"] == (
+        "SIGNAL_DATE_T_STRICT_YYYY-MM-DD_NOT_EXECUTION_DATE"
+    )
+    assert inventory["trials"][1]["permutation_rank_order"] == (
+        "HIGH_TO_LOW_FIRST_CHUNK_SELECTED"
+    )
+    assert inventory["trials"][1]["random_top_decile_size_rule"] == (
+        "N//10_PLUS_ONE_IFF_N_MOD_10_NONZERO"
+    )
+    assert inventory["trials"][1]["selected_target_rule"] == (
+        "EQUAL_WEIGHT_SELECTED_KEYS_SERIALIZED_IN_ASCENDING_CANONICAL_KEY_BYTES"
+    )
     assert inventory["trials"][1]["rng_seed_derivation"] == (
         "first_16_hex_sha256("
-        "random_rank_v1|20260729|factor_id|YYYY-MM-DD)"
+        "random_rank_v1|20260729|factor_id|signal_date_t_YYYY-MM-DD)"
     )
     assert all(trial["type"].startswith("STRATEGY_") for trial in strategy_trials)
     assert {
@@ -603,6 +626,82 @@ def test_listing_lineage_key_bytes_v1_golden_fixtures() -> None:
     assert decomposed == _listing_lineage_key_bytes_v1(
         "XNAS", "\u00c5", "2026-07-29", "2026-07-30"
     )
+
+
+def test_random_rank_top_decile_nondivisible_golden_fixture() -> None:
+    seed_preimage = "random_rank_v1|20260729|MOM_12_1|2026-07-29"
+    seed_digest = hashlib.sha256(seed_preimage.encode("ascii")).hexdigest()
+    seed = int(seed_digest[:16], 16)
+    ordered_keys = tuple(
+        sorted(
+            _listing_lineage_key_bytes_v1(
+                "XNYS", f"T{index:03d}", "2014-01-01", None
+            )
+            for index in range(103)
+        )
+    )
+    permutation = tuple(
+        int(index)
+        for index in np.random.Generator(
+            np.random.PCG64DXSM(seed)
+        ).permutation(len(ordered_keys))
+    )
+    expected_permutation = (
+        63, 102, 92, 77, 18, 42, 25, 36, 66, 1, 94, 26, 61, 10, 35, 52,
+        57, 82, 6, 87, 56, 27, 99, 44, 33, 28, 11, 100, 9, 64, 62, 90,
+        78, 93, 16, 81, 8, 79, 38, 85, 67, 58, 15, 74, 0, 22, 37, 21,
+        24, 72, 53, 76, 41, 73, 80, 40, 17, 13, 12, 71, 14, 101, 30, 50,
+        60, 59, 69, 47, 3, 19, 83, 54, 91, 4, 84, 68, 43, 39, 29, 97, 23,
+        20, 45, 75, 5, 86, 48, 31, 34, 89, 98, 55, 2, 7, 32, 95, 70, 51,
+        65, 46, 49, 96, 88,
+    )
+    top_decile_size = len(ordered_keys) // 10 + (
+        1 if len(ordered_keys) % 10 else 0
+    )
+    selected_keys_in_permutation_order = tuple(
+        ordered_keys[index] for index in permutation[:top_decile_size]
+    )
+    forbidden_last_chunk = tuple(
+        ordered_keys[index] for index in permutation[-top_decile_size:]
+    )
+    forbidden_floor_only_first_chunk = tuple(
+        ordered_keys[index]
+        for index in permutation[: len(ordered_keys) // 10]
+    )
+    expected_selected_keys = tuple(
+        _listing_lineage_key_bytes_v1(
+            "XNYS", ticker, "2014-01-01", None
+        )
+        for ticker in (
+            "T063", "T102", "T092", "T077", "T018", "T042",
+            "T025", "T036", "T066", "T001", "T094",
+        )
+    )
+    serialized_equal_weight_target = tuple(
+        sorted(
+            (key, 1.0 / top_decile_size)
+            for key in selected_keys_in_permutation_order
+        )
+    )
+
+    assert seed_digest == (
+        "4f3c72a41c74ed307cc6a86e734268f"
+        "2266be31b4977ed99336462b234251e97"
+    )
+    assert seed == 5709564476776574256
+    assert permutation == expected_permutation
+    assert top_decile_size == 11
+    assert selected_keys_in_permutation_order == expected_selected_keys
+    assert tuple(key for key, _ in serialized_equal_weight_target) == tuple(
+        sorted(expected_selected_keys)
+    )
+    assert all(
+        math.isclose(weight, 1.0 / 11.0, abs_tol=1e-15)
+        for _, weight in serialized_equal_weight_target
+    )
+    assert forbidden_last_chunk != expected_selected_keys
+    assert forbidden_floor_only_first_chunk == expected_selected_keys[:-1]
+    assert forbidden_floor_only_first_chunk != expected_selected_keys
 
 
 def test_decision_time_targets_ignore_future_availability_mutations() -> None:

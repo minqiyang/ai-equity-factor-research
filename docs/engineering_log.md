@@ -1,5 +1,28 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Seventh-Review Random-Selection Remediation
+
+- Exact-head Codex review of `b8149c2` completed with one P2: the random-rank
+  baseline did not map its frozen permutation uniquely to a top-decile target.
+- Froze the seed's date token to strict signal date `t`, the canonical input to
+  ascending listing-key bytes, the permutation to high-to-low rank, selection
+  to the first remainder-aware top-decile chunk, weights to equal weight, and
+  target serialization back to ascending canonical-key order.
+- Added a valid non-divisible 103-key golden fixture. It asserts the SHA-256
+  preimage digest, uint64 seed, complete `PCG64DXSM` permutation, 11 selected
+  canonical keys, weights, serialization, and a discriminating last-chunk
+  rejection.
+- The random baseline remains one semantic trial and the frozen inventory
+  remains exactly 14.
+- Focused project-structure validation passed 52 tests. The full suite passed
+  3079 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Sixth-Review Cost-Accounting Remediation
 
 - Exact-head Codex review of `0179ebb` completed with one P1 and one P2: the

@@ -38,6 +38,11 @@ Original failures and consequences:
 - The first isolated build could not resolve declared build requirements in
   the network-restricted sandbox. The identical build was rerun with approved
   dependency-download access and succeeded without publishing artifacts.
+- The first heartbeat-creation call used lowercase `active`, and the second
+  omitted its thread destination; the app rejected both before creating
+  anything. The third call used the accepted active status and thread
+  destination, creating exactly one monitor. It was deleted immediately when
+  the seventh-review finding arrived.
 
 Investigation:
 
@@ -74,11 +79,14 @@ Correction:
 - Aligned both aggregate and security-level cost effects to the accepted gross
   multiplier and froze the random-rank continuous baseline at primary 10 bps
   without expanding the 14-trial inventory.
+- Froze the random permutation's date token, rank direction, remainder-aware
+  first-chunk selection, weights, and serialization, with a full non-divisible
+  golden fixture.
 
 Verification:
 
-- The latest corrected focused structure suite passed 51 tests and the full
-  suite passed 3078 tests with two platform-conditional skips. Full Ruff,
+- The latest corrected focused structure suite passed 52 tests and the full
+  suite passed 3079 tests with two platform-conditional skips. Full Ruff,
   compileall, Skill audit, YAML and JSON parsing, deterministic repo-map
   regeneration, `git diff --check`, added-line privacy and Unicode/control
   scans, and isolated sdist/wheel build passed.

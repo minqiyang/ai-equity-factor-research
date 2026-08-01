@@ -34,8 +34,11 @@ profitability, or trading readiness.
   cost now follows the accepted post-return-equity order and includes the
   gross multiplier in both portfolio and security-level return impacts. The
   random-rank continuous baseline is frozen net at the primary 10-bps case,
-  while episodic baseline diagnostics remain gross and cost-free; the semantic
-  inventory remains exactly 14. Repository
+  while episodic baseline diagnostics remain gross and cost-free. Its random
+  target now uses the signal date in the seed, treats the permutation as high-
+  to-low rank, selects the first remainder-aware top-decile chunk, and
+  serializes equal weights by canonical key; the semantic inventory remains
+  exactly 14. Repository
   governance fixes safe in-scope review findings without owner round trips and
   keeps the task active through current-head review and remediation; only a
   genuinely critical owner-decision follow-up retains the four-run,

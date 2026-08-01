@@ -326,6 +326,42 @@ trials:
   hidden_trials: FORBIDDEN
   exact_rerun_classification: ATTEMPT_OF_EXISTING_SEMANTIC_TRIAL
 
+baselines:
+  random_rank_top_decile:
+    seed_preimage: random_rank_v1|20260729|factor_id|signal_date_t_YYYY-MM-DD
+    date_token: SIGNAL_DATE_T_STRICT_YYYY_MM_DD_NOT_EXECUTION_DATE
+    input_order: ASCENDING_CANONICAL_LISTING_KEY_UNSIGNED_BYTES
+    permutation_input: INTEGER_INDICES_0_THROUGH_N_MINUS_1
+    permutation_interpretation: HIGH_TO_LOW_RANDOM_RANK
+    top_decile_size: N // 10 + (1 if N % 10 else 0)
+    selection: FIRST_TOP_DECILE_SIZE_PERMUTED_INDICES
+    forbidden_selection: LAST_CHUNK_OR_FLOOR_ONLY_SIZE
+    target_weight: 1 / selected_count
+    target_serialization: ASCENDING_CANONICAL_LISTING_KEY_BYTES
+    golden_fixture:
+      factor_id: MOM_12_1
+      signal_date: 2026-07-29
+      exchange: XNYS
+      ticker_sequence: T000_THROUGH_T102
+      effective_from: 2014-01-01
+      effective_to: null
+      universe_size: 103
+      top_decile_size: 11
+      seed_sha256: 4f3c72a41c74ed307cc6a86e734268f2266be31b4977ed99336462b234251e97
+      seed_uint64: 5709564476776574256
+      selected_tickers_in_permutation_order:
+        - T063
+        - T102
+        - T092
+        - T077
+        - T018
+        - T042
+        - T025
+        - T036
+        - T066
+        - T001
+        - T094
+
 inference:
   primary_hypothesis_family:
     - MOM_12_1_MEAN_MONTHLY_RANK_IC_GREATER_THAN_ZERO

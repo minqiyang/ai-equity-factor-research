@@ -15,6 +15,45 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Freeze Random-Rank Permutation-To-Target Mapping
+
+Context:
+
+- The seventh exact-head Codex review of PR #177 at `b8149c2` found one P2.
+  The baseline froze seed derivation and RNG but did not say which date entered
+  the seed, which end of the permutation was selected, or how a non-divisible
+  universe determined top-decile size.
+
+Decision:
+
+- Use strict signal date `t`, never execution date, in the factor/month seed
+  preimage. Interpret the first 16 SHA-256 hex digits as an unsigned big-endian
+  seed for NumPy `PCG64DXSM`.
+- Sort canonical listing-key bytes ascending, permute integer indices once, and
+  interpret the permutation as high-to-low random rank.
+- Reuse the factor-decile remainder rule: select the first
+  `N // 10 + (1 if N % 10 else 0)` permuted indices. The final chunk and a
+  floor-only size are forbidden.
+- Assign `1 / selected_count` to every selected key and serialize the target in
+  ascending canonical-key order. The random baseline remains one semantic
+  trial and the complete inventory remains exactly 14.
+
+Rationale:
+
+- Otherwise multiple reasonable implementations can produce different
+  baseline holdings and returns from the same frozen seed.
+- Reusing the existing high-ranked-decile size rule avoids introducing a
+  second quantile convention solely for the random baseline.
+
+Consequences:
+
+- A 103-key golden fixture freezes the exact digest, unsigned seed, complete
+  permutation, 11 selected canonical keys, equal weights, and serialization.
+- No data, performance, trial execution, additional hypothesis or cost case,
+  merge, brokerage, paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Align Diagnostic Costs And Freeze Random-Baseline Cost Basis
 
 Context:
