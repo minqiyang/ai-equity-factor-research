@@ -65,9 +65,28 @@ The search family contains exactly:
 - `REV_1M`:
   `-(adjusted_close[t] / adjusted_close[t-21] - 1)`.
 - `LOW_VOL_3M`: the negative sample standard deviation (`ddof=1`) of the 63
-  one-day adjusted-close returns ending at `t`. Under the runner's Python
-  half-open slice convention the exact return slice is `[t-62:t+1]`, which
-  includes `t` and requires exactly 64 price anchors.
+  one-day **simple** adjusted-close returns ending at `t`. For each common-
+  calendar row `d` from `t-62` through `t`, inclusive, the return is exactly
+  `adjusted_close[d] / adjusted_close[d-1] - 1`; a log return is forbidden.
+  Under the runner's Python half-open slice convention the exact return slice
+  is `[t-62:t+1]`, which includes `t` and requires exactly 64 price anchors
+  from `t-63` through `t`.
+
+Every required `LOW_VOL_3M` anchor must be a real numeric scalar other than a
+Boolean, present, finite, and strictly greater than zero before division. If
+the anchor count is not exactly 64 or any anchor fails that check, the factor
+value for that listing/signal date is retained as invalid/missing and the
+listing is excluded from that factor's decision-time eligible set with the
+reason counted. No zero, forward/backward fill, interpolation, absolute-value
+repair, clipping, alternate row, or log-return fallback is allowed. The
+factor-month remains usable only if the already-frozen eligibility and
+distinct-value minimums are still met.
+
+The simple-return golden fixture builds 64 anchors from returns
+`0.001,0.002,...,0.063`. Its negative sample standard deviation is
+`-0.01833030277982336`; the forbidden log-return calculation would be
+`-0.017765781758667692`. An invalid-anchor mutation fixture covers missing,
+Boolean, non-finite, zero, and negative anchors.
 
 All factors are oriented so higher is better. No formula, direction, lookback,
 cost case, factor, model, liquidity screen, price screen, or parameter variant

@@ -1,5 +1,28 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Ninth-Review LOW_VOL Return Remediation
+
+- Exact-head Codex review of `86f6929` completed with one P2: the low-
+  volatility input did not distinguish simple from log returns or freeze
+  invalid price-anchor behavior.
+- Replaced the alias formula with the exact adjacent adjusted-close simple-
+  return calculation over `d=t-62..t` and explicitly forbade log returns.
+- Required 64 present, finite, strictly positive real non-Boolean anchors.
+  Invalid anchors produce a retained invalid/missing factor value, factor-
+  specific eligibility exclusion, and counted reason with no repair path.
+- Extended the existing off-by-one fixture to distinguish the frozen simple
+  negative sample standard deviation `-0.01833030277982336` from the forbidden
+  log value `-0.017765781758667692` and cover missing, Boolean, non-finite,
+  zero, negative, and short anchor inputs.
+- Focused project-structure validation passed 53 tests. The full suite passed
+  3080 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Eighth-Review Holm-Index Remediation
 
 - Exact-head Codex review of `1f6c801` completed with one P2: the adjusted-p

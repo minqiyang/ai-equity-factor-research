@@ -43,6 +43,10 @@ Original failures and consequences:
   anything. The third call used the accepted active status and thread
   destination, creating exactly one monitor. It was deleted immediately when
   the seventh-review finding arrived.
+- The first ninth-round focused run failed only because a contract phrase
+  assertion crossed a Markdown line wrap. The simple-return, forbidden-log,
+  and invalid-anchor calculations passed. The assertion was narrowed to a
+  same-line semantic fragment without weakening the protocol.
 
 Investigation:
 
@@ -84,6 +88,8 @@ Correction:
   golden fixture.
 - Removed Holm's index ambiguity by freezing one-based mathematical positions,
   Python `k-1` access, the sorted running maximum, and factor-order mapping.
+- Froze `LOW_VOL_3M` to simple adjacent-price returns and fail-closed anchor
+  validity, with a simple-versus-log and invalid-anchor mutation fixture.
 
 Verification:
 

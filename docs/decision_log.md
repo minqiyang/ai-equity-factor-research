@@ -15,6 +15,42 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Freeze LOW_VOL_3M Simple Returns And Anchor Validity
+
+Context:
+
+- The ninth exact-head Codex review of PR #177 at `86f6929` found one P2.
+  `one_day_adjusted_close_returns` did not distinguish simple from log returns
+  or define invalid price-anchor handling.
+
+Decision:
+
+- Define each `LOW_VOL_3M` observation as the adjacent-price simple return
+  `adjusted_close[d] / adjusted_close[d-1] - 1` for `d=t-62..t`, inclusive.
+  Log returns are forbidden.
+- Require exactly 64 anchors from `t-63..t`. Every anchor must be a present,
+  finite, strictly positive real numeric scalar other than a Boolean.
+- If any anchor fails, retain the listing/signal-date factor value as invalid/
+  missing, exclude that listing from the factor-specific decision-time
+  eligible set, and count the reason. Filling, interpolation, clipping,
+  absolute-value repair, alternate rows, and log fallback are forbidden.
+
+Rationale:
+
+- Simple and log return volatilities can rank securities differently, changing
+  deciles, targets, Rank IC, and final diagnostic state.
+- Invalid-anchor behavior must be decision-time deterministic and visible,
+  rather than silently repaired by an implementation.
+
+Consequences:
+
+- The 63-return golden fixture now freezes distinct simple and forbidden-log
+  sample standard deviations and mutates every invalid-anchor class.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Freeze Holm Index Origin And Factor-Order Mapping
 
 Context:

@@ -41,6 +41,9 @@ profitability, or trading readiness.
   exactly 14. Holm adjusted p-values now explicitly use one-based mathematical
   indices with Python `k-1` access, a capped sorted running maximum, stable
   factor-order tie breaking, and mapping back to original factor order.
+  `LOW_VOL_3M` now explicitly uses adjacent adjusted-close simple returns and
+  requires exactly 64 finite, strictly positive real non-Boolean anchors;
+  invalid anchors are retained and counted with no fill or log-return fallback.
   Repository
   governance fixes safe in-scope review findings without owner round trips and
   keeps the task active through current-head review and remediation; only a

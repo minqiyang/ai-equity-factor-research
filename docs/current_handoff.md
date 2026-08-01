@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the eighth PR #177 review-remediation round.
+Updated: 2026-07-31 for the ninth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -50,11 +50,14 @@ Updated: 2026-07-31 for the eighth PR #177 review-remediation round.
   `b8149c2`; exact-head CI run `30686852275` passed. The seventh review of
   `b8149c2` found one P2 remediated by committed and pushed head `1f6c801`;
   exact-head CI run `30687469154` passed. The eighth review of `1f6c801` found
-  one P2: the Holm formula did not define the origin of `k`. The current
-  branch-head snapshot containing this handoff freezes one-based mathematical
-  indices, Python `k-1` access, sorted running maxima, capping, stable factor-
-  order tie breaking, sequential stopping, and mapping back to factor order.
-  It includes a three-p-value golden fixture, retains the exact 14-trial
+  one P2 remediated by committed and pushed head `86f6929`; exact-head CI run
+  `30687930346` passed. The ninth review of `86f6929` found one P2: the
+  `LOW_VOL_3M` one-day return kind and invalid-anchor behavior were ambiguous.
+  The current branch-head snapshot containing this handoff freezes adjacent-
+  price simple returns, exactly 64 strictly positive finite real non-Boolean
+  anchors, retained invalid/missing factor values, counted factor-specific
+  eligibility exclusions, and forbidden repair paths. It includes a simple-
+  versus-log and invalid-anchor golden fixture, retains the exact 14-trial
   inventory, and is not pending local authorship. The actual remaining gate is
   exact current-head CI followed by one current-head Codex review; every
   finding restarts that remediation loop. Do not repeat commit or push work

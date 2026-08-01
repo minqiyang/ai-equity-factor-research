@@ -4,6 +4,7 @@ import hashlib
 from importlib import resources
 import json
 import math
+from numbers import Real
 from pathlib import Path
 import re
 import runpy
@@ -446,6 +447,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "remediated by committed and pushed head `1f6c801`",
         "exact-head CI run `30687469154` passed",
         "The eighth review of `1f6c801` found one P2",
+        "remediated by committed and pushed head `86f6929`",
+        "exact-head CI run `30687930346` passed",
+        "The ninth review of `86f6929` found one P2",
         "not pending local authorship",
         "The actual remaining gate is exact",
         "current-head CI followed by one current-head Codex review",
@@ -487,6 +491,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "The golden test freezes the complete 103-index permutation",
         "mathematical index `k` is explicitly one-based",
         "adjusted values mapped back to factor order",
+        "one-day **simple** adjusted-close returns",
+        "a log return is forbidden",
+        "value for that listing/signal date is retained as invalid/missing",
     ]:
         assert phrase in contract
 
@@ -515,7 +522,10 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "post_t_mutation_effect_on_frozen_objects: NONE_BYTE_IDENTICAL",
         "fixed_bps_interpretation: ALL_IN_DIAGNOSTIC_EXECUTION_COST_PROXY",
         "evaluation: ORDERED_FIRST_MATCH_WINS_MUTUALLY_EXCLUSIVE_EXHAUSTIVE",
-        "formula: -std(one_day_adjusted_close_returns[t-62:t+1], ddof=1)",
+        "formula: \"-std([adjusted_close[d] / adjusted_close[d-1] - 1 for d=t-62..t], ddof=1)\"",
+        "one_day_return_kind: SIMPLE_NOT_LOG",
+        "price_anchor_validation: REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE",
+        "invalid_anchor_action: INVALID_MISSING_FACTOR_VALUE_EXCLUDE_LISTING_FROM_FACTOR_DECISION_TIME_ELIGIBILITY_AND_COUNT_REASON",
         "all_other_zero_target_triggers: FORBIDDEN",
         "byte_relation: EXACT_BYTE_FOR_BYTE_COPY",
         "rank_ic_input_table: PRIMARY_COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_TABLE",
@@ -790,6 +800,30 @@ def test_zero_target_has_only_the_three_frozen_decision_time_triggers() -> None:
 
 
 def test_low_vol_3m_uses_exactly_63_returns_from_64_price_anchors() -> None:
+    def low_vol_from_anchors(anchors: list[object]) -> float | None:
+        if len(anchors) != 64:
+            return None
+        if any(
+            isinstance(anchor, bool)
+            or not isinstance(anchor, Real)
+            or not math.isfinite(float(anchor))
+            or float(anchor) <= 0.0
+            for anchor in anchors
+        ):
+            return None
+        simple_returns = tuple(
+            float(anchors[index]) / float(anchors[index - 1]) - 1.0
+            for index in range(1, len(anchors))
+        )
+        mean_simple_return = sum(simple_returns) / len(simple_returns)
+        return -math.sqrt(
+            sum(
+                (one_day_return - mean_simple_return) ** 2
+                for one_day_return in simple_returns
+            )
+            / (len(simple_returns) - 1)
+        )
+
     source_returns = tuple(index / 1000 for index in range(1, 64))
     price_anchors = [100.0]
     for one_day_return in source_returns:
@@ -808,15 +842,61 @@ def test_low_vol_3m_uses_exactly_63_returns_from_64_price_anchors() -> None:
         )
         / (len(inclusive_t_window) - 1)
     )
+    log_returns = tuple(
+        math.log(
+            price_anchors[index] / price_anchors[index - 1]
+        )
+        for index in range(1, len(price_anchors))
+    )
+    mean_log_return = sum(log_returns) / len(log_returns)
+    forbidden_log_sample_std = math.sqrt(
+        sum(
+            (one_day_return - mean_log_return) ** 2
+            for one_day_return in log_returns
+        )
+        / (len(log_returns) - 1)
+    )
 
     assert len(price_anchors) == 64
     assert len(inclusive_t_window) == 63
     assert math.isclose(
-        -sample_std,
+        low_vol_from_anchors(price_anchors),
         -math.sqrt(336) / 1000,
         rel_tol=1e-12,
         abs_tol=1e-15,
     )
+    assert math.isclose(
+        -sample_std,
+        -0.01833030277982336,
+        rel_tol=1e-15,
+        abs_tol=1e-15,
+    )
+    assert math.isclose(
+        -forbidden_log_sample_std,
+        -0.017765781758667692,
+        rel_tol=1e-15,
+        abs_tol=1e-15,
+    )
+    assert not math.isclose(
+        sample_std,
+        forbidden_log_sample_std,
+        rel_tol=1e-12,
+        abs_tol=1e-15,
+    )
+
+    invalid_anchor_values: tuple[object, ...] = (
+        None,
+        True,
+        float("nan"),
+        float("inf"),
+        0.0,
+        -1.0,
+    )
+    for invalid_anchor in invalid_anchor_values:
+        mutated_anchors: list[object] = list(price_anchors)
+        mutated_anchors[31] = invalid_anchor
+        assert low_vol_from_anchors(mutated_anchors) is None
+    assert low_vol_from_anchors(price_anchors[:-1]) is None
 
 
 def test_preregistration_bundle_child_binds_exact_frozen_yaml_bytes() -> None:
