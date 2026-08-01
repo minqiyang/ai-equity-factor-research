@@ -13,11 +13,11 @@ operation must satisfy that boundary.
 
 ## Startup And Freshness
 
-1. Read `docs/current_roadmap.md` as the current status and latest snapshot,
-   then `docs/repo_map.md` and `AGENTS.md`.
-2. Read this controller and only active-stage contracts. Until compaction, use
-   `docs/current_handoff.md` only through its top status notice; the retained body
-   is historical. Research or code stages also require `PROJECT_SPEC.md`.
+1. After `AGENTS.md`, read `docs/current_handoff.md`,
+   `docs/codex_long_running_controller.md`, and `docs/current_roadmap.md` for the
+   recorded checkpoint, execution gates, and program status, respectively.
+2. Use `docs/repo_map.md` for targeted orientation and read only active-stage
+   contracts. Research or code stages also require `PROJECT_SPEC.md`.
 3. With capped output, check branch/tree state, local and remote `main`, recent
    history, and relevant PR state; verify the live remote before choosing a base.
 4. If the tree is dirty or diverged, preserve it in place and use a clean
@@ -28,9 +28,10 @@ operation must satisfy that boundary.
 
 ## Select And Bound The Stage
 
-- Until handoff compaction, `docs/current_roadmap.md` owns active status,
-  dependencies, and the latest verified snapshot; the retained handoff body is
-  historical and does not define the current task queue.
+- `docs/current_handoff.md` owns the latest recorded operational checkpoint and
+  next-safe-action routing. Its remote facts are cached evidence, not live state.
+- `docs/current_roadmap.md` owns program stage sequence, dependencies, gate and
+  completion criteria, and coarse stage status.
 - Choose one coherent stage; keep unrelated fixes in separate branches and PRs.
 - Research methodology comes from `PROJECT_SPEC.md`, the charter, roadmap, and
   `docs/eodhd_sp500_diagnostic_campaign_contract.md`, not this controller.
@@ -115,6 +116,5 @@ credentials, brokerage/orders, live behavior, or out-of-scope interpretation.
 ## Completion Report
 
 Report branch, commit/PR, risk, files, checks, findings, assumptions, external
-authorization, and next gate. Keep status and snapshots with the owners named in
-`Select And Bound The Stage`, and history in logs; do not copy history or
-workflow policy into active status.
+authorization, and next gate. Keep state with the owners named in `Select And
+Bound The Stage`, and history in logs; do not duplicate either across active sources.

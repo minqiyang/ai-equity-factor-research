@@ -6,8 +6,9 @@ Status: canonical long-term research intent and evidence policy.
 
 This charter defines what the repository is trying to learn, which evidence is
 required, and which research-scope boundaries apply. `PROJECT_SPEC.md` describes
-the project contract, `docs/current_roadmap.md` is the active task sequence, and
-`docs/codex_long_running_controller.md` defines operational startup routing.
+the project contract, `docs/current_handoff.md` records the operational checkpoint,
+`docs/current_roadmap.md` defines the program sequence and dependencies, and
+`docs/codex_long_running_controller.md` defines staged execution and gates.
 External-action authority is owned only by
 [`AGENTS.md`](../AGENTS.md#authority-and-scope).
 Historical plans and audits remain evidence, not active task queues.

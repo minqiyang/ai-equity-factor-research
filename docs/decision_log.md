@@ -15,6 +15,54 @@ investment performance.
 
 ---
 
+## 2026-08-01 - Separate The Operational Checkpoint From The Program Roadmap
+
+Context:
+
+- The active handoff had grown to 837 lines by accumulating review chains,
+  contract summaries, CI identifiers, and an obsolete PR #177 task queue.
+- PR #178 temporarily made the roadmap own the latest snapshot because the
+  retained handoff body was historical. That transition ended once the handoff
+  could be safely compacted.
+- The unchanged 20-line workflow Skill already routes `AGENTS.md`, handoff,
+  controller, and roadmap in the intended permanent order.
+
+Decision:
+
+- `docs/current_handoff.md` owns the latest recorded operational checkpoint,
+  exact last-verified repository/PR facts, immediate owner blockers, and the
+  next safe action. Remote facts are cached evidence and require live verification.
+- `docs/current_roadmap.md` owns the program stage sequence, dependency order,
+  gate and completion criteria, and coarse stage status. It does not maintain
+  branch, CI, or exact repository-state snapshots.
+- `docs/codex_long_running_controller.md` continues to own execution, external
+  gates, review, waiting, and stop behavior. `AGENTS.md` continues to own
+  authority and research-safety invariants.
+- Startup resumes through handoff, controller, and roadmap after repository
+  authority is loaded. The generated repo map is orientation, not another state source.
+- Historical review and contract narratives remain in canonical contracts and
+  durable decision, engineering, and troubleshooting logs. Unique audit IDs
+  found only in the retired handoff text are preserved in the engineering log.
+
+Rationale:
+
+- Separating an operational checkpoint from the research program plan prevents
+  volatile GitHub facts from bloating or redefining stage dependencies.
+- A bounded resume document lowers startup cost while retained logs and Git
+  history preserve adverse findings, remediation evidence, and provenance.
+- Relationship, ownership, length, and obsolete-state tests prevent the former
+  duplication and stale-task-queue failure mode from returning.
+
+Consequences:
+
+- The active handoff is capped at 120 lines and contains no historical review chain.
+- Roadmap status remains authoritative for research sequencing; the handoff may
+  summarize it only as a routed operational checkpoint.
+- The Skill and campaign contract remain unchanged, and no research or external-
+  action authority is created by this documentation change.
+
+---
+
 ## 2026-08-01 - Assign One Owner To Each Active Governance Responsibility
 
 Context:
