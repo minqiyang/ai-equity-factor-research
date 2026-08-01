@@ -473,6 +473,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "The fourteenth review of `fc561e4` found two P2",
         "all three factor rebalances to be decision-time valid",
         "both baselines the same retained invalid zero-target/full-cash",
+        "remediated by committed and pushed head `e9c2707`",
+        "exact-head CI run `30691526104` passed",
+        "The fifteenth review of `e9c2707` found one P1 and one P2",
+        "one-row within-segment resampling for lengths two through six",
+        "campaign-wide at earliest any-factor eligibility",
         "not pending local authorship",
         "The actual remaining gate is exact-head CI on the current head",
         "followed by one current-head Codex review",
@@ -534,6 +539,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "only a subset of factors is valid",
         "both the equal-weight and random-rank factor-matched output records",
         "The random baseline does not derive a seed or consume a",
+        "freezes once, campaign-wide, at the earliest signal cutoff",
+        "per-factor freeze or re-encoding is forbidden",
+        "For `2<=n<=6`, set `L=1`",
+        "short-segment golden fixture uses 60 records",
+        "resampling support is degenerate",
     ]:
         assert phrase in contract
 
@@ -546,7 +556,7 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "embargo_rows: 0",
         "random_rank_seed: 20260729",
         "bootstrap_seed: 20260730",
-        "block_length_monthly_records: 6",
+        "long_segment_block_length_monthly_records: 6",
         "bootstrap_replicates: 20000",
         "minimum_valid_monthly_records_for_primary_inference: 60",
         "percentile_quantile_method: linear",
@@ -588,6 +598,12 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "random_seed_or_permutation_consumption: NONE",
         "episodic_return: INVALID_MISSING_NOT_ZERO",
         "required_output_reconciliation: INVALID_OUTPUT_PRESENT_NOT_MISSING_TRIAL_OUTPUT",
+        "key_freeze: FIRST_ANY_FACTOR_DECISION_TIME_ELIGIBILITY_CAMPAIGN_WIDE",
+        "per_factor_key_freeze_or_reencoding: FORBIDDEN",
+        "segment_block_length: 6_IF_SEGMENT_LENGTH_GT_6_ELSE_1",
+        "short_segment_rule: LENGTH_2_THROUGH_6_DRAW_N_SINGLE_ROW_BLOCKS_UNIFORMLY_WITH_REPLACEMENT",
+        "degenerate_resampling_action: PRIMARY_INFERENCE_INVALID_NO_HOLM_SUPPORT_RETAIN_COUNTS",
+        "nondegenerate_bootstrap_support_all_three_factors: REQUIRED",
         "adjusted_close_t_minus_252: 80.0",
         "adjusted_close_t: 90.0",
         "all_other_zero_target_triggers: FORBIDDEN",
@@ -709,6 +725,34 @@ def test_listing_lineage_key_bytes_v1_golden_fixtures() -> None:
     assert decomposed == _listing_lineage_key_bytes_v1(
         "XNAS", "\u00c5", "2026-07-29", "2026-07-30"
     )
+
+
+def test_listing_key_freezes_at_campaign_first_any_factor_eligibility() -> None:
+    first_eligibility = {
+        "REV_1M": datetime(2026, 7, 31, 20, tzinfo=timezone.utc),
+        "LOW_VOL_3M": datetime(2026, 8, 31, 20, tzinfo=timezone.utc),
+        "MOM_12_1": datetime(2026, 9, 30, 20, tzinfo=timezone.utc),
+    }
+    campaign_freeze = min(first_eligibility.values())
+    endpoint_known_at = datetime(2026, 8, 15, 20, tzinfo=timezone.utc)
+    campaign_effective_to = (
+        "2026-10-15" if endpoint_known_at <= campaign_freeze else None
+    )
+    campaign_key = _listing_lineage_key_bytes_v1(
+        "XNYS", "STAG", "2026-07-01", campaign_effective_to
+    )
+    keys_by_factor = {
+        factor_id: bytes(campaign_key) for factor_id in first_eligibility
+    }
+    forbidden_momentum_specific_key = _listing_lineage_key_bytes_v1(
+        "XNYS", "STAG", "2026-07-01", "2026-10-15"
+    )
+
+    assert campaign_freeze == first_eligibility["REV_1M"]
+    assert campaign_effective_to is None
+    assert len(set(keys_by_factor.values())) == 1
+    assert keys_by_factor["MOM_12_1"] == keys_by_factor["REV_1M"]
+    assert campaign_key != forbidden_momentum_specific_key
 
 
 def test_random_rank_top_decile_nondivisible_golden_fixture() -> None:
@@ -1449,7 +1493,7 @@ def test_bootstrap_reuses_segment_draws_for_both_distributions() -> None:
         segment_indices = []
         for segment in segments:
             segment_length = len(segment)
-            block_length = min(6, segment_length)
+            block_length = 6 if segment_length > 6 else 1
             starts = rng.integers(
                 low=0,
                 high=segment_length - block_length + 1,
@@ -1528,6 +1572,83 @@ def test_bootstrap_reuses_segment_draws_for_both_distributions() -> None:
         draw_replicate_indices() for _ in range(3)
     )
     assert forbidden_second_pass_indices != replicate_segment_indices
+
+
+def test_short_bootstrap_segments_resample_60_records_nondegenerately() -> None:
+    segments = tuple(
+        np.arange(segment_start, segment_start + 6)
+        for segment_start in range(0, 60, 6)
+    )
+    row_index = np.arange(60, dtype=float)
+    factor_table = np.column_stack(
+        (
+            row_index / 100.0,
+            ((row_index % 7.0) - 3.0) / 100.0,
+            ((row_index * row_index) % 17.0) / 100.0,
+        )
+    )
+    null_centered_table = factor_table - factor_table.mean(axis=0)
+    rng = np.random.Generator(np.random.PCG64DXSM(20260730))
+
+    def draw_replicate_indices() -> tuple[int, ...]:
+        sampled_indices: list[int] = []
+        for segment in segments:
+            segment_length = len(segment)
+            block_length = 6 if segment_length > 6 else 1
+            starts = rng.integers(
+                low=0,
+                high=segment_length - block_length + 1,
+                size=math.ceil(segment_length / block_length),
+                endpoint=False,
+            )
+            local_indices = np.concatenate(
+                [
+                    np.arange(start, start + block_length)
+                    for start in starts
+                ]
+            )[:segment_length]
+            sampled_indices.extend(
+                int(index) for index in segment[local_indices]
+            )
+        return tuple(sampled_indices)
+
+    replicate_indices = tuple(draw_replicate_indices() for _ in range(3))
+    identity_copy = tuple(range(60))
+    serialized_replicates = json.dumps(
+        replicate_indices,
+        separators=(",", ":"),
+    ).encode("ascii")
+    null_bootstrap_means = np.asarray(
+        [
+            null_centered_table[list(indices)].mean(axis=0)
+            for indices in replicate_indices
+        ]
+    )
+
+    assert hashlib.sha256(serialized_replicates).hexdigest() == (
+        "1af6fb42e42646a709d038138e5f0d35"
+        "88ac003022ab7950fe1e83cb6811826b"
+    )
+    assert len(set(replicate_indices)) == 3
+    assert all(indices != identity_copy for indices in replicate_indices)
+    for indices in replicate_indices:
+        assert len(indices) == 60
+        for segment_start in range(0, 60, 6):
+            sampled_segment = indices[segment_start : segment_start + 6]
+            assert all(
+                segment_start <= index < segment_start + 6
+                for index in sampled_segment
+            )
+    for factor_index in range(3):
+        assert len(
+            set(np.round(null_bootstrap_means[:, factor_index], 15))
+        ) >= 2
+
+    forbidden_full_segment_copies = (identity_copy,) * 3
+    assert len(set(forbidden_full_segment_copies)) == 1
+    assert forbidden_full_segment_copies != replicate_indices
+    singleton_segments = tuple((index,) for index in range(60))
+    assert not any(len(segment) >= 2 for segment in singleton_segments)
 
 
 def test_factor_turnover_uses_immediate_frozen_scheduled_predecessor() -> None:

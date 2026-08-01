@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the fourteenth PR #177 review-remediation round.
+Updated: 2026-07-31 for the fifteenth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -90,10 +90,17 @@ Updated: 2026-07-31 for the fourteenth PR #177 review-remediation round.
   decision-time valid for the prospective counter, retains subset-valid dates
   without counting them, and gives both baselines the same retained invalid
   zero-target/full-cash behavior for sparse, tied, or duplicate-key months.
-  Random draws are not consumed for invalid months. Integrated subset-factor
-  and three-trigger baseline fixtures retain the exact 14-trial inventory and
-  are not pending local authorship. The actual remaining gate is exact-head CI
-  on the current head, followed by one current-head Codex review; every finding
+  Random draws are not consumed for invalid months. Those gaps were remediated
+  by committed and pushed head `e9c2707`; exact-head CI run `30691526104`
+  passed. The fifteenth review of `e9c2707` found one P1 and one P2: segments of
+  at most six rows were copied by the bootstrap, and the first-eligibility key
+  freeze did not aggregate staggered factor eligibility. The current branch-
+  head snapshot uses one-row within-segment resampling for lengths two through
+  six, rejects degenerate resampling support, and freezes each listing key once
+  campaign-wide at earliest any-factor eligibility. Sixty-record short-segment
+  and staggered-factor key fixtures retain the exact 14-trial inventory and are
+  not pending local authorship. The actual remaining gate is exact-head CI on
+  the current head, followed by one current-head Codex review; every finding
   restarts that remediation loop. Do not repeat commit or push work from an old
   handoff instruction; resolve current `HEAD`, remote head, CI, and review
   state.

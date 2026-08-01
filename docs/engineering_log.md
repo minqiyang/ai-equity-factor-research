@@ -1,5 +1,25 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Fifteenth-Review Bootstrap And Key Remediation
+
+- Exact-head Codex review of `e9c2707` completed with one P1 and one P2: short
+  bootstrap segments were copied unchanged, and key freeze scope across
+  staggered factor eligibility was ambiguous.
+- Changed lengths two through six to one-row within-segment draws with
+  replacement, retained length-six blocks for longer segments, and added a
+  nondegenerate resampling-support coverage gate.
+- Froze keys campaign-wide at earliest any-factor decision-time eligibility,
+  with every later factor reusing the same bytes.
+- Added a deterministic 60-record/ten-segment resampling fixture and a
+  staggered factor-eligibility key fixture. Focused project-structure
+  validation passed 61 tests. The full suite passed 3088 tests with two
+  platform-conditional skips. Full Ruff, compileall, Skill audit, YAML and JSON
+  parsing, deterministic repo-map regeneration, `git diff --check`, added-line
+  privacy and Unicode/control scans, and isolated sdist/wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Fourteenth-Review Common-Clock Baseline Remediation
 
 - Exact-head Codex review of `fc561e4` completed with two P2 findings:

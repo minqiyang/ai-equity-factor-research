@@ -61,7 +61,11 @@ profitability, or trading readiness.
   subset-valid month is retained but does not increment the 12/24 clock. Both
   baselines inherit the factor's three invalid-month triggers and retain an
   invalid zero-target/full-cash output without treating episodic missingness as
-  zero or consuming a random permutation. Repository
+  zero or consuming a random permutation. Bootstrap segments of two through
+  six rows now use genuine one-row within-segment resampling, with a
+  nondegenerate-support gate that prevents false Holm support. Listing keys
+  freeze once campaign-wide at earliest any-factor eligibility, so later
+  factor eligibility cannot re-encode an endpoint. Repository
   governance fixes safe in-scope review findings without owner round trips and
   keeps the task active through current-head review and remediation; only a
   genuinely critical owner-decision follow-up retains the four-run,

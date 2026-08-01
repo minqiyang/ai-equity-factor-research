@@ -250,12 +250,17 @@ delimiter-based serialization. Ascending byte order means lexicographic order
 over unsigned bytes. This same encoding controls factor-value ties, factor
 turnover alignment, and random-baseline input order.
 
-The key is frozen when the listing first becomes decision-time eligible.
-`effective_to` means the lineage endpoint known at that first eligibility
-cutoff; it is null when no endpoint was then known. A later halt, removal,
-symbol change, delisting, or provider backfill cannot rewrite the frozen key.
-The subsequently observed actual endpoint remains separate interval/audit
-metadata and is tested by the post-`t` mutation oracle.
+The key freezes once, campaign-wide, at the earliest signal cutoff where the
+listing first becomes decision-time eligible for any of `MOM_12_1`, `REV_1M`,
+or `LOW_VOL_3M`. `effective_to` means the lineage endpoint known at that
+earliest any-factor cutoff; it is null when no endpoint was then known. Every
+factor reuses those same frozen key bytes when it later becomes eligible. A
+per-factor freeze or re-encoding is forbidden. A halt, removal, symbol change,
+delisting, provider backfill, or endpoint learned between staggered factor-
+eligibility dates cannot rewrite the key. The subsequently observed actual
+endpoint remains separate interval/audit metadata and is tested by the post-
+`t` mutation oracle. A staggered fixture freezes a null-ended key at reversal's
+earlier eligibility and rejects a later momentum-specific endpoint encoding.
 
 Factor turnover is target-to-target top-decile turnover, not a cost model:
 align the union of canonical listing keys, assign zero to absent or nonselected
@@ -466,7 +471,8 @@ The dependence-aware method applies to the three primary mean Rank IC effects.
 It is an overlapping, non-circular moving-block bootstrap over a common
 complete-case monthly Rank IC table:
 
-- block length: 6 monthly records;
+- long-segment block length: 6 monthly records, with the short-segment rule
+  below;
 - replicates: 20,000;
 - minimum valid monthly records for primary inference: 60;
 - random baseline seed: 20260729;
@@ -482,9 +488,13 @@ complete-case monthly Rank IC table:
 - compute each factor's observed mean across all retained records; the null
   table subtracts that factor mean from every value;
 - for each replicate, process segments in chronological order; for a segment
-  of length `n`, set `L=min(6,n)`, enumerate overlapping non-circular block
-  starts `0..n-L`, draw `ceil(n/L)` starts uniformly with replacement,
-  concatenate the selected blocks, and truncate to the first `n` rows;
+  of length `n>6`, set `L=6`. For `2<=n<=6`, set `L=1` and draw `n` single-row
+  blocks uniformly with replacement from all `n` positions, producing genuine
+  within-segment resampling instead of copying the full segment. A singleton
+  uses `L=1` and necessarily retains its only row;
+- enumerate overlapping non-circular block starts `0..n-L`, draw `ceil(n/L)`
+  starts uniformly with replacement, concatenate the selected blocks, and
+  truncate to the first `n` rows;
 - use identical block-start draws for all three columns, concatenate the
   resampled segments, and compute the unweighted mean across all retained rows,
   so a fold's weight equals its retained complete-case month count;
@@ -495,6 +505,12 @@ complete-case monthly Rank IC table:
   for both the uncentered table used by interval resamples and the globally
   null-centered table used by p-value resamples. There is one RNG pass per
   replicate, never separate centered/uncentered passes or pass-order choice;
+- primary inference additionally requires at least one segment of length two
+  or more and at least two distinct null-bootstrap means for every factor. If
+  this resampling support is degenerate, retain all counts and outputs but mark
+  primary inference invalid, grant no Holm support, and route through the
+  realized-coverage gate to `INCONCLUSIVE_DIAGNOSTIC` unless an earlier ordered
+  rule applies;
 - consume RNG draws in replicate-major, then chronological-segment order;
 - primary one-sided p-value is
   `(1 + count(null_bootstrap_mean >= observed_mean)) / 20001`; and
@@ -506,6 +522,13 @@ lengths 8 and 7, block length 6, and row-index factor columns
 are `[[0,0],[0,1]]`, `[[0,2],[1,0]]`, and `[[0,1],[1,1]]`. The golden test
 freezes each complete 15-row index vector and both uncentered and null-centered
 mean matrices from those same rows, so a second RNG pass cannot pass.
+
+The short-segment golden fixture uses 60 records in ten consecutive six-record
+segments. Every segment therefore uses six one-row draws with replacement.
+Three seeded replicates must differ from the identity copy and from each other,
+must sample only within their source segment, and must produce multiple null-
+bootstrap means for each factor. The forbidden former `L=n=6` implementation
+copies all 60 rows unchanged and fails the fixture.
 
 The run manifest records Python, NumPy, calendar, and ordered signal-index
 identities. Mean, median, sample standard deviation, and monthly ICIR

@@ -15,6 +15,49 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Resample Short Segments And Freeze Keys Campaign-Wide
+
+Context:
+
+- The fifteenth exact-head Codex review of PR #177 at `e9c2707` found one P1
+  and one P2. `L=min(6,n)` copied every segment of at most six rows into every
+  bootstrap replicate, and first-decision-time eligibility did not say how to
+  aggregate staggered eligibility across factors for key freezing.
+
+Decision:
+
+- For segments longer than six, retain overlapping non-circular length-six
+  blocks. For segment lengths two through six, use length-one blocks and draw
+  `n` positions uniformly with replacement. A singleton necessarily stays
+  fixed.
+- Require at least one resampleable segment and at least two distinct null-
+  bootstrap means for each factor. Degenerate support retains all evidence but
+  makes primary inference invalid, grants no Holm support, and routes to the
+  realized-coverage `INCONCLUSIVE_DIAGNOSTIC` rule unless an earlier rule wins.
+- Freeze each listing-lineage key once, campaign-wide, at the earliest signal
+  cutoff where the listing is decision-time eligible for any of the three
+  factors. Later factor eligibility reuses the same bytes; per-factor key
+  freezing or re-encoding is forbidden.
+
+Rationale:
+
+- A centered bootstrap that copies all rows can assign the minimum p-value to
+  a positive mean without representing sampling uncertainty.
+- One key identity must control ties, turnover, and random-baseline ordering
+  across all factors even when their lookbacks become eligible on different
+  dates.
+
+Consequences:
+
+- A 60-record fixture in ten six-row segments proves genuine within-segment
+  resampling and nondegenerate null means; an all-singleton case fails support.
+- A staggered-factor fixture freezes a null-ended key at reversal eligibility
+  and rejects later momentum-specific endpoint bytes.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Freeze Common Prospective Eligibility And Invalid Baselines
 
 Context:

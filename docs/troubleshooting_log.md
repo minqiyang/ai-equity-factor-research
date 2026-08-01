@@ -96,6 +96,14 @@ Original failures and consequences:
   prospective clock, and strategy invalid-month triggers did not reach the
   baseline outputs. The fixes therefore bind each rule across its downstream
   consumers and use integrated rather than phrase-only mutation fixtures.
+- The first combined fifteenth-round patch was rejected because one expected
+  bootstrap sentence did not match the current contract wording. The rejected
+  patch changed no file. It was split into exact YAML, contract, and test
+  patches and each applied successfully.
+- The P1 showed that `min(6,n)` is not a safe short-segment rule: it collapses
+  every `n<=6` start range to zero and copies the segment. The corrected fixture
+  uses a full 60-record admissible sample, not a tiny smoke case, and also tests
+  the explicit singleton degeneracy gate.
 
 Investigation:
 
@@ -151,6 +159,8 @@ Correction:
   freeze rather than protocol freeze alone.
 - Froze the prospective clock to all-three-factor decision-time validity and
   propagated the three invalid-rebalance triggers through both baseline trials.
+- Added genuine short-segment bootstrap draws plus a degeneracy coverage gate,
+  and froze listing keys once at campaign-wide earliest any-factor eligibility.
 
 Verification:
 

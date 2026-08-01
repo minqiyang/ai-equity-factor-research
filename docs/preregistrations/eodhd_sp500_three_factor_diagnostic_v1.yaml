@@ -61,8 +61,11 @@ identity:
     effective_from: STRICT_GREGORIAN_YYYY_MM_DD_EXACTLY_10_ASCII_BYTES
     effective_to_null: SINGLE_ZERO_BYTE
     effective_to_present: SINGLE_0X01_BYTE_THEN_STRICT_10_BYTE_ASCII_DATE
-    effective_to_semantics: ENDPOINT_KNOWN_AT_FIRST_DECISION_TIME_ELIGIBILITY_ELSE_NULL
-    key_freeze: FIRST_DECISION_TIME_ELIGIBILITY
+    effective_to_semantics: ENDPOINT_KNOWN_AT_CAMPAIGN_WIDE_FIRST_ANY_FACTOR_DECISION_TIME_ELIGIBILITY_ELSE_NULL
+    key_freeze: FIRST_ANY_FACTOR_DECISION_TIME_ELIGIBILITY_CAMPAIGN_WIDE
+    key_freeze_factor_aggregation: EARLIEST_SIGNAL_CUTOFF_ACROSS_MOM_12_1_REV_1M_AND_LOW_VOL_3M_FIRST_ELIGIBILITY
+    per_factor_key_freeze_or_reencoding: FORBIDDEN
+    later_factor_first_eligibility_reuses_campaign_frozen_key_bytes: true
     later_actual_endpoint_or_provider_backfill_rewrites_key: false
     string_constraints: NONEMPTY_UNICODE_SCALARS_NO_CONTROL_CHARACTERS
     transformations_forbidden:
@@ -477,13 +480,17 @@ inference:
     - INVALID_OR_MISSING_MONTH
     - LEAVE_ONE_YEAR_OUT_GAP
   block_sampling: OVERLAPPING_NONCIRCULAR_UNIFORM_WITH_REPLACEMENT
-  segment_block_length: min(6, segment_length)
+  segment_block_length: 6_IF_SEGMENT_LENGTH_GT_6_ELSE_1
+  short_segment_rule: LENGTH_2_THROUGH_6_DRAW_N_SINGLE_ROW_BLOCKS_UNIFORMLY_WITH_REPLACEMENT
+  singleton_segment_rule: DRAW_ONLY_INDEX_ZERO_RETAIN_FIXED_SINGLETON
   blocks_drawn_per_segment: ceil(segment_length / segment_block_length)
   concatenation: CHRONOLOGICAL_SEGMENT_ORDER_THEN_TRUNCATE_EACH_SEGMENT
   fold_weighting: RETAINED_COMPLETE_CASE_MONTH_COUNT
   joint_factor_draws: true
   rng_consumption_order: REPLICATE_MAJOR_THEN_CHRONOLOGICAL_SEGMENT
   block_start_draw_api: GENERATOR_INTEGERS_LOW_0_HIGH_N_MINUS_L_PLUS_1_SIZE_CEIL_N_OVER_L_ENDPOINT_FALSE
+  short_segment_resampling_support: AT_LEAST_ONE_SEGMENT_LENGTH_GE_2_AND_AT_LEAST_TWO_DISTINCT_NULL_BOOTSTRAP_MEANS_PER_FACTOR
+  degenerate_resampling_action: PRIMARY_INFERENCE_INVALID_NO_HOLM_SUPPORT_RETAIN_COUNTS
   draw_reuse_across_distributions: SAME_ROW_INDEX_VECTOR_FOR_UNCENTERED_AND_NULL_CENTERED_TABLES
   rng_passes_per_replicate: ONE_NO_SECOND_CENTERED_OR_UNCENTERED_PASS
   null_centering: SUBTRACT_EACH_FACTOR_GLOBAL_OBSERVED_COMPLETE_CASE_MEAN
@@ -508,7 +515,7 @@ inference:
       - [0, 1, 2, 3, 4, 5, 0, 1, 8, 9, 10, 11, 12, 13, 9]
       - [0, 1, 2, 3, 4, 5, 2, 3, 9, 10, 11, 12, 13, 14, 8]
       - [0, 1, 2, 3, 4, 5, 1, 2, 9, 10, 11, 12, 13, 14, 9]
-  block_length_monthly_records: 6
+  long_segment_block_length_monthly_records: 6
   bootstrap_replicates: 20000
   minimum_valid_monthly_records_for_primary_inference: 60
   random_rank_seed: 20260729
@@ -624,6 +631,7 @@ final_state_assignment:
   realized_coverage_gate:
     prefrozen_thresholds: ALL_MET
     minimum_common_complete_case_monthly_records: 60
+    nondegenerate_bootstrap_support_all_three_factors: REQUIRED
   factor_predicates:
     holm_supported: HOLM_REJECT_AND_OBSERVED_COMMON_CASE_MEAN_RANK_IC_STRICTLY_GT_ZERO
     economically_supported: VALID_PRIMARY_FACTOR_MATCHED_NET_ANNUALIZED_ACTIVE_RETURN_STRICTLY_GT_ZERO_AT_BOTH_10_AND_25_BPS
