@@ -161,6 +161,10 @@ Original failures and consequences:
   and failed only because the expanded contract moved a line break inside one
   UTC-close phrase assertion. The assertion was split into adjacent stable
   fragments.
+- The twentieth review exposed a liveness contradiction between an exact frozen
+  data identity and future data arrival. The binding now fixes the immutable
+  seed and succession rules, while each future batch supplies its own chained
+  content address without moving the anchor.
 
 Investigation:
 
@@ -228,11 +232,13 @@ Correction:
 - Canonicalized every prospective freeze/signal comparison to UTC and delayed
   threshold opening until both last-period output windows mature.
 - Added completed detached-run-binding time to the prospective maximum anchor.
+- Split prospective data binding into immutable seed and append-only batch
+  succession so new observations can accumulate under the original anchor.
 
 Verification:
 
-- The latest corrected focused structure suite passed 66 tests and the full
-  suite passed 3093 tests with two platform-conditional skips. Full Ruff,
+- The latest corrected focused structure suite passed 67 tests and the full
+  suite passed 3094 tests with two platform-conditional skips. Full Ruff,
   compileall, Skill audit, YAML and JSON parsing, deterministic repo-map
   regeneration, `git diff --check`, added-line privacy and Unicode/control
   scans, and isolated sdist/wheel build passed.

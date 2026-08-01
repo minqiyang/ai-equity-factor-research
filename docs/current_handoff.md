@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the nineteenth PR #177 review-remediation round.
+Updated: 2026-07-31 for the twentieth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -138,8 +138,17 @@ Updated: 2026-07-31 for the nineteenth PR #177 review-remediation round.
   binding completion to the maximum required UTC anchor and forbids prospective
   counting until protocol, inventory, data, code, config, and environment are
   bound. A staggered code-before-signal/binding-after-signal fixture is not
-  pending local authorship. The actual remaining gate is exact-head CI on the
-  current head, followed by one current-head Codex review; every finding
+  pending local authorship. Those gaps were remediated by committed and pushed
+  head `e6c7ad5`; exact-head CI run `30694731334` passed. The twentieth review
+  of `e6c7ad5` found one P2: rebinding an exact monolithic data manifest for
+  each future batch would keep moving the prospective anchor. The current
+  branch-head snapshot binds an immutable historical seed plus an append-only
+  prospective chain with sequence, previous hash, content-addressed batch,
+  strictly increasing session bounds, and no anchor reset. Corrections append
+  audit records without overwriting or retroactively recomputing frozen
+  signals. A seed-plus-two-matured-batch fixture is not pending local
+  authorship. The actual remaining gate is exact-head CI on the current head,
+  followed by one current-head Codex review; every finding
   restarts that remediation loop. Do not repeat commit or push work from an old
   handoff instruction; resolve current `HEAD`, remote head, CI, and review
   state.

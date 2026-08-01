@@ -80,7 +80,12 @@ profitability, or trading readiness.
   separate access authorization. The latest prospective anchor also requires
   completed detached run binding of the exact protocol, inventory, accepted
   data, runner code, configuration, and environment identity; runner-code
-  freeze alone cannot start or increment the window.
+  freeze alone cannot start or increment the window. That binding now freezes
+  an immutable historical seed/cutoff and an append-only prospective succession
+  policy rather than pretending to hash future bytes. Consecutive previous-
+  hash/batch-hash records extend strictly increasing session bounds without
+  resetting the original anchor; corrections append audit records and cannot
+  overwrite or retroactively recompute frozen signals.
   Bootstrap segments of two through
   six rows now use genuine one-row within-segment resampling, with a
   nondegenerate-support gate that prevents false Holm support and is an

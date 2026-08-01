@@ -807,6 +807,32 @@ The staggered binding fixture freezes runner code at
 qualifying signal at `2026-09-30T20:00:00Z` is the prospective start. A code-
 freeze-only implementation incorrectly starts in August and fails the fixture.
 
+The detached binding does not pretend to hash future provider bytes. It binds
+an exact immutable historical seed data record and cutoff plus the prospective
+append-succession policy before the first prospective signal. The repository-
+external prospective chain starts at seed sequence 0. Each later append record
+contains sequence, exact immediately preceding record SHA-256, batch-manifest
+SHA-256, strictly nonoverlapping new-session bounds after the preceding
+accepted cutoff, and a timezone-aware UTC ingestion instant. The record itself
+is content addressed. Sequence must increase by one; no prior artifact may be
+mutated or deleted.
+
+Future batch bytes are bound by that frozen succession policy and their append
+records, not by rewriting the original detached binding. A valid append never
+changes the original prospective start anchor. A provider correction to an
+earlier observation is retained as a new correction record; it cannot overwrite
+the prior batch or retroactively recompute a frozen signal and must retain the
+affected output-validity consequence. Ingestion health and append integrity may
+be checked while performance access remains forbidden.
+
+The append fixture binds a seed cutoff `2026-01-30` before detached-binding
+completion at `2026-02-05T20:00:00Z`, then chains February and March batch
+records with consecutive sequences and previous hashes. Qualifying February
+and March signals occur after the unchanged binding anchor, and after their
+respective output maturities the matured prospective count reaches two. A
+forbidden implementation that replaces the seed manifest and re-anchors on
+each batch ingestion counts neither month.
+
 On a shared XNYS month-end date, a required freeze strictly before the official
 close permits that same day's signal to qualify after close. A freeze at the
 exact close or any later instant makes the same day's signal non-prospective;

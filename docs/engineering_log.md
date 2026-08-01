@@ -1,5 +1,30 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Twentieth-Review Prospective-Append Remediation
+
+- Exact-head Codex review of `e6c7ad5` completed with one P2: binding a single
+  exact accepted-data manifest would require rebinding on every future batch
+  and reset the prospective anchor indefinitely.
+- Split prospective data identity into an immutable historical seed/cutoff and
+  a succession policy frozen in the detached binding. Future batches use a
+  content-addressed append record with consecutive sequence, previous hash,
+  batch hash, nonoverlapping increasing session bounds, and UTC ingestion time;
+  appends never reset the original anchor.
+- Required corrections to append an audit record without overwriting prior
+  artifacts or retroactively recomputing frozen signals.
+- Added a two-batch chain fixture that starts after a pre-binding seed cutoff,
+  preserves hash succession, and matures/counts February and March while a
+  forbidden per-batch reanchor counts neither.
+- Focused project-structure validation passed 67 tests. The full suite passed
+  3094 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, `git diff
+  --check`, and added-line privacy, non-ASCII, and hidden-Unicode/control scans
+  passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Nineteenth-Review Run-Binding Remediation
 
 - Exact-head Codex review of `3aeeb5a` completed with one P2: prospective

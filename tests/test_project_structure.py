@@ -494,6 +494,8 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "later of its label and next-month execution maturity",
         "The nineteenth review of `3aeeb5a` found one P2",
         "detached run binding completion",
+        "The twentieth review of `e6c7ad5` found one P2",
+        "immutable historical seed plus an append-only prospective chain",
         "not pending local authorship",
         "The actual remaining gate is exact-head CI on the current head",
         "followed by one current-head Codex review",
@@ -560,6 +562,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "Runner-",
         "code freeze alone is insufficient",
         "staggered binding fixture freezes runner code",
+        "detached binding does not pretend to hash future provider bytes",
+        "valid append never",
+        "append fixture binds a seed cutoff",
         "only a subset of factors is valid",
         "The equal-weight eligible-universe baseline is the same frozen target",
         "The random-rank baseline alone inherits all three factor decision-time invalid-",
@@ -625,6 +630,10 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "freeze_timestamp_normalization: REQUIRE_TIMEZONE_AWARE_CONVERT_TO_UTC_REJECT_NAIVE_OR_DATE_ONLY",
         "detached_run_binding_completion_predicate: EXACT_PROTOCOL_INVENTORY_DATA_CODE_CONFIG_AND_ENVIRONMENT_IDENTITY_BOUND_BEFORE_RESULT_BEARING_JOB",
         "detached_run_binding_incomplete: PROSPECTIVE_COUNT_FORBIDDEN",
+        "historical_seed: EXACT_IMMUTABLE_ACCEPTED_DATA_RECORD_AND_CUTOFF_BOUND_AT_DETACHED_RUN_BINDING",
+        "append_record_chain: SEQUENCE_PREVIOUS_RECORD_SHA256_BATCH_MANIFEST_SHA256_SESSION_BOUNDS_INGESTED_AT_UTC",
+        "original_start_anchor_reset_on_append: FORBIDDEN",
+        "correction_policy: APPEND_CORRECTION_RECORD_NO_OVERWRITE_NO_RETROACTIVE_SIGNAL_RECOMPUTE_AND_RETAIN_AFFECTED_VALIDITY",
         "signal_instant: OFFICIAL_XNYS_SESSION_CLOSE_FROM_FROZEN_CALENDAR_CONVERTED_TO_UTC",
         "start_anchor_timestamp: MAXIMUM_OF_ALL_NORMALIZED_REQUIRED_FREEZE_INSTANTS_UTC",
         "start_rule: FIRST_SIGNAL_WITH_SIGNAL_INSTANT_UTC_STRICTLY_GT_START_ANCHOR_UTC_SATISFYING_SIGNAL_ELIGIBILITY_PREDICATE",
@@ -1108,6 +1117,96 @@ def test_prospective_start_waits_for_complete_detached_run_binding() -> None:
     assert prospective_start == september_signal
     assert forbidden_code_only_start == august_signal
     assert prospective_start != forbidden_code_only_start
+
+
+def test_prospective_data_appends_without_resetting_original_anchor() -> None:
+    detached_binding_completion = datetime(
+        2026, 2, 5, 20, tzinfo=timezone.utc
+    )
+    seed_cutoff = date(2026, 1, 30)
+    seed_manifest_sha256 = hashlib.sha256(
+        b"historical-seed-cutoff-2026-01-30"
+    ).hexdigest()
+
+    def append_record(
+        *,
+        sequence: int,
+        previous_record_sha256: str,
+        session_start: date,
+        session_end: date,
+        signal_instant: datetime,
+        output_maturity: datetime,
+        ingested_at: datetime,
+    ) -> dict[str, object]:
+        payload = {
+            "sequence": sequence,
+            "seed_manifest_sha256": seed_manifest_sha256,
+            "previous_record_sha256": previous_record_sha256,
+            "batch_manifest_sha256": hashlib.sha256(
+                f"batch-{sequence}-{session_start}-{session_end}".encode()
+            ).hexdigest(),
+            "session_start": session_start.isoformat(),
+            "session_end": session_end.isoformat(),
+            "signal_instant": signal_instant.isoformat(),
+            "output_maturity": output_maturity.isoformat(),
+            "ingested_at": ingested_at.isoformat(),
+        }
+        canonical = json.dumps(
+            payload, sort_keys=True, separators=(",", ":")
+        ).encode()
+        return payload | {"record_sha256": hashlib.sha256(canonical).hexdigest()}
+
+    seed_record_sha256 = hashlib.sha256(
+        f"0|{seed_manifest_sha256}|{seed_cutoff}".encode()
+    ).hexdigest()
+    february = append_record(
+        sequence=1,
+        previous_record_sha256=seed_record_sha256,
+        session_start=date(2026, 2, 2),
+        session_end=date(2026, 2, 27),
+        signal_instant=datetime(2026, 2, 27, 21, tzinfo=timezone.utc),
+        output_maturity=datetime(2026, 4, 1, 20, tzinfo=timezone.utc),
+        ingested_at=datetime(2026, 2, 27, 21, 5, tzinfo=timezone.utc),
+    )
+    march = append_record(
+        sequence=2,
+        previous_record_sha256=str(february["record_sha256"]),
+        session_start=date(2026, 3, 2),
+        session_end=date(2026, 3, 31),
+        signal_instant=datetime(2026, 3, 31, 20, tzinfo=timezone.utc),
+        output_maturity=datetime(2026, 5, 1, 20, tzinfo=timezone.utc),
+        ingested_at=datetime(2026, 3, 31, 20, 5, tzinfo=timezone.utc),
+    )
+    records = (february, march)
+    as_of = datetime(2026, 5, 1, 20, 0, 1, tzinfo=timezone.utc)
+
+    previous_hash = seed_record_sha256
+    previous_cutoff = seed_cutoff
+    for expected_sequence, record in enumerate(records, start=1):
+        assert record["sequence"] == expected_sequence
+        assert record["previous_record_sha256"] == previous_hash
+        assert date.fromisoformat(str(record["session_start"])) > previous_cutoff
+        assert record["seed_manifest_sha256"] == seed_manifest_sha256
+        previous_hash = str(record["record_sha256"])
+        previous_cutoff = date.fromisoformat(str(record["session_end"]))
+
+    matured_count = sum(
+        datetime.fromisoformat(str(record["signal_instant"]))
+        > detached_binding_completion
+        and datetime.fromisoformat(str(record["output_maturity"])) < as_of
+        for record in records
+    )
+    forbidden_reanchored_count = sum(
+        datetime.fromisoformat(str(record["signal_instant"]))
+        > datetime.fromisoformat(str(record["ingested_at"]))
+        for record in records
+    )
+
+    assert matured_count == 2
+    assert forbidden_reanchored_count == 0
+    assert detached_binding_completion < datetime.fromisoformat(
+        str(february["signal_instant"])
+    )
 
 
 def test_prospective_threshold_waits_for_label_and_strategy_maturity() -> None:

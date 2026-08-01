@@ -15,6 +15,41 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Chain Prospective Batches Without Rebinding The Seed
+
+Context:
+
+- The twentieth exact-head Codex review of PR #177 at `e6c7ad5` found one P2.
+  A detached binding to one latest-cutoff manifest could not accept future
+  observations without rebinding and moving the start anchor.
+
+Decision:
+
+- Bind an immutable historical seed data record/cutoff and the append-
+  succession policy before the first prospective signal. Bind future batches
+  through consecutive content-addressed append records containing previous
+  hash, batch manifest hash, increasing nonoverlapping session bounds, and UTC
+  ingestion time. Valid appends do not reset the original anchor.
+- Never overwrite prior artifacts. Provider corrections append a correction
+  record, retain the affected validity state, and do not retroactively
+  recompute a frozen signal.
+
+Rationale:
+
+- Future bytes cannot be known at initial binding, but their admissible order,
+  immutability, identity, and audit treatment can be frozen in advance.
+- Rebinding the root on every batch makes a strictly-post-binding prospective
+  window impossible to accumulate.
+
+Consequences:
+
+- The fixture binds a January seed and successfully chains/counts matured
+  February and March batches under the unchanged February binding anchor.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Anchor Prospective Time To Completed Run Binding
 
 Context:
