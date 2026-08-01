@@ -77,7 +77,10 @@ profitability, or trading readiness.
   day freezes. The 12/24 counter is operational only: protected opening waits
   strictly beyond the later of the threshold signal's `e+21` label close and
   following monthly execution close, without bypassing Track B logging or
-  separate access authorization.
+  separate access authorization. The latest prospective anchor also requires
+  completed detached run binding of the exact protocol, inventory, accepted
+  data, runner code, configuration, and environment identity; runner-code
+  freeze alone cannot start or increment the window.
   Bootstrap segments of two through
   six rows now use genuine one-row within-segment resampling, with a
   nondegenerate-support gate that prevents false Holm support and is an

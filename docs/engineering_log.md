@@ -1,5 +1,27 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Nineteenth-Review Run-Binding Remediation
+
+- Exact-head Codex review of `3aeeb5a` completed with one P2: prospective
+  counting could begin after runner-code freeze but before the complete
+  detached run binding fixed configuration and environment identity.
+- Added detached-run-binding completion to the maximum normalized UTC anchor.
+  Completion requires exact protocol, inventory, accepted data, code, config,
+  and environment identity binding before any result-bearing job; incomplete
+  binding forbids prospective counting.
+- Added a staggered fixture where code freezes before an August signal but the
+  detached binding completes afterward, forcing the prospective start to the
+  next qualifying September signal.
+- Focused project-structure validation passed 66 tests. The full suite passed
+  3093 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, `git diff
+  --check`, and added-line privacy, non-ASCII, and hidden-Unicode/control scans
+  passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Eighteenth-Review Prospective-Time Remediation
 
 - Exact-head Codex review of `242f373` completed with two P2 findings: freeze

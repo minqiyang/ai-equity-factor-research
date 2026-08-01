@@ -153,6 +153,14 @@ Original failures and consequences:
 - The first eighteenth-round count-update patch contained an extra hunk marker
   and was rejected without changing a file. The corrected two-file patch then
   updated the verified counts.
+- The nineteenth review found that freezing runner code is not equivalent to
+  completing the detached execution binding. The prospective anchor now waits
+  for the full configuration/environment/data binding, and a staggered fixture
+  rejects the code-only start.
+- The first nineteenth-round focused run passed the staggered binding fixture
+  and failed only because the expanded contract moved a line break inside one
+  UTC-close phrase assertion. The assertion was split into adjacent stable
+  fragments.
 
 Investigation:
 
@@ -219,11 +227,12 @@ Correction:
   freeze.
 - Canonicalized every prospective freeze/signal comparison to UTC and delayed
   threshold opening until both last-period output windows mature.
+- Added completed detached-run-binding time to the prospective maximum anchor.
 
 Verification:
 
-- The latest corrected focused structure suite passed 65 tests and the full
-  suite passed 3092 tests with two platform-conditional skips. Full Ruff,
+- The latest corrected focused structure suite passed 66 tests and the full
+  suite passed 3093 tests with two platform-conditional skips. Full Ruff,
   compileall, Skill audit, YAML and JSON parsing, deterministic repo-map
   regeneration, `git diff --check`, added-line privacy and Unicode/control
   scans, and isolated sdist/wheel build passed.

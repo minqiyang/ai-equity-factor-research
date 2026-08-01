@@ -15,6 +15,37 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Anchor Prospective Time To Completed Run Binding
+
+Context:
+
+- The nineteenth exact-head Codex review of PR #177 at `3aeeb5a` found one P2.
+  Runner code could freeze before a signal while the detached record binding
+  exact configuration and environment identity completed after it.
+
+Decision:
+
+- Add detached-run-binding completion to the required canonical UTC anchors.
+  The binding is complete only after exact protocol, trial inventory, accepted
+  data, runner code, configuration, and environment identity are bound before
+  result-bearing work. An incomplete binding forbids prospective counting.
+
+Rationale:
+
+- Code identity alone does not freeze dependencies, configuration, dataset
+  acceptance, or the executable environment needed to reproduce seeded and
+  deterministic outputs.
+
+Consequences:
+
+- In the staggered fixture, an August signal after code freeze but before
+  binding completion cannot count; the next qualifying September signal is the
+  prospective start.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Canonicalize Prospective Instants And Mature Threshold Outputs
 
 Context:

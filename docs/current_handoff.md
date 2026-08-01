@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the eighteenth PR #177 review-remediation round.
+Updated: 2026-07-31 for the nineteenth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -131,9 +131,15 @@ Updated: 2026-07-31 for the eighteenth PR #177 review-remediation round.
   operational only and delays protected opening until strictly after the later
   of its label and next-month execution maturity, plus the existing Track B and
   authorization gates. Same-day before/at/after-close and 12/24 output-maturity
-  fixtures are not pending local authorship. The actual remaining gate is
-  exact-head CI on the current head, followed by one current-head Codex review;
-  every finding
+  fixtures were remediated by committed and pushed head `3aeeb5a`; exact-head
+  CI run `30694138955` passed. The nineteenth review of `3aeeb5a` found one P2:
+  runner-code freeze could precede a signal while the complete detached run
+  binding followed it. The current branch-head snapshot adds detached run
+  binding completion to the maximum required UTC anchor and forbids prospective
+  counting until protocol, inventory, data, code, config, and environment are
+  bound. A staggered code-before-signal/binding-after-signal fixture is not
+  pending local authorship. The actual remaining gate is exact-head CI on the
+  current head, followed by one current-head Codex review; every finding
   restarts that remediation loop. Do not repeat commit or push work from an old
   handoff instruction; resolve current `HEAD`, remote head, CI, and review
   state.

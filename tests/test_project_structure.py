@@ -492,6 +492,8 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "The eighteenth review of `242f373` found two P2",
         "canonical UTC signal-close instant",
         "later of its label and next-month execution maturity",
+        "The nineteenth review of `3aeeb5a` found one P2",
+        "detached run binding completion",
         "not pending local authorship",
         "The actual remaining gate is exact-head CI on the current head",
         "followed by one current-head Codex review",
@@ -549,11 +551,15 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "factor-specific common-calendar lookback position span addressable",
         "no extra observed-price completeness gate",
         "Prospective collection compares only canonical UTC instants",
-        "official XNYS session close from the",
+        "Each signal instant is the official",
+        "XNYS session close from the frozen calendar",
         "shared XNYS month-end date",
         "strictly before the official",
         "threshold-output-maturity instant",
         "Opening at counter increment",
+        "Runner-",
+        "code freeze alone is insufficient",
+        "staggered binding fixture freezes runner code",
         "only a subset of factors is valid",
         "The equal-weight eligible-universe baseline is the same frozen target",
         "The random-rank baseline alone inherits all three factor decision-time invalid-",
@@ -617,6 +623,8 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "FACTOR_SPECIFIC_REFERENCED_PRICE_ANCHORS_VALID_AT_T",
         "canonical_instant_standard: UTC_RFC3339_TIMEZONE_AWARE_EXACT_INSTANT",
         "freeze_timestamp_normalization: REQUIRE_TIMEZONE_AWARE_CONVERT_TO_UTC_REJECT_NAIVE_OR_DATE_ONLY",
+        "detached_run_binding_completion_predicate: EXACT_PROTOCOL_INVENTORY_DATA_CODE_CONFIG_AND_ENVIRONMENT_IDENTITY_BOUND_BEFORE_RESULT_BEARING_JOB",
+        "detached_run_binding_incomplete: PROSPECTIVE_COUNT_FORBIDDEN",
         "signal_instant: OFFICIAL_XNYS_SESSION_CLOSE_FROM_FROZEN_CALENDAR_CONVERTED_TO_UTC",
         "start_anchor_timestamp: MAXIMUM_OF_ALL_NORMALIZED_REQUIRED_FREEZE_INSTANTS_UTC",
         "start_rule: FIRST_SIGNAL_WITH_SIGNAL_INSTANT_UTC_STRICTLY_GT_START_ANCHOR_UTC_SATISFYING_SIGNAL_ELIGIBILITY_PREDICATE",
@@ -1077,6 +1085,29 @@ def test_prospective_same_day_freeze_uses_canonical_close_instant() -> None:
         assert str(error) == "freeze instant must be timezone-aware"
     else:
         raise AssertionError("naive freeze instant must fail closed")
+
+
+def test_prospective_start_waits_for_complete_detached_run_binding() -> None:
+    runner_code_freeze = datetime(2026, 8, 15, 20, tzinfo=timezone.utc)
+    august_signal = datetime(2026, 8, 31, 20, tzinfo=timezone.utc)
+    detached_binding_completion = datetime(
+        2026, 9, 5, 20, tzinfo=timezone.utc
+    )
+    september_signal = datetime(2026, 9, 30, 20, tzinfo=timezone.utc)
+    qualifying_signals = (august_signal, september_signal)
+
+    required_anchor = max(runner_code_freeze, detached_binding_completion)
+    prospective_start = min(
+        signal for signal in qualifying_signals if signal > required_anchor
+    )
+    forbidden_code_only_start = min(
+        signal for signal in qualifying_signals if signal > runner_code_freeze
+    )
+
+    assert runner_code_freeze < august_signal < detached_binding_completion
+    assert prospective_start == september_signal
+    assert forbidden_code_only_start == august_signal
+    assert prospective_start != forbidden_code_only_start
 
 
 def test_prospective_threshold_waits_for_label_and_strategy_maturity() -> None:

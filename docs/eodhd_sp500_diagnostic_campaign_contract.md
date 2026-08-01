@@ -785,15 +785,27 @@ research-pass, profitability, or deployment claim.
 ## Prospective Confirmation and Track B
 
 Prospective collection compares only canonical UTC instants. Every protocol-
-freeze, runner-code-freeze, and dataset-policy-freeze timestamp must be
-timezone-aware RFC 3339, is converted to UTC, and is rejected if naive or
-date-only. Each signal instant is the official XNYS session close from the
-frozen calendar converted to UTC; a session date or midnight substitute is
-forbidden. The anchor is the maximum normalized freeze instant. Collection
-starts at the first signal whose canonical close instant is strictly later
-than that anchor and for which all three factor rebalances are decision-time
-valid: each has at least 100 eligible listings, at least 10 distinct finite
-values, and unique canonical keys.
+freeze, runner-code-freeze, dataset-policy-freeze, and completed detached-run-
+binding timestamp must be timezone-aware RFC 3339, is converted to UTC, and is
+rejected if naive or date-only. The detached binding is complete only when it
+binds the exact protocol, trial inventory, accepted data record, runner code,
+configuration, and environment identity before any result-bearing job. Runner-
+code freeze alone is insufficient, and prospective counting is forbidden
+while the detached binding is incomplete. Each signal instant is the official
+XNYS session close from the frozen calendar converted to UTC; a session date
+or midnight substitute is forbidden. The anchor is the maximum normalized
+required instant, including detached-binding completion. Collection starts at
+the first signal whose canonical close instant is strictly later than that
+anchor and for which all three factor rebalances are decision-time valid: each
+has at least 100 eligible listings, at least 10 distinct finite values, and
+unique canonical keys.
+
+The staggered binding fixture freezes runner code at
+`2026-08-15T20:00:00Z`, observes an otherwise qualifying signal at
+`2026-08-31T20:00:00Z`, and completes the detached run binding only at
+`2026-09-05T20:00:00Z`. The August signal cannot count; the next otherwise
+qualifying signal at `2026-09-30T20:00:00Z` is the prospective start. A code-
+freeze-only implementation incorrectly starts in August and fails the fixture.
 
 On a shared XNYS month-end date, a required freeze strictly before the official
 close permits that same day's signal to qualify after close. A freeze at the
