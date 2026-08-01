@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the twentieth PR #177 review-remediation round.
+Updated: 2026-07-31 for the twenty-first PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -147,8 +147,18 @@ Updated: 2026-07-31 for the twentieth PR #177 review-remediation round.
   strictly increasing session bounds, and no anchor reset. Corrections append
   audit records without overwriting or retroactively recomputing frozen
   signals. A seed-plus-two-matured-batch fixture is not pending local
-  authorship. The actual remaining gate is exact-head CI on the current head,
-  followed by one current-head Codex review; every finding
+  authorship. That gap was remediated by committed and pushed head `5869193`;
+  exact-head CI run `30695127750` passed. The twenty-first review of `5869193`
+  found one P2: factor input anchors did not bind their resolved permanent-
+  security/listing identity or distinguish an accepted rename from ticker
+  reuse. The current branch-head snapshot requires every factor price anchor
+  to match the target permanent-security, listing, and listing-episode IDs and
+  permits alias traversal only for a contiguous, evidenced same-episode symbol
+  rename. Ticker-only joins, reused tickers across issuers, relistings, listing
+  moves, share-class changes, distinct successors, and ambiguous chains fail
+  closed. Accepted-rename and equal-ticker/different-issuer fixtures are not
+  pending local authorship. The actual remaining gate is exact-head CI on the
+  current head, followed by one current-head Codex review; every finding
   restarts that remediation loop. Do not repeat commit or push work from an old
   handoff instruction; resolve current `HEAD`, remote head, CI, and review
   state.

@@ -165,6 +165,11 @@ Original failures and consequences:
   data identity and future data arrival. The binding now fixes the immutable
   seed and succession rules, while each future batch supplies its own chained
   content address without moving the anchor.
+- The twenty-first review showed that scalar-valid price endpoints plus a
+  resolved signal listing still leave the lookback join ambiguous. The factor-
+  anchor policy now binds every endpoint to accepted permanent-security,
+  listing, and listing-episode IDs, permits only evidenced same-episode symbol
+  renames, and rejects an otherwise numerically valid reused-ticker return.
 
 Investigation:
 

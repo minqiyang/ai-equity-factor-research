@@ -1,5 +1,29 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Twenty-First-Review Factor-Lineage Remediation
+
+- Exact-head Codex review `4834461569` of `5869193` completed with one P2:
+  factor price anchors were numerically gated but not bound to the resolved
+  permanent-security/listing lineage, leaving rename and ticker-reuse behavior
+  implementation-dependent.
+- Added `factor_anchor_lineage_v1`. Every factor anchor carries accepted
+  normalized permanent-security, listing, listing-episode, alias-interval, and
+  lineage-evidence fields and must match the signal target identity exactly.
+  Only a contiguous, nonoverlapping, evidenced same-identity symbol rename may
+  traverse aliases; ticker-only joins and identity/episode changes fail closed.
+- Added executable accepted-rename and equal-ticker/different-issuer fixtures.
+  The former retains momentum `0.25`; the latter proves a ticker-only `0.25`
+  calculation exists but is rejected before decision-time eligibility. The
+  shared target helper now consumes the lineage gate.
+- Focused project-structure validation passed 68 tests. The full suite passed
+  3095 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, and `git
+  diff --check` passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Twentieth-Review Prospective-Append Remediation
 
 - Exact-head Codex review of `e6c7ad5` completed with one P2: binding a single

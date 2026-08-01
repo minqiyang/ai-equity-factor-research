@@ -51,6 +51,96 @@ def _listing_lineage_key_bytes_v1(
     )
 
 
+def _factor_anchor_lineage_v1_is_valid(
+    anchors: list[dict[str, object]],
+    target_identity: dict[str, str],
+    alias_chain: list[dict[str, object]],
+) -> bool:
+    identity_fields = (
+        "resolved_permanent_security_id",
+        "resolved_listing_id",
+        "resolved_listing_episode_id",
+    )
+    accepted_rename = (
+        "ACCEPTED_SYMBOL_RENAME_SAME_PERMANENT_SECURITY_"
+        "SAME_LISTING_AND_LISTING_EPISODE"
+    )
+    if not anchors or not alias_chain or any(
+        not target_identity.get(field) for field in identity_fields
+    ):
+        return False
+
+    parsed_chain: list[tuple[date, date | None, dict[str, object]]] = []
+    for alias in alias_chain:
+        try:
+            effective_from = date.fromisoformat(str(alias["alias_effective_from"]))
+            effective_to_raw = alias.get("alias_effective_to")
+            effective_to = (
+                None
+                if effective_to_raw is None
+                else date.fromisoformat(str(effective_to_raw))
+            )
+        except (KeyError, TypeError, ValueError):
+            return False
+        if effective_to is not None and effective_to <= effective_from:
+            return False
+        if any(
+            alias.get(field) != target_identity[field]
+            for field in identity_fields
+        ):
+            return False
+        for required_text in (
+            "source_exchange",
+            "source_ticker",
+            "lineage_resolution_evidence_id",
+        ):
+            if (
+                not isinstance(alias.get(required_text), str)
+                or not alias[required_text]
+            ):
+                return False
+        parsed_chain.append((effective_from, effective_to, alias))
+
+    for index, (effective_from, effective_to, alias) in enumerate(parsed_chain):
+        if index == len(parsed_chain) - 1:
+            if alias.get("transition_to_next") != "TARGET_ALIAS":
+                return False
+            continue
+        next_effective_from = parsed_chain[index + 1][0]
+        if (
+            effective_to != next_effective_from
+            or alias.get("transition_to_next") != accepted_rename
+            or next_effective_from <= effective_from
+        ):
+            return False
+
+    for anchor in anchors:
+        if any(
+            anchor.get(field) != target_identity[field]
+            for field in identity_fields
+        ):
+            return False
+        try:
+            session = date.fromisoformat(str(anchor["session_date"]))
+        except (KeyError, TypeError, ValueError):
+            return False
+        matching_aliases = [
+            alias
+            for effective_from, effective_to, alias in parsed_chain
+            if anchor.get("source_exchange") == alias["source_exchange"]
+            and anchor.get("source_ticker") == alias["source_ticker"]
+            and anchor.get("alias_effective_from") == alias["alias_effective_from"]
+            and anchor.get("alias_effective_to") == alias["alias_effective_to"]
+            and anchor.get("lineage_resolution_evidence_id")
+            == alias["lineage_resolution_evidence_id"]
+            and session >= effective_from
+            and (effective_to is None or session < effective_to)
+        ]
+        if len(matching_aliases) != 1:
+            return False
+    return True
+
+
 def _decision_time_objects(
     records: list[dict[str, object]],
 ) -> tuple[
@@ -67,6 +157,7 @@ def _decision_time_objects(
             "factor_specific_lookback_position_span_addressable_at_t"
         ]
         and record["factor_specific_required_price_anchors_valid_at_t"]
+        and record["factor_anchor_lineage_v1_valid_at_t"]
         and record["corporate_action_policy_known_at_t"]
         and math.isfinite(float(record["factor_value_at_t"]))
     ]
@@ -550,6 +641,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "positions**, not a contiguous-observed-price requirement",
         "Each formula consumes exactly its two referenced",
         "Interior-missing fixtures for both factors retain momentum",
+        "Every factor input price anchor is governed by",
+        "All anchors must match that target's permanent security, listing,",
+        "Traversal across different ticker text is allowed only through a",
+        "Ticker-text-only joins,",
+        "A reused-ticker fixture deliberately",
         "factor-specific common-calendar lookback position span addressable",
         "no extra observed-price completeness gate",
         "Prospective collection compares only canonical UTC instants",
@@ -606,6 +702,10 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "minimum_distinct_forward_returns: 2",
         "complete_full_37_event_profile_first: false",
         "version: listing_lineage_key_bytes_v1",
+        "version: factor_anchor_lineage_v1",
+        "anchor_to_target_identity_match: EXACT_PERMANENT_SECURITY_LISTING_AND_LISTING_EPISODE",
+        "allowed_alias_traversal: ACCEPTED_SYMBOL_RENAME_SAME_PERMANENT_SECURITY_SAME_LISTING_AND_LISTING_EPISODE_ONLY",
+        "price_stitch_or_ticker_fallback: FORBIDDEN",
         "post_t_mutation_effect_on_frozen_objects: NONE_BYTE_IDENTICAL",
         "fixed_bps_interpretation: ALL_IN_DIAGNOSTIC_EXECUTION_COST_PROXY",
         "evaluation: ORDERED_FIRST_MATCH_WINS_MUTUALLY_EXCLUSIVE_EXHAUSTIVE",
@@ -626,6 +726,7 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "interior_missing_price_action: NO_FACTOR_VALUE_EFFECT_IF_REFERENCED_ANCHORS_VALID",
         "FACTOR_SPECIFIC_LOOKBACK_COMMON_CALENDAR_POSITION_SPAN_ADDRESSABLE_AT_T",
         "FACTOR_SPECIFIC_REFERENCED_PRICE_ANCHORS_VALID_AT_T",
+        "FACTOR_SPECIFIC_FACTOR_ANCHOR_LINEAGE_V1_IDENTITY_AND_PATH_VALID_AT_T",
         "canonical_instant_standard: UTC_RFC3339_TIMEZONE_AWARE_EXACT_INSTANT",
         "freeze_timestamp_normalization: REQUIRE_TIMEZONE_AWARE_CONVERT_TO_UTC_REJECT_NAIVE_OR_DATE_ONLY",
         "detached_run_binding_completion_predicate: EXACT_PROTOCOL_INVENTORY_DATA_CODE_CONFIG_AND_ENVIRONMENT_IDENTITY_BOUND_BEFORE_RESULT_BEARING_JOB",
@@ -785,6 +886,129 @@ def test_listing_lineage_key_bytes_v1_golden_fixtures() -> None:
     )
 
 
+def test_factor_price_anchors_bind_to_resolved_listing_lineage() -> None:
+    target_identity = {
+        "resolved_permanent_security_id": "SECURITY-001",
+        "resolved_listing_id": "LISTING-001",
+        "resolved_listing_episode_id": "EPISODE-001",
+    }
+    accepted_rename_chain = [
+        {
+            **target_identity,
+            "source_exchange": "XNYS",
+            "source_ticker": "OLD",
+            "alias_effective_from": "2020-01-01",
+            "alias_effective_to": "2025-06-01",
+            "lineage_resolution_evidence_id": "rename-evidence-001",
+            "transition_to_next": (
+                "ACCEPTED_SYMBOL_RENAME_SAME_PERMANENT_SECURITY_"
+                "SAME_LISTING_AND_LISTING_EPISODE"
+            ),
+        },
+        {
+            **target_identity,
+            "source_exchange": "XNYS",
+            "source_ticker": "NEW",
+            "alias_effective_from": "2025-06-01",
+            "alias_effective_to": None,
+            "lineage_resolution_evidence_id": "rename-evidence-001",
+            "transition_to_next": "TARGET_ALIAS",
+        },
+    ]
+    accepted_rename_anchors = [
+        {
+            **accepted_rename_chain[0],
+            "session_date": "2025-01-02",
+            "adjusted_close": 80.0,
+        },
+        {
+            **accepted_rename_chain[1],
+            "session_date": "2025-12-01",
+            "adjusted_close": 100.0,
+        },
+    ]
+
+    assert _factor_anchor_lineage_v1_is_valid(
+        accepted_rename_anchors,
+        target_identity,
+        accepted_rename_chain,
+    )
+    assert (
+        float(accepted_rename_anchors[1]["adjusted_close"])
+        / float(accepted_rename_anchors[0]["adjusted_close"])
+        - 1.0
+    ) == 0.25
+
+    reused_ticker_anchors = deepcopy(accepted_rename_anchors)
+    reused_ticker_chain = deepcopy(accepted_rename_chain)
+    reused_ticker_anchors[0].update(
+        {
+            "source_ticker": "REUSED",
+            "resolved_permanent_security_id": "SECURITY-OLD-ISSUER",
+            "resolved_listing_id": "LISTING-OLD-ISSUER",
+            "resolved_listing_episode_id": "EPISODE-OLD-ISSUER",
+        }
+    )
+    reused_ticker_anchors[1].update(
+        {
+            "source_ticker": "REUSED",
+            "resolved_permanent_security_id": "SECURITY-NEW-ISSUER",
+            "resolved_listing_id": "LISTING-NEW-ISSUER",
+            "resolved_listing_episode_id": "EPISODE-NEW-ISSUER",
+        }
+    )
+    for anchor_index, alias in enumerate(reused_ticker_chain):
+        alias.update(
+            {
+                "source_ticker": "REUSED",
+                "resolved_permanent_security_id": (
+                    "SECURITY-OLD-ISSUER"
+                    if anchor_index == 0
+                    else "SECURITY-NEW-ISSUER"
+                ),
+                "resolved_listing_id": (
+                    "LISTING-OLD-ISSUER"
+                    if anchor_index == 0
+                    else "LISTING-NEW-ISSUER"
+                ),
+                "resolved_listing_episode_id": (
+                    "EPISODE-OLD-ISSUER"
+                    if anchor_index == 0
+                    else "EPISODE-NEW-ISSUER"
+                ),
+            }
+        )
+    reused_ticker_target = {
+        field: str(reused_ticker_anchors[1][field])
+        for field in target_identity
+    }
+    forbidden_ticker_only_join = (
+        reused_ticker_anchors[0]["source_ticker"]
+        == reused_ticker_anchors[1]["source_ticker"]
+    )
+    forbidden_ticker_only_momentum = (
+        float(reused_ticker_anchors[1]["adjusted_close"])
+        / float(reused_ticker_anchors[0]["adjusted_close"])
+        - 1.0
+    )
+
+    assert forbidden_ticker_only_join
+    assert forbidden_ticker_only_momentum == 0.25
+    assert not _factor_anchor_lineage_v1_is_valid(
+        reused_ticker_anchors,
+        reused_ticker_target,
+        reused_ticker_chain,
+    )
+
+    gapped_rename_chain = deepcopy(accepted_rename_chain)
+    gapped_rename_chain[1]["alias_effective_from"] = "2025-06-02"
+    assert not _factor_anchor_lineage_v1_is_valid(
+        accepted_rename_anchors,
+        target_identity,
+        gapped_rename_chain,
+    )
+
+
 def test_listing_key_freezes_at_campaign_first_any_factor_eligibility() -> None:
     first_eligibility = {
         "REV_1M": datetime(2026, 7, 31, 20, tzinfo=timezone.utc),
@@ -901,6 +1125,7 @@ def test_decision_time_targets_ignore_future_availability_mutations() -> None:
                 "lineage_resolved_through_t": True,
                 "factor_specific_lookback_position_span_addressable_at_t": True,
                 "factor_specific_required_price_anchors_valid_at_t": True,
+                "factor_anchor_lineage_v1_valid_at_t": True,
                 "corporate_action_policy_known_at_t": True,
                 "factor_value_at_t": float(100 - index),
                 "execution_available_after_t": True,
@@ -928,6 +1153,15 @@ def test_decision_time_targets_ignore_future_availability_mutations() -> None:
     )
     assert frozen_cash == 0.0
 
+    lineage_invalid = deepcopy(records)
+    lineage_invalid[0]["factor_anchor_lineage_v1_valid_at_t"] = False
+    invalid_target, invalid_benchmark, invalid_cash = _decision_time_objects(
+        lineage_invalid
+    )
+    assert invalid_target == ()
+    assert len(invalid_benchmark) == 99
+    assert invalid_cash == 1.0
+
 
 def test_zero_target_has_only_the_three_frozen_decision_time_triggers() -> None:
     records = []
@@ -941,6 +1175,7 @@ def test_zero_target_has_only_the_three_frozen_decision_time_triggers() -> None:
                 "lineage_resolved_through_t": True,
                 "factor_specific_lookback_position_span_addressable_at_t": True,
                 "factor_specific_required_price_anchors_valid_at_t": True,
+                "factor_anchor_lineage_v1_valid_at_t": True,
                 "corporate_action_policy_known_at_t": True,
                 "factor_value_at_t": float(100 - index),
             }
@@ -985,6 +1220,7 @@ def test_endpoint_only_factor_windows_flow_into_decision_time_targets() -> None:
                     "lineage_resolved_through_t": True,
                     "factor_specific_lookback_position_span_addressable_at_t": True,
                     "factor_specific_required_price_anchors_valid_at_t": True,
+                    "factor_anchor_lineage_v1_valid_at_t": True,
                     "unreferenced_interior_adjusted_close_missing": index == 0,
                     "corporate_action_policy_known_at_t": True,
                     "factor_value_at_t": float(100 - index),
@@ -1256,6 +1492,7 @@ def test_invalid_factor_month_separates_invested_benchmark_from_random_cash() ->
                 "lineage_resolved_through_t": True,
                 "factor_specific_lookback_position_span_addressable_at_t": True,
                 "factor_specific_required_price_anchors_valid_at_t": True,
+                "factor_anchor_lineage_v1_valid_at_t": True,
                 "corporate_action_policy_known_at_t": True,
                 "factor_value_at_t": float(100 - index),
             }

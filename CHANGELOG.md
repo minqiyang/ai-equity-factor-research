@@ -85,7 +85,13 @@ profitability, or trading readiness.
   policy rather than pretending to hash future bytes. Consecutive previous-
   hash/batch-hash records extend strictly increasing session bounds without
   resetting the original anchor; corrections append audit records and cannot
-  overwrite or retroactively recompute frozen signals.
+  overwrite or retroactively recompute frozen signals. Every factor-input
+  price anchor now also carries the accepted normalized permanent-security,
+  listing, and listing-episode identity. Symbol-change traversal is allowed
+  only for an evidenced rename inside that exact identity; ticker reuse,
+  relisting, venue/listing moves, share-class changes, distinct successor
+  securities, and ambiguous alias chains fail closed. Rename and reused-ticker
+  fixtures reject ticker-text-only stitching.
   Bootstrap segments of two through
   six rows now use genuine one-row within-segment resampling, with a
   nondegenerate-support gate that prevents false Holm support and is an

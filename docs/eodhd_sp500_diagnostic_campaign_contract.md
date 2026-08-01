@@ -72,6 +72,38 @@ The search family contains exactly:
   is `[t-62:t+1]`, which includes `t` and requires exactly 64 price anchors
   from `t-63` through `t`.
 
+Every factor input price anchor is governed by
+`factor_anchor_lineage_v1`, in addition to the numeric gates below. Each
+anchor carries the resolved permanent-security ID, listing ID, listing-episode
+ID, source exchange/ticker, session date, alias effective interval, and
+lineage-resolution evidence ID from the blinded dataset-review-accepted
+normalized security master. The target listing carries the same three resolved
+identity IDs. All anchors must match that target's permanent security, listing,
+and listing episode exactly. These are diagnostic reconstruction IDs, not a
+claim that EODHD supplies a permanent provider identifier, and they do not
+upgrade the campaign beyond `DIAGNOSTIC_ONLY`.
+
+Alias intervals are effective-from inclusive and effective-to exclusive, with
+a null end open. An anchor's session must lie inside its asserted alias
+interval. Traversal across different ticker text is allowed only through a
+contiguous, nonoverlapping, source-evidenced chain accepted as a symbol rename
+of the same permanent security, listing, and listing episode. The no-change
+case requires the same alias and exact target identity. Ticker-text-only joins,
+ticker reuse across securities, relistings or listing-episode changes, venue or
+listing moves, share-class changes, mergers/acquisitions or distinct successor
+securities, and ambiguous, gapped, overlapping, or conflicting alias chains
+are forbidden. An identity mismatch or unresolved path retains an invalid/
+missing factor value, excludes that listing from the factor-specific decision-
+time eligible set, and counts the exact reason; price stitching or ticker
+fallback is forbidden.
+
+The lineage golden fixtures distinguish two cases. An accepted rename uses an
+old and new alias with the same permanent-security, listing, and listing-
+episode IDs and retains momentum `0.25`. A reused-ticker fixture deliberately
+uses identical ticker text for two different permanent securities/listing
+episodes; a ticker-only join would produce `0.25`, but the frozen lineage gate
+must reject it.
+
 Every required `LOW_VOL_3M` anchor must be a real numeric scalar other than a
 Boolean, present, finite, and strictly greater than zero before division. If
 the anchor count is not exactly 64 or any anchor fails that check, the factor
@@ -185,7 +217,9 @@ the signal cutoff `t`. Decision-time eligibility requires:
 - point-in-time membership effective and known at `t`;
 - listing lineage resolved through `t`;
 - the factor-specific common-calendar lookback position span addressable at
-  `t` and every price anchor actually referenced by that factor valid at `t`;
+  `t`, every price anchor actually referenced by that factor numerically valid
+  at `t`, and every such anchor's `factor_anchor_lineage_v1` identity and path
+  valid at `t`;
 - no extra observed-price completeness gate: an unreferenced interior missing
   or invalid adjusted close cannot exclude `MOM_12_1` or `REV_1M`;
 - a finite factor value at `t`;

@@ -15,6 +15,48 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Bind Factor Anchors To Resolved Listing Lineage
+
+Context:
+
+- The twenty-first exact-head Codex review of PR #177 at `5869193` found one
+  P2. Numeric factor-anchor validity did not determine whether lookback prices
+  could cross an accepted rename, a listing episode, or ticker reuse by a
+  different issuer.
+
+Decision:
+
+- Require every factor input price anchor to carry the blinded dataset-review-
+  accepted normalized permanent-security, listing, and listing-episode IDs,
+  plus its source alias interval and lineage evidence. Every anchor must match
+  the signal target's three resolved identity IDs exactly.
+- Permit alias traversal only for a contiguous, nonoverlapping, evidenced
+  symbol rename inside the same permanent security, listing, and listing
+  episode. Reject ticker-text-only joins, ticker reuse, relisting, venue or
+  listing moves, share-class changes, distinct successor securities, and any
+  ambiguous lineage path.
+
+Rationale:
+
+- Ticker is an alias, so numeric adjusted-close anchors cannot establish
+  longitudinal security identity by themselves.
+- A verified rename can preserve one diagnostic listing episode, whereas a
+  reused ticker can silently combine unrelated issuers and manufacture a
+  return.
+
+Consequences:
+
+- An accepted old-alias/new-alias fixture retains momentum `0.25` only because
+  both anchors resolve to the same security/listing episode. An equal-ticker
+  different-issuer fixture shows the same ticker-only `0.25` calculation and
+  rejects it before factor eligibility.
+- The internal resolved IDs remain diagnostic reconstruction evidence; they do
+  not assert an EODHD permanent provider ID or upgrade the evidence tier.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Chain Prospective Batches Without Rebinding The Seed
 
 Context:
