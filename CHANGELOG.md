@@ -25,10 +25,14 @@ profitability, or trading readiness.
   14-trial inventory child. Final-state robustness now uses only the primary
   common complete-case Rank IC table with an outcome-independent required-year
   set, all required years in the yearly denominator, and exact required-year
-  omissions. Repository governance fixes safe in-scope review findings without
-  owner round trips and bounds pending-review schedules to eight five-minute
-  runs and critical owner-decision follow-ups to four thirty-minute runs. This
-  release changes no research runtime, data, or performance output.
+  omissions. Factor turnover now always uses the immediately preceding
+  scheduled frozen decision-time target, so an outcome-invalid middle month
+  cannot make later turnover skip to the last outcome-valid target. Repository
+  governance fixes safe in-scope review findings without owner round trips and
+  keeps the task active through current-head review and remediation; only a
+  genuinely critical owner-decision follow-up retains the four-run,
+  thirty-minute cap. This release changes no research runtime, data, or
+  performance output.
 - Added the bounded Stage 4B-R1I attempt-start release. The owner selected
   bundle `R1I-A`, freezing the exact earlier attempt-allocation reference, a
   complete digest-pinned external readiness record, separate start-actor

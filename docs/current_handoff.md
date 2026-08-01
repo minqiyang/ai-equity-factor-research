@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the third PR #177 review-remediation round.
+Updated: 2026-07-31 for the fourth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -39,21 +39,19 @@ Updated: 2026-07-31 for the third PR #177 review-remediation round.
 - PR #177 is the current open scope-reset gate on
   `codex/eodhd-diagnostic-scope-reset`; it is not merged. Initial review of
   `3df9a21` found two P1 and two P2 protocol gaps, which commit `97425c0`
-  remediated before exact-head CI passed. The second review of `97425c0` found
-  three P2 gaps: an ambiguous 62-versus-63 return slice, an underdefined
-  zero-target trigger, and a missing exact-byte link from the bundle to the
-  frozen YAML. The current remediation fixes all three, adds the owner-directed
-  automatic review-remediation and bounded scheduled-wait policy to
-  `AGENTS.md`, and locally passes 3073 tests with two platform skips plus the
-  remaining repository gates. The third review of `4d832c7` then found two P2
-  gaps: the bundle trial inventory lacked an exact frozen-byte/hash relation,
-  and the final-state robustness predicates did not freeze common-case versus
-  factor-specific Rank IC samples or the required-year denominator. The active
-  remediation binds the exact inventory, freezes common-complete-case
-  robustness and all required-year semantics, and passes 48 focused structure
-  tests, the 3075-test full suite with two platform skips, and all remaining
-  local gates. It must be committed and pushed, pass exact-head CI, and pass a
-  new final review before any protected merge.
+  remediated. The second review of `97425c0` found three P2 gaps remediated by
+  `4d832c7`; the third review of `4d832c7` found two P2 gaps remediated by
+  committed and pushed head `6a7445f`. Exact-head CI run `30684864773` passed
+  for `6a7445f`. Its fourth review then found two P2 gaps: factor turnover did
+  not freeze the predecessor after an outcome-invalid middle month, and this
+  handoff still described the already-completed third-round commit/push as
+  pending. The current branch-head snapshot containing this handoff freezes
+  the immediate scheduled decision-time turnover predecessor, adds the
+  three-month mutation oracle, and corrects the persistent review-wait policy.
+  It is not pending local authorship. The actual remaining gate is exact
+  current-head CI followed by one current-head Codex review; every finding
+  restarts that remediation loop. Do not repeat commit or push work from an old
+  handoff instruction; resolve current `HEAD`, remote head, CI, and review state.
 - Current protected-main baseline: 3064 tests passed with two
   platform-conditional wide-`longdouble` skips. The PR #176 release also
   passed Ruff, compileall, deterministic repo-map, Skill audit, immutable

@@ -244,9 +244,10 @@ mutation cases, or PR count as the primary measure of research progress.
   final stable head when review is required. Re-review only after an actionable
   fix changes that head.
 - Fix every safe actionable review finding inside the authorized scope without
-  waiting for owner confirmation. When only review completion is pending, use
-  one five-minute thread schedule capped at eight runs and never duplicate the
-  review request.
+  waiting for owner confirmation. A pending review is not a terminal task
+  state: keep the task active, use one five-minute thread monitor when needed,
+  never duplicate the review request, and continue through every safe finding
+  until the exact current head has no actionable finding.
 - A genuinely critical owner decision uses one thirty-minute thread follow-up
   schedule capped at four runs; no scheduled run may make the decision for the
   owner.

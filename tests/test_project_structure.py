@@ -104,6 +104,17 @@ def _decision_time_objects(
     return target, benchmark, cash_weight
 
 
+def _factor_target_turnover(
+    previous_target: dict[bytes, float],
+    current_target: dict[bytes, float],
+) -> float:
+    listing_keys = previous_target.keys() | current_target.keys()
+    return sum(
+        abs(current_target.get(key, 0.0) - previous_target.get(key, 0.0))
+        for key in listing_keys
+    )
+
+
 def _classify_diagnostic(
     *,
     hard_valid: bool,
@@ -273,7 +284,7 @@ def test_required_governance_files_exist() -> None:
         assert (PROJECT_ROOT / file_name).is_file(), f"Missing file: {file_name}"
 
 
-def test_agents_requires_active_remediation_and_bounded_scheduled_waits() -> None:
+def test_agents_requires_active_remediation_and_persistent_review_waits() -> None:
     agents = (PROJECT_ROOT / "AGENTS.md").read_text(encoding="utf-8")
     controller = (
         PROJECT_ROOT / "docs/codex_long_running_controller.md"
@@ -284,17 +295,22 @@ def test_agents_requires_active_remediation_and_bounded_scheduled_waits() -> Non
 
     for phrase in [
         "Do not wait for owner confirmation before fixing an actionable review finding",
-        "five-minute intervals with at most",
-        "eight scheduled runs",
+        "A pending `@codex review` is not a terminal task state",
+        "Do not send a final",
+        "thread-scoped monitor at five-minute",
+        "intervals, check the exact current head",
+        "until the exact-current-head review completes",
         "thirty-minute intervals with at",
         "most four scheduled runs",
-        "duplicate review requests",
+        "duplicate review request",
         "owner's behalf",
     ]:
         assert phrase in agents
-    assert "five-minute scheduled" in controller
+    assert "five-minute scheduled monitor" in controller
+    assert "return a final response" in controller
     assert "thirty-minute follow-up" in controller
-    assert "five-minute thread schedule capped at eight runs" in roadmap
+    assert "pending review is not a terminal task" in roadmap
+    assert "five-minute thread monitor" in roadmap
     assert "thirty-minute thread follow-up" in roadmap
 
 
@@ -411,6 +427,16 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         assert "docs/eodhd_sp500_diagnostic_campaign_contract.md" in canonical_doc
 
     for phrase in [
+        "committed and pushed head `6a7445f`",
+        "Exact-head CI run `30684864773` passed",
+        "It is not pending local authorship",
+        "actual remaining gate is exact",
+        "current-head CI followed by one current-head Codex review",
+    ]:
+        assert phrase in handoff
+    assert "It must be committed and pushed" not in handoff
+
+    for phrase in [
         "Track A - diagnostic research now",
         "Track B - formal evidence infrastructure",
         "`full_ledger_profile_v1`",
@@ -430,6 +456,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "No other condition produces a zero target",
         "Every yearly and leave-one-year-out Rank IC value",
         "required `trial_inventory.json` child",
+        "For every later scheduled month",
+        "scheduled frozen decision-time target",
+        "make turnover skip back to the last outcome-valid month",
     ]:
         assert phrase in contract
 
@@ -464,6 +493,8 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "rank_ic_input_table: PRIMARY_COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_TABLE",
         "positive_year_fraction_denominator: ALL_REQUIRED_YEARS",
         "semantic_relation: EXACT_FROZEN_14_TRIAL_INVENTORY",
+        "factor_turnover_predecessor: IMMEDIATELY_PRECEDING_SCHEDULED_FROZEN_DECISION_TIME_TARGET",
+        "outcome_invalid_middle_target_retention: RETAIN_AS_NEXT_TURNOVER_PREDECESSOR",
     ]:
         assert phrase in preregistration
 
@@ -702,6 +733,40 @@ def test_fixed_bps_cost_fixtures_cover_every_frozen_case() -> None:
     for turnover, cases in fixtures.items():
         for bps, expected in cases.items():
             assert round(turnover * bps / 10000, 10) == expected
+
+
+def test_factor_turnover_uses_immediate_frozen_scheduled_predecessor() -> None:
+    key_a = b"a"
+    key_b = b"b"
+    key_c = b"c"
+    key_d = b"d"
+    frozen_targets = (
+        {key_a: 0.5, key_b: 0.5},
+        {key_c: 0.5, key_d: 0.5},
+        {key_a: 0.5, key_b: 0.5},
+    )
+
+    def scheduled_turnovers(
+        outcome_validity: tuple[bool, bool, bool],
+    ) -> tuple[None, float, float]:
+        assert len(outcome_validity) == len(frozen_targets)
+        return (
+            None,
+            _factor_target_turnover(frozen_targets[0], frozen_targets[1]),
+            _factor_target_turnover(frozen_targets[1], frozen_targets[2]),
+        )
+
+    all_outcomes_valid = scheduled_turnovers((True, True, True))
+    middle_outcome_invalid = scheduled_turnovers((True, False, True))
+    forbidden_skip_to_last_outcome_valid = _factor_target_turnover(
+        frozen_targets[0],
+        frozen_targets[2],
+    )
+
+    assert all_outcomes_valid == (None, 2.0, 2.0)
+    assert middle_outcome_invalid == all_outcomes_valid
+    assert middle_outcome_invalid[2] == 2.0
+    assert forbidden_skip_to_last_outcome_valid == 0.0
 
 
 def test_diagnostic_final_state_assignment_is_exhaustive_at_boundaries() -> None:

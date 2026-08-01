@@ -1,5 +1,33 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Fourth-Review And Persistent-Wait Remediation
+
+- Exact-head Codex review of `6a7445f` completed with two new P2 findings:
+  factor turnover lacked an exact predecessor after an outcome-invalid middle
+  month, and the handoff still described the third-round commit/push as
+  pending.
+- Froze factor turnover to the immediately preceding scheduled frozen
+  decision-time target regardless of later outcome validity. The outcome-
+  invalid flag remains separate and cannot skip the predecessor back to the
+  last outcome-valid month.
+- Added a three-month mutation oracle whose middle target later becomes
+  outcome-invalid. The required immediate-target path retains turnover 2.0;
+  the forbidden last-outcome-valid path would report 0.0.
+- Corrected the handoff to record committed/pushed/CI-passed head `6a7445f`
+  and identify current-head CI plus review as the actual remaining gate.
+- Replaced the review-monitor exhaustion rule with the owner's latest terminal
+  condition: keep the task active through current-head review and every safe
+  remediation until no actionable finding remains. The four-run critical
+  owner-decision wait remains unchanged.
+- Focused project-structure validation passed 49 tests. The full suite passed
+  3076 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Third-Review Protocol Remediation
 
 - Deleted the prior bounded PR review monitor as soon as the new findings were

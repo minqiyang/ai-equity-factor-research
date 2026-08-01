@@ -1,5 +1,72 @@
 # Troubleshooting Log
 
+## 2026-07-31 - Premature Review-Wait Completion Recovery
+
+Original failures and consequences:
+
+- After posting `@codex review` for `6a7445f`, the task created a bounded
+  monitor and sent a final response while the review was still pending. The
+  owner correctly identified that the requested terminal condition had not
+  been reached and had to resume the task manually.
+- The first combined reread of AGENTS, handoff, controller, and roadmap
+  exceeded its output budget. No truncated portion was used as evidence.
+- Invoking the thread-aware helper with `--help` unexpectedly executed its
+  authentication preflight. The sandbox could not read the GitHub keyring, so
+  the command failed without reading review state or changing files.
+- The first two focused structure runs after editing failed only phrase
+  assertions because the asserted text crossed Markdown line wraps or used a
+  plural where the policy used a singular. The new three-month turnover
+  mutation oracle, YAML parse, Ruff, and diff checks did not fail.
+
+Investigation:
+
+- Deleted the bounded monitor so it could not race the resumed active task.
+- Re-read every required canonical workflow source in independent bounded
+  ranges.
+- Re-ran the thread-aware helper with approved keyring/network access and
+  separately inspected the exact-head review, inline comments, and request-
+  comment reactions.
+- Confirmed the review completed on exact head `6a7445f` and created two new
+  current P2 threads: `PRRT_kwDOSkphKc6VluEc` and
+  `PRRT_kwDOSkphKc6VluEd`.
+
+Correction:
+
+- Kept the resumed task active and entered the remediation loop instead of
+  returning another pending-gate final response.
+- Froze the immediate scheduled decision-time predecessor for factor turnover
+  and added the required outcome-invalid-middle-month mutation fixture.
+- Corrected the stale handoff and changed the review wait policy so monitor
+  creation or exhaustion cannot be treated as task completion.
+- Replaced the brittle whole-phrase assertions with stable semantic fragments
+  and matched the policy's singular wording; no protocol or workflow rule was
+  weakened.
+
+Verification:
+
+- The corrected focused structure suite passed 49 tests and the full suite
+  passed 3076 tests with two platform-conditional skips. Full Ruff,
+  compileall, Skill audit, YAML and JSON parsing, deterministic repo-map
+  regeneration, `git diff --check`, added-line privacy and Unicode/control
+  scans, and isolated sdist/wheel build passed.
+
+Remaining caveats:
+
+- Historical review threads remain read only and unresolved.
+- PR #177 must pass exact-new-head CI and a new current-head Codex review; any
+  actionable finding restarts the loop.
+
+Prevention:
+
+- Check the requested outcome, not the existence of a waiting mechanism,
+  before sending a final response.
+- Treat an eyes/processing reaction, missing exact-head review, or pending
+  review object as active work.
+- After any output truncation, reread required sources independently before
+  relying on them.
+
+---
+
 ## 2026-07-31 - PR 177 Missing Worktree And Bounded-Read Recovery
 
 Original failures and consequences:

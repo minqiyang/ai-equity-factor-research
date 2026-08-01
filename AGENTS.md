@@ -101,7 +101,7 @@ This repository is a serious simulated quantitative research project. AI coding 
 - When a PR has multiple meaningful commits, preserve them unless the commit history is messy.
 - Do not treat PR count or commit count as a quality metric by itself.
 
-### Review Remediation And Bounded Scheduled Waits
+### Review Remediation And Persistent Review Waits
 
 - Do not wait for owner confirmation before fixing an actionable review finding
   that is safe and inside the already-authorized PR or stage scope. Implement
@@ -112,13 +112,16 @@ This repository is a serious simulated quantitative research project. AI coding 
   decision. Review remediation does not authorize stage expansion, data
   purchase or access, protected-sample access, destructive work, merge,
   deployment, brokerage behavior, or another externally visible side effect.
-- When the only remaining gate is a pending `@codex review`, create or update
-  one thread-scoped scheduled monitor at five-minute intervals with at most
-  eight scheduled runs. Each run checks the exact current head once. It must
-  not post duplicate review requests. Stop the schedule as soon as the review
-  completes, the head changes, or a finding arrives; fix actionable findings
-  immediately. If the eighth run still finds no completed review, pause and
-  report the pending gate.
+- A pending `@codex review` is not a terminal task state. Do not send a final
+  response merely because the review request or a monitor was created. Keep
+  the current task active until the exact-current-head review completes. When
+  a scheduled monitor is needed, use one thread-scoped monitor at five-minute
+  intervals, check the exact current head once per run, and never post a
+  duplicate review request. Stop the monitor only when the review completes,
+  the head changes, or a finding arrives. Fix every safe actionable finding
+  immediately and repeat validation, push, CI, and current-head review until
+  no actionable finding remains. If the platform requires a bounded schedule,
+  renew it without treating schedule exhaustion as task completion.
 - When progress requires a genuinely critical owner decision, create or update
   one thread-scoped scheduled follow-up at thirty-minute intervals with at
   most four scheduled runs. Critical decisions include purchase or license
@@ -128,9 +131,9 @@ This repository is a serious simulated quantitative research project. AI coding 
   issue one concise follow-up; it must not decide on the owner's behalf. Stop
   the schedule when the owner responds or after the fourth run, then remain
   paused.
-- Reuse a matching active schedule instead of creating duplicates. Scheduled
-  waits never authorize repeated `@codex review` comments, repeated GitHub
-  polling outside the stated bound, protection bypass, or merge.
+- Reuse a matching active schedule instead of creating duplicates. Persistent
+  review waiting never authorizes repeated `@codex review` comments,
+  protection bypass, or merge.
 
 ## Strict Prohibitions
 

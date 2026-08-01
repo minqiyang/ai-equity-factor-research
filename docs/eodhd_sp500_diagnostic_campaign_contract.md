@@ -204,8 +204,21 @@ metadata and is tested by the post-`t` mutation oracle.
 
 Factor turnover is target-to-target top-decile turnover, not a cost model:
 align the union of canonical listing keys, assign zero to absent or nonselected
-names, and calculate `sum(abs(w_t - w_previous))`. The first valid month is
-`not_applicable`. No drifted holdings enter this factor diagnostic.
+names, and calculate `sum(abs(w_t - w_previous))`. Every scheduled signal
+month freezes one decision-time factor target: either the ranked top-decile
+target or the zero target caused by one of the three enumerated decision-time
+conditions below. The first scheduled frozen target inside the bounded
+evaluation schedule is `not_applicable`.
+
+For every later scheduled month, `w_previous` is the immediately preceding
+scheduled frozen decision-time target, including an intervening zero target.
+This predecessor is retained even when that preceding month later becomes
+outcome-invalid. Forward-return, endpoint, or comparison validity may flag the
+corresponding factor-month outcome invalid, but may not delete its frozen
+target, make turnover skip back to the last outcome-valid month, or change any
+later turnover. Factor turnover remains a decision-time diagnostic with the
+outcome-invalid flag retained separately. No drifted holdings enter this
+factor diagnostic.
 
 Each factor reports Rank IC, the ten-decile curve, top-minus-bottom diagnostic
 spread, adjacent-decile monotonicity, factor turnover, coverage, invalid

@@ -15,6 +15,55 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Persist Through Review And Freeze Factor-Turnover Predecessors
+
+Context:
+
+- The fourth exact-head Codex review of PR #177 at `6a7445f` found two P2
+  gaps. Factor turnover did not specify whether an outcome-invalid intervening
+  month remained the next month's predecessor, and the mandatory handoff still
+  called already-completed commit/push work pending.
+- The owner also corrected the review-wait terminal condition: creating a
+  monitor is not completion, and the task must continue through review and any
+  safe remediation until the exact current head has no actionable finding.
+
+Decision:
+
+- Freeze factor turnover to the immediately preceding scheduled frozen
+  decision-time target, including an intervening zero target and a target whose
+  later outcome becomes invalid. Outcome validity is retained separately and
+  cannot make turnover skip back to the last outcome-valid target.
+- The first scheduled frozen target in the bounded evaluation schedule has
+  `not_applicable` turnover. Every later scheduled target has exactly one
+  immediate predecessor.
+- Treat a pending current-head Codex review as a nonterminal task state. Keep
+  the task active, use a single five-minute monitor only when needed, never
+  duplicate a review request, and repeat fix, validation, push, CI, and review
+  until no actionable finding remains.
+- Retain the separate four-run, thirty-minute cap for a genuinely critical
+  owner decision; this decision supersedes only the prior eight-run pause rule
+  for a pending Codex review.
+
+Rationale:
+
+- Later endpoint missingness must not rewrite a previously knowable target or
+  any later decision-time turnover. Skipping an outcome-invalid target would
+  make a future diagnostic depend on post-signal information.
+- A scheduled callback is an implementation mechanism for waiting, not proof
+  that the requested review gate completed.
+
+Consequences:
+
+- A three-month mutation fixture distinguishes the required immediate-target
+  turnover from the forbidden last-outcome-valid alternative.
+- The handoff records `6a7445f` as committed, pushed, and CI-passed, names the
+  fourth-review findings, and directs continuations to current-head CI/review
+  state rather than redundant publication work.
+- This changes protocol and workflow control only. It adds no data access,
+  performance result, merge, brokerage, paper, or live behavior.
+
+---
+
 ## 2026-07-31 - Freeze Robustness Sample And Trial Inventory Binding
 
 Context:

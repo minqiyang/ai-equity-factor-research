@@ -201,7 +201,13 @@ factor_diagnostics:
   monotonicity_share: FRACTION_OF_9_ADJACENT_DIFFERENCES_NONNEGATIVE
   fully_monotone: ALL_9_ADJACENT_DIFFERENCES_NONNEGATIVE
   factor_turnover: TARGET_TO_TARGET_UNDIVIDED_SUM_ABSOLUTE_WEIGHT_CHANGES
-  first_factor_turnover: NOT_APPLICABLE
+  factor_turnover_target_schedule: EVERY_SCHEDULED_SIGNAL_MONTH_FREEZES_TOP_DECILE_OR_ENUMERATED_ZERO_TARGET
+  factor_turnover_predecessor: IMMEDIATELY_PRECEDING_SCHEDULED_FROZEN_DECISION_TIME_TARGET
+  factor_turnover_zero_target_predecessor: INCLUDED
+  factor_turnover_outcome_validity_dependence: FORBIDDEN
+  outcome_invalid_middle_target_retention: RETAIN_AS_NEXT_TURNOVER_PREDECESSOR
+  outcome_invalid_factor_turnover_reporting: RETAIN_WITH_SEPARATE_OUTCOME_INVALID_FLAG
+  first_scheduled_factor_turnover: NOT_APPLICABLE
   outputs:
     - coverage
     - invalid_and_missing_counts
