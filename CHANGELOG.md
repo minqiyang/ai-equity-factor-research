@@ -25,7 +25,10 @@ profitability, or trading readiness.
   14-trial inventory child. Final-state robustness now uses only the primary
   common complete-case Rank IC table with an outcome-independent required-year
   set, all required years in the yearly denominator, and exact required-year
-  omissions. Factor turnover now always uses the immediately preceding
+  omissions. A missing required factor-matched primary comparison is a hard
+  `INVALID_DIAGNOSTIC` failure, while a missing secondary SPY comparison is
+  retained as descriptive-only evidence with no final-state effect. Factor
+  turnover always uses the immediately preceding
   scheduled frozen decision-time target, so an outcome-invalid middle month
   cannot make later turnover skip to the last outcome-valid target. Repository
   governance fixes safe in-scope review findings without owner round trips and

@@ -120,6 +120,8 @@ def _classify_diagnostic(
     hard_valid: bool,
     prefrozen_coverage_met: bool,
     common_months: int,
+    primary_matched_benchmark_comparisons_valid: bool,
+    secondary_spy_comparisons_valid: bool,
     mean_rank_ics: tuple[float, float, float],
     holm_rejections: tuple[bool, bool, bool],
     active_return_10bps: tuple[float, float, float],
@@ -127,7 +129,7 @@ def _classify_diagnostic(
     common_case_positive_year_fractions: tuple[float, float, float],
     common_case_all_loyo_means_positive: tuple[bool, bool, bool],
 ) -> str:
-    if not hard_valid or any(
+    if not hard_valid or not primary_matched_benchmark_comparisons_valid or any(
         rejected and mean_rank_ic <= 0
         for rejected, mean_rank_ic in zip(
             holm_rejections, mean_rank_ics, strict=True
@@ -422,6 +424,7 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
     contract = contract_path.read_text(encoding="utf-8")
     preregistration = preregistration_path.read_text(encoding="utf-8")
     inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    normalized_handoff = " ".join(handoff.split())
 
     for canonical_doc in [roadmap, handoff, specification, controller]:
         assert "docs/eodhd_sp500_diagnostic_campaign_contract.md" in canonical_doc
@@ -429,12 +432,15 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
     for phrase in [
         "committed and pushed head `6a7445f`",
         "Exact-head CI run `30684864773` passed",
-        "It is not pending local authorship",
-        "actual remaining gate is exact",
+        "fourth review found two P2 gaps remediated by committed and pushed head `e5d72c2`",
+        "exact-head CI run `30685562719` passed",
+        "The fifth review of `e5d72c2` found one P2",
+        "not pending local authorship",
+        "The actual remaining gate is exact",
         "current-head CI followed by one current-head Codex review",
     ]:
-        assert phrase in handoff
-    assert "It must be committed and pushed" not in handoff
+        assert phrase in normalized_handoff
+    assert "It must be committed and pushed" not in normalized_handoff
 
     for phrase in [
         "Track A - diagnostic research now",
@@ -459,6 +465,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "For every later scheduled month",
         "scheduled frozen decision-time target",
         "make turnover skip back to the last outcome-valid month",
+        "required factor-matched primary-",
+        "benchmark comparison is a hard-validity failure",
+        "SPY is descriptive",
     ]:
         assert phrase in contract
 
@@ -495,6 +504,8 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "semantic_relation: EXACT_FROZEN_14_TRIAL_INVENTORY",
         "factor_turnover_predecessor: IMMEDIATELY_PRECEDING_SCHEDULED_FROZEN_DECISION_TIME_TARGET",
         "outcome_invalid_middle_target_retention: RETAIN_AS_NEXT_TURNOVER_PREDECESSOR",
+        "primary_benchmark_comparison_gap_final_state: INVALID_DIAGNOSTIC_HARD_VALIDITY_FAILURE",
+        "secondary_spy_comparison_final_state_role: DESCRIPTIVE_ONLY_NO_EFFECT",
     ]:
         assert phrase in preregistration
 
@@ -774,6 +785,8 @@ def test_diagnostic_final_state_assignment_is_exhaustive_at_boundaries() -> None
         "hard_valid": True,
         "prefrozen_coverage_met": True,
         "common_months": 60,
+        "primary_matched_benchmark_comparisons_valid": True,
+        "secondary_spy_comparisons_valid": True,
         "mean_rank_ics": (0.02, -0.01, -0.02),
         "holm_rejections": (True, False, False),
         "active_return_10bps": (0.01, -0.01, -0.01),
@@ -866,6 +879,32 @@ def test_diagnostic_final_state_assignment_is_exhaustive_at_boundaries() -> None
     }
 
 
+def test_benchmark_comparison_gaps_have_frozen_final_state_routing() -> None:
+    base = {
+        "hard_valid": True,
+        "prefrozen_coverage_met": True,
+        "common_months": 60,
+        "primary_matched_benchmark_comparisons_valid": True,
+        "secondary_spy_comparisons_valid": True,
+        "mean_rank_ics": (0.02, -0.01, -0.02),
+        "holm_rejections": (True, False, False),
+        "active_return_10bps": (0.01, -0.01, -0.01),
+        "active_return_25bps": (0.005, -0.01, -0.01),
+        "common_case_positive_year_fractions": (0.6, 0.4, 0.4),
+        "common_case_all_loyo_means_positive": (True, False, False),
+    }
+
+    matched_universe_gap = _classify_diagnostic(
+        **(base | {"primary_matched_benchmark_comparisons_valid": False})
+    )
+    secondary_spy_gap = _classify_diagnostic(
+        **(base | {"secondary_spy_comparisons_valid": False})
+    )
+
+    assert matched_universe_gap == "INVALID_DIAGNOSTIC"
+    assert secondary_spy_gap == "POSITIVE_DIAGNOSTIC"
+
+
 def test_final_state_robustness_uses_common_case_not_factor_all_valid() -> None:
     records = []
     required_years = (2018, 2019, 2020)
@@ -903,6 +942,8 @@ def test_final_state_robustness_uses_common_case_not_factor_all_valid() -> None:
         "hard_valid": True,
         "prefrozen_coverage_met": True,
         "common_months": 60,
+        "primary_matched_benchmark_comparisons_valid": True,
+        "secondary_spy_comparisons_valid": True,
         "mean_rank_ics": (0.1, -0.01, -0.02),
         "holm_rejections": (True, False, False),
         "active_return_10bps": (0.01, -0.01, -0.01),

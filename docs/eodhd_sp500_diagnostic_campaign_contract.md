@@ -277,6 +277,21 @@ Missing constituent execution or held returns, or missing SPY benchmark dates,
 invalidate the comparison; they do not change benchmark membership and are not
 filled.
 
+Final-state routing distinguishes the two comparisons. Any missing constituent
+execution or held return that invalidates a required factor-matched primary-
+benchmark comparison is a hard-validity failure for the campaign and produces
+`INVALID_DIAGNOSTIC` under the first ordered rule. It is not a realized-
+coverage failure, a merely false economic predicate, or an interval that may
+be omitted. The primary annualized active return is calculated only from a
+complete valid factor-matched comparison.
+
+A missing SPY date invalidates and retains only the secondary SPY comparison.
+SPY is descriptive, never enters `economically_supported(f)`, and has no effect
+on the ordered final state when every required primary comparison is valid.
+The invalid secondary output and missing-date count remain required bundle
+evidence; they may not be filled, omitted, or substituted with another date or
+benchmark.
+
 Each baseline semantic trial emits an exact output matrix with rows
 `MOM_12_1`, `REV_1M`, and `LOW_VOL_3M` and columns
 `episode_21_row_return` and `continuous_daily_return`. These factor-matched
@@ -514,14 +529,19 @@ tree. Evaluate it in this order:
    other than exactly 14 terminally reconciled semantic trials and all required
    outputs; a pre-frozen membership/identity/terminal invalidation threshold
    exceeded; a required strategy execution/held-return path invalid; or a Holm
-   rejection paired with a nonpositive observed mean Rank IC.
+   rejection paired with a nonpositive observed mean Rank IC; or any required
+   factor-matched primary-benchmark comparison invalid. A secondary SPY
+   comparison invalidation is descriptive only and is not a hard-validity or
+   coverage failure.
 2. Otherwise, `INCONCLUSIVE_DIAGNOSTIC` if any pre-frozen realized coverage
    threshold fails or the common complete-case primary sample contains fewer
    than 60 monthly records.
 3. Otherwise, define `holm_supported(f)` as a Holm rejection for factor `f`
    with observed common-complete-case mean Rank IC strictly greater than zero.
    Define `economically_supported(f)` as strictly positive net annualized
-   active return for that factor's long-only strategy at both 10 and 25 bps.
+   active return against that factor's valid factor-matched primary benchmark
+   at both 10 and 25 bps. The secondary SPY comparison never enters this
+   predicate.
    Define `robustness_supported(f)` as strictly positive leave-one-year-out
    common-case mean Rank IC for every required-year omission and a strictly
    greater than 0.5 fraction of required calendar-year common-case mean Rank IC

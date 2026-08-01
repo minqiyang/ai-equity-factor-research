@@ -15,6 +15,45 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Freeze Benchmark-Comparison Final-State Routing
+
+Context:
+
+- The fifth exact-head Codex review of PR #177 at `e5d72c2` found one P2.
+  Missing factor-matched constituent returns or SPY dates invalidated their
+  comparisons, but the ordered final-state tree did not state whether each gap
+  was a hard failure, coverage failure, or false economic predicate.
+
+Decision:
+
+- Any invalid required factor-matched primary-benchmark comparison is a hard-
+  validity failure for the campaign and routes to `INVALID_DIAGNOSTIC` under
+  the first ordered rule. It may not be omitted, filled, or treated as merely
+  economically unsupported.
+- The secondary SPY comparison is descriptive only. A missing SPY date retains
+  an invalid secondary output and missing count but has no final-state effect
+  when every required primary comparison is valid.
+- `economically_supported(f)` uses only the valid factor-matched primary-
+  benchmark annualized active return at 10 and 25 bps.
+
+Rationale:
+
+- The primary comparison is required for the preregistered economic coherence
+  predicate, so incomplete primary evidence cannot support another final state.
+- SPY was frozen as a secondary proxy and should not silently become a hard
+  requirement for a final state whose primary benchmark is factor-matched.
+
+Consequences:
+
+- Separate fixtures route a primary matched-universe gap to
+  `INVALID_DIAGNOSTIC` and show that a SPY-only gap leaves an otherwise
+  `POSITIVE_DIAGNOSTIC` state unchanged.
+- Both invalid comparisons remain visible in the required evidence outputs.
+- No data, performance, trial execution, merge, brokerage, paper, or live
+  behavior is added.
+
+---
+
 ## 2026-07-31 - Persist Through Review And Freeze Factor-Turnover Predecessors
 
 Context:

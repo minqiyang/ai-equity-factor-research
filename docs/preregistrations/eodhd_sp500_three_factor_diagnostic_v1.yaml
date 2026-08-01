@@ -253,8 +253,14 @@ strategy:
   primary_benchmark: FACTOR_MATCHED_CONTINUOUS_EQUAL_WEIGHT_DECISION_TIME_ELIGIBLE_UNIVERSE
   primary_benchmark_membership_freeze: SIGNAL_CLOSE_T
   future_availability_membership_recomputation: FORBIDDEN
+  primary_benchmark_comparison_gap: INVALIDATE_REQUIRED_PRIMARY_COMPARISON
+  primary_benchmark_comparison_gap_final_state: INVALID_DIAGNOSTIC_HARD_VALIDITY_FAILURE
+  primary_benchmark_gap_is_coverage_or_false_economic_predicate: false
   secondary_benchmark: SPY_ADJUSTED_CLOSE_PROXY_ON_IDENTICAL_DAILY_INTERVALS
-  missing_benchmark_return: INVALIDATE_COMPARISON
+  missing_spy_return: INVALIDATE_SECONDARY_COMPARISON_ONLY
+  secondary_spy_comparison_final_state_role: DESCRIPTIVE_ONLY_NO_EFFECT
+  invalid_comparison_interval_omission_or_fill: FORBIDDEN
+  economically_supported_benchmark: PRIMARY_FACTOR_MATCHED_BENCHMARK_ONLY
   shorting: false
   borrow_assumptions: NONE
   turnover_convention: UNDIVIDED_SUM_ABSOLUTE_WEIGHT_CHANGES_FROM_DRIFTED_WEIGHTS
@@ -438,13 +444,15 @@ final_state_assignment:
     semantic_trials: EXACTLY_14_TERMINALLY_RECONCILED_WITH_ALL_REQUIRED_OUTPUTS
     prefrozen_membership_identity_terminal_thresholds: NOT_EXCEEDED
     required_strategy_execution_and_held_return_paths: VALID
+    required_factor_matched_primary_benchmark_comparisons: VALID
+    secondary_spy_comparison_validity: DESCRIPTIVE_ONLY_NOT_A_HARD_OR_COVERAGE_GATE
     holm_rejection_with_nonpositive_observed_mean_rank_ic: INVALID
   realized_coverage_gate:
     prefrozen_thresholds: ALL_MET
     minimum_common_complete_case_monthly_records: 60
   factor_predicates:
     holm_supported: HOLM_REJECT_AND_OBSERVED_COMMON_CASE_MEAN_RANK_IC_STRICTLY_GT_ZERO
-    economically_supported: NET_ANNUALIZED_ACTIVE_RETURN_STRICTLY_GT_ZERO_AT_BOTH_10_AND_25_BPS
+    economically_supported: VALID_PRIMARY_FACTOR_MATCHED_NET_ANNUALIZED_ACTIVE_RETURN_STRICTLY_GT_ZERO_AT_BOTH_10_AND_25_BPS
     robustness_supported:
       rank_ic_input_table: PRIMARY_COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_TABLE
       required_years: INFERENCE_FINAL_STATE_ROBUSTNESS_REQUIRED_YEAR_SET

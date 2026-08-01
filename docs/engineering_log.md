@@ -1,5 +1,27 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Fifth-Review Benchmark Routing Remediation
+
+- Exact-head Codex review of `e5d72c2` completed with one P2: invalid primary
+  factor-matched and secondary SPY comparisons had no unique route through the
+  deterministic final-state tree.
+- Made any required primary factor-matched comparison gap a campaign hard-
+  validity failure and therefore `INVALID_DIAGNOSTIC`. Interval omission,
+  filling, and false-economic-predicate treatment are forbidden.
+- Kept a SPY-only comparison gap descriptive with no final-state effect while
+  retaining its invalid output and missing-date count as required evidence.
+- Added separate final-state fixtures for matched-universe and SPY gaps and
+  reconciled the protocol, preregistration, handoff, decision log, changelog,
+  and troubleshooting record.
+- Focused project-structure validation passed 50 tests. The full suite passed
+  3077 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Fourth-Review And Persistent-Wait Remediation
 
 - Exact-head Codex review of `6a7445f` completed with two new P2 findings:

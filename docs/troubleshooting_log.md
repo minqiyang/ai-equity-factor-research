@@ -17,6 +17,11 @@ Original failures and consequences:
   assertions because the asserted text crossed Markdown line wraps or used a
   plural where the policy used a singular. The new three-month turnover
   mutation oracle, YAML parse, Ruff, and diff checks did not fail.
+- The first focused run for the fifth-review benchmark-routing fix likewise
+  failed only a structural phrase split across `primary-` and `benchmark`.
+  The next two retries found the same line-wrap and capitalization issue in
+  the handoff's committed-head and remaining-gate phrases. Both benchmark
+  final-state behavior fixtures passed throughout.
 
 Investigation:
 
@@ -29,6 +34,9 @@ Investigation:
 - Confirmed the review completed on exact head `6a7445f` and created two new
   current P2 threads: `PRRT_kwDOSkphKc6VluEc` and
   `PRRT_kwDOSkphKc6VluEd`.
+- Continued the same active loop through `e5d72c2`; its review completed with
+  benchmark-routing P2 thread `PRRT_kwDOSkphKc6Vl0hK` rather than being
+  mistaken for a clean terminal result.
 
 Correction:
 
@@ -41,11 +49,14 @@ Correction:
 - Replaced the brittle whole-phrase assertions with stable semantic fragments
   and matched the policy's singular wording; no protocol or workflow rule was
   weakened.
+- Split the benchmark-routing assertion into stable adjacent semantic
+  fragments and normalized handoff whitespace before checking its full
+  semantic phrases; no protocol or handoff rule was weakened.
 
 Verification:
 
-- The corrected focused structure suite passed 49 tests and the full suite
-  passed 3076 tests with two platform-conditional skips. Full Ruff,
+- The latest corrected focused structure suite passed 50 tests and the full
+  suite passed 3077 tests with two platform-conditional skips. Full Ruff,
   compileall, Skill audit, YAML and JSON parsing, deterministic repo-map
   regeneration, `git diff --check`, added-line privacy and Unicode/control
   scans, and isolated sdist/wheel build passed.
