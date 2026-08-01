@@ -1,5 +1,29 @@
 # Engineering Log
 
+## 2026-08-01 - Same-PR Protected Lifecycle Authorization
+
+- At the owner's explicit direction, root `AGENTS.md` now interprets an
+  instruction to create or publish one PR as authorization for that same PR's
+  normal protected lifecycle unless the owner narrows or revokes it. The
+  controller owns the procedural sequence; neither source authorizes another
+  PR, scope expansion, auto-merge, protection bypass, deployment, sensitive
+  data, brokerage, or destructive action.
+- Review-required PRs remain blocked until Codex review completes cleanly on the
+  exact current head, required CI and formal reviews pass, and no review thread
+  remains unresolved. A verified in-scope remediation may be published and its
+  addressed thread replied to and resolved; unverified or disputed findings
+  remain open and stop the lifecycle.
+- Exact-head review `4836054644` of `d3375f6` found that thread resolution was
+  missing from the lifecycle grant. Commit `0f432ae` added that bounded action.
+  Re-review `4836073605` then required this durable engineering record.
+- Project-structure validation passed 74 tests. The full suite passed 3,101
+  tests with two platform-conditional `longdouble` skips. Ruff, compileall,
+  Skill audit, deterministic repo-map regeneration, whitespace checks, and
+  independent P1/P2 diff review passed.
+- No research method, runtime, factor, strategy, campaign, private data, vendor
+  access, performance interpretation, deployment, brokerage, paper, or live
+  behavior changed.
+
 ## 2026-08-01 - Active Handoff Compaction And Permanent Resume Routing
 
 - PR #178 merged as `3e1f30db0aa3019d67300283ad55e89ac62d64a7`
