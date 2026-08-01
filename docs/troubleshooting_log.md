@@ -170,6 +170,12 @@ Original failures and consequences:
   anchor policy now binds every endpoint to accepted permanent-security,
   listing, and listing-episode IDs, permits only evidenced same-episode symbol
   renames, and rejects an otherwise numerically valid reused-ticker return.
+- The twenty-second review exposed an unbound field in the stateful continuous
+  path: factor inputs and episodic labels used adjusted close, but strategy and
+  primary-benchmark held returns did not. One shared adjacent adjusted-close
+  simple-return policy now controls both paths, with a split fixture proving
+  raw close would change gross return, drifted turnover, cost, and active
+  return.
 
 Investigation:
 

@@ -15,6 +15,49 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Freeze Continuous Held Returns To Adjusted Close
+
+Context:
+
+- The twenty-second exact-head Codex review of PR #177 at `9bbc2c3` found one
+  P2. The continuous strategy and primary-benchmark path froze timing but not
+  the price field, adjacent-return formula, or held-anchor failure policy.
+
+Decision:
+
+- Use `adjusted_close_simple_held_return_v1` for the factor strategy, both
+  long-only baselines, and factor-matched primary benchmark: each adjacent
+  common-calendar held return is exactly
+  `adjusted_close[d] / adjusted_close[d-1] - 1`.
+- Require both anchors to be real numeric non-Boolean, present, finite,
+  strictly positive, and valid under `factor_anchor_lineage_v1`. Invalid
+  strategy anchors invalidate the affected trial; invalid primary-benchmark
+  anchors invalidate the required comparison and route to the existing hard-
+  validity state. No membership renormalization or repair is allowed.
+- Forbid raw-close fallback and separately adding split or dividend cash flows
+  to the adjusted-close proxy.
+
+Rationale:
+
+- Corporate actions can make raw-close returns economically incompatible with
+  the reviewed dividend-and-split-adjusted proxy and change every downstream
+  stateful calculation.
+- Strategy and primary-benchmark returns must use the same field, formula,
+  calendar, and missingness semantics for active-return evidence to be
+  interpretable.
+
+Consequences:
+
+- The 2-for-1 split fixture freezes adjusted gross return `0`, equal drifted
+  weights, zero turnover/cost/active return, and rejects the raw alternative's
+  `-0.25` gross return, `1/3` turnover, and `0.00025` 10-bps cost impact.
+- This remains an idealized diagnostic total-return proxy, not a share-level
+  execution or exact total-return-index claim.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Bind Factor Anchors To Resolved Listing Lineage
 
 Context:

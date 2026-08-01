@@ -646,6 +646,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "Traversal across different ticker text is allowed only through a",
         "Ticker-text-only joins,",
         "A reused-ticker fixture deliberately",
+        "The continuous held-return policy is",
+        "adjusted_close[d] / adjusted_close[d-1] - 1",
+        "A log return, raw close, or alternate price field is forbidden",
+        "The corporate-action fixture holds a split security",
+        "10-bps post-return-equity cost impact",
         "factor-specific common-calendar lookback position span addressable",
         "no extra observed-price completeness gate",
         "Prospective collection compares only canonical UTC instants",
@@ -706,6 +711,15 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "anchor_to_target_identity_match: EXACT_PERMANENT_SECURITY_LISTING_AND_LISTING_EPISODE",
         "allowed_alias_traversal: ACCEPTED_SYMBOL_RENAME_SAME_PERMANENT_SECURITY_SAME_LISTING_AND_LISTING_EPISODE_ONLY",
         "price_stitch_or_ticker_fallback: FORBIDDEN",
+        "version: adjusted_close_simple_held_return_v1",
+        "strategy_held_return_field: adjusted_close",
+        "primary_benchmark_held_return_field: adjusted_close",
+        "selected_target_execution_anchor_field: adjusted_close",
+        "primary_benchmark_execution_anchor_field: adjusted_close",
+        "return_formula: adjusted_close[d] / adjusted_close[d-1] - 1",
+        "raw_close_return_fallback: FORBIDDEN",
+        "separate_split_or_dividend_cash_flow_addition: FORBIDDEN_TO_PREVENT_DOUBLE_COUNTING",
+        "forbidden_raw_close_gross_return: -0.25",
         "post_t_mutation_effect_on_frozen_objects: NONE_BYTE_IDENTICAL",
         "fixed_bps_interpretation: ALL_IN_DIAGNOSTIC_EXECUTION_COST_PROXY",
         "evaluation: ORDERED_FIRST_MATCH_WINS_MUTUALLY_EXCLUSIVE_EXHAUSTIVE",
@@ -1782,6 +1796,124 @@ def test_invalid_month_stays_in_continuous_economic_support_path() -> None:
     assert full_path_state == "MIXED_DIAGNOSTIC"
     assert forbidden_filtered_state == "POSITIVE_DIAGNOSTIC"
     assert forbidden_segment_restart_state == "POSITIVE_DIAGNOSTIC"
+
+
+def test_continuous_held_returns_use_adjusted_close_across_split() -> None:
+    def simple_held_return(before: object, after: object) -> float | None:
+        anchors = (before, after)
+        if not all(
+            not isinstance(anchor, bool)
+            and isinstance(anchor, Real)
+            and math.isfinite(float(anchor))
+            and float(anchor) > 0.0
+            for anchor in anchors
+        ):
+            return None
+        return float(after) / float(before) - 1.0
+
+    target_weights = (0.5, 0.5)
+    adjusted_returns = (
+        simple_held_return(50.0, 50.0),
+        simple_held_return(100.0, 100.0),
+    )
+    forbidden_raw_returns = (
+        simple_held_return(100.0, 50.0),
+        simple_held_return(100.0, 100.0),
+    )
+    assert all(value is not None for value in adjusted_returns)
+    assert all(value is not None for value in forbidden_raw_returns)
+    adjusted_numeric = tuple(float(value) for value in adjusted_returns)
+    forbidden_raw_numeric = tuple(
+        float(value) for value in forbidden_raw_returns
+    )
+
+    def path_values(
+        returns: tuple[float, float],
+    ) -> tuple[float, tuple[float, float]]:
+        ending_values = tuple(
+            weight * (1.0 + held_return)
+            for weight, held_return in zip(
+                target_weights,
+                returns,
+                strict=True,
+            )
+        )
+        ending_total = sum(ending_values)
+        gross_return = ending_total - 1.0
+        drifted_weights = tuple(
+            value / ending_total for value in ending_values
+        )
+        return gross_return, drifted_weights
+
+    adjusted_gross, adjusted_drifted = path_values(adjusted_numeric)
+    forbidden_raw_gross, forbidden_raw_drifted = path_values(
+        forbidden_raw_numeric
+    )
+    adjusted_turnover = sum(
+        abs(target - drifted)
+        for target, drifted in zip(
+            target_weights,
+            adjusted_drifted,
+            strict=True,
+        )
+    )
+    forbidden_raw_turnover = sum(
+        abs(target - drifted)
+        for target, drifted in zip(
+            target_weights,
+            forbidden_raw_drifted,
+            strict=True,
+        )
+    )
+    adjusted_cost = (
+        (1.0 + adjusted_gross) * adjusted_turnover * 10 / 10000
+    )
+    forbidden_raw_cost = (
+        (1.0 + forbidden_raw_gross)
+        * forbidden_raw_turnover
+        * 10
+        / 10000
+    )
+    adjusted_primary_benchmark_return = adjusted_gross
+    forbidden_raw_primary_benchmark_return = forbidden_raw_gross
+    adjusted_active_return = (
+        adjusted_gross
+        - adjusted_cost
+        - adjusted_primary_benchmark_return
+    )
+    forbidden_raw_active_return = (
+        forbidden_raw_gross
+        - forbidden_raw_cost
+        - forbidden_raw_primary_benchmark_return
+    )
+
+    assert adjusted_numeric == (0.0, 0.0)
+    assert adjusted_gross == 0.0
+    assert adjusted_drifted == (0.5, 0.5)
+    assert adjusted_turnover == 0.0
+    assert adjusted_cost == 0.0
+    assert adjusted_active_return == 0.0
+    assert forbidden_raw_numeric == (-0.5, 0.0)
+    assert forbidden_raw_gross == -0.25
+    assert forbidden_raw_drifted == (
+        0.3333333333333333,
+        0.6666666666666666,
+    )
+    assert math.isclose(forbidden_raw_turnover, 1.0 / 3.0, abs_tol=1e-15)
+    assert math.isclose(forbidden_raw_cost, 0.00025, abs_tol=1e-15)
+    assert math.isclose(forbidden_raw_active_return, -0.00025, abs_tol=1e-15)
+
+    invalid_anchors: tuple[object, ...] = (
+        None,
+        True,
+        float("nan"),
+        float("inf"),
+        0.0,
+        -1.0,
+    )
+    for invalid_anchor in invalid_anchors:
+        assert simple_held_return(invalid_anchor, 100.0) is None
+        assert simple_held_return(100.0, invalid_anchor) is None
 
 
 def test_low_vol_3m_uses_exactly_63_returns_from_64_price_anchors() -> None:

@@ -135,6 +135,41 @@ price_policy:
     endpoint_adjusted_close: 121.0
     simple_return: 0.21
     forbidden_log_return: 0.1906203596086497
+  continuous_held_return_policy:
+    version: adjusted_close_simple_held_return_v1
+    consumers:
+      - LONG_ONLY_FACTOR_STRATEGY
+      - RANDOM_RANK_LONG_ONLY_BASELINE
+      - EQUAL_WEIGHT_ELIGIBLE_UNIVERSE_BASELINE
+      - PRIMARY_FACTOR_MATCHED_EQUAL_WEIGHT_BENCHMARK
+    strategy_held_return_field: adjusted_close
+    primary_benchmark_held_return_field: adjusted_close
+    field_claim: EODHD_DIVIDEND_AND_SPLIT_ADJUSTED_CLOSE_RETURN_PROXY
+    return_kind: SIMPLE_NOT_LOG
+    return_formula: adjusted_close[d] / adjusted_close[d-1] - 1
+    interval: EACH_ADJACENT_COMMON_CALENDAR_CLOSE_AFTER_EXECUTION_THROUGH_NEXT_MONTHLY_EXECUTION_CLOSE
+    anchor_validation: BOTH_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE
+    anchor_lineage_policy: factor_anchor_lineage_v1
+    strategy_invalid_anchor_action: INVALIDATE_AND_RETAIN_AFFECTED_STRATEGY_TRIAL_WITH_EXACT_REASON
+    primary_benchmark_invalid_anchor_action: INVALIDATE_REQUIRED_PRIMARY_COMPARISON_AND_ROUTE_TO_INVALID_DIAGNOSTIC
+    invalid_anchor_repairs: FORBIDDEN_ZERO_FILL_FORWARD_FILL_BACKWARD_FILL_INTERPOLATION_CLIPPING_ABSOLUTE_VALUE_ALTERNATE_ROW_OR_LOG_FALLBACK
+    raw_close_return_fallback: FORBIDDEN
+    separate_split_or_dividend_cash_flow_addition: FORBIDDEN_TO_PREVENT_DOUBLE_COUNTING
+    corporate_action_split_fixture:
+      split_ratio: 2.0
+      split_security_raw_close_before: 100.0
+      split_security_raw_close_after: 50.0
+      split_security_adjusted_close_before: 50.0
+      split_security_adjusted_close_after: 50.0
+      unaffected_security_adjusted_close_before: 100.0
+      unaffected_security_adjusted_close_after: 100.0
+      equal_weight_strategy_and_primary_benchmark_adjusted_gross_return: 0.0
+      forbidden_raw_close_gross_return: -0.25
+      adjusted_drifted_weights: [0.5, 0.5]
+      forbidden_raw_close_drifted_weights: [0.3333333333333333, 0.6666666666666666]
+      adjusted_turnover_back_to_equal_weight: 0.0
+      forbidden_raw_close_turnover_back_to_equal_weight: 0.3333333333333333
+      forbidden_raw_close_10_bps_cost_impact: 0.00025
   exact_total_return_index_claim: FORBIDDEN_UNLESS_DATASET_REVIEW_VERIFIES
   raw_ohlc_use: PRIVATE_AUDIT_ONLY
   volume_use: FORBIDDEN_IN_CAMPAIGN
@@ -323,6 +358,11 @@ strategy:
   portfolio: LONG_ONLY_TOP_DECILE_EQUAL_WEIGHT
   episode_21_row_return_use: FACTOR_AND_DECILE_DIAGNOSTIC_ONLY_NOT_COMPOUNDED
   return_object: CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH
+  held_return_policy: adjusted_close_simple_held_return_v1
+  strategy_held_return_field: adjusted_close
+  primary_benchmark_held_return_field: adjusted_close
+  selected_target_execution_anchor_field: adjusted_close
+  primary_benchmark_execution_anchor_field: adjusted_close
   first_earned_return: EXECUTION_CLOSE_TO_NEXT_COMMON_CALENDAR_CLOSE
   continuous_schedule_inclusion: SIGNAL_TARGET_REQUIRES_NEXT_MONTHLY_EXECUTION_ON_OR_BEFORE_ACCEPTED_CUTOFF
   boundary_signal_with_complete_label_but_next_execution_after_cutoff: EXCLUDE_BEFORE_CONTINUOUS_TARGET_FREEZE_NOT_INVALID

@@ -91,7 +91,12 @@ profitability, or trading readiness.
   only for an evidenced rename inside that exact identity; ticker reuse,
   relisting, venue/listing moves, share-class changes, distinct successor
   securities, and ambiguous alias chains fail closed. Rename and reused-ticker
-  fixtures reject ticker-text-only stitching.
+  fixtures reject ticker-text-only stitching. Continuous factor-strategy,
+  long-only baseline, and primary factor-matched benchmark held returns now
+  use one adjacent common-calendar adjusted-close simple-return policy. A
+  split fixture rejects raw-close return, drifted-weight, turnover, cost, and
+  active-return contamination; missing anchors fail closed and separate split
+  or dividend cash-flow addition is forbidden as double counting.
   Bootstrap segments of two through
   six rows now use genuine one-row within-segment resampling, with a
   nondegenerate-support gate that prevents false Holm support and is an

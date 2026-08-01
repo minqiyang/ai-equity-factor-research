@@ -1,5 +1,30 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Twenty-Second-Review Held-Return Remediation
+
+- Exact-head Codex review `4834496727` of `9bbc2c3` completed with one P2: the
+  continuous holdings path did not bind the strategy and primary benchmark to
+  one held-return price field, adjacent-return formula, and anchor policy.
+- Added `adjusted_close_simple_held_return_v1` for factor strategies, both
+  long-only baselines, and the factor-matched primary benchmark. It uses exact
+  adjacent common-calendar adjusted-close simple returns, strict positive
+  real non-Boolean anchors, the frozen lineage policy, and no repair or raw-
+  close fallback. Strategy anchor failures invalidate the trial; primary-
+  benchmark failures trigger the required hard-invalid comparison route.
+- Added a two-security 2-for-1 split fixture. The required adjusted path keeps
+  gross return, turnover, cost, and active return at zero; the forbidden raw
+  path produces `-0.25` gross return, `1/3` turnover, and `0.00025` 10-bps
+  cost impact. Separate corporate-action cash flows cannot be added to the
+  adjusted proxy.
+- Focused project-structure validation passed 69 tests. The full suite passed
+  3096 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, and `git
+  diff --check` passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Twenty-First-Review Factor-Lineage Remediation
 
 - Exact-head Codex review `4834461569` of `5869193` completed with one P2:

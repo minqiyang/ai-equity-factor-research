@@ -190,10 +190,42 @@ membership are forbidden.
 
 ### Price fields and terminal events
 
-Factor inputs and diagnostic forward returns use the reviewed EODHD
-dividend-and-split-adjusted close return proxy. The campaign must not call it an
-exact total-return index until the dataset review verifies the provider
-semantics and corporate-action reconciliation.
+Factor inputs, diagnostic forward returns, continuous strategy held returns,
+both long-only baseline held returns, and primary factor-matched benchmark
+held returns use the reviewed EODHD dividend-and-split-adjusted close return
+proxy. The campaign must not call it an exact total-return index until the
+dataset review verifies the provider semantics and corporate-action
+reconciliation.
+
+The continuous held-return policy is
+`adjusted_close_simple_held_return_v1`. For every security and each adjacent
+common-calendar interval after execution through the next monthly execution
+close, the return is exactly
+`adjusted_close[d] / adjusted_close[d-1] - 1`. This same field and simple-
+return formula apply to the factor strategy, random-rank long-only baseline,
+equal-weight eligible-universe baseline, and factor-matched primary benchmark.
+A log return, raw close, or alternate price field is forbidden.
+
+Both adjusted-close anchors must be real numeric non-Boolean scalars that are
+present, finite, and strictly positive, and their identity/path must pass
+`factor_anchor_lineage_v1`. There is no zero/forward/backward fill,
+interpolation, clipping, absolute-value repair, alternate row, security-
+specific next observation, or log fallback. An invalid held anchor retains and
+invalidates the affected strategy trial with its exact reason. For the primary
+benchmark it invalidates the required comparison and routes through the
+already-frozen `INVALID_DIAGNOSTIC` hard-validity rule; benchmark membership is
+not renormalized over surviving returns. Because the adjusted-close proxy is
+used, separately adding split or dividend cash flows is forbidden as double
+counting.
+
+The corporate-action fixture holds a split security and an unaffected security
+at equal weights. Across a 2-for-1 split, the split security's raw close moves
+from `100` to `50`, while its adjusted close remains `50`; the unaffected
+adjusted close remains `100`. The required adjusted-close path therefore has
+portfolio and primary-benchmark gross return `0`, drifted weights `(0.5,0.5)`,
+and turnover `0` back to equal weight. The forbidden raw-close path instead
+has gross return `-0.25`, drifted weights `(1/3,2/3)`, turnover `1/3`, and
+10-bps post-return-equity cost impact `0.00025`.
 
 Raw OHLC, splits, dividends, and volume may be retained privately for audit
 only while the active subscription terms or written permission allow that
@@ -331,9 +363,12 @@ decile. The fixed execution-to-21-row episode remains a factor/decile
 diagnostic only. It is never compounded into a strategy equity curve.
 
 The strategy uses one continuous idealized holdings path. A target formed at
-signal close `t` resets at execution close `e`; it then earns common-calendar
-close-to-close returns after `e` through the next monthly execution close. The
-next execution resets the target again. Before any continuous target is frozen,
+signal close `t` resets at execution close `e`; it then earns the exact
+`adjusted_close_simple_held_return_v1` common-calendar close-to-close returns
+after `e` through the next monthly execution close. The factor-matched primary
+benchmark uses the identical held-return field, formula, calendar, and invalid-
+anchor policy. The next execution resets the target again. Before any
+continuous target is frozen,
 the calendar-only strategy schedule includes a signal only when its following
 monthly execution close is on or before the accepted cutoff. A boundary signal
 may retain a complete 21-row factor-diagnostic label while being excluded from

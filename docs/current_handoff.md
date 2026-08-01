@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the twenty-first PR #177 review-remediation round.
+Updated: 2026-07-31 for the twenty-second PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -157,7 +157,17 @@ Updated: 2026-07-31 for the twenty-first PR #177 review-remediation round.
   rename. Ticker-only joins, reused tickers across issuers, relistings, listing
   moves, share-class changes, distinct successors, and ambiguous chains fail
   closed. Accepted-rename and equal-ticker/different-issuer fixtures are not
-  pending local authorship. The actual remaining gate is exact-head CI on the
+  pending local authorship. That gap was remediated by committed and pushed
+  head `9bbc2c3`; exact-head CI run `30696026141` passed. The twenty-second
+  review of `9bbc2c3` found one P2: the continuous holdings path did not bind
+  strategy and primary-benchmark held returns to one price field/formula. The
+  current branch-head snapshot uses adjacent common-calendar adjusted-close
+  simple returns for the factor strategy, both long-only baselines, and the
+  primary factor-matched benchmark, with strict positive real non-Boolean
+  anchors and no repair, raw-close fallback, or separate split/dividend cash-
+  flow addition. A 2-for-1 split fixture distinguishes adjusted from raw gross
+  return, drifted weights, turnover, cost, and active return and is not pending
+  local authorship. The actual remaining gate is exact-head CI on the
   current head, followed by one current-head Codex review; every finding
   restarts that remediation loop. Do not repeat commit or push work from an old
   handoff instruction; resolve current `HEAD`, remote head, CI, and review
