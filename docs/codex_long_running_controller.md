@@ -7,9 +7,9 @@ GitHub review lifecycle, waiting, stop conditions, and completion reporting.
 
 This process is subordinate to the
 [repository authority boundary](../AGENTS.md#authority-and-scope), research
-charter, and current higher-level instructions. Eligibility is not authorization:
-pushes, PR writes, comments, review requests, auto-merge, merges, closes, data
-access, and destructive actions require explicit action-and-scope authorization.
+charter, and current higher-level instructions. It grants no authority.
+Eligibility is not authorization; every external, sensitive, or destructive
+operation must satisfy that boundary.
 
 ## Startup And Freshness
 
@@ -40,8 +40,7 @@ access, and destructive actions require explicit action-and-scope authorization.
 - Use a clean `codex/` branch or worktree and state the intended edits first.
 - Add or update tests and durable records required by `AGENTS.md`; stage only
   files in the declared scope.
-- Run focused tests, then appropriate baselines; defaults are
-  `python -m pytest -q` and `python -m compileall src tests research`.
+- Run focused tests, then the baselines defined by `.github/workflows/ci.yml`.
 - Check whitespace in all states: `git diff --check`,
   `git diff --cached --check`, and `git diff --check origin/main...HEAD` (or the
   established base range) for unstaged, staged, and committed changes.
@@ -53,10 +52,10 @@ access, and destructive actions require explicit action-and-scope authorization.
 
 ## External Authorization Gate
 
-Before any push, PR create/update, comment, review request, auto-merge, merge, or
-close, verify explicit operation-and-scope authorization; otherwise stop after
-local validation. Publish through a PR, never direct `main`, protection bypass,
-merge-queue bypass, or `--admin`.
+Apply the [repository authority boundary](../AGENTS.md#authority-and-scope) to
+external, sensitive, or destructive operations. Workflow eligibility and
+successful checks do not grant authority. Without explicit action-and-scope
+authorization, stop after local validation.
 
 ## Predecessor PR Gate
 

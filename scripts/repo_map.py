@@ -63,7 +63,7 @@ IMPORTANT_FILES = [
     ),
     (
         "docs/current_handoff.md",
-        "Current verified snapshot pending the dedicated compaction stage; read this first.",
+        "Transitional status notice above a historical pre-merge body; read the notice first pending compaction.",
     ),
     (
         "docs/research_program_charter.md",
@@ -161,17 +161,15 @@ IMPORTANT_FILES = [
     ("pyproject.toml", "Package metadata and test dependencies."),
 ]
 
-TEST_COMMANDS = [
-    ("Full tests", "python -m pytest -q"),
-    ("Lint repository", "python -m ruff check ."),
-    ("Compile source, tests, and research", "python -m compileall src tests research"),
-    ("Compile LEAN scaffold", "python -m compileall lean"),
-    ("Build distribution", "python -m build"),
+LOCAL_VALIDATION_COMMANDS = [
     ("Repo map refresh", "python scripts/repo_map.py"),
     ("Unstaged whitespace check", "git diff --check"),
     ("Staged whitespace check", "git diff --cached --check"),
     ("Committed branch whitespace check", "git diff --check origin/main...HEAD"),
-    ("Skill audit for workflow/Skill changes", ".\\scripts\\audit-skills.ps1"),
+    (
+        "Skill audit for workflow/Skill changes",
+        "pwsh -NoProfile -File scripts/audit-skills.ps1",
+    ),
 ]
 
 
@@ -278,9 +276,10 @@ def build_repo_map() -> str:
             "",
             "## Test And Validation Commands",
             "",
+            "- CI validation commands are defined only in `.github/workflows/ci.yml`; this map does not duplicate them.",
         ]
     )
-    for label, command in TEST_COMMANDS:
+    for label, command in LOCAL_VALIDATION_COMMANDS:
         lines.append(f"- {label}: `{command}`")
 
     lines.extend(

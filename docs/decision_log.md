@@ -32,6 +32,9 @@ Decision:
 
 - `AGENTS.md` is the repository source for authority, research-safety
   invariants, alignment requirements, and review severity.
+- Only `AGENTS.md` enumerates actions that require explicit authorization. The
+  controller applies that boundary by reference and must not maintain a second
+  action inventory.
 - `docs/codex_long_running_controller.md` is the source for staged execution,
   external gates, review lifecycle, waiting, stop conditions, and completion
   reporting.
@@ -40,10 +43,9 @@ Decision:
   redefine authority or workflow policy.
 - `docs/research_program_charter.md` owns research intent and evidence policy;
   it references rather than redefines external-action or GitHub review rules.
-- Technical eligibility never grants permission to push, update a PR, request
-  review, enable auto-merge, merge, close, access private data, or perform a
-  destructive action. Explicit current authorization must cover the action and
-  scope.
+- Technical eligibility never grants permission for an external, sensitive, or
+  destructive operation. Explicit current authorization must cover the action
+  and scope.
 - Preserve the valid PR #148 behavior in the controller: no review on Drafts,
   one explicit request on a stable current head after validation and CI, no
   duplicate request for an unchanged head, and re-review only after an

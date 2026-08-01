@@ -496,61 +496,22 @@ def test_governance_documents_define_unique_policy_owners() -> None:
         ).split()
     )
 
-    def comma_separated_actions(value: str) -> list[str]:
-        value = value.replace(", or ", ", ").replace(", and ", ", ")
-        return [item.strip() for item in value.split(",")]
+    assert "No repository file grants authority to" in authority
+    assert "explicit user or higher-level authorization" in authority
+    assert "../AGENTS.md#authority-and-scope" in controller_scope
+    assert "It grants no authority" in controller_scope
+    assert "Eligibility is not authorization" in controller_scope
 
-    agents_grant_clause = re.search(
-        r"No repository file grants authority to (.*?)\. Each requires "
-        r"explicit user or higher-level authorization",
-        authority,
-    )
-    assert agents_grant_clause is not None
-    assert comma_separated_actions(agents_grant_clause.group(1)) == [
-        "push",
-        "create or update a PR",
-        "post a comment or review request",
-        "enable auto-merge",
-        "merge",
-        "close",
-        "deploy",
-        "access private data",
-        "take destructive action",
-    ]
+    assert "../AGENTS.md#authority-and-scope" in authorization_gate
+    assert "explicit action-and-scope authorization" in authorization_gate
+    assert "successful checks do not grant authority" in authorization_gate
+    assert "stop after local validation" in authorization_gate
 
-    authorization_clause = re.search(
-        r"Before any (.*?), verify explicit operation-and-scope authorization",
-        authorization_gate,
-    )
-    assert authorization_clause is not None
-    assert comma_separated_actions(authorization_clause.group(1)) == [
-        "push",
-        "PR create/update",
-        "comment",
-        "review request",
-        "auto-merge",
-        "merge",
-        "close",
-    ]
-    assert "never direct `main`" in authorization_gate
-
-    scope_clause = re.search(
-        r"Eligibility is not authorization: (.*?) require explicit "
-        r"action-and-scope authorization",
-        controller_scope,
-    )
-    assert scope_clause is not None
-    assert comma_separated_actions(scope_clause.group(1)) == [
-        "pushes",
-        "PR writes",
-        "comments",
-        "review requests",
-        "auto-merge",
-        "merges",
-        "closes",
-        "data access",
-        "destructive actions",
-    ]
+    for duplicated_inventory in [
+        "pushes, PR writes, comments",
+        "Before any push, PR create/update",
+    ]:
+        assert duplicated_inventory not in documents["controller"]
 
     assert "## Current Authorization" not in documents["charter"]
     assert "## Current Research Scope Boundary" in documents["charter"]
@@ -7926,24 +7887,14 @@ def test_public_metadata_and_readme_match_implemented_scope() -> None:
     ]
 
 
-def test_ci_commands_and_generated_repo_map_path_index() -> None:
-    workflow = (PROJECT_ROOT / ".github/workflows/ci.yml").read_text(
-        encoding="utf-8"
-    )
+def test_generated_repo_map_references_canonical_ci_commands() -> None:
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
-    commands = [
-        "python -m pytest -q",
-        "python -m ruff check .",
-        "python -m compileall src tests research",
-        "python -m compileall lean",
-        "python -m build",
-    ]
-
-    for command in commands:
-        assert command in workflow
-
     assert ".github/workflows/ci.yml" in repo_map
     assert "scripts/repo_map.py" in repo_map
+    assert (
+        "CI validation commands are defined only in `.github/workflows/ci.yml`"
+        in repo_map
+    )
 
     repo_map_module = runpy.run_path(str(PROJECT_ROOT / "scripts/repo_map.py"))
     assert repo_map_module["build_repo_map"]() == repo_map

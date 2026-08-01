@@ -3,7 +3,7 @@
 ## 2026-08-01 - Governance Source-Of-Truth Convergence
 
 - Reduced `AGENTS.md` from 165 to 80 lines, the long-running controller from 468
-  to 117 lines, and the current roadmap from 261 to 120 lines while preserving
+  to 116 lines, and the current roadmap from 261 to 120 lines while preserving
   research-safety, alignment, validation, review, and stop boundaries.
 - Removed duplicated review, polling, push, and merge policy from the roadmap
   and research charter. Corrected the roadmap to PR #177's protected merge,
@@ -13,6 +13,10 @@
   owner, reference, authorization, predecessor-gate, and review-lifecycle
   checks. Contract, registry, preregistration, and golden-fixture semantics
   remain tested only at their authoritative sources.
+- Acceptance follow-up removed the remaining authorization action inventories
+  from the controller and tests; only `AGENTS.md` enumerates those actions. The
+  repo map now references the canonical CI workflow instead of maintaining
+  another command list and gives a portable Skill-audit invocation.
 - Project-structure validation passed 73 tests. The full suite passed 3100 tests
   with two platform-conditional `longdouble` skips. Ruff, compileall, isolated
   package build, Skill audit, deterministic repo-map regeneration, and all

@@ -26,7 +26,7 @@ Scope: concise orientation for Codex handoffs. Cache/build directories, generate
 ## Important Files
 
 - `AGENTS.md` (present): Canonical external-action authority boundary and repository invariants.
-- `docs/current_handoff.md` (present): Current verified snapshot pending the dedicated compaction stage; read this first.
+- `docs/current_handoff.md` (present): Transitional status notice above a historical pre-merge body; read the notice first pending compaction.
 - `docs/research_program_charter.md` (present): Canonical long-term research intent and evidence policy; not an external-action authority source.
 - `docs/purged_bounded_split_contract.md` (present): Accepted Stage 1a timing and sample-isolation design.
 - `docs/signal_execution_timing_contract.md` (present): Accepted Stage 2a signal, execution, and metric timing design.
@@ -60,16 +60,12 @@ Scope: concise orientation for Codex handoffs. Cache/build directories, generate
 
 ## Test And Validation Commands
 
-- Full tests: `python -m pytest -q`
-- Lint repository: `python -m ruff check .`
-- Compile source, tests, and research: `python -m compileall src tests research`
-- Compile LEAN scaffold: `python -m compileall lean`
-- Build distribution: `python -m build`
+- CI validation commands are defined only in `.github/workflows/ci.yml`; this map does not duplicate them.
 - Repo map refresh: `python scripts/repo_map.py`
 - Unstaged whitespace check: `git diff --check`
 - Staged whitespace check: `git diff --cached --check`
 - Committed branch whitespace check: `git diff --check origin/main...HEAD`
-- Skill audit for workflow/Skill changes: `.\scripts\audit-skills.ps1`
+- Skill audit for workflow/Skill changes: `pwsh -NoProfile -File scripts/audit-skills.ps1`
 
 ## Output Discipline
 
