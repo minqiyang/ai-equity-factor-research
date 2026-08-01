@@ -1,120 +1,74 @@
 # Current Roadmap
 
-Updated: 2026-08-01 after the protected merge of PR #177.
+Updated: 2026-08-01 after the protected merge of PR #178.
 
-Canonical responsibility: active stage status, dependencies, latest verified
-snapshot, and completion evidence. Repository authority is [AGENTS.md](../AGENTS.md);
-workflow behavior is owned by the [controller](codex_long_running_controller.md).
+Canonical responsibility: program stage sequence, dependency order, gate and
+completion criteria, and coarse stage status.
+
 This is the canonical roadmap.
 
-## Current State
+Repository authority is [AGENTS.md](../AGENTS.md), workflow behavior is owned by
+the [controller](codex_long_running_controller.md), and the timestamped
+operational checkpoint is in the [current handoff](current_handoff.md).
 
-- Protected `main`: `f50b6e77b0c3a0226e246459e2a394d1489210ac`, the
-  merge commit for PR #177.
-- PR #177 final branch head:
-  `c04133315911c74c96e77984b5968792434aee8f`.
-- Completed delivery: Track A PR 1, the EODHD diagnostic scope and protocol
-  freeze.
-- Current research gate: private entitlement, retention, and publication
-  evidence. This gate is not yet satisfied.
-- Current evidence ceiling: `DIAGNOSTIC_ONLY`. No dataset, formal
-  interpretation, profitability claim, deployment, brokerage, paper, live, or
-  real-money activity is accepted or authorized.
+## Program Position
+
+- Track A PR 1 is complete through PR #177: the EODHD diagnostic scope,
+  three-factor protocol, and exact 14-semantic-trial inventory are frozen.
+- Governance source convergence is complete through PR #178. It changed no
+  campaign protocol, research runtime, private data, or empirical conclusion.
+- The current research gate is private entitlement, retention, and publication
+  evidence. That gate is not yet satisfied.
+- The evidence ceiling remains `DIAGNOSTIC_ONLY`. No dataset or formal
+  interpretation has been accepted.
 - The 2025-05-01 through 2026-05-31 interval remains permanently
   `historical_evaluation`, never a pristine holdout.
 
-Until the dedicated compaction PR, this roadmap is the sole latest verified snapshot.
-The [current handoff](current_handoff.md) body is historical and defines neither status nor task queue.
-
-## Authoritative Research Sources
+## Canonical Research Sources
 
 - [Research program charter](research_program_charter.md): long-term evidence
   policy and evidence-state boundaries.
-- [docs/eodhd_sp500_diagnostic_campaign_contract.md](eodhd_sp500_diagnostic_campaign_contract.md):
-  Track A/Track B scope, private-data gate, freeze sequence, and stop conditions.
-- [Canonical preregistration](preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml):
-  frozen three-factor diagnostic protocol.
-- [Canonical trial inventory](preregistrations/eodhd_sp500_three_factor_trial_inventory_v1.json):
-  exactly 14 semantic trials.
-- [docs/point_in_time_data_methodology_contract.md](point_in_time_data_methodology_contract.md):
+- [Track A/Track B campaign contract](eodhd_sp500_diagnostic_campaign_contract.md):
+  scope, private-data gate, freeze sequence, and stop conditions.
+- [Canonical preregistration](preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml)
+  and [trial inventory](preregistrations/eodhd_sp500_three_factor_trial_inventory_v1.json):
+  frozen protocol and exactly 14 semantic trials.
+- [Point-in-time methodology contract](point_in_time_data_methodology_contract.md):
   dataset review and formal-interpretation requirements.
+- [Repository map](repo_map.md): accepted timing, split, ledger, and schema
+  contracts without duplicating their semantics here.
 - [Decision log](decision_log.md), [engineering log](engineering_log.md), and
-  [troubleshooting log](troubleshooting_log.md): retained historical evidence,
-  not active task queues.
-
-Accepted ledger/schema contracts remain indexed, without duplicating semantics:
-[design](experiment_trial_ledger_contract.md) (`docs/experiment_trial_ledger_contract.md`) and [R0](experiment_trial_ledger_schema_registry_contract.md) (`docs/experiment_trial_ledger_schema_registry_contract.md`);
-[R1A/R1B](experiment_trial_ledger_allocation_registration_schema_contract.md) (`docs/experiment_trial_ledger_allocation_registration_schema_contract.md`) and [R1C](experiment_trial_ledger_trial_family_registration_schema_contract.md) (`docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`);
-[R1D](experiment_trial_ledger_sample_registration_schema_contract.md) (`docs/experiment_trial_ledger_sample_registration_schema_contract.md`) and [R1E](experiment_trial_ledger_binding_schema_contract.md) (`docs/experiment_trial_ledger_binding_schema_contract.md`);
-[R1F](experiment_trial_ledger_trial_allocation_schema_contract.md) (`docs/experiment_trial_ledger_trial_allocation_schema_contract.md`) and [R1G](experiment_trial_ledger_campaign_inventory_seal_schema_contract.md) (`docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md`);
-[R1H](experiment_trial_ledger_attempt_allocation_schema_contract.md) (`docs/experiment_trial_ledger_attempt_allocation_schema_contract.md`) and [R1I](experiment_trial_ledger_attempt_start_schema_contract.md) (`docs/experiment_trial_ledger_attempt_start_schema_contract.md`).
-Timing and split contracts remain discoverable through the [repository map](repo_map.md).
-
-## Completed Foundations
-
-| Foundation | Status | Evidence boundary |
-| --- | --- | --- |
-| Research charter and split isolation | Complete | Research policy and purged, bounded split behavior are accepted on protected `main`. |
-| Signal and execution timing | Complete | The after-close/next-observed-close contract and implementation are accepted on protected `main`. |
-| Point-in-time methodology | Contract complete | No provider, license, dataset, universe, field, benchmark, or historical claim is accepted by the methodology alone. |
-| 4b-R1E. Campaign-entity and Stage 3 sample-reference binding schemas | Complete on protected main via PR #171 | Contract/schema evidence only. |
-| 4b-R1F. Semantic trial-allocation schema | Complete on protected main via PR #172 | Contract/schema evidence only. |
-| 4b-R1G. Initial campaign-inventory-seal schema | Complete on protected main via PR #173 | Contract/schema evidence only. |
-| 4b-R1H. Attempt-allocation schema | Complete on protected main via PR #174 | Contract/schema evidence only. |
-| 4b-R1I. Attempt-start schema | Complete on protected main via PR #176 | The accepted R0-R1I releases remain optional `full_ledger_profile_v1`; they do not provide a stateful evidence runtime. |
-| Track A PR 1 protocol freeze | Complete via PR #177 | The provider-bounded three-factor protocol and unique 14-trial inventory are frozen; no research runtime ran and no performance was calculated. |
+  [troubleshooting log](troubleshooting_log.md): historical evidence, not queues.
 
 ## Active Dependency Chain
 
-| Order | Stage | Status | Dependency or completion evidence |
+| Order | Stage | Status | Dependency or completion criterion |
 | --- | --- | --- | --- |
-| 1 | Track A private entitlement, retention, and publication gate | Current; pending private evidence | Record the exact existing capability and written permitted-use, retention, publication, and deletion terms. A purchase is not authorized. |
-| 2 | Track A PR 2: dataset manifest and validation | Dataset-bound work blocked by stage 1 | The manifest, provider-bound validator, safe projection, and non-self-issued blinded dataset decision begin only after the private gate. Generic provider-agnostic schema or validator preparation is separate and cannot satisfy or start PR 2. |
-| 3 | Track A PR 3: bounded diagnostic runner | Blocked by an accepted PR 2 dataset review | Implement only the frozen protocol and its deterministic validation surface; do not add trials or interpret results. |
-| 4 | Detached pre-run binding | Blocked by protected PR 3 merge | Before any result-bearing job, bind exact code, configuration, environment, protocol, inventory, and accepted dataset identities outside the repository. |
-| 5 | Track A PR 4: frozen diagnostic evidence | Blocked by stages 3 and 4 | Run and reconcile all 14 trials once, retain every outcome externally, and publish only an approved safe aggregate projection. |
-| 6 | Track B minimal formal evidence runtime | Deferred until Track A closes | Required before prospective performance access or formal evidence promotion; not a Track A prerequisite. |
+| 1 | Private entitlement, retention, and publication gate | Current; pending private evidence | Complete only with an accepted private record under the campaign contract. |
+| 2 | Track A PR 2: dataset manifest and validation | Blocked by stage 1 | Complete only with an accepted provider-bound manifest, validator, safe projection, and blinded dataset-review decision. Generic preparation cannot satisfy or start this stage. |
+| 3 | Track A PR 3: bounded diagnostic runner | Blocked by accepted PR 2 review | Complete only with an accepted bounded runner implementing the frozen protocol and deterministic validation surface. |
+| 4 | Detached pre-run binding | Blocked by protected PR 3 merge | Complete only when exact code, configuration, environment, protocol, inventory, and accepted dataset identities are bound outside the repository. |
+| 5 | Track A PR 4: frozen diagnostic evidence | Blocked by stages 3 and 4 | Complete only after all 14 trials run once, every outcome is retained externally, and an approved safe aggregate projection is produced. |
+| 6 | Track B minimal formal evidence runtime | Deferred until Track A closes | Required before prospective performance access or formal promotion; not a Track A prerequisite. |
+
+## Gate Completion Criteria
+
+Stage 1 completes only when the owner supplies an accepted private record of the
+exact existing capability and written permitted-use, retention, publication,
+and deletion terms required by the campaign contract. Until then, stage 2 and
+all dataset-bound work remain blocked. The handoff owns the timestamped list of
+currently missing owner evidence.
+
+This section defines dependency and completion state only. It grants no authority
+and adds no vendor, data, publication, or interpretation rule beyond the linked
+canonical sources.
+
+## Deferred And Out Of Scope
 
 Broad factor-zoo expansion, formal statistics, strategy promotion, independent
-cross-provider replication, and LEAN parity remain outside the active queue.
-Completing all 37 registry event schemas is optional hardening, not a Track A
-dependency.
+cross-provider replication, LEAN parity, and completion of the remaining 26
+optional ledger event schemas are outside the active queue.
 
-## Current Gate Evidence And Blockers
-
-The next gate determines whether existing access supports historical membership evidence and whether written terms permit retention and safe public outputs; the campaign contract owns the exact required record and allowed content.
-
-Current blockers are:
-
-- historical-index-membership capability has not been privately established;
-- frozen-snapshot retention and deletion duties have not been recorded;
-- public noncommercial derived-output permission has not been recorded; and
-- no dataset manifest or blinded dataset-review decision has been accepted.
-
-Do not purchase or expand vendor access, expose credentials or provider
-responses, commit licensed/private rows or paths, publish derived counts or
-hashes, or inspect performance under this roadmap. Until the private gate is
-satisfied, any separately authorized public preparation must remain generic and
-provider-agnostic within the campaign contract; do not create or bind PR 2's
-dataset manifest, provider validator, safe projection, or review decision.
-Missing entitlement or unresolved permission requires owner input; it is not
-permission to broaden scope.
-
-## PR #177 Completion Evidence
-
-- Merge commit `f50b6e77b0c3a0226e246459e2a394d1489210ac` has parents
-  `6386c59c53b407765c5dba7fcfe7879fa0433356` and the final PR head
-  `c04133315911c74c96e77984b5968792434aee8f`.
-- The merged campaign contract points to the canonical preregistration and
-  trial inventory; structure tests enforce a semantic-trial count of 14, 14
-  entries, and 14 unique trial IDs.
-- The final-head engineering record reports 71 focused structure tests and
-  3,098 full-suite tests passed with two platform-conditional skips, together
-  with Ruff, compile, Skill, artifact-build, repo-map, diff, privacy, and
-  Unicode/control checks.
-- The merged scope records no vendor access, private row, performance value,
-  purchase, research runtime execution, brokerage, paper, or live action.
-
-This roadmap grants no authority. Use [AGENTS.md](../AGENTS.md) for authority
-and the [Codex long-running controller](codex_long_running_controller.md) for
-stage execution, review, waiting, external gates, and stop behavior.
+This roadmap grants no authority. Use [AGENTS.md](../AGENTS.md) for authority,
+the [controller](codex_long_running_controller.md) for execution and external
+gates, and the [handoff](current_handoff.md) for the latest recorded checkpoint.

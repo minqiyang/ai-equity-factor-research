@@ -63,7 +63,7 @@ IMPORTANT_FILES = [
     ),
     (
         "docs/current_handoff.md",
-        "Transitional notice above a historical body; the roadmap owns the latest snapshot until compaction.",
+        "Concise operational handoff with a timestamped checkpoint, blockers, and next safe action; grants no authority.",
     ),
     (
         "docs/research_program_charter.md",
@@ -134,7 +134,10 @@ IMPORTANT_FILES = [
         "eodhd_sp500_three_factor_trial_inventory_v1.json",
         "Exact frozen 14-semantic-trial inventory.",
     ),
-    ("docs/current_roadmap.md", "Canonical active stage status and dependencies."),
+    (
+        "docs/current_roadmap.md",
+        "Canonical program stages, dependency order, gate and completion criteria, and coarse status.",
+    ),
     ("docs/repo_map.md", "Generated concise repo map."),
     (
         "docs/codex_long_running_controller.md",
@@ -287,7 +290,7 @@ def build_repo_map() -> str:
             "",
             "## Output Discipline",
             "",
-            "- Read `docs/current_roadmap.md` for current state; consult the handoff through its supersession notice until compaction.",
+            "- Read `docs/current_handoff.md` for the recorded checkpoint, then the controller and `docs/current_roadmap.md`; verify remote facts live before acting.",
             "- Do not print full generated reports or large logs by default; inspect targeted ranges only when needed.",
             "- Use capped command output for unknown commands, and save full output to a temp file when full review is necessary.",
         ]

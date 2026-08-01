@@ -1,5 +1,50 @@
 # Engineering Log
 
+## 2026-08-01 - Active Handoff Compaction And Permanent Resume Routing
+
+- PR #178 merged as `3e1f30db0aa3019d67300283ad55e89ac62d64a7`
+  from final head `bcbe2a5c654e229ad16cef0be291a8313e9394c8`.
+  Draft PR #148 head `6ac11c2ef2d99d0d9216e2cc4fa669a2c2c96469`
+  was then closed without merge because PR #178 absorbed its valid intent.
+- Compressed `docs/current_handoff.md` from 837 to 91 lines. The handoff now
+  owns the timestamped operational checkpoint and next-action routing; the
+  roadmap owns program status, dependencies, and gate/completion criteria.
+- Restored permanent handoff-first resume routing across AGENTS, controller,
+  charter, generated repo map, and relationship tests without changing the
+  20-line Staged Quant Workflow Skill.
+- Mapped every retired handoff section to canonical contracts or durable logs.
+  The exact identifiers below were the only historical audit details without a
+  separate durable-log copy and are retained here before deletion.
+- PR #177 completed at merge `f50b6e77b0c3a0226e246459e2a394d1489210ac`
+  from final head `c04133315911c74c96e77984b5968792434aee8f`.
+
+### Preserved PR #177 Intermediate Exact-Head CI
+
+| Head | CI run | Head | CI run | Head | CI run |
+| --- | ---: | --- | ---: | --- | ---: |
+| `6a7445f` | `30684864773` | `e5d72c2` | `30685562719` | `0179ebb` | `30686127537` |
+| `b8149c2` | `30686852275` | `1f6c801` | `30687469154` | `86f6929` | `30687930346` |
+| `a5b6695` | `30688393600` | `bc4c201` | `30689003562` | `d2ac8cd` | `30689676655` |
+| `12cacaa` | `30690253765` | `fc561e4` | `30690874955` | `e9c2707` | `30691526104` |
+| `46679c4` | `30692101398` | `5b08be6` | `30692981109` | `242f373` | `30693611292` |
+| `3aeeb5a` | `30694138955` | `e6c7ad5` | `30694731334` | `5869193` | `30695127750` |
+| `9bbc2c3` | `30696026141` | `93adce5` | `30696493027` | `2c6b827` | `30697181943` |
+
+### Preserved Registry Exact-Head CI
+
+| Stage | CI run | Stage | CI run |
+| --- | ---: | --- | ---: |
+| R1C | `30470068227` | R1D | `30474619015` |
+| R1E | `30478013476` | R1F | `30481526688` |
+| R1G | `30485367220` | R1H | `30489229758` |
+
+- Project-structure validation passed 74 tests. The full suite passed 3,101
+  tests with two platform-conditional `longdouble` skips. Ruff, compileall,
+  isolated package build, Skill audit, deterministic repo-map regeneration, and
+  unstaged whitespace checks passed.
+- No campaign protocol, Skill, research runtime, factor, strategy, private data,
+  performance interpretation, brokerage, paper, or live behavior changed.
+
 ## 2026-08-01 - Governance Source-Of-Truth Convergence
 
 - Reduced `AGENTS.md` from 165 to 80 lines, the long-running controller from 468

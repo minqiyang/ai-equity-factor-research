@@ -430,9 +430,14 @@ def test_governance_documents_define_unique_policy_owners() -> None:
             "gates, GitHub review lifecycle, waiting, stop conditions, and "
             "completion reporting."
         ),
+        "handoff": (
+            "Canonical responsibility: the latest recorded operational checkpoint, "
+            "exact last-verified repository and PR facts, immediate blockers or "
+            "owner decisions, and the next safe action."
+        ),
         "roadmap": (
-            "Canonical responsibility: active stage status, dependencies, latest "
-            "verified snapshot, and completion evidence."
+            "Canonical responsibility: program stage sequence, dependency order, "
+            "gate and completion criteria, and coarse stage status."
         ),
     }
     normalized = {name: " ".join(text.split()) for name, text in documents.items()}
@@ -453,9 +458,17 @@ def test_governance_documents_define_unique_policy_owners() -> None:
             "Protected Merge Eligibility",
         ],
         "roadmap": [
-            "Current State",
+            "Program Position",
             "Active Dependency Chain",
-            "Current Gate Evidence And Blockers",
+            "Gate Completion Criteria",
+            "Deferred And Out Of Scope",
+        ],
+        "handoff": [
+            "Resume Order",
+            "Latest Recorded Operational Checkpoint",
+            "Immediate Blockers Or Owner Decisions",
+            "Next Safe Action",
+            "Source Routing",
         ],
     }
     for owner, headings in exclusive_sections.items():
@@ -516,7 +529,7 @@ def test_governance_documents_define_unique_policy_owners() -> None:
     assert "## Current Authorization" not in documents["charter"]
     assert "## Current Research Scope Boundary" in documents["charter"]
     assert "../AGENTS.md#authority-and-scope" in documents["charter"]
-    assert "defines operational startup routing" in documents["charter"]
+    assert "defines staged execution and gates" in documents["charter"]
     assert "current_handoff.md` is the operational entry point" not in documents[
         "charter"
     ]
@@ -544,7 +557,77 @@ def test_governance_documents_define_unique_policy_owners() -> None:
         assert misplaced_policy not in documents["roadmap"]
 
 
-def test_current_roadmap_is_the_transitional_status_and_snapshot_source() -> None:
+def test_active_handoff_is_bounded_and_rejects_obsolete_narratives() -> None:
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(encoding="utf-8")
+    handoff_lines = handoff.splitlines()
+    normalized_handoff = " ".join(handoff.lower().split())
+
+    assert 60 <= len(handoff_lines) <= 120
+    assert len(handoff.encode("utf-8")) <= 12_000
+    assert max(map(len, handoff_lines)) <= 120
+    assert re.search(r"^Updated: \d{4}-\d{2}-\d{2}\b", handoff, re.MULTILINE)
+
+    for section in [
+        "Resume Order",
+        "Latest Recorded Operational Checkpoint",
+        "Recorded Delivery Scope",
+        "Current Research Gate Summary",
+        "Immediate Blockers Or Owner Decisions",
+        "Next Safe Action",
+        "Source Routing",
+    ]:
+        assert _markdown_section(handoff, section).strip()
+
+    checkpoint = _markdown_section(handoff, "Latest Recorded Operational Checkpoint")
+    checkpoint_bullets = re.findall(r"(?ms)^- (.*?)(?=^- |\Z)", checkpoint)
+    baseline_bullets = [
+        bullet
+        for bullet in checkpoint_bullets
+        if bullet.startswith("Last externally verified protected baseline")
+    ]
+    assert len(baseline_bullets) == 1
+    assert re.search(r"`[0-9a-f]{40}`", baseline_bullets[0])
+    assert "cached evidence" in handoff
+    assert "must be checked separately" in checkpoint
+    pr_148_bullets = [
+        bullet for bullet in checkpoint_bullets if "pr #148" in bullet.lower()
+    ]
+    if pr_148_bullets:
+        assert all("closed without merge" in bullet.lower() for bullet in pr_148_bullets)
+
+    for obsolete_active_narrative in [
+        "current protected `origin/main`: `6386c59`",
+        "pr #177 is the current open scope-reset gate",
+        "complete pr 1 scope and campaign reset",
+        "codex/eodhd-diagnostic-scope-reset",
+        "pr #148 remains open",
+        "pr #148 is open",
+        "pr #148 is not closed",
+        "independent draft governance pr",
+        "is still neither a predecessor",
+        "authorized for merge/close",
+        "until compaction",
+        "supersession notice",
+        "historical body",
+    ]:
+        assert obsolete_active_narrative not in normalized_handoff
+
+    paragraphs = [
+        " ".join(paragraph.lower().split())
+        for paragraph in re.split(r"\n\s*\n", handoff)
+    ]
+    stale_pr_state = re.compile(
+        r"\b(?:remains|is|currently|still)\s+(?:the\s+)?(?:current\s+)?open\b"
+        r"|\b(?:not merged|unmerged)\b"
+        r"|\bis next\b"
+        r"|\b(?:is|remains)\s+(?:the\s+)?current\b.{0,40}\bgate\b"
+    )
+    for paragraph in paragraphs:
+        if "pr #176" in paragraph or "pr #177" in paragraph:
+            assert not stale_pr_state.search(paragraph)
+
+
+def test_active_governance_sources_define_permanent_resume_routing() -> None:
     agents = (PROJECT_ROOT / "AGENTS.md").read_text(encoding="utf-8")
     workflow_skill = (
         PROJECT_ROOT / ".agents/skills/staged-quant-workflow/SKILL.md"
@@ -560,73 +643,137 @@ def test_current_roadmap_is_the_transitional_status_and_snapshot_source() -> Non
     controller = (
         PROJECT_ROOT / "docs/codex_long_running_controller.md"
     ).read_text(encoding="utf-8")
+    charter = (PROJECT_ROOT / "docs/research_program_charter.md").read_text(
+        encoding="utf-8"
+    )
 
-    responsibility = (
-        "Canonical responsibility: active stage status, dependencies, latest "
-        "verified snapshot, and completion evidence."
+    handoff_responsibility = (
+        "Canonical responsibility: the latest recorded operational checkpoint, "
+        "exact last-verified repository and PR facts, immediate blockers or owner "
+        "decisions, and the next safe action."
+    )
+    roadmap_responsibility = (
+        "Canonical responsibility: program stage sequence, dependency order, "
+        "gate and completion criteria, and coarse stage status."
     )
     assert "This is the canonical roadmap" in roadmap
-    assert responsibility in " ".join(roadmap.split())
-    assert "this roadmap is the sole latest verified snapshot" in " ".join(
-        roadmap.lower().split()
-    )
-    for current_section in [
-        "Current State",
+    assert roadmap_responsibility in " ".join(roadmap.split())
+    assert handoff_responsibility in " ".join(handoff.split())
+    for roadmap_section in [
+        "Program Position",
         "Active Dependency Chain",
-        "Current Gate Evidence And Blockers",
+        "Gate Completion Criteria",
     ]:
-        assert _markdown_section(roadmap, current_section).strip()
-    assert "Active roadmap: `docs/current_roadmap.md`" in handoff
-    assert re.search(r"^Updated: \d{4}-\d{2}-\d{2}\b", handoff, re.MULTILINE)
-    handoff_notice = handoff.split("## Canonical State", maxsplit=1)[0]
-    assert "owns neither the latest verified snapshot nor the" in handoff_notice
-    assert "current task queue" in handoff_notice
-    canonical_state = _markdown_section(handoff, "Canonical State")
+        assert _markdown_section(roadmap, roadmap_section).strip()
+
+    gate_summary = _markdown_section(handoff, "Current Research Gate Summary")
+    assert "docs/current_roadmap.md" in gate_summary
+    assert "- " not in gate_summary
+    handoff_blockers = set(
+        re.findall(
+            r"^- (.+)$",
+            _markdown_section(handoff, "Immediate Blockers Or Owner Decisions"),
+            re.MULTILINE,
+        )
+    )
+    roadmap_gate = _markdown_section(roadmap, "Gate Completion Criteria")
+    roadmap_gate_bullets = set(
+        re.findall(
+            r"^- (.+)$",
+            roadmap_gate,
+            re.MULTILINE,
+        )
+    )
+    assert handoff_blockers
+    assert not roadmap_gate_bullets
+    normalized_handoff_blockers = {
+        " ".join(blocker.lower().split()) for blocker in handoff_blockers
+    }
+
+    def has_copied_blocker(text: str) -> bool:
+        normalized = " ".join(text.lower().split())
+        return any(blocker in normalized for blocker in normalized_handoff_blockers)
+
+    assert not has_copied_blocker(roadmap_gate)
+    copied_blocker_mutation = roadmap_gate + "\n" + next(
+        iter(normalized_handoff_blockers)
+    )
+    assert has_copied_blocker(copied_blocker_mutation)
+
+    source_routing = _markdown_section(handoff, "Source Routing")
     for evidence_reference in [
+        "AGENTS.md",
+        "docs/codex_long_running_controller.md",
         "docs/current_roadmap.md",
         "docs/research_program_charter.md",
         "docs/eodhd_sp500_diagnostic_campaign_contract.md",
+        "docs/decision_log.md",
+        "docs/engineering_log.md",
+        "docs/troubleshooting_log.md",
     ]:
-        assert evidence_reference in canonical_state
+        assert evidence_reference in source_routing
+
+    expected_resume_order = [
+        "AGENTS.md",
+        "docs/current_handoff.md",
+        "docs/codex_long_running_controller.md",
+        "docs/current_roadmap.md",
+    ]
     for startup in [
         _markdown_section(agents, "Startup And Sources"),
         _markdown_section(controller, "Startup And Freshness"),
+        _markdown_section(handoff, "Resume Order"),
+        workflow_skill,
     ]:
-        assert startup.index("docs/current_roadmap.md") < startup.index(
-            "docs/current_handoff.md"
-        )
-        normalized_startup = " ".join(startup.lower().split())
-        for transitional_boundary in ["only", "notice", "body", "historical"]:
-            assert transitional_boundary in normalized_startup
+        positions = [startup.index(path) for path in expected_resume_order]
+        assert positions == sorted(positions)
+
     normalized_repo_map = " ".join(repo_map.split())
-    assert "the roadmap owns the latest snapshot until compaction" in (
-        normalized_repo_map
-    )
+    assert "timestamped checkpoint, blockers, and next safe action" in normalized_repo_map
     assert (
-        "Read `docs/current_roadmap.md` for current state; consult the handoff "
-        "through its supersession notice until compaction."
+        "Read `docs/current_handoff.md` for the recorded checkpoint, then the "
+        "controller and `docs/current_roadmap.md`; verify remote facts live"
         in normalized_repo_map
     )
-    assert "owns active status" in controller
-    assert "latest verified snapshot" in controller
-    completion_report = _markdown_section(controller, "Completion Report")
+    assert "owns the latest recorded operational checkpoint" in controller
+    assert "owns program stage sequence" in controller
+    completion_report = " ".join(
+        _markdown_section(controller, "Completion Report").split()
+    )
     assert "owners named in" in completion_report
     assert "Select And Bound The Stage" in completion_report
-    assert "snapshot in handoff" not in completion_report
-    assert workflow_skill.index("1. `AGENTS.md`") < workflow_skill.index(
-        "2. `docs/current_handoff.md`"
-    )
     assert "This Skill grants no additional authority" in workflow_skill
-    assert "including work invoked through a thin routing Skill" in agents
-    for obsolete_current_state in [
-        "Current protected `origin/main`: `6386c59`",
-        "PR #177 is the current open scope-reset gate",
-        "Complete PR 1 scope and campaign reset",
-        "codex/eodhd-diagnostic-scope-reset",
+    assert "through a thin routing Skill" in agents
+
+    next_action = " ".join(_markdown_section(handoff, "Next Safe Action").split())
+    for duplicated_workflow_inventory in [
+        "@codex review",
+        "exact-head CI",
+        "review, and separately authorized protected-merge gate",
+        "Do not purchase access",
     ]:
-        assert obsolete_current_state not in roadmap
-    assert responsibility not in " ".join(handoff.split())
-    assert responsibility not in " ".join(controller.split())
+        assert duplicated_workflow_inventory not in next_action
+
+    normalized_roadmap = " ".join(roadmap.lower().split())
+    for forbidden_roadmap_snapshot in [
+        "origin/main",
+        "branch head",
+        "ci run",
+        "latest verified snapshot",
+    ]:
+        assert forbidden_roadmap_snapshot not in normalized_roadmap
+
+    active_sources = [agents, controller, roadmap, handoff, charter, repo_map]
+    for transitional_wording in [
+        "until compaction",
+        "historical body",
+        "supersession notice",
+        "sole latest verified snapshot",
+    ]:
+        assert all(
+            transitional_wording not in source.lower() for source in active_sources
+        )
+
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
 

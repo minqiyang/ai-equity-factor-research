@@ -9,6 +9,10 @@ profitability, or trading readiness.
 
 ### Changed
 
+- Replaced the 837-line active handoff with a bounded operational checkpoint,
+  moved unique historical audit identifiers into the engineering log, restored
+  permanent handoff/controller/roadmap routing, and added guards against stale
+  PR narratives and future active-document regrowth.
 - Consolidated repository governance so `AGENTS.md` owns authority and research
   safety, the controller owns staged workflow and review lifecycle, and the
   charter and roadmap reference those sources instead of repeating polling,
