@@ -126,6 +126,7 @@ def _classify_diagnostic(
     hard_valid: bool,
     prefrozen_coverage_met: bool,
     common_months: int,
+    bootstrap_support_all_three_factors: bool,
     primary_matched_benchmark_comparisons_valid: bool,
     secondary_spy_comparisons_valid: bool,
     mean_rank_ics: tuple[float, float, float],
@@ -142,7 +143,11 @@ def _classify_diagnostic(
         )
     ):
         return "INVALID_DIAGNOSTIC"
-    if not prefrozen_coverage_met or common_months < 60:
+    if (
+        not prefrozen_coverage_met
+        or common_months < 60
+        or not bootstrap_support_all_three_factors
+    ):
         return "INCONCLUSIVE_DIAGNOSTIC"
 
     holm_supported = tuple(
@@ -478,6 +483,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "The fifteenth review of `e9c2707` found one P1 and one P2",
         "one-row within-segment resampling for lengths two through six",
         "campaign-wide at earliest any-factor eligibility",
+        "The sixteenth review of `46679c4` found two P2",
+        "equal-weight baseline and primary benchmark remain invested",
+        "bootstrap support as an explicit classifier coverage input",
         "not pending local authorship",
         "The actual remaining gate is exact-head CI on the current head",
         "followed by one current-head Codex review",
@@ -537,8 +545,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "maximum of the protocol-freeze, runner-",
         "strictly after that latest required freeze for which all three",
         "only a subset of factors is valid",
-        "both the equal-weight and random-rank factor-matched output records",
-        "The random baseline does not derive a seed or consume a",
+        "The equal-weight eligible-universe baseline is the same frozen target",
+        "The random-rank baseline alone inherits all three factor decision-time invalid-",
+        "primary benchmark are -0.0110 and -0.0125",
+        "The random baseline does not derive a",
+        "seed or consume a permutation for that factor/month",
         "freezes once, campaign-wide, at the earliest signal cutoff",
         "per-factor freeze or re-encoding is forbidden",
         "For `2<=n<=6`, set `L=1`",
@@ -604,6 +615,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "short_segment_rule: LENGTH_2_THROUGH_6_DRAW_N_SINGLE_ROW_BLOCKS_UNIFORMLY_WITH_REPLACEMENT",
         "degenerate_resampling_action: PRIMARY_INFERENCE_INVALID_NO_HOLM_SUPPORT_RETAIN_COUNTS",
         "nondegenerate_bootstrap_support_all_three_factors: REQUIRED",
+        "relation_to_primary_benchmark: SAME_FROZEN_TARGET_AND_GROSS_COST_FREE_CONTINUOUS_RETURN_OBJECT",
+        "primary_benchmark_reuse_of_factor_or_random_zero_target: FORBIDDEN",
+        "invalid_factor_month_active_return: RETAIN_DESCRIPTIVE_ONLY_EXCLUDE_FROM_FINAL_STATE_SUPPORT",
         "adjusted_close_t_minus_252: 80.0",
         "adjusted_close_t: 90.0",
         "all_other_zero_target_triggers: FORBIDDEN",
@@ -1008,7 +1022,7 @@ def test_prospective_start_uses_latest_required_freeze_boundary() -> None:
     assert prospective_start != forbidden_any_factor_start
 
 
-def test_baselines_retain_invalid_zero_targets_without_random_draws() -> None:
+def test_invalid_factor_month_separates_invested_benchmark_from_random_cash() -> None:
     valid_records = []
     for index in range(100):
         valid_records.append(
@@ -1032,6 +1046,31 @@ def test_baselines_retain_invalid_zero_targets_without_random_draws() -> None:
         factor_target, eligible_benchmark, cash_weight = (
             _decision_time_objects(records)
         )
+        unique_keys = len(
+            {record["listing_key_bytes"] for record in records}
+        ) == len(records)
+        if baseline_id == "EQUAL_WEIGHT":
+            if not records or not unique_keys:
+                return {
+                    "validity": "INVALID_UNFORMABLE_BENCHMARK",
+                    "target": (),
+                    "cash_weight": None,
+                    "episodic_return": None,
+                    "random_draw_consumed": False,
+                    "output_record_retained": True,
+                }
+            return {
+                "validity": (
+                    "MATCHED_FACTOR_MONTH_INVALID"
+                    if cash_weight == 1.0
+                    else "VALID"
+                ),
+                "target": eligible_benchmark,
+                "cash_weight": 0.0,
+                "episodic_return": "MEASURE_AFTER_OUTCOME_GATE",
+                "random_draw_consumed": False,
+                "output_record_retained": True,
+            }
         if cash_weight == 1.0:
             return {
                 "validity": "INVALID_DECISION_TIME_FACTOR_MONTH",
@@ -1041,14 +1080,9 @@ def test_baselines_retain_invalid_zero_targets_without_random_draws() -> None:
                 "random_draw_consumed": False,
                 "output_record_retained": True,
             }
-        target = (
-            eligible_benchmark
-            if baseline_id == "EQUAL_WEIGHT"
-            else factor_target
-        )
         return {
             "validity": "VALID",
-            "target": target,
+            "target": factor_target,
             "cash_weight": 0.0,
             "episodic_return": "MEASURE_AFTER_OUTCOME_GATE",
             "random_draw_consumed": baseline_id == "RANDOM_RANK",
@@ -1083,13 +1117,54 @@ def test_baselines_retain_invalid_zero_targets_without_random_draws() -> None:
     assert baseline_outputs(valid_records, "RANDOM_RANK")[
         "random_draw_consumed"
     ] is True
-    for records in invalid_cases.values():
-        assert baseline_outputs(records, "EQUAL_WEIGHT") == (
-            expected_invalid_output
+    for case_name in ("sparse", "tied"):
+        records = invalid_cases[case_name]
+        equal_weight_output = baseline_outputs(records, "EQUAL_WEIGHT")
+        assert equal_weight_output["validity"] == (
+            "MATCHED_FACTOR_MONTH_INVALID"
         )
+        assert len(equal_weight_output["target"]) == len(records)
+        assert equal_weight_output["cash_weight"] == 0.0
         assert baseline_outputs(records, "RANDOM_RANK") == (
             expected_invalid_output
         )
+
+    duplicate_equal_weight = baseline_outputs(
+        invalid_cases["duplicate_key"], "EQUAL_WEIGHT"
+    )
+    assert duplicate_equal_weight == {
+        "validity": "INVALID_UNFORMABLE_BENCHMARK",
+        "target": (),
+        "cash_weight": None,
+        "episodic_return": None,
+        "random_draw_consumed": False,
+        "output_record_retained": True,
+    }
+    assert baseline_outputs(
+        invalid_cases["duplicate_key"], "RANDOM_RANK"
+    ) == expected_invalid_output
+
+    tied_factor_gross_return = 0.0
+    invested_benchmark_return = 0.01
+    liquidation_turnover = 1.0
+    active_returns = {}
+    forbidden_cash_benchmark_active_returns = {}
+    for bps in (10, 25):
+        factor_net_return = tied_factor_gross_return - (
+            (1.0 + tied_factor_gross_return)
+            * liquidation_turnover
+            * bps
+            / 10000
+        )
+        active_returns[bps] = factor_net_return - invested_benchmark_return
+        forbidden_cash_benchmark_active_returns[bps] = factor_net_return
+
+    assert active_returns == {10: -0.011, 25: -0.0125}
+    assert forbidden_cash_benchmark_active_returns == {
+        10: -0.001,
+        25: -0.0025,
+    }
+    assert active_returns != forbidden_cash_benchmark_active_returns
 
 
 def test_low_vol_3m_uses_exactly_63_returns_from_64_price_anchors() -> None:
@@ -1690,6 +1765,7 @@ def test_diagnostic_final_state_assignment_is_exhaustive_at_boundaries() -> None
         "hard_valid": True,
         "prefrozen_coverage_met": True,
         "common_months": 60,
+        "bootstrap_support_all_three_factors": True,
         "primary_matched_benchmark_comparisons_valid": True,
         "secondary_spy_comparisons_valid": True,
         "mean_rank_ics": (0.02, -0.01, -0.02),
@@ -1718,6 +1794,17 @@ def test_diagnostic_final_state_assignment_is_exhaustive_at_boundaries() -> None
         (
             {"common_months": 59},
             "INCONCLUSIVE_DIAGNOSTIC",
+        ),
+        (
+            {"bootstrap_support_all_three_factors": False},
+            "INCONCLUSIVE_DIAGNOSTIC",
+        ),
+        (
+            {
+                "hard_valid": False,
+                "bootstrap_support_all_three_factors": False,
+            },
+            "INVALID_DIAGNOSTIC",
         ),
         (
             {
@@ -1789,6 +1876,7 @@ def test_benchmark_comparison_gaps_have_frozen_final_state_routing() -> None:
         "hard_valid": True,
         "prefrozen_coverage_met": True,
         "common_months": 60,
+        "bootstrap_support_all_three_factors": True,
         "primary_matched_benchmark_comparisons_valid": True,
         "secondary_spy_comparisons_valid": True,
         "mean_rank_ics": (0.02, -0.01, -0.02),
@@ -1847,6 +1935,7 @@ def test_final_state_robustness_uses_common_case_not_factor_all_valid() -> None:
         "hard_valid": True,
         "prefrozen_coverage_met": True,
         "common_months": 60,
+        "bootstrap_support_all_three_factors": True,
         "primary_matched_benchmark_comparisons_valid": True,
         "secondary_spy_comparisons_valid": True,
         "mean_rank_ics": (0.1, -0.01, -0.02),

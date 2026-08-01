@@ -305,6 +305,10 @@ strategy:
   missing_held_return_zero_target_rewrite: FORBIDDEN
   primary_benchmark: FACTOR_MATCHED_CONTINUOUS_EQUAL_WEIGHT_DECISION_TIME_ELIGIBLE_UNIVERSE
   primary_benchmark_membership_freeze: SIGNAL_CLOSE_T
+  primary_benchmark_sparse_or_tied_factor_month: REMAIN_INVESTED_IN_NONEMPTY_UNIQUE_DECISION_TIME_ELIGIBLE_UNIVERSE
+  primary_benchmark_duplicate_key_or_empty_universe: INVALID_UNFORMABLE_NO_CASH_SUBSTITUTE
+  primary_benchmark_reuse_of_factor_or_random_zero_target: FORBIDDEN
+  invalid_factor_month_active_return: RETAIN_DESCRIPTIVE_ONLY_EXCLUDE_FROM_FINAL_STATE_SUPPORT
   future_availability_membership_recomputation: FORBIDDEN
   primary_benchmark_comparison_gap: INVALIDATE_REQUIRED_PRIMARY_COMPARISON
   primary_benchmark_comparison_gap_final_state: INVALID_DIAGNOSTIC_HARD_VALIDITY_FAILURE
@@ -380,9 +384,17 @@ trials:
   exact_rerun_classification: ATTEMPT_OF_EXISTING_SEMANTIC_TRIAL
 
 baselines:
-  invalid_factor_month_policy:
+  equal_weight_eligible_universe:
+    relation_to_primary_benchmark: SAME_FROZEN_TARGET_AND_GROSS_COST_FREE_CONTINUOUS_RETURN_OBJECT
+    semantic_role_serialization: DISTINCT_BASELINE_AND_PRIMARY_BENCHMARK_ROLES
+    sparse_or_tied_factor_month_target: EQUAL_WEIGHT_NONEMPTY_UNIQUE_DECISION_TIME_ELIGIBLE_UNIVERSE
+    sparse_or_tied_factor_month_output: RETAIN_INVESTED_RETURN_WITH_MATCHED_FACTOR_MONTH_INVALID_FLAG
+    duplicate_key_or_empty_universe_output: RETAIN_INVALID_UNFORMABLE_OUTPUT_WITHOUT_CASH_SUBSTITUTE
+    matched_factor_invalid_final_state_support: FORBIDDEN
+    reuse_as_random_rank_or_factor_zero_target: FORBIDDEN
+  random_rank_invalid_factor_month_policy:
     triggers: SAME_THREE_DECISION_TIME_ZERO_TARGET_TRIGGERS_AS_FACTOR_STRATEGY
-    applies_to: BOTH_EQUAL_WEIGHT_AND_RANDOM_RANK_FACTOR_MATCHED_OUTPUTS
+    applies_to: RANDOM_RANK_FACTOR_MATCHED_OUTPUT_ONLY
     output_disposition: RETAIN_INVALID_OUTPUT_RECORD
     target: ZERO_TARGET
     cash_weight: 1.0

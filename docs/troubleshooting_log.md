@@ -104,6 +104,29 @@ Original failures and consequences:
   every `n<=6` start range to zero and copies the segment. The corrected fixture
   uses a full 60-record admissible sample, not a tiny smoke case, and also tests
   the explicit singleton degeneracy gate.
+- The sixteenth review exposed an overgeneralization from the fourteenth-round
+  fix: propagating factor invalidity to both baselines also converted the
+  invested equal-weight primary benchmark to cash. The correction separates
+  the benchmark/equal-weight path from the random-rank/factor path and tests
+  their economic outputs together.
+- The same review showed that documenting bootstrap degeneracy was insufficient
+  while the executable classifier helper lacked that coverage input. The input
+  and ordered boundary cases now fail closed without changing hard-validity
+  precedence.
+- The first sixteenth-round focused command addressed a nonexistent worktree-
+  local `.venv/bin/python` and exited before collection. Validation resumed
+  with the repository's existing project virtual environment; no failed or
+  partial test result was counted.
+- The next focused run passed all behavioral fixtures and failed only because a
+  structural contract phrase crossed a Markdown line wrap. The assertion was
+  narrowed to the exact invested-benchmark active-return values without
+  weakening the economic mutation check. Its retry then reached a second stale
+  whole-sentence assertion split by the rewritten paragraph; that assertion was
+  separated into stable adjacent semantic fragments.
+- The first isolated sixteenth-round build could not resolve its declared
+  setuptools/wheel requirements in the network-restricted sandbox. The exact
+  build was rerun with approved dependency-download access and produced both
+  sdist and wheel without publishing either artifact.
 
 Investigation:
 
@@ -157,15 +180,19 @@ Correction:
 - Propagated that endpoint-only rule through the integrated decision-time
   eligibility/target path and bound prospective counting to every required
   freeze rather than protocol freeze alone.
-- Froze the prospective clock to all-three-factor decision-time validity and
-  propagated the three invalid-rebalance triggers through both baseline trials.
+- Froze the prospective clock to all-three-factor decision-time validity. The
+  random baseline inherits the three invalid-rebalance triggers, while the
+  equal-weight baseline and primary benchmark preserve their separately frozen
+  invested-universe return object.
 - Added genuine short-segment bootstrap draws plus a degeneracy coverage gate,
   and froze listing keys once at campaign-wide earliest any-factor eligibility.
+- Bound that degeneracy gate into classification and added a tied-month fixture
+  that rejects a cash substitute for the equal-weight primary benchmark.
 
 Verification:
 
-- The latest corrected focused structure suite passed 56 tests and the full
-  suite passed 3083 tests with two platform-conditional skips. Full Ruff,
+- The latest corrected focused structure suite passed 61 tests and the full
+  suite passed 3088 tests with two platform-conditional skips. Full Ruff,
   compileall, Skill audit, YAML and JSON parsing, deterministic repo-map
   regeneration, `git diff --check`, added-line privacy and Unicode/control
   scans, and isolated sdist/wheel build passed.

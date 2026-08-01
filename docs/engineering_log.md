@@ -1,5 +1,31 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Sixteenth-Review Benchmark And Classifier Remediation
+
+- Exact-head Codex review of `46679c4` completed with two P2 findings: the
+  invalid-factor-month rule reused factor cash for the equal-weight primary
+  benchmark, and final-state classification did not consume bootstrap-support
+  coverage.
+- Kept the equal-weight baseline and primary benchmark invested in every
+  nonempty unique decision-time eligible universe on sparse/tied factor
+  months. The factor and random-rank targets still liquidate to cash, while
+  their active returns are retained descriptively and excluded from final-
+  state support. Duplicate or empty benchmark targets remain unformable rather
+  than being replaced by cash.
+- Added an integrated tied-factor fixture covering both portfolio paths and
+  exact 10/25-bps active returns. Added nondegenerate bootstrap support for all
+  three factors as an explicit coverage input to the ordered classifier, plus
+  false-support and hard-validity-precedence boundary cases.
+- Focused project-structure validation passed 61 tests. The full suite passed
+  3088 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, `git diff
+  --check`, and added-line privacy, non-ASCII, and hidden-Unicode/control scans
+  passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Fifteenth-Review Bootstrap And Key Remediation
 
 - Exact-head Codex review of `e9c2707` completed with one P1 and one P2: short

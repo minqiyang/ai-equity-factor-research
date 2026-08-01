@@ -58,12 +58,17 @@ profitability, or trading readiness.
   only at the first eligible signal strictly after the latest protocol, runner-
   code, and dataset-policy freeze timestamp; prior months cannot be backfilled.
   That signal must have all three factor rebalances decision-time valid; a
-  subset-valid month is retained but does not increment the 12/24 clock. Both
-  baselines inherit the factor's three invalid-month triggers and retain an
-  invalid zero-target/full-cash output without treating episodic missingness as
-  zero or consuming a random permutation. Bootstrap segments of two through
+  subset-valid month is retained but does not increment the 12/24 clock. The
+  random-rank baseline inherits the factor's three invalid-month triggers and
+  retains an invalid zero-target/full-cash output without treating episodic
+  missingness as zero or consuming a random permutation. The equal-weight
+  baseline and primary benchmark instead remain invested in a nonempty unique
+  eligible universe on sparse/tied factor months; their return is not replaced
+  by cash, and invalid-factor-month active returns are descriptive only.
+  Bootstrap segments of two through
   six rows now use genuine one-row within-segment resampling, with a
-  nondegenerate-support gate that prevents false Holm support. Listing keys
+  nondegenerate-support gate that prevents false Holm support and is an
+  explicit all-three-factor classifier coverage input. Listing keys
   freeze once campaign-wide at earliest any-factor eligibility, so later
   factor eligibility cannot re-encode an endpoint. Repository
   governance fixes safe in-scope review findings without owner round trips and

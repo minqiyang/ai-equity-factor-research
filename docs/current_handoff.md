@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the fifteenth PR #177 review-remediation round.
+Updated: 2026-07-31 for the sixteenth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -85,8 +85,8 @@ Updated: 2026-07-31 for the fifteenth PR #177 review-remediation round.
   remediated by committed and pushed head `fc561e4`; exact-head CI run
   `30690874955` passed. The fourteenth review of `fc561e4` found two P2 gaps:
   prospective counting did not aggregate factor-specific eligibility, and the
-  random baseline did not freeze behavior for invalid factor months. The
-  current branch-head snapshot requires all three factor rebalances to be
+  random baseline did not freeze behavior for invalid factor months. That
+  remediation required all three factor rebalances to be
   decision-time valid for the prospective counter, retains subset-valid dates
   without counting them, and gives both baselines the same retained invalid
   zero-target/full-cash behavior for sparse, tied, or duplicate-key months.
@@ -98,9 +98,21 @@ Updated: 2026-07-31 for the fifteenth PR #177 review-remediation round.
   head snapshot uses one-row within-segment resampling for lengths two through
   six, rejects degenerate resampling support, and freezes each listing key once
   campaign-wide at earliest any-factor eligibility. Sixty-record short-segment
-  and staggered-factor key fixtures retain the exact 14-trial inventory and are
-  not pending local authorship. The actual remaining gate is exact-head CI on
-  the current head, followed by one current-head Codex review; every finding
+  and staggered-factor key fixtures retain the exact 14-trial inventory. Those
+  gaps were remediated by committed and pushed head `46679c4`; exact-head CI
+  run `30692101398` passed. The sixteenth review of `46679c4` found two P2
+  gaps: the prior invalid-month rule incorrectly turned the equal-weight
+  baseline and primary benchmark into cash on a tied factor month, and the
+  classifier did not consume the already-frozen bootstrap-support gate. The
+  current branch-head snapshot keeps the factor and random-rank target at zero
+  for sparse/tied invalid factor months while the equal-weight baseline and
+  primary benchmark remain invested in the nonempty unique eligible universe.
+  It retains resulting active returns descriptively and excludes them from
+  final-state support. It also passes all-three-factor nondegenerate bootstrap
+  support as an explicit classifier coverage input, with hard-validity
+  precedence. Integrated tied-month economic and classifier boundary fixtures
+  are not pending local authorship. The actual remaining gate is exact-head CI
+  on the current head, followed by one current-head Codex review; every finding
   restarts that remediation loop. Do not repeat commit or push work from an old
   handoff instruction; resolve current `HEAD`, remote head, CI, and review
   state.

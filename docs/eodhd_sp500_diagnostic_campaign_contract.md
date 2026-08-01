@@ -337,6 +337,17 @@ Missing constituent execution or held returns, or missing SPY benchmark dates,
 invalidate the comparison; they do not change benchmark membership and are not
 filled.
 
+A factor month with fewer than 100 eligible listings or fewer than 10 distinct
+finite factor values does not turn the primary benchmark into cash. When the
+decision-time eligible universe is nonempty and has unique canonical keys, the
+primary benchmark remains invested at equal weights even though the matched
+factor and random-rank targets are zero and carry an invalid-factor-month flag.
+An empty universe or duplicate canonical keys makes the benchmark target
+unformable and retains an invalid comparison gap; it is not replaced by a cash
+benchmark. Reusing the factor or random-rank zero target as the primary
+benchmark is forbidden. Active returns for a decision-time-invalid factor month
+are retained as descriptive evidence but cannot enter final-state support.
+
 Final-state routing distinguishes the two comparisons. Any missing constituent
 execution or held return that invalidates a required factor-matched primary-
 benchmark comparison is a hard-validity failure for the campaign and produces
@@ -352,18 +363,35 @@ The invalid secondary output and missing-date count remain required bundle
 evidence; they may not be filled, omitted, or substituted with another date or
 benchmark.
 
-The two baseline trials inherit the same three decision-time invalid-rebalance
-triggers as the factor they match: fewer than 100 eligible listings, fewer than
-10 distinct finite factor values, or duplicate canonical listing keys. For any
-trigger, both the equal-weight and random-rank factor-matched output records are
-retained as invalid with a zero target and full cash. The episodic return is
-invalid/missing, never zero. The continuous path applies the zero-target
-liquidation turnover and then non-interest-bearing cash while retaining the
-invalid-month flag. The random baseline does not derive a seed or consume a
-permutation for that factor/month. The invalid output satisfies required-output
-reconciliation and inherits the factor-month coverage invalidity; it is not a
-missing trial output or a new hard-validity failure. Sparse, tied, and duplicate-
-key fixtures apply this rule to both baselines.
+The equal-weight eligible-universe baseline is the same frozen target and gross,
+cost-free continuous return object as the primary factor-matched benchmark,
+serialized under a distinct baseline semantic role. It must never reuse the
+random-rank or factor zero target. For a sparse or tied factor month, a nonempty
+eligible universe with unique canonical keys remains equal-weight invested; its
+return is retained with a matched-factor-month-invalid flag and cannot support
+the final state. An empty universe or duplicate canonical keys instead retains
+an invalid, unformable equal-weight output without inventing a cash substitute.
+
+The random-rank baseline alone inherits all three factor decision-time invalid-
+rebalance triggers: fewer than 100 eligible listings, fewer than 10 distinct
+finite factor values, or duplicate canonical listing keys. For any trigger, its
+factor-matched output record is retained as invalid with a zero target and full
+cash. The episodic return is invalid/missing, never zero. Its continuous path
+applies the zero-target liquidation turnover and then non-interest-bearing cash
+while retaining the invalid-month flag. The random baseline does not derive a
+seed or consume a permutation for that factor/month. The invalid output
+satisfies required-output reconciliation and inherits the factor-month coverage
+invalidity; it is not a missing trial output or a new hard-validity failure.
+
+The integrated tied-month fixture contains 100 unique eligible keys with one
+distinct finite factor value, an incoming zero gross factor return, a prior
+fully invested factor target, and a +1% gross cost-free equal-weight benchmark
+return. The factor and random-rank paths liquidate with turnover 1.0. The factor
+net returns are therefore -0.0010 at 10 bps and -0.0025 at 25 bps, while active
+returns against the still-invested primary benchmark are -0.0110 and -0.0125.
+A forbidden cash benchmark would instead report -0.0010 and -0.0025 active
+returns. The fixture retains the former values descriptively with the invalid-
+factor-month flag; neither value enters final-state support.
 
 Each baseline semantic trial emits an exact output matrix with rows
 `MOM_12_1`, `REV_1M`, and `LOW_VOL_3M` and columns
@@ -694,8 +722,10 @@ tree. Evaluate it in this order:
    comparison invalidation is descriptive only and is not a hard-validity or
    coverage failure.
 2. Otherwise, `INCONCLUSIVE_DIAGNOSTIC` if any pre-frozen realized coverage
-   threshold fails or the common complete-case primary sample contains fewer
-   than 60 monthly records.
+   threshold fails, the common complete-case primary sample contains fewer
+   than 60 monthly records, or nondegenerate bootstrap support is not available
+   for all three factors under the frozen segment rules. Bootstrap-support
+   failure cannot produce Holm support.
 3. Otherwise, define `holm_supported(f)` as a Holm rejection for factor `f`
    with observed common-complete-case mean Rank IC strictly greater than zero.
    Define `economically_supported(f)` as strictly positive net annualized

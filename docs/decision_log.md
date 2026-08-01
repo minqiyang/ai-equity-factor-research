@@ -15,6 +15,48 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Preserve The Invested Benchmark And Bind Bootstrap Coverage
+
+Context:
+
+- The sixteenth exact-head Codex review of PR #177 at `46679c4` found two P2
+  gaps. The fourteenth-round baseline generalization incorrectly made the
+  equal-weight eligible-universe benchmark reuse a factor's zero target, and
+  the final-state classifier did not accept the frozen bootstrap-support gate
+  as an input.
+
+Decision:
+
+- For sparse or tied factor months, keep the factor and random-rank targets at
+  zero but keep the equal-weight baseline and primary benchmark invested in
+  the nonempty unique decision-time eligible universe. Duplicate canonical
+  keys or an empty universe make that benchmark unformable; cash is not a
+  substitute.
+- Retain invalid-factor-month active returns as descriptive evidence and
+  forbid them from final-state support.
+- Require nondegenerate bootstrap support for all three factors as an explicit
+  realized-coverage input. Failure routes to `INCONCLUSIVE_DIAGNOSTIC` unless
+  an earlier hard-validity rule produces `INVALID_DIAGNOSTIC`.
+
+Rationale:
+
+- The primary benchmark measures the invested eligible universe and cannot be
+  silently converted into the same cash path as an invalid factor portfolio.
+- A bootstrap unable to generate nondegenerate null support cannot justify a
+  Holm-supported conclusion, while ordered hard-validity precedence must stay
+  intact.
+
+Consequences:
+
+- A tied-month fixture fixes the 10/25-bps active-return contrast against an
+  invested benchmark and rejects a cash-benchmark implementation.
+- Classifier boundary cases cover false bootstrap support and its precedence
+  interaction with hard validity.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Resample Short Segments And Freeze Keys Campaign-Wide
 
 Context:
