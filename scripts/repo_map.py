@@ -57,11 +57,17 @@ MAJOR_DIRS = [
 ]
 
 IMPORTANT_FILES = [
-    ("AGENTS.md", "Agent guardrails, command-output controls, and repo safety rules."),
-    ("docs/current_handoff.md", "Shortest current-state handoff; read this first."),
+    (
+        "AGENTS.md",
+        "Canonical external-action authority boundary and repository invariants.",
+    ),
+    (
+        "docs/current_handoff.md",
+        "Transitional notice above a historical body; the roadmap owns the latest snapshot until compaction.",
+    ),
     (
         "docs/research_program_charter.md",
-        "Canonical long-term research evidence and authorization policy.",
+        "Canonical long-term research intent and evidence policy; not an external-action authority source.",
     ),
     (
         "docs/purged_bounded_split_contract.md",
@@ -128,12 +134,19 @@ IMPORTANT_FILES = [
         "eodhd_sp500_three_factor_trial_inventory_v1.json",
         "Exact frozen 14-semantic-trial inventory.",
     ),
-    ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
+    ("docs/current_roadmap.md", "Canonical active stage status and dependencies."),
     ("docs/repo_map.md", "Generated concise repo map."),
-    ("docs/codex_long_running_controller.md", "Continuation and stop-condition controller."),
+    (
+        "docs/codex_long_running_controller.md",
+        "Canonical staged workflow and GitHub review lifecycle controller.",
+    ),
     (
         ".agents/skills/staged-quant-workflow/SKILL.md",
         "Thin invocation router for the canonical staged workflow documents.",
+    ),
+    (
+        ".github/workflows/ci.yml",
+        "Canonical continuous-integration commands and platform test matrix.",
     ),
     (
         "PROJECT_SPEC.md",
@@ -148,15 +161,15 @@ IMPORTANT_FILES = [
     ("pyproject.toml", "Package metadata and test dependencies."),
 ]
 
-TEST_COMMANDS = [
-    ("Full tests", "python -m pytest -q"),
-    ("Lint repository", "python -m ruff check ."),
-    ("Compile source, tests, and research", "python -m compileall src tests research"),
-    ("Compile LEAN scaffold", "python -m compileall lean"),
-    ("Build distribution", "python -m build"),
+LOCAL_VALIDATION_COMMANDS = [
     ("Repo map refresh", "python scripts/repo_map.py"),
-    ("Branch whitespace check", "git diff --check origin/main..HEAD"),
-    ("Skill audit for workflow/Skill changes", ".\\scripts\\audit-skills.ps1"),
+    ("Unstaged whitespace check", "git diff --check"),
+    ("Staged whitespace check", "git diff --cached --check"),
+    ("Committed branch whitespace check", "git diff --check origin/main...HEAD"),
+    (
+        "Skill audit for workflow/Skill changes",
+        "pwsh -NoProfile -File scripts/audit-skills.ps1",
+    ),
 ]
 
 
@@ -263,9 +276,10 @@ def build_repo_map() -> str:
             "",
             "## Test And Validation Commands",
             "",
+            "- CI validation commands are defined only in `.github/workflows/ci.yml`; this map does not duplicate them.",
         ]
     )
-    for label, command in TEST_COMMANDS:
+    for label, command in LOCAL_VALIDATION_COMMANDS:
         lines.append(f"- {label}: `{command}`")
 
     lines.extend(
@@ -273,7 +287,7 @@ def build_repo_map() -> str:
             "",
             "## Output Discipline",
             "",
-            "- Read `docs/current_handoff.md` before deeper logs.",
+            "- Read `docs/current_roadmap.md` for current state; consult the handoff through its supersession notice until compaction.",
             "- Do not print full generated reports or large logs by default; inspect targeted ranges only when needed.",
             "- Use capped command output for unknown commands, and save full output to a temp file when full review is necessary.",
         ]

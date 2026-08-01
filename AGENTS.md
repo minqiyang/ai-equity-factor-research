@@ -1,165 +1,80 @@
 # AI Agent Rules
 
-This repository is a serious simulated quantitative research project. AI coding agents must preserve auditability, reproducibility, and research discipline.
+Canonical responsibility: repository invariants, authority boundaries, and
+research-safety review standards.
 
-## Startup And Context Budget
+## Authority And Scope
 
-- For staged workflow continuations, read `docs/current_handoff.md` first.
-- Use `docs/repo_map.md` for concise orientation before broad repository scans.
-- Read deeper logs and long documents only when the handoff points to them, the active stage requires them, a check fails, or a guardrail-sensitive decision needs source evidence.
-- Regenerate the repo map with `python scripts/repo_map.py` after workflow-control changes that alter the repository map.
+- Repository instructions define constraints and eligibility; they never expand
+  current system, developer, user, or global authority.
+- No repository file grants authority to push, create or update a PR, post a
+  comment or review request, enable auto-merge, merge, close, deploy, access
+  private data, or take destructive action. Each requires explicit user or
+  higher-level authorization for that action and scope.
+- Local-edit authorization is not publication authorization; approval for a
+  named PR or remediation does not expand its stage or file scope.
+- Never direct-push or direct-merge to `main`, bypass protections, checks,
+  reviews, or a merge queue, or use administrative override flags.
+- Preserve unrelated user changes. Do not reset, clean, overwrite, or hide them;
+  use a separate clean branch or worktree when the current tree is dirty.
+- Treat credentials, private data, licenses, account identifiers, and production
+  systems as sensitive. Never store secrets or raw private data in the repo.
 
-## Command Output Protection
+## Startup And Sources
 
-- Cap unknown large command output by default.
-- Prefer `git status --porcelain | head -n 50` for quick status checks.
-- Prefer `git log --oneline -20` for recent history.
-- Prefer `git diff --name-only | head -n 80` for scope checks.
-- Use `COMMAND 2>&1 | head -c 8000` for unknown commands that may print large output.
-- In PowerShell, use equivalent caps such as `Select-Object -First` for line limits.
-- Write full command output to temp files and inspect targeted ranges only when full review is needed.
-- Never `cat` full generated reports or large logs by default.
+- For staged work, including work invoked through a thin routing Skill, read
+  `docs/current_roadmap.md` for current status and latest snapshot, then
+  `docs/repo_map.md` and `docs/codex_long_running_controller.md`.
+  Until compaction, only `docs/current_handoff.md`'s top notice is current; its body is historical.
+- Read long logs or contracts only when the active stage or a failed/sensitive check requires them.
+- Cap unknown output and prefer targeted searches or short views. Regenerate
+  `docs/repo_map.md` when workflow-control changes alter the map.
 
-## Required Behavior
+## Research Safety Invariants
 
-- Before editing, summarize the intended changes.
-- After editing, summarize changed files, tests run, and next steps.
-- Prefer small, reviewable changes.
-- Keep strategy logic transparent and explainable.
-- Preserve date alignment in all feature, backtest, and reporting code.
-- Always explain assumptions about data, costs, slippage, execution timing, and benchmark choice.
-- Add or update tests for any feature calculation change.
-- Document any change to strategy logic in `EXPERIMENT_LOG.md`, `PROJECT_SPEC.md`, or a relevant research note.
-- Treat zero-cost or no-slippage results as diagnostics only.
-- Keep failures, weak results, and caveats visible.
-- After meaningful code or research-process changes, check whether the work
-  should be added to `docs/engineering_log.md` as a durable engineering note.
+- Keep this project simulated, auditable, reproducible, and explainable; never
+  add brokerage connections, orders, paper/live trading, or live-account behavior.
+- Never invent results or claim profitability without reproducible evidence.
+  Zero-cost or no-slippage results are diagnostics only.
+- Keep failed, weak, invalid, abandoned, and contrary results visible; never
+  cherry-pick only the best parameter or trial.
+- Never use future returns, future universe membership, future fundamentals,
+  same-period target returns, or any other look-ahead or survivorship leakage.
+- Real/private-data access or interpretation requires accepted methodology and
+  evidence gates plus explicit authorization; a contract alone grants no access.
+- Explain data provenance, missingness, costs, slippage, execution timing,
+  benchmark choice, sample splits, and material limitations.
 
-## Review guidelines
+## Alignment And Evidence
 
-- Prioritize equity-factor-research validity risks over style-only comments.
-- Treat look-ahead bias, data leakage, survivorship bias, factor normalization
-  leakage, incorrect signal lag, rebalance/execution/return-window mismatch,
-  benchmark misalignment, and portfolio construction errors as P1 only when
-  there is concrete evidence from the diff or changed path, such as an
-  unlagged join, same-period target return, future universe membership, or
-  mismatched execution and return window. Suspicion from a touched factor input
-  alone is not enough for a P1 finding.
-- Treat missing edge-case tests for missing data, sparse universes, empty
-  portfolios, invalid returns, transaction costs, turnover, benchmark alignment,
-  and calendar alignment as P2 unless they directly create a P1
-  research-validity risk.
-- Treat misleading documentation, overstated performance claims, hidden
-  assumptions, or missing non-goals as P1 or P2 depending on severity.
-- Do not spend review budget on typo-only comments unless they change technical
-  meaning.
-- Flag hidden Unicode or control-character risks, including bidi controls,
-  zero-width characters, non-breaking spaces, and unexplained non-ASCII changes
-  in code, config, markdown instructions, schemas, ticker columns, or
-  generated-output policy; suggest removing them or adding a targeted Unicode
-  scan check when needed.
-- Require every finding to include file path, evidence, why it matters, and a
-  suggested test or fix.
+- Inputs must be known before trading. Distinguish feature, signal, rebalance,
+  execution, and return dates; state execution time and test every boundary.
+- Add deterministic tests for feature, strategy, portfolio, accounting, or
+  reporting calculation changes.
+- Document strategy changes in `EXPERIMENT_LOG.md`, `PROJECT_SPEC.md`, or the
+  relevant note; record durable process evidence in `docs/engineering_log.md`.
+- Keep reports and experiment records reproducible.
 
-## Pull Request and Commit Discipline
+## Review Priorities
 
-- Prefer small, reviewable pull requests.
-- Each PR should represent one clear feature, bug fix, test improvement, documentation update, or refactor.
-- Prefer meaningful commits.
-- Each commit should represent one coherent engineering step.
-- Do not split trivial edits into artificial PRs or commits just to increase counts.
-- Do not combine unrelated changes in one PR.
-- Use separate PRs for distinct features, bug fixes, test hardening, documentation updates, and refactors.
-- Use a separate branch for each stage or milestone.
-- If a previous PR is not verified merged, report the gate once, enter a
-  paused external PR gate state, and wait for explicit user resume. Automatic
-  continuations without a user-stated merge/resume/inspect instruction must
-  not query GitHub again, repeat gate reports, print repeated pause notes, mark
-  the goal complete, mark the goal blocked merely because the same external PR
-  remains pending, rerun baseline validation, or start another stage.
-- After creating a PR, Codex may enable GitHub auto-merge or perform a normal
-  protected PR merge only when the PR is not high-risk or unclear, the PR
-  author/head owner is verified from GitHub metadata as `minqiyang`, branch
-  protection or rulesets are verifiable, required checks pass or auto-merge is
-  used for pending checks, no required review is pending, and changed-file scope
-  matches the declared stage.
-- Codex must not direct-push or direct-merge to `main`, bypass branch
-  protection/rulesets/checks/reviews/merge queue, or use `gh pr merge --admin`.
-- If risk is high or unclear, author/pusher identity cannot be verified from
-  GitHub PR metadata, protection/check/review status cannot be verified, CI is
-  unstable or blocked after a bounded wait, or scope does not match the stage,
-  stop for human review.
-- For research features, prefer this sequence:
-  1. planning
-  2. tests or documentation
-  3. implementation
-  4. read-only review
-  5. commit
-  6. PR
-  7. protected PR merge or GitHub auto-merge only when the risk/protection/check
-     policy above allows it
-- When a PR has multiple meaningful commits, preserve them unless the commit history is messy.
-- Do not treat PR count or commit count as a quality metric by itself.
+- Prioritize research-validity risk over style. A P1 requires concrete evidence
+  from changed code, tests, or documentation; touching a factor input alone is
+  not evidence of leakage.
+- Flag as P1 an unsupported implemented/completed claim or a concrete mismatch
+  in signal/factor timing, rebalance/execution timing, return-window or benchmark
+  alignment, portfolio construction or accounting, or leakage prevention.
+- Flag as P2 undocumented implemented/tested behavior, partial work called
+  complete, stale next steps, or missing sparse/empty/invalid-data, cost,
+  turnover, benchmark, or calendar edge tests unless evidence creates P1 risk.
+- Rank misleading claims, hidden assumptions, and missing non-goals by impact;
+  ignore typos unless meaning changes. Flag unexplained Unicode/control changes.
+- Every finding must cite the file and claim, code/test evidence, mismatch and
+  impact, plus a recommended fix or targeted test.
 
-### Review Remediation And Persistent Review Waits
+## Engineering And Change Discipline
 
-- Do not wait for owner confirmation before fixing an actionable review finding
-  that is safe and inside the already-authorized PR or stage scope. Implement
-  the fix, add or update the relevant tests and durable logs, validate the
-  exact new head, push it, and request a new current-head review when required.
-- Continue that remediation loop until the current head has no unresolved
-  actionable finding or the finding exposes a genuinely critical owner
-  decision. Review remediation does not authorize stage expansion, data
-  purchase or access, protected-sample access, destructive work, merge,
-  deployment, brokerage behavior, or another externally visible side effect.
-- A pending `@codex review` is not a terminal task state. Do not send a final
-  response merely because the review request or a monitor was created. Keep
-  the current task active until the exact-current-head review completes. When
-  a scheduled monitor is needed, use one thread-scoped monitor at five-minute
-  intervals, check the exact current head once per run, and never post a
-  duplicate review request. Stop the monitor only when the review completes,
-  the head changes, or a finding arrives. Fix every safe actionable finding
-  immediately and repeat validation, push, CI, and current-head review until
-  no actionable finding remains. If the platform requires a bounded schedule,
-  renew it without treating schedule exhaustion as task completion.
-- When progress requires a genuinely critical owner decision, create or update
-  one thread-scoped scheduled follow-up at thirty-minute intervals with at
-  most four scheduled runs. Critical decisions include purchase or license
-  choices, protected-data or performance access, destructive or irreversible
-  action, externally visible scope expansion, and materially different valid
-  research interpretations. Each run checks for the owner's response and may
-  issue one concise follow-up; it must not decide on the owner's behalf. Stop
-  the schedule when the owner responds or after the fourth run, then remain
-  paused.
-- Reuse a matching active schedule instead of creating duplicates. Persistent
-  review waiting never authorizes repeated `@codex review` comments,
-  protection bypass, or merge.
-
-## Strict Prohibitions
-
-- Never claim a strategy is profitable without reproducible evidence.
-- Never invent backtest results.
-- Never remove, weaken, or skip tests to make code pass.
-- Never change strategy logic without documenting the change.
-- Never introduce future data leakage.
-- Never use future returns, future universe membership, future fundamentals, or same-period target returns as features.
-- Never connect live brokerage accounts.
-- Never add live trading functionality.
-- Never hide failed experiments or cherry-pick only the best parameter result.
-- Never store secrets, API keys, account IDs, or credentials in the repository.
-
-## Date Alignment Requirements
-
-- Signal inputs must be known before the trade date.
-- Feature dates must be clearly distinguished from execution dates and return measurement dates.
-- Rebalance logic must state whether trades occur at next open, next close, or another explicit execution time.
-- Tests should cover off-by-one errors for rolling windows, lags, and rebalance dates.
-
-## Engineering Standards
-
-- Use deterministic tests for core calculations.
-- Keep modules narrowly scoped.
-- Prefer clear pandas operations over opaque cleverness.
-- Add concise comments only where they clarify non-obvious alignment or research logic.
-- Do not add heavyweight dependencies without justification.
-- Keep generated reports and experiment logs reproducible.
+- State scope before editing; afterward report files, tests, caveats, and next gate.
+- Keep branches, PRs, and commits coherent; separate unrelated change types.
+- Never remove, weaken, or skip tests to make a change pass.
+- Prefer narrow modules, clear pandas, deterministic tests, and no unjustified
+  heavyweight dependency. The controller owns workflow and review lifecycle.

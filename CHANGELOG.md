@@ -7,6 +7,16 @@ profitability, or trading readiness.
 
 ## Unreleased
 
+### Changed
+
+- Consolidated repository governance so `AGENTS.md` owns authority and research
+  safety, the controller owns staged workflow and review lifecycle, and the
+  charter and roadmap reference those sources instead of repeating polling,
+  push, review, or merge policy. The roadmap now reflects PR #177's protected
+  merge and current private evidence gate. Structure tests verify ownership,
+  references, and explicit authorization boundaries rather than duplicated
+  prose or handoff review history.
+
 ### Added
 
 - Added the owner-approved EODHD historical S&P 500 diagnostic campaign scope

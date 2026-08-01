@@ -5,10 +5,12 @@ Adopted: 2026-07-26
 Status: canonical long-term research intent and evidence policy.
 
 This charter defines what the repository is trying to learn, which evidence is
-required, and which actions remain unauthorized. `PROJECT_SPEC.md` describes
-the project contract, `docs/current_roadmap.md` is the active task sequence,
-and `docs/current_handoff.md` is the short operational entry point. Historical
-plans and audits remain evidence, not active task queues.
+required, and which research-scope boundaries apply. `PROJECT_SPEC.md` describes
+the project contract, `docs/current_roadmap.md` is the active task sequence, and
+`docs/codex_long_running_controller.md` defines operational startup routing.
+External-action authority is owned only by
+[`AGENTS.md`](../AGENTS.md#authority-and-scope).
+Historical plans and audits remain evidence, not active task queues.
 
 ## Mission
 
@@ -29,21 +31,19 @@ platform that can:
 The objective is evidence quality, not the highest historical Sharpe ratio.
 No single metric is sufficient for promotion.
 
-## Current Authorization
+## Current Research Scope Boundary
 
-The current phase is research-only.
+The current phase is research-only. This section records evidence scope and
+non-goals; it grants no authority. External actions remain governed by
+[`AGENTS.md`](../AGENTS.md#authority-and-scope).
 
 - Local synthetic and explicitly accepted historical research are in scope
   only through the gates in this charter and the current roadmap.
-- This charter does not authorize vendor downloads, credentials, remote data
-  access, brokerage connections, orders, paper deployment, live deployment, or
-  real-money execution.
+- Vendor downloads, credentials, remote/private data, brokerage connections,
+  orders, paper/live deployment, and real-money execution are outside this phase.
 - The existing `lean/` directory remains a non-executing scaffold.
-- Paper runtime work requires a future explicit scope decision after a
-  `PORTFOLIO_PASS`.
-- Live trading requires separate future owner authorization, operational risk
-  limits, and a separate credentials and execution boundary. A
-  `LIVE_CANDIDATE` label is not authorization to trade.
+- A future `PORTFOLIO_PASS` or `LIVE_CANDIDATE` label is evidence state only; it
+  does not change repository scope or external-action authority.
 
 ## Evidence Layers
 
@@ -54,7 +54,7 @@ The program keeps four evidence layers separate.
 | Factor | A date-by-asset score computed from information available at the declared time. | Whether the score has incremental cross-sectional information under a registered diagnostic protocol. |
 | Strategy | A frozen signal policy, selection rule, holding rule, rebalance schedule, and execution assumption. | Whether the rule has stable out-of-sample value after its stated costs. |
 | Portfolio | One or more strategies under benchmark, weighting, exposure, liquidity, concentration, and risk constraints. | Whether active value survives realistic constraints, costs, capacity, and stability tests. |
-| Execution | The translation from frozen targets to order intents, simulated fills, positions, costs, and reconciliation. | Whether local and LEAN behavior agree closely enough for a separately authorized paper candidate. |
+| Execution | The translation from frozen targets to order intents, simulated fills, positions, costs, and reconciliation. | Whether local and LEAN behavior agree closely enough for a separately gated paper candidate evidence state. |
 
 A factor helper is not a strategy. A strategy backtest is not portfolio
 evidence. Portfolio evidence is not execution evidence. Software correctness
@@ -195,7 +195,7 @@ Relevant dimensions include:
 - fold, subperiod, universe, and parameter-neighborhood stability;
 - statistical uncertainty and multiple-testing-adjusted evidence;
 - simplicity and economic rationale; and
-- local-to-LEAN parity when that later gate is authorized.
+- local-to-LEAN parity when that later research gate is accepted.
 
 If a campaign uses "recall," it must define future winners before evaluation,
 for example top-decile benchmark-adjusted forward returns. Report Precision@K,
@@ -237,12 +237,12 @@ reproducible evidence. Reproducibility alone does not establish validity.
 | 10. Portfolio and risk engine | Add reviewed weighting, exposure, turnover, liquidity, volatility, concentration, and infeasibility contracts. | Drift-aware accounting identities and constraint tests pass. |
 | 11. Frozen historical evaluation | Freeze candidates, rules, costs, metrics, thresholds, and trial policy before purged walk-forward evaluation. | No tuning on protected results; correct sample classification and complete access ledger. |
 | 12. Independent reproduction | Reproduce promoted evidence from the frozen manifest through an independent reviewer/path. | Data, config, code, output, and metric parity pass. |
-| 13. LEAN parity and paper candidate | Compare signals, holdings, trades, costs, and reconciliation for `PORTFOLIO_PASS` candidates only. | Separate explicit authorization is required before any paper runtime; no live path. |
+| 13. LEAN parity and paper candidate | Compare signals, holdings, trades, costs, and reconciliation for `PORTFOLIO_PASS` candidates only. | Candidate evidence only; paper runtime is outside project scope and remains governed by the `AGENTS.md` authority boundary. |
 
-Controlled live execution is not a stage authorized by this charter. It
-requires a separate future repository or package boundary, explicit owner
-authorization, capital and loss limits, reconciliation, kill switches, and
-operational review.
+Controlled live execution is outside this charter and project scope. Candidate
+states grant no authority. Any future system would require a separate repository
+or package boundary, capital and loss limits, reconciliation, kill switches, and
+operational review, with external actions governed only by `AGENTS.md`.
 
 ## Promotion and Stop Rules
 
@@ -263,7 +263,7 @@ Stop and issue a decision memo when:
 Rejected and inconclusive evidence remains part of the record. A failed gate
 does not invite tuning on the same protected sample.
 
-## Repository and Delivery Boundary
+## Repository and Research Responsibility Boundary
 
 This repository owns research contracts, data validation, factor replication,
 diagnostics, simulations, evidence, and frozen candidate artifacts. Any future
@@ -271,14 +271,11 @@ order-capable execution system should use a separately reviewed boundary so
 research changes cannot access credentials or silently change operational
 behavior.
 
-Deliver one coherent stage per branch and pull request. The integration owner
-maintains the canonical roadmap and handoff. Read-only auditors may work in
-parallel; reviewers do not fix their own findings.
+Research responsibilities remain separated: the integration owner maintains
+the canonical roadmap and handoff, read-only auditors may work in parallel,
+and reviewers do not fix their own findings.
 
-Keep automatic GitHub Codex review disabled. Do not request review while a PR
-is Draft. After local validation and CI are stable, request `@codex review`
-once on the final stable head when the change affects research semantics,
-implementation, returns, costs, benchmarks, CI, security, or execution scope.
-Request re-review only after an actionable fix changes the reviewed head.
-Never direct-push or direct-merge to `main`, bypass protection or required
-reviews, or use `--admin`.
+External-action authority is defined only by
+[`AGENTS.md`](../AGENTS.md#authority-and-scope). GitHub review sequencing is
+defined only by the controller's
+[GitHub Review Lifecycle](codex_long_running_controller.md#github-review-lifecycle).

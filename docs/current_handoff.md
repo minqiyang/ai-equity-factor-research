@@ -1,6 +1,13 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the twenty-fourth PR #177 review-remediation round.
+Updated: 2026-08-01 after the protected merge of PR #177.
+
+Status notice: PR #177 merged as protected-main commit `f50b6e77` from final
+branch head `c041333`. The detailed pre-merge narrative below is retained only
+as historical evidence pending the dedicated handoff-compaction PR. Statements
+that PR #177 is open or that its protocol-freeze work is next are superseded.
+Until compaction, this file owns neither the latest verified snapshot nor the
+current task queue; use `docs/current_roadmap.md` for both.
 
 ## Canonical State
 

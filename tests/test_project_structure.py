@@ -18,6 +18,20 @@ import numpy as np
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
+def _markdown_section(text: str, heading: str) -> str:
+    """Return one level-two Markdown section without matching later sections."""
+    pattern = re.compile(
+        rf"^## {re.escape(heading)}\s*$\n(.*?)(?=^##\s|\Z)",
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    matches = pattern.findall(text)
+    if len(matches) != 1:
+        raise AssertionError(
+            f"expected exactly one level-two section {heading!r}, found {len(matches)}"
+        )
+    return matches[0]
+
+
 def _listing_lineage_key_bytes_v1(
     exchange: str,
     ticker: str,
@@ -389,103 +403,252 @@ def test_required_governance_files_exist() -> None:
         assert (PROJECT_ROOT / file_name).is_file(), f"Missing file: {file_name}"
 
 
-def test_agents_requires_active_remediation_and_persistent_review_waits() -> None:
+def test_governance_documents_define_unique_policy_owners() -> None:
+    documents = {
+        "agents": (PROJECT_ROOT / "AGENTS.md").read_text(encoding="utf-8"),
+        "controller": (
+            PROJECT_ROOT / "docs/codex_long_running_controller.md"
+        ).read_text(encoding="utf-8"),
+        "roadmap": (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+            encoding="utf-8"
+        ),
+        "handoff": (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+            encoding="utf-8"
+        ),
+        "charter": (
+            PROJECT_ROOT / "docs/research_program_charter.md"
+        ).read_text(encoding="utf-8"),
+    }
+
+    owners = {
+        "agents": (
+            "Canonical responsibility: repository invariants, authority boundaries, "
+            "and research-safety review standards."
+        ),
+        "controller": (
+            "Canonical responsibility: staged workflow state transitions, external "
+            "gates, GitHub review lifecycle, waiting, stop conditions, and "
+            "completion reporting."
+        ),
+        "roadmap": (
+            "Canonical responsibility: active stage status, dependencies, latest "
+            "verified snapshot, and completion evidence."
+        ),
+    }
+    normalized = {name: " ".join(text.split()) for name, text in documents.items()}
+
+    for owner, marker in owners.items():
+        assert marker in normalized[owner]
+        for other_name, other_text in normalized.items():
+            if other_name != owner:
+                assert marker not in other_text
+
+    exclusive_sections = {
+        "agents": ["Authority And Scope"],
+        "controller": [
+            "External Authorization Gate",
+            "Predecessor PR Gate",
+            "GitHub Review Lifecycle",
+            "Waiting And Follow-Up",
+            "Protected Merge Eligibility",
+        ],
+        "roadmap": [
+            "Current State",
+            "Active Dependency Chain",
+            "Current Gate Evidence And Blockers",
+        ],
+    }
+    for owner, headings in exclusive_sections.items():
+        for heading in headings:
+            marker = f"## {heading}"
+            assert marker in documents[owner]
+            for other_name, other_text in documents.items():
+                if other_name != owner:
+                    assert marker not in other_text
+
+    for controller_only_token in [
+        "explicit merged/resume/inspect request",
+        "report one gate summary",
+        "re-query an unchanged gate",
+        "final stable current head",
+        "technically merge-eligible",
+    ]:
+        assert controller_only_token in normalized["controller"]
+        assert all(
+            controller_only_token not in text
+            for name, text in normalized.items()
+            if name != "controller"
+        )
+
+    assert "docs/codex_long_running_controller.md" in documents["agents"]
+    assert "../AGENTS.md#authority-and-scope" in documents["controller"]
+    assert "codex_long_running_controller.md" in documents["roadmap"]
+    assert "../AGENTS.md" in documents["roadmap"]
+    authority = " ".join(
+        _markdown_section(documents["agents"], "Authority And Scope").split()
+    )
+    controller_scope = " ".join(
+        _markdown_section(documents["controller"], "Scope And Authority").split()
+    )
+    authorization_gate = " ".join(
+        _markdown_section(
+            documents["controller"], "External Authorization Gate"
+        ).split()
+    )
+
+    assert "No repository file grants authority to" in authority
+    assert "explicit user or higher-level authorization" in authority
+    assert "../AGENTS.md#authority-and-scope" in controller_scope
+    assert "It grants no authority" in controller_scope
+    assert "Eligibility is not authorization" in controller_scope
+
+    assert "../AGENTS.md#authority-and-scope" in authorization_gate
+    assert "explicit action-and-scope authorization" in authorization_gate
+    assert "successful checks do not grant authority" in authorization_gate
+    assert "stop after local validation" in authorization_gate
+
+    for duplicated_inventory in [
+        "pushes, PR writes, comments",
+        "Before any push, PR create/update",
+    ]:
+        assert duplicated_inventory not in documents["controller"]
+
+    assert "## Current Authorization" not in documents["charter"]
+    assert "## Current Research Scope Boundary" in documents["charter"]
+    assert "../AGENTS.md#authority-and-scope" in documents["charter"]
+    assert "defines operational startup routing" in documents["charter"]
+    assert "current_handoff.md` is the operational entry point" not in documents[
+        "charter"
+    ]
+    assert (
+        "codex_long_running_controller.md#github-review-lifecycle"
+        in documents["charter"]
+    )
+
+    for stale_grant in [
+        "may enable github auto-merge",
+        "perform a normal protected pr merge",
+        "may automatically push",
+        "thread-scoped monitor at five-minute",
+        "thirty-minute intervals",
+    ]:
+        assert all(stale_grant not in text.lower() for text in documents.values())
+
+    for misplaced_policy in [
+        "@codex review",
+        "five-minute",
+        "thirty-minute",
+        "auto-merge",
+        "## Review and Change Policy",
+    ]:
+        assert misplaced_policy not in documents["roadmap"]
+
+
+def test_current_roadmap_is_the_transitional_status_and_snapshot_source() -> None:
     agents = (PROJECT_ROOT / "AGENTS.md").read_text(encoding="utf-8")
-    controller = (
-        PROJECT_ROOT / "docs/codex_long_running_controller.md"
+    workflow_skill = (
+        PROJECT_ROOT / ".agents/skills/staged-quant-workflow/SKILL.md"
     ).read_text(encoding="utf-8")
     roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
         encoding="utf-8"
     )
-
-    for phrase in [
-        "Do not wait for owner confirmation before fixing an actionable review finding",
-        "A pending `@codex review` is not a terminal task state",
-        "Do not send a final",
-        "thread-scoped monitor at five-minute",
-        "intervals, check the exact current head",
-        "until the exact-current-head review completes",
-        "thirty-minute intervals with at",
-        "most four scheduled runs",
-        "duplicate review request",
-        "owner's behalf",
-    ]:
-        assert phrase in agents
-    assert "five-minute scheduled monitor" in controller
-    assert "return a final response" in controller
-    assert "thirty-minute follow-up" in controller
-    assert "pending review is not a terminal task" in roadmap
-    assert "five-minute thread monitor" in roadmap
-    assert "thirty-minute thread follow-up" in roadmap
-
-
-def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
+    repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
     handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(encoding="utf-8")
     historical_roadmap = (
         PROJECT_ROOT / "docs/current_roadmap_gap_refresh.md"
     ).read_text(encoding="utf-8")
+    controller = (
+        PROJECT_ROOT / "docs/codex_long_running_controller.md"
+    ).read_text(encoding="utf-8")
 
-    for phrase in [
-        "This is the canonical roadmap",
-        "## Implemented Baseline",
-        "## Current Research-Validity Findings",
-        "## Delivery Sequence",
-        "0. Research Charter Reset",
-        "1a. Purged/bounded split contract",
-        "1b. Purged/bounded split implementation",
-        "2a. Signal/execution timing contract",
-        "2b. Signal/execution timing implementation",
-        "3. Point-in-time data methodology",
-        "4b-R1A. Allocation/registration architecture decision",
-        "4b-R1C. Trial-family registration schema",
-        "4b-R1D. Sample registration schema",
-        "4b-R1E. Campaign-entity and Stage 3 sample-reference binding schemas",
-        "4b-R1F. Semantic trial-allocation schema",
-        "4b-R1G. Initial campaign-inventory-seal schema",
-        "4b-R1H. Attempt-allocation schema",
-        "4b-R1I. Attempt-start schema",
-        "`docs/point_in_time_data_methodology_contract.md`",
-        "`docs/experiment_trial_ledger_allocation_registration_schema_contract.md`",
-        "`docs/experiment_trial_ledger_trial_family_registration_schema_contract.md`",
-        "`docs/experiment_trial_ledger_sample_registration_schema_contract.md`",
-        "`docs/experiment_trial_ledger_binding_schema_contract.md`",
-        "`docs/experiment_trial_ledger_trial_allocation_schema_contract.md`",
-        "`docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md`",
-        "`docs/experiment_trial_ledger_attempt_allocation_schema_contract.md`",
-        "`docs/experiment_trial_ledger_attempt_start_schema_contract.md`",
-        "Target construction currently lives in `src/backtest/portfolio.py`",
-        "`historical_evaluation`, not a pristine holdout",
-        "request `@codex review` once on the",
-        "`docs/purged_bounded_split_contract.md`",
-        "`docs/signal_execution_timing_contract.md`",
+    responsibility = (
+        "Canonical responsibility: active stage status, dependencies, latest "
+        "verified snapshot, and completion evidence."
+    )
+    assert "This is the canonical roadmap" in roadmap
+    assert responsibility in " ".join(roadmap.split())
+    assert "this roadmap is the sole latest verified snapshot" in " ".join(
+        roadmap.lower().split()
+    )
+    for current_section in [
+        "Current State",
+        "Active Dependency Chain",
+        "Current Gate Evidence And Blockers",
     ]:
-        assert phrase in roadmap
-
-    for phrase in [
-        "Long-term evidence policy: `docs/research_program_charter.md`",
-        "Active roadmap: `docs/current_roadmap.md`",
-        "## Research Charter Decision",
-        "## Stage 1 Split Decision",
-        "## Stage 2 Timing Decision",
-        "## Stage 3 Data Methodology Decision",
-        "## Accepted Stage 4a Experiment and Trial Ledger Decision",
-        "## Accepted R0 Through R1I And Optional Full Ledger Profile",
-        "## Audited Findings",
-        "## PR #148 Interaction",
-        "## Next Safe Stage",
-        "Complete PR 1 scope and campaign reset without data access or performance",
+        assert _markdown_section(roadmap, current_section).strip()
+    assert "Active roadmap: `docs/current_roadmap.md`" in handoff
+    assert re.search(r"^Updated: \d{4}-\d{2}-\d{2}\b", handoff, re.MULTILINE)
+    handoff_notice = handoff.split("## Canonical State", maxsplit=1)[0]
+    assert "owns neither the latest verified snapshot nor the" in handoff_notice
+    assert "current task queue" in handoff_notice
+    canonical_state = _markdown_section(handoff, "Canonical State")
+    for evidence_reference in [
+        "docs/current_roadmap.md",
+        "docs/research_program_charter.md",
+        "docs/eodhd_sp500_diagnostic_campaign_contract.md",
     ]:
-        assert phrase in handoff
-
+        assert evidence_reference in canonical_state
+    for startup in [
+        _markdown_section(agents, "Startup And Sources"),
+        _markdown_section(controller, "Startup And Freshness"),
+    ]:
+        assert startup.index("docs/current_roadmap.md") < startup.index(
+            "docs/current_handoff.md"
+        )
+        normalized_startup = " ".join(startup.lower().split())
+        for transitional_boundary in ["only", "notice", "body", "historical"]:
+            assert transitional_boundary in normalized_startup
+    normalized_repo_map = " ".join(repo_map.split())
+    assert "the roadmap owns the latest snapshot until compaction" in (
+        normalized_repo_map
+    )
+    assert (
+        "Read `docs/current_roadmap.md` for current state; consult the handoff "
+        "through its supersession notice until compaction."
+        in normalized_repo_map
+    )
+    assert "owns active status" in controller
+    assert "latest verified snapshot" in controller
+    completion_report = _markdown_section(controller, "Completion Report")
+    assert "owners named in" in completion_report
+    assert "Select And Bound The Stage" in completion_report
+    assert "snapshot in handoff" not in completion_report
+    assert workflow_skill.index("1. `AGENTS.md`") < workflow_skill.index(
+        "2. `docs/current_handoff.md`"
+    )
+    assert "This Skill grants no additional authority" in workflow_skill
+    assert "including work invoked through a thin routing Skill" in agents
+    for obsolete_current_state in [
+        "Current protected `origin/main`: `6386c59`",
+        "PR #177 is the current open scope-reset gate",
+        "Complete PR 1 scope and campaign reset",
+        "codex/eodhd-diagnostic-scope-reset",
+    ]:
+        assert obsolete_current_state not in roadmap
+    assert responsibility not in " ".join(handoff.split())
+    assert responsibility not in " ".join(controller.split())
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "3064 passing tests" in roadmap
-    assert "Current protected-main baseline: 3064 tests passed" in handoff
-    assert "completed holding-episode metrics" in roadmap
-    assert "no actionable P1/P2 findings" not in roadmap
+
+
+def test_controller_predecessor_gate_is_single_check_and_single_report() -> None:
+    controller = (
+        PROJECT_ROOT / "docs/codex_long_running_controller.md"
+    ).read_text(encoding="utf-8")
+    predecessor_gate = " ".join(
+        _markdown_section(controller, "Predecessor PR Gate").split()
+    )
+
+    for phrase in [
+        "check once",
+        "report one gate summary",
+        "re-query an unchanged gate",
+        "explicit merged/resume/inspect request",
+    ]:
+        assert phrase in predecessor_gate
+
+
+def test_risk_evaluation_design_defines_staged_metrics() -> None:
     design = (
         PROJECT_ROOT / "docs/risk_evaluation_metrics_design.md"
     ).read_text(encoding="utf-8")
@@ -512,92 +675,13 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         / "docs/preregistrations/"
         "eodhd_sp500_three_factor_trial_inventory_v1.json"
     )
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
     controller = (
         PROJECT_ROOT / "docs/codex_long_running_controller.md"
     ).read_text(encoding="utf-8")
     contract = contract_path.read_text(encoding="utf-8")
     preregistration = preregistration_path.read_text(encoding="utf-8")
     inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
-    normalized_handoff = " ".join(handoff.split())
-
-    for canonical_doc in [roadmap, handoff, specification, controller]:
-        assert "docs/eodhd_sp500_diagnostic_campaign_contract.md" in canonical_doc
-
-    for phrase in [
-        "committed and pushed head `6a7445f`",
-        "Exact-head CI run `30684864773` passed",
-        "fourth review found two P2 gaps remediated by committed and pushed head `e5d72c2`",
-        "exact-head CI run `30685562719` passed",
-        "The fifth review of `e5d72c2` found one P2",
-        "remediated by committed and pushed head `0179ebb`",
-        "exact-head CI run `30686127537` passed",
-        "The sixth review of `0179ebb` found one P1 and one P2",
-        "remediated by committed and pushed head `b8149c2`",
-        "exact-head CI run `30686852275` passed",
-        "The seventh review of `b8149c2` found one P2",
-        "remediated by committed and pushed head `1f6c801`",
-        "exact-head CI run `30687469154` passed",
-        "The eighth review of `1f6c801` found one P2",
-        "remediated by committed and pushed head `86f6929`",
-        "exact-head CI run `30687930346` passed",
-        "The ninth review of `86f6929` found one P2",
-        "remediated by committed and pushed head `a5b6695`",
-        "CI run `30688393600` passed on that exact head",
-        "The tenth review of `a5b6695` found two P2",
-        "remediated by committed and pushed head `bc4c201`",
-        "exact-head CI run `30689003562` passed",
-        "The eleventh review of `bc4c201` found one P2",
-        "remediated by committed and pushed head `d2ac8cd`",
-        "exact-head CI run `30689676655` passed",
-        "The twelfth review of `d2ac8cd` found one P2",
-        "counts as common-calendar position spans",
-        "remediated by committed and pushed head `12cacaa`",
-        "exact-head CI run `30690253765` passed",
-        "The thirteenth review of `12cacaa` found two P2",
-        "factor-specific lookback-position and referenced-anchor validity",
-        "strictly after the latest protocol, runner-code, and dataset-policy",
-        "remediated by committed and pushed head `fc561e4`",
-        "exact-head CI run `30690874955` passed",
-        "The fourteenth review of `fc561e4` found two P2",
-        "all three factor rebalances to be decision-time valid",
-        "both baselines the same retained invalid zero-target/full-cash",
-        "remediated by committed and pushed head `e9c2707`",
-        "exact-head CI run `30691526104` passed",
-        "The fifteenth review of `e9c2707` found one P1 and one P2",
-        "one-row within-segment resampling for lengths two through six",
-        "campaign-wide at earliest any-factor eligibility",
-        "The sixteenth review of `46679c4` found two P2",
-        "equal-weight baseline and primary benchmark remain invested",
-        "bootstrap support as an explicit classifier coverage input",
-        "The seventeenth review of `5b08be6` found one P1 and one P2",
-        "complete label but no in-cutoff next monthly execution",
-        "valid/tied/valid economic path",
-        "The eighteenth review of `242f373` found two P2",
-        "canonical UTC signal-close instant",
-        "later of its label and next-month execution maturity",
-        "The nineteenth review of `3aeeb5a` found one P2",
-        "detached run binding completion",
-        "The twentieth review of `e6c7ad5` found one P2",
-        "immutable historical seed plus an append-only prospective chain",
-        "remediated by committed and pushed head `2c6b827`",
-        "exact-head CI run `30697181943` passed",
-        "The twenty-fourth review of `2c6b827` found one P1",
-        "Each row therefore has expected inclusion weight one",
-        "not pending local authorship",
-        "The actual remaining gate is exact-head CI on the current head",
-        "followed by one current-head Codex review",
-    ]:
-        assert phrase in normalized_handoff
-    assert "It must be committed and pushed" not in normalized_handoff
+    assert "docs/eodhd_sp500_diagnostic_campaign_contract.md" in controller
 
     for phrase in [
         "Track A - diagnostic research now",
@@ -2961,16 +3045,19 @@ def test_final_state_robustness_uses_common_case_not_factor_all_valid() -> None:
     assert forbidden_all_valid_state == "MIXED_DIAGNOSTIC"
 
 
-def test_research_program_charter_defines_evidence_and_authorization_gates() -> None:
+def test_research_program_charter_defines_evidence_and_scope_gates() -> None:
     charter = (PROJECT_ROOT / "docs/research_program_charter.md").read_text(
         encoding="utf-8"
     )
+    normalized_charter = " ".join(charter.split())
     specification = " ".join(
         (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(encoding="utf-8").split()
     )
 
     for phrase in [
-        "## Current Authorization",
+        "## Current Research Scope Boundary",
+        "This section records evidence scope and non-goals; it grants no authority",
+        "../AGENTS.md#authority-and-scope",
         "## Evidence Layers",
         "Factor | A date-by-asset score",
         "Strategy | A frozen signal policy",
@@ -2981,9 +3068,11 @@ def test_research_program_charter_defines_evidence_and_authorization_gates() -> 
         "historical evaluation or pseudo-holdout",
         "## Candidate States",
         "`PAPER_CANDIDATE`",
-        "Controlled live execution is not a stage authorized by this charter",
+        "Controlled live execution is outside this charter and project scope",
     ]:
-        assert phrase in charter
+        assert phrase in normalized_charter
+
+    assert "## Current Authorization" not in normalized_charter
 
     for phrase in [
         "The current phase is research-only",
@@ -3001,12 +3090,6 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
     contract = (
         PROJECT_ROOT / "docs/purged_bounded_split_contract.md"
     ).read_text(encoding="utf-8")
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
 
     for phrase in [
@@ -3039,35 +3122,15 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
     ]:
         assert phrase in contract
 
-    for canonical_doc in [roadmap, handoff, repo_map]:
-        assert "docs/purged_bounded_split_contract.md" in canonical_doc
+    assert "docs/purged_bounded_split_contract.md" in repo_map
 
     for case_number in range(1, 23):
         assert contract.count(f"`SPLIT-{case_number:03d}`") == 1
-
-    assert roadmap.count("| 1b. Purged/bounded split implementation |") == 1
-    assert "| 1b. Purged/bounded split implementation | Complete" in roadmap
-    assert "| 2a. Signal/execution timing contract | Complete" in roadmap
-    assert (
-        "| 2b. Signal/execution timing implementation | "
-        "Complete on protected main via PR #162"
-    ) in roadmap
-    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
-
 
 def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     contract = (
         PROJECT_ROOT / "docs/signal_execution_timing_contract.md"
     ).read_text(encoding="utf-8")
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
 
     for phrase in [
@@ -3166,86 +3229,13 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     for case_number in range(1, 15):
         assert contract.count(f"`TIMING-{case_number:03d}`") == 1
 
-    for canonical_doc in [roadmap, handoff, specification, repo_map]:
-        assert "docs/signal_execution_timing_contract.md" in canonical_doc
-
-    assert (
-        "Stage 2b now requires explicit exact evaluation bounds and exact "
-        "full-source price/signal axes plus exact source provenance whose "
-        "caller-declared baseline is captured before later mutation."
-    ) in " ".join(handoff.split())
-    assert "rejects zero and invalid lag types" in " ".join(
-        specification.split()
-    )
-    assert "| 2a. Signal/execution timing contract | Complete" in roadmap
-    assert (
-        "| 2b. Signal/execution timing implementation | "
-        "Complete on protected main via PR #162"
-    ) in roadmap
-    assert (
-        "| 3. Point-in-time data methodology | "
-        "Complete on protected main via PR #163"
-    ) in roadmap
-    assert (
-        "| 4a. Experiment/trial ledger contract | "
-        "Complete on protected main via PR #164"
-    ) in roadmap
-    assert (
-        "| 4b-R0. Payload-schema registry foundation | "
-        "Complete on protected main via PR #165; "
-        "incomplete diagnostic support only"
-    ) in roadmap
-    assert (
-        "| 4b-R1A. Allocation/registration architecture decision | "
-        "Complete on protected main via PR #166"
-    ) in roadmap
-    assert (
-        "| 4b-R1B. Campaign/experiment allocation schemas | "
-        "Complete on protected main via PR #167"
-    ) in roadmap
-    assert (
-        "| 4b-R1C. Trial-family registration schema | "
-        "Complete on protected main via PR #169"
-    ) in roadmap
-    assert (
-        "| 4b-R1D. Sample registration schema | "
-        "Complete on protected main via PR #170"
-    ) in roadmap
-    assert (
-        "| 4b-R1E. Campaign-entity and Stage 3 sample-reference binding "
-        "schemas | Complete on protected main via PR #171"
-    ) in roadmap
-    assert (
-        "| 4b-R1F. Semantic trial-allocation schema | "
-        "Complete on protected main via PR #172"
-    ) in roadmap
-    assert (
-        "| 4b-R1G. Initial campaign-inventory-seal schema | "
-        "Complete on protected main via PR #173"
-    ) in roadmap
-    assert (
-        "| 4b-R1H. Attempt-allocation schema | "
-        "Complete on protected main via PR #174"
-    ) in roadmap
-    assert (
-        "| 4b-R1I. Attempt-start schema | "
-        "Complete on protected main via PR #176"
-    ) in roadmap
+    assert "docs/signal_execution_timing_contract.md" in repo_map
 
 
 def test_point_in_time_data_methodology_contract_freezes_stage_three_design() -> None:
     contract = (
         PROJECT_ROOT / "docs/point_in_time_data_methodology_contract.md"
     ).read_text(encoding="utf-8")
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
     readiness_audit = (
         PROJECT_ROOT / "docs/real_data_readiness_audit.md"
     ).read_text(encoding="utf-8")
@@ -3376,9 +3366,6 @@ def test_point_in_time_data_methodology_contract_freezes_stage_three_design() ->
         assert boundary_token in pit_015_row
 
     for canonical_doc in [
-        roadmap,
-        handoff,
-        specification,
         readiness_audit,
         readiness_skill,
         study_checklist,
@@ -3449,15 +3436,6 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
     contract = (
         PROJECT_ROOT / "docs/experiment_trial_ledger_contract.md"
     ).read_text(encoding="utf-8")
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
     point_in_time_contract = (
         PROJECT_ROOT / "docs/point_in_time_data_methodology_contract.md"
     ).read_text(encoding="utf-8")
@@ -3616,31 +3594,10 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
     for case_number in range(1, 16):
         assert contract.count(f"`LEDGER-{case_number:03d}`") == 1
 
-    for canonical_doc in [roadmap, handoff, specification, repo_map]:
-        assert "docs/experiment_trial_ledger_contract.md" in canonical_doc
+    assert "docs/experiment_trial_ledger_contract.md" in repo_map
 
     assert "accepted Stage 3 methodology contract" in point_in_time_contract
     assert "acceptance pending protected merge" not in point_in_time_contract
-    assert "| 3. Point-in-time data methodology | Complete" in roadmap
-    assert (
-        "| 4a. Experiment/trial ledger contract | "
-        "Complete on protected main via PR #164"
-    ) in roadmap
-    assert (
-        "| 4b-R0. Payload-schema registry foundation | "
-        "Complete on protected main via PR #165; "
-        "incomplete diagnostic support only"
-    ) in roadmap
-    assert "Finish Stage 4a contract PR gates" not in handoff
-    assert "Accepted Stage 4a design authority" in handoff
-    assert "accepted Stage 4a design authority" in " ".join(
-        specification.split()
-    )
-    assert "Accepted Stage 4a experiment/trial" in repo_map
-    assert (
-        "Accepted Stage 4B-R0 fail-closed schema-registry foundation"
-        in repo_map
-    )
     for phrase in [
         "Contract ID: `experiment_trial_ledger_schema_registry_r0`",
         "`SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`",
@@ -3651,20 +3608,7 @@ def test_experiment_trial_ledger_contract_freezes_stage_four_a_design() -> None:
         "No other event becomes append-valid in R0",
     ]:
         assert phrase in normalized_registry_contract
-    for canonical_doc in [roadmap, handoff, specification, repo_map]:
-        assert "docs/experiment_trial_ledger_schema_registry_contract.md" in (
-            canonical_doc
-        )
-    assert "Blocked by Stage 4a protected merge" not in roadmap
-    assert "Proposed Stage 4a design authority" not in handoff
-    assert "proposed Stage 4a design authority" not in " ".join(
-        specification.split()
-    )
-    assert "Proposed Stage 4a experiment/trial" not in repo_map
-    assert "proposed Stage 3" not in roadmap
-    assert "proposed Stage 3" not in handoff
-    assert "new-head GitHub gates pending" not in roadmap
-    assert "required current-head review remain pending" not in handoff
+    assert "docs/experiment_trial_ledger_schema_registry_contract.md" in repo_map
 
 
 def test_allocation_registration_r1b_freezes_e1_and_versioned_release() -> None:
@@ -3674,15 +3618,6 @@ def test_allocation_registration_r1b_freezes_e1_and_versioned_release() -> None:
     )
     contract = contract_path.read_text(encoding="utf-8")
     normalized_contract = " ".join(contract.split())
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
     r0_registry_path = (
         PROJECT_ROOT
@@ -3902,37 +3837,8 @@ def test_allocation_registration_r1b_freezes_e1_and_versioned_release() -> None:
         == r1_sidecar_bytes
     )
 
-    for canonical_doc in [roadmap, handoff, specification, repo_map]:
-        assert (
-            "docs/experiment_trial_ledger_allocation_registration_schema_contract.md"
-            in canonical_doc
-        )
     assert (
-        "| 4b-R1A. Allocation/registration architecture decision | "
-        "Complete on protected main via PR #166"
-    ) in roadmap
-    assert (
-        "| 4b-R1B. Campaign/experiment allocation schemas | "
-        "Complete on protected main via PR #167"
-    ) in roadmap
-    assert "preserve R0 registry JSON and its sidecar byte-for-byte" in handoff
-    assert "owner selected option `E1`" in handoff
-    normalized_handoff = " ".join(handoff.split())
-    assert "supports exactly three event types" in normalized_handoff
-    assert "other 34 events" in normalized_handoff
-    assert (
-        "new immutable, monotonically versioned registry artifact and digest"
-        in " ".join(handoff.split())
-    )
-    assert "owner-selected Stage 4B-R1A architecture-A decision" in " ".join(
-        specification.split()
-    )
-    assert "Stage 4B-R1B implementation authority" in " ".join(
-        specification.split()
-    )
-    assert (
-        "Accepted Stage 4B-R1A/R1B allocation architecture and "
-        "campaign/experiment release"
+        "docs/experiment_trial_ledger_allocation_registration_schema_contract.md"
         in repo_map
     )
 
@@ -3944,15 +3850,6 @@ def test_trial_family_registration_r1c_freezes_owner_bundle_and_release() -> Non
     )
     contract = contract_path.read_text(encoding="utf-8")
     normalized_contract = " ".join(contract.split())
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
     registry_path = (
         PROJECT_ROOT
@@ -4115,26 +4012,9 @@ def test_trial_family_registration_r1c_freezes_owner_bundle_and_release() -> Non
         "d31b7a812a79618f097a50db0177e63f5246522b3b63590968172e31b71cd499"
     )
 
-    for canonical_doc in [roadmap, handoff, specification, repo_map]:
-        assert (
-            "docs/experiment_trial_ledger_trial_family_registration_schema_contract.md"
-            in canonical_doc
-        )
     assert (
-        "| 4b-R1B. Campaign/experiment allocation schemas | "
-        "Complete on protected main via PR #167"
-    ) in roadmap
-    assert (
-        "| 4b-R1C. Trial-family registration schema | "
-        "Complete on protected main via PR #169"
-    ) in roadmap
-    normalized_handoff = " ".join(handoff.split())
-    assert "the owner selected bundle `R1C-A`" in normalized_handoff
-    assert "leaves the other 33 events" in normalized_handoff
-    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
-    assert "owner-selected Stage 4B-R1C-A" in " ".join(specification.split())
-    assert (
-        "Accepted Stage 4B-R1C-A trial-family registration authority" in repo_map
+        "docs/experiment_trial_ledger_trial_family_registration_schema_contract.md"
+        in repo_map
     )
 
 
@@ -4145,15 +4025,6 @@ def test_sample_registration_r1d_freezes_owner_bundle_and_release() -> None:
     )
     contract = contract_path.read_text(encoding="utf-8")
     normalized_contract = " ".join(contract.split())
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
     registry_path = (
         PROJECT_ROOT
@@ -4297,26 +4168,9 @@ def test_sample_registration_r1d_freezes_owner_bundle_and_release() -> None:
         assert re.fullmatch(r"smp_[0-9a-f]{32}", event["subject_id"])
         assert list(event["payload"]) == expected_payload_fields
 
-    for canonical_doc in [roadmap, handoff, specification, repo_map]:
-        assert (
-            "docs/experiment_trial_ledger_sample_registration_schema_contract.md"
-            in canonical_doc
-        )
     assert (
-        "| 4b-R1C. Trial-family registration schema | "
-        "Complete on protected main via PR #169"
-    ) in roadmap
-    assert (
-        "| 4b-R1D. Sample registration schema | "
-        "Complete on protected main via PR #170"
-    ) in roadmap
-    normalized_handoff = " ".join(handoff.split())
-    assert "the owner selected bundle `R1D-A`" in normalized_handoff
-    assert "leaves the other 32 events" in normalized_handoff
-    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
-    assert "owner-selected Stage 4B-R1D-A" in " ".join(specification.split())
-    assert (
-        "Accepted Stage 4B-R1D-A local sample registration authority" in repo_map
+        "docs/experiment_trial_ledger_sample_registration_schema_contract.md"
+        in repo_map
     )
 
 
@@ -4327,15 +4181,6 @@ def test_binding_r1e_freezes_owner_bundle_and_release() -> None:
     )
     contract = contract_path.read_text(encoding="utf-8")
     normalized_contract = " ".join(contract.split())
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
     registry_path = (
         PROJECT_ROOT
@@ -4488,27 +4333,7 @@ def test_binding_r1e_freezes_owner_bundle_and_release() -> None:
         fixture["stage3_sample_reference_bound"]["subject_id"]
     )
 
-    for canonical_doc in [roadmap, handoff, specification, repo_map]:
-        assert (
-            "docs/experiment_trial_ledger_binding_schema_contract.md"
-            in canonical_doc
-        )
-    assert (
-        "| 4b-R1D. Sample registration schema | "
-        "Complete on protected main via PR #170"
-    ) in roadmap
-    assert (
-        "| 4b-R1E. Campaign-entity and Stage 3 sample-reference binding "
-        "schemas | Complete on protected main via PR #171"
-    ) in roadmap
-    normalized_handoff = " ".join(handoff.split())
-    assert "the owner selected bundle `R1E-A`" in normalized_handoff
-    assert "leaves the other 30 events" in normalized_handoff
-    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
-    assert "owner-selected Stage 4B-R1E-A" in " ".join(
-        specification.split()
-    )
-    assert "Accepted Stage 4B-R1E-A binding authority" in repo_map
+    assert "docs/experiment_trial_ledger_binding_schema_contract.md" in repo_map
 
 
 def test_trial_allocation_r1f_freezes_owner_bundle_and_release() -> None:
@@ -4518,15 +4343,6 @@ def test_trial_allocation_r1f_freezes_owner_bundle_and_release() -> None:
     )
     contract = contract_path.read_text(encoding="utf-8")
     normalized_contract = " ".join(contract.split())
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
     registry_path = (
         PROJECT_ROOT
@@ -4725,28 +4541,9 @@ def test_trial_allocation_r1f_freezes_owner_bundle_and_release() -> None:
         assert re.fullmatch(r"trl_[0-9a-f]{32}", event["subject_id"])
         assert list(event["payload"]) == expected_payload_fields
 
-    for canonical_doc in [roadmap, handoff, specification, repo_map]:
-        assert (
-            "docs/experiment_trial_ledger_trial_allocation_schema_contract.md"
-            in canonical_doc
-        )
     assert (
-        "| 4b-R1E. Campaign-entity and Stage 3 sample-reference binding "
-        "schemas | Complete on protected main via PR #171"
-    ) in roadmap
-    assert (
-        "| 4b-R1F. Semantic trial-allocation schema | "
-        "Complete on protected main via PR #172"
-    ) in roadmap
-    normalized_handoff = " ".join(handoff.split())
-    assert "the owner selected bundle `R1F-A`" in normalized_handoff
-    assert "leaves the other 29 events" in normalized_handoff
-    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
-    assert "owner-selected Stage 4B-R1F-A" in " ".join(
-        specification.split()
-    )
-    assert (
-        "Accepted Stage 4B-R1F-A semantic trial-allocation authority" in repo_map
+        "docs/experiment_trial_ledger_trial_allocation_schema_contract.md"
+        in repo_map
     )
 
 
@@ -4757,15 +4554,6 @@ def test_campaign_inventory_seal_r1g_freezes_owner_bundle_and_release() -> None:
     )
     contract = contract_path.read_text(encoding="utf-8")
     normalized_contract = " ".join(contract.split())
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
     registry_path = (
         PROJECT_ROOT
@@ -4957,28 +4745,8 @@ def test_campaign_inventory_seal_r1g_freezes_owner_bundle_and_release() -> None:
             == event["previous_event_sha256"]
         )
 
-    for canonical_doc in [roadmap, handoff, specification, repo_map]:
-        assert (
-            "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md"
-            in canonical_doc
-        )
     assert (
-        "| 4b-R1F. Semantic trial-allocation schema | "
-        "Complete on protected main via PR #172"
-    ) in roadmap
-    assert (
-        "| 4b-R1G. Initial campaign-inventory-seal schema | "
-        "Complete on protected main via PR #173"
-    ) in roadmap
-    normalized_handoff = " ".join(handoff.split())
-    assert "The owner selected bundle `R1G-A`" in normalized_handoff
-    assert "leaves the other 28 events" in normalized_handoff
-    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
-    assert "owner-selected Stage 4B-R1G-A" in " ".join(
-        specification.split()
-    )
-    assert (
-        "Accepted Stage 4B-R1G-A initial campaign-inventory-seal authority"
+        "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md"
         in repo_map
     )
 
@@ -4990,15 +4758,6 @@ def test_attempt_allocation_r1h_freezes_owner_bundle_and_release() -> None:
     )
     contract = contract_path.read_text(encoding="utf-8")
     normalized_contract = " ".join(contract.split())
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
     registry_path = (
         PROJECT_ROOT
@@ -5158,27 +4917,10 @@ def test_attempt_allocation_r1h_freezes_owner_bundle_and_release() -> None:
         retry["payload"]["relation"]["prior_attempt_id"],
     )
 
-    for canonical_doc in [roadmap, handoff, specification, repo_map]:
-        assert (
-            "docs/experiment_trial_ledger_attempt_allocation_schema_contract.md"
-            in canonical_doc
-        )
     assert (
-        "| 4b-R1G. Initial campaign-inventory-seal schema | "
-        "Complete on protected main via PR #173"
-    ) in roadmap
-    assert (
-        "| 4b-R1H. Attempt-allocation schema | "
-        "Complete on protected main via PR #174"
-    ) in roadmap
-    normalized_handoff = " ".join(handoff.split())
-    assert "The owner selected bundle `R1H-A`" in normalized_handoff
-    assert "leaves the other 27 events" in normalized_handoff
-    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
-    assert "owner-selected Stage 4B-R1H-A" in " ".join(
-        specification.split()
+        "docs/experiment_trial_ledger_attempt_allocation_schema_contract.md"
+        in repo_map
     )
-    assert "Accepted Stage 4B-R1H-A attempt-allocation authority" in repo_map
 
 
 def test_attempt_start_r1i_freezes_owner_bundle_and_release() -> None:
@@ -5188,15 +4930,6 @@ def test_attempt_start_r1i_freezes_owner_bundle_and_release() -> None:
     )
     contract = contract_path.read_text(encoding="utf-8")
     normalized_contract = " ".join(contract.split())
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
     registry_path = (
         PROJECT_ROOT
@@ -5339,27 +5072,10 @@ def test_attempt_start_r1i_freezes_owner_bundle_and_release() -> None:
     assert list(event["payload"]) == expected_payload_fields
     assert len(event["payload"]["campaign_scope_ids"]) == 1
 
-    for canonical_doc in [roadmap, handoff, specification, repo_map]:
-        assert (
-            "docs/experiment_trial_ledger_attempt_start_schema_contract.md"
-            in canonical_doc
-        )
     assert (
-        "| 4b-R1H. Attempt-allocation schema | "
-        "Complete on protected main via PR #174"
-    ) in roadmap
-    assert (
-        "| 4b-R1I. Attempt-start schema | "
-        "Complete on protected main via PR #176"
-    ) in roadmap
-    normalized_handoff = " ".join(handoff.split())
-    assert "The owner selected bundle `R1I-A`" in normalized_handoff
-    assert "leaves the other 26 events" in normalized_handoff
-    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
-    assert "owner-selected Stage 4B-R1I-A" in " ".join(
-        specification.split()
+        "docs/experiment_trial_ledger_attempt_start_schema_contract.md"
+        in repo_map
     )
-    assert "Accepted Stage 4B-R1I-A attempt-start authority" in repo_map
 
 
 def _ascii_jcs_golden_bytes(value: object) -> bytes:
@@ -7929,15 +7645,6 @@ def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:
     methodology_contract = (
         PROJECT_ROOT / "docs/point_in_time_data_methodology_contract.md"
     ).read_text(encoding="utf-8")
-    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
-        encoding="utf-8"
-    )
-    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
-        encoding="utf-8"
-    )
-    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
-        encoding="utf-8"
-    )
 
     for text in [readiness_skill, readiness_audit, methodology_contract]:
         normalized_text = " ".join(text.split())
@@ -8037,9 +7744,6 @@ def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:
 
     for text in [
         methodology_contract,
-        roadmap,
-        handoff,
-        specification,
         readiness_skill,
         readiness_audit,
         experiment_log,
@@ -8048,43 +7752,54 @@ def test_readiness_and_experiment_records_do_not_bypass_program_gates() -> None:
         assert "2025-05-01 through 2026-05-31" in normalized_text
         assert "`historical_evaluation`" in normalized_text
 
-    assert "the required predecessor or current-stage PR" in controller
-    assert "the current-stage PR has been opened" in controller
-    assert "- an open PR requires human review" not in controller
-    assert "- a previous PR is not verified merged" not in controller
-    assert "- a PR has been opened but is not eligible" not in controller
+    assert "## Predecessor PR Gate" in controller
+    assert "## Stop Conditions" in controller
+    assert "Eligibility is not authorization" in controller
+    assert "docs/eodhd_sp500_diagnostic_campaign_contract.md" in controller
 
 
-def test_review_required_prs_complete_current_head_review_before_merge() -> None:
-    controller = " ".join(
-        (PROJECT_ROOT / "docs/codex_long_running_controller.md")
-        .read_text(encoding="utf-8")
-        .split()
-    )
-    roadmap = " ".join(
-        (PROJECT_ROOT / "docs/current_roadmap.md")
-        .read_text(encoding="utf-8")
-        .split()
+def test_controller_owns_review_lifecycle_without_granting_merge_authority() -> None:
+    controller = (
+        PROJECT_ROOT / "docs/codex_long_running_controller.md"
+    ).read_text(encoding="utf-8")
+    review_lifecycle = " ".join(
+        _markdown_section(controller, "GitHub Review Lifecycle").split()
     )
 
-    assert (
-        "Do not enable auto-merge or attempt a merge while required checks "
-        "or an applicable current-head Codex review is pending."
-    ) in controller
-    assert (
-        "completed on the current head with no unresolved actionable findings"
-    ) in controller
-    assert controller.index("post `@codex review` once") < controller.index(
-        "Do not enable auto-merge or attempt a merge"
-    )
-    assert "required checks pass, or auto-merge" not in controller
-    assert "required checks pass or auto-merge" not in controller
+    for phrase in [
+        "Automatic Review disabled",
+        "Drafts get no request",
+        "`@codex review`",
+        "required CI stabilize",
+        "final stable current head",
+        "unchanged head",
+        "actionable fix changes the head",
+        "metadata-only edits may omit it",
+        "current head has no unresolved actionable finding",
+        "all required checks and reviews pass",
+        "never grants merge authority",
+        "External Authorization Gate",
+    ]:
+        assert phrase in review_lifecycle
 
-    assert (
-        "Do not enable auto-merge or merge a review-required PR until Codex "
-        "review has completed on the current head with no unresolved actionable "
-        "findings."
-    ) in roadmap
+    for required_scope in [
+        "research semantics",
+        "returns",
+        "costs",
+        "benchmarks",
+        "implementation",
+        "CI",
+        "security",
+        "data handling",
+        "execution scope",
+    ]:
+        assert required_scope in review_lifecycle
+
+    assert review_lifecycle.index("final stable current head") < review_lifecycle.index(
+        "technically merge-eligible"
+    )
+    assert "may enable GitHub auto-merge" not in review_lifecycle
+    assert "perform a normal protected PR merge" not in review_lifecycle
 
 
 def test_staged_quant_workflow_skill_is_a_thin_router() -> None:
@@ -8223,22 +7938,14 @@ def test_public_metadata_and_readme_match_implemented_scope() -> None:
     ]
 
 
-def test_ci_and_generated_repo_map_share_core_validation_commands() -> None:
-    workflow = (PROJECT_ROOT / ".github/workflows/ci.yml").read_text(
-        encoding="utf-8"
-    )
+def test_generated_repo_map_references_canonical_ci_commands() -> None:
     repo_map = (PROJECT_ROOT / "docs/repo_map.md").read_text(encoding="utf-8")
-    commands = [
-        "python -m pytest -q",
-        "python -m ruff check .",
-        "python -m compileall src tests research",
-        "python -m compileall lean",
-        "python -m build",
-    ]
-
-    for command in commands:
-        assert command in workflow
-        assert command in repo_map
+    assert ".github/workflows/ci.yml" in repo_map
+    assert "scripts/repo_map.py" in repo_map
+    assert (
+        "CI validation commands are defined only in `.github/workflows/ci.yml`"
+        in repo_map
+    )
 
     repo_map_module = runpy.run_path(str(PROJECT_ROOT / "scripts/repo_map.py"))
     assert repo_map_module["build_repo_map"]() == repo_map
