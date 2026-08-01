@@ -1,5 +1,82 @@
 # Troubleshooting Log
 
+## 2026-07-31 - PR 177 Missing Worktree And Bounded-Read Recovery
+
+Original failures and consequences:
+
+- The former temporary worktree directory no longer existed, although Git
+  still registered it as a prunable worktree at `4d832c7`. The first
+  skill/handoff read therefore failed before reading or modifying any file.
+- The root checkout remained stale and dirty with unrelated user files, so it
+  could not safely host the remediation.
+- The first `git worktree add --force` attempt could not write root Git
+  metadata inside the sandbox and failed with `Operation not permitted`.
+- A later combined AGENTS/handoff read exceeded the output budget. Its
+  truncated handoff portion was not accepted as evidence.
+- The first Ruby YAML check used a `safe_load_file` method unavailable in the
+  installed Psych version. It did not modify repository files and did not
+  establish a parse result.
+- The first isolated sdist/wheel build could not resolve its declared build
+  requirements in the network-restricted sandbox. It did not establish a
+  package-build result.
+- The sandboxed GitHub authentication check could not read the keyring and
+  reported the active token as invalid. It did not change local or remote
+  authentication state.
+
+Investigation:
+
+- Read `git worktree list --porcelain`, root status, the retained branch ref,
+  and recent history without switching, cleaning, or editing the root.
+- Confirmed the PR branch and remote head both pointed to `4d832c7` and that
+  protected `origin/main` remained `6386c59`.
+- Deleted the old five-minute review monitor because actionable findings had
+  arrived.
+- Re-read the full handoff, controller, roadmap, specification, and repo map in
+  independent bounded ranges.
+
+Correction:
+
+- Re-ran the same worktree-add command with approved Git-metadata access and a
+  new explicit temporary-worktree target.
+- Used only the recreated clean worktree for the two P2 fixes.
+- Switched from combined long reads to independent bounded ranges after the
+  first truncation.
+- Re-ran the YAML check with `YAML.safe_load(File.read(...))`, preserving the
+  same safe-load and no-alias constraints supported by the installed parser.
+- Re-ran the same isolated package build with approved network access only for
+  the declared setuptools and wheel requirements.
+- Re-ran the same read-only GitHub authentication check with approved keyring
+  access; it confirmed the active `minqiyang` account and required scopes.
+
+Verification:
+
+- The recreated worktree started clean on
+  `codex/eodhd-diagnostic-scope-reset@4d832c7` and matched the remote branch.
+- Thread-aware review retrieval identified exactly the two new current P2
+  findings linked by the owner.
+- The corrected focused structure suite passed 48 tests; the full suite passed
+  3075 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic
+  repo-map regeneration, `git diff --check`, added-line privacy and
+  Unicode/control scans, and isolated sdist/wheel build passed.
+
+Remaining caveats:
+
+- Review threads remain read only and unresolved.
+- A new review monitor will be created only after the remediation is pushed,
+  exact-head CI passes, and one new `@codex review` request is posted.
+
+Prevention:
+
+- At every scheduled continuation, verify a temporary worktree path still
+  exists before using it and recreate it from the retained branch when it is
+  prunable.
+- Never recover a missing isolated worktree by editing the dirty root checkout.
+- After one truncation, read each required canonical source in separate bounded
+  ranges rather than repeating a combined read.
+
+---
+
 ## 2026-07-29 - PR 177 Second-Review And Local-Validation Recovery
 
 Original failures and consequences:

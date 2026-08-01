@@ -1,5 +1,35 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Third-Review Protocol Remediation
+
+- Deleted the prior bounded PR review monitor as soon as the new findings were
+  confirmed. The former temporary worktree had disappeared while its Git
+  metadata remained prunable, so a fresh isolated worktree was recreated at
+  `4d832c7` without editing or cleaning the stale dirty root checkout.
+- Thread-aware GitHub inspection confirmed two new current P2 findings: the
+  bundle inventory was not bound to the frozen 14-trial JSON, and final-state
+  robustness did not freeze its Rank IC sample or year denominator.
+- Added an exact byte/hash/semantic relation from bundle
+  `trial_inventory.json` to the committed frozen inventory. A mutation oracle
+  changes one cost field and proves the detached hash no longer matches.
+- Froze final-state yearly and leave-one-year-out Rank IC robustness to the
+  primary common complete-case monthly table. Required years are derived from
+  the outcome-independent bounded evaluation schedule, grouped by signal year,
+  all remain in the yearly fraction denominator, and are each omitted exactly
+  once. Missing-year, exact-zero, and empty-after-omission cases fail
+  robustness.
+- Added a discriminating fixture where common-case robustness produces
+  `POSITIVE_DIAGNOSTIC` while the forbidden factor-all-valid sample would
+  produce `MIXED_DIAGNOSTIC`.
+- Focused project-structure validation passed 48 tests. The full suite passed
+  3075 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-29 - PR 177 Second-Review And Bounded-Wait Remediation
 
 - Thread-aware GitHub inspection at `97425c0` confirmed three new current P2

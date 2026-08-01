@@ -373,6 +373,18 @@ inference:
     strategy_security_gross_daily: pre_return_weight * security_daily_return
     strategy_security_cost_at_execution: -(bps / 10000) * abs(delta_weight)
     compounded_annual_return_contribution_claim: FORBIDDEN
+  final_state_robustness:
+    rank_ic_input_table: PRIMARY_COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_TABLE
+    factor_specific_all_valid_month_table_use: DESCRIPTIVE_ONLY_FORBIDDEN_FOR_FINAL_STATE
+    yearly_mean_assignment: SIGNAL_DATE_CALENDAR_YEAR
+    required_year_set: YEARS_WITH_AT_LEAST_ONE_SCHEDULED_PRIMARY_EVALUATION_SIGNAL_AND_FULL_LABEL_INSIDE_ACCEPTED_BOUNDS
+    required_year_set_outcome_dependence: FORBIDDEN
+    required_year_missing_common_case_row: ROBUSTNESS_FALSE
+    positive_year_fraction_numerator: REQUIRED_YEARS_WITH_COMMON_CASE_MEAN_RANK_IC_STRICTLY_GT_ZERO
+    positive_year_fraction_denominator: ALL_REQUIRED_YEARS
+    leave_one_year_out_required_omissions: EVERY_REQUIRED_YEAR_EXACTLY_ONCE
+    leave_one_year_out_drop_rule: DROP_COMMON_CASE_ROWS_WHOSE_EXECUTION_TO_END_INTERVAL_INTERSECTS_OMITTED_YEAR
+    leave_one_year_out_empty_remaining_table: ROBUSTNESS_FALSE
   leave_one_year_out:
     hypothesis_family: DESCRIPTIVE_ONLY_NO_NEW_HOLM_FAMILY
     factor_label_intersects_omitted_year: DROP
@@ -428,8 +440,10 @@ final_state_assignment:
     holm_supported: HOLM_REJECT_AND_OBSERVED_COMMON_CASE_MEAN_RANK_IC_STRICTLY_GT_ZERO
     economically_supported: NET_ANNUALIZED_ACTIVE_RETURN_STRICTLY_GT_ZERO_AT_BOTH_10_AND_25_BPS
     robustness_supported:
+      rank_ic_input_table: PRIMARY_COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_TABLE
+      required_years: INFERENCE_FINAL_STATE_ROBUSTNESS_REQUIRED_YEAR_SET
       leave_one_year_out_mean_rank_ic: STRICTLY_GT_ZERO_FOR_EVERY_REQUIRED_OMISSION
-      fraction_calendar_year_mean_rank_ic_strictly_gt_zero: STRICTLY_GT_0_5
+      fraction_calendar_year_mean_rank_ic_strictly_gt_zero: STRICTLY_GT_0_5_USING_ALL_REQUIRED_YEARS_DENOMINATOR
     exact_zero: FAILS_EVERY_STRICT_POSITIVE_PREDICATE
   ordered_rules:
     - state: INVALID_DIAGNOSTIC
@@ -463,6 +477,12 @@ evidence_bundle:
     byte_relation: EXACT_BYTE_FOR_BYTE_COPY
     hash_relation: CHILD_SHA256_EQUALS_DETACHED_PROTOCOL_FREEZE_SHA256
     json_conversion_is_authoritative: false
+  frozen_trial_inventory_child:
+    source_path: docs/preregistrations/eodhd_sp500_three_factor_trial_inventory_v1.json
+    bundle_path: trial_inventory.json
+    byte_relation: EXACT_BYTE_FOR_BYTE_COPY
+    hash_relation: CHILD_SHA256_EQUALS_DETACHED_TRIAL_INVENTORY_FREEZE_SHA256
+    semantic_relation: EXACT_FROZEN_14_TRIAL_INVENTORY
   required_artifacts:
     - dataset_full_manifest.json
     - dataset_public_projection.json

@@ -21,11 +21,14 @@ profitability, or trading readiness.
   availability, canonical listing-key bytes, all-in fixed-bps cost semantics,
   and an exhaustive deterministic final-state decision tree. Review remediation
   further pins the 63-return low-volatility slice, the only three decision-time
-  zero-target conditions, and an exact-byte YAML evidence child. Repository
-  governance now fixes safe in-scope review findings without owner round trips
-  and bounds pending-review schedules to eight five-minute runs and critical
-  owner-decision follow-ups to four thirty-minute runs. This release changes no
-  research runtime, data, or performance output.
+  zero-target conditions, an exact-byte YAML evidence child, and an exact-byte
+  14-trial inventory child. Final-state robustness now uses only the primary
+  common complete-case Rank IC table with an outcome-independent required-year
+  set, all required years in the yearly denominator, and exact required-year
+  omissions. Repository governance fixes safe in-scope review findings without
+  owner round trips and bounds pending-review schedules to eight five-minute
+  runs and critical owner-decision follow-ups to four thirty-minute runs. This
+  release changes no research runtime, data, or performance output.
 - Added the bounded Stage 4B-R1I attempt-start release. The owner selected
   bundle `R1I-A`, freezing the exact earlier attempt-allocation reference, a
   complete digest-pinned external readiness record, separate start-actor

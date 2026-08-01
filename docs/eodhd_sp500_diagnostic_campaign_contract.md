@@ -374,6 +374,23 @@ arithmetic daily contributions by security and calendar year. They sum to the
 corresponding daily gross return and execution cost series, not to compounded
 annual return. Rank IC has no additive per-security contribution claim.
 
+Every yearly and leave-one-year-out Rank IC value used by the final-state
+robustness predicate comes exclusively from the primary common complete-case
+monthly Rank IC table used by all three factor tests. A factor's larger
+all-valid-month table remains descriptive and is forbidden for final-state
+robustness.
+
+Yearly means group common-case records by signal-date calendar year. The
+outcome-independent required-year set is frozen before performance access as
+every calendar year containing at least one scheduled primary-evaluation
+signal whose complete execution-to-end label lies inside the accepted bounds.
+The positive-year fraction denominator is every required year; its numerator
+is the number of required years whose common-case mean Rank IC is strictly
+positive for that factor. Every required year must contain at least one
+common-case record. A missing required-year record set or an exact-zero mean
+makes `robustness_supported(f)` false and may not be removed from the
+denominator.
+
 Leave-one-year-out is descriptive only. Factor inference drops every label
 whose execution-to-end interval intersects the omitted year and reuses the
 fixed bootstrap rules without another Holm family. Continuous strategy
@@ -381,6 +398,12 @@ sensitivity treats the pre-omission and post-omission portions as separate
 cash-started paths with no holdings or cost bridge across the gap; pooled daily
 statistics concatenate the two return segments, and maximum drawdown is the
 larger segment drawdown.
+
+For final-state robustness, every required year is omitted exactly once from
+the same primary common-case source table. If no common-case records remain
+after an omission, that omission fails robustness. Otherwise the remaining
+unweighted factor mean must be strictly positive. Factor-specific all-valid
+rows never enter this predicate.
 
 The Sharpe-style item must be labelled `zero_cash_rate_sharpe_style`, is
 diagnostic only, and is not used for factor discovery. No bootstrap interval is
@@ -461,6 +484,14 @@ protocol-freeze SHA-256. A derived `preregistration.json` may be retained only
 as a non-authoritative convenience artifact; it cannot replace or satisfy the
 exact-YAML child requirement.
 
+The required `trial_inventory.json` child is likewise an exact byte-for-byte
+copy of
+`docs/preregistrations/eodhd_sp500_three_factor_trial_inventory_v1.json` at the
+protocol-freeze commit. Its child SHA-256 must equal the detached trial-
+inventory freeze SHA-256. A parsed, reordered, normalized, or field-modified
+inventory cannot satisfy this requirement even when its own child hash is
+listed in `bundle_manifest.json`.
+
 Final-state assignment is an ordered, mutually exclusive, exhaustive decision
 tree. Evaluate it in this order:
 
@@ -479,9 +510,11 @@ tree. Evaluate it in this order:
    Define `economically_supported(f)` as strictly positive net annualized
    active return for that factor's long-only strategy at both 10 and 25 bps.
    Define `robustness_supported(f)` as strictly positive leave-one-year-out
-   mean Rank IC for every required omission and a strictly greater than 0.5
-   fraction of calendar-year mean Rank IC values above zero. Exact zero fails
-   each strict-positive predicate.
+   common-case mean Rank IC for every required-year omission and a strictly
+   greater than 0.5 fraction of required calendar-year common-case mean Rank IC
+   values above zero, using all required years as the denominator. Exact zero,
+   a missing required-year common-case set, or an empty post-omission table
+   fails robustness.
 4. `POSITIVE_DIAGNOSTIC` if at least one factor satisfies all three support
    predicates.
 5. Otherwise, `MIXED_DIAGNOSTIC` if at least one factor is Holm-supported.

@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-29 for the EODHD diagnostic campaign scope reset.
+Updated: 2026-07-31 for the third PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -45,8 +45,15 @@ Updated: 2026-07-29 for the EODHD diagnostic campaign scope reset.
   frozen YAML. The current remediation fixes all three, adds the owner-directed
   automatic review-remediation and bounded scheduled-wait policy to
   `AGENTS.md`, and locally passes 3073 tests with two platform skips plus the
-  remaining repository gates. It must be committed, pushed, pass exact-head
-  CI, and pass final review before any protected merge.
+  remaining repository gates. The third review of `4d832c7` then found two P2
+  gaps: the bundle trial inventory lacked an exact frozen-byte/hash relation,
+  and the final-state robustness predicates did not freeze common-case versus
+  factor-specific Rank IC samples or the required-year denominator. The active
+  remediation binds the exact inventory, freezes common-complete-case
+  robustness and all required-year semantics, and passes 48 focused structure
+  tests, the 3075-test full suite with two platform skips, and all remaining
+  local gates. It must be committed and pushed, pass exact-head CI, and pass a
+  new final review before any protected merge.
 - Current protected-main baseline: 3064 tests passed with two
   platform-conditional wide-`longdouble` skips. The PR #176 release also
   passed Ruff, compileall, deterministic repo-map, Skill audit, immutable

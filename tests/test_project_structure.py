@@ -113,8 +113,8 @@ def _classify_diagnostic(
     holm_rejections: tuple[bool, bool, bool],
     active_return_10bps: tuple[float, float, float],
     active_return_25bps: tuple[float, float, float],
-    positive_year_fractions: tuple[float, float, float],
-    all_loyo_means_positive: tuple[bool, bool, bool],
+    common_case_positive_year_fractions: tuple[float, float, float],
+    common_case_all_loyo_means_positive: tuple[bool, bool, bool],
 ) -> str:
     if not hard_valid or any(
         rejected and mean_rank_ic <= 0
@@ -148,8 +148,8 @@ def _classify_diagnostic(
             holm_supported,
             active_return_10bps,
             active_return_25bps,
-            positive_year_fractions,
-            all_loyo_means_positive,
+            common_case_positive_year_fractions,
+            common_case_all_loyo_means_positive,
             strict=True,
         )
     )
@@ -160,6 +160,66 @@ def _classify_diagnostic(
     if all(value < 0 for value in mean_rank_ics):
         return "NEGATIVE_DIAGNOSTIC"
     return "INCONCLUSIVE_DIAGNOSTIC"
+
+
+def _rank_ic_robustness_from_records(
+    records: list[dict[str, object]],
+    *,
+    factor_index: int,
+    required_years: tuple[int, ...],
+    sample_basis: str,
+) -> tuple[float, bool]:
+    def rank_ic_value(record: dict[str, object]) -> float | None:
+        rank_ics = record["rank_ics"]
+        if not isinstance(rank_ics, tuple):
+            raise TypeError("rank_ics must be a tuple")
+        value = rank_ics[factor_index]
+        return None if value is None else float(value)
+
+    if sample_basis == "COMMON_COMPLETE_CASE":
+        source_records = [
+            record
+            for record in records
+            if isinstance(record["rank_ics"], tuple)
+            and all(value is not None for value in record["rank_ics"])
+        ]
+    elif sample_basis == "FACTOR_ALL_VALID":
+        source_records = [
+            record for record in records if rank_ic_value(record) is not None
+        ]
+    else:
+        raise ValueError("unknown Rank IC robustness sample basis")
+
+    positive_year_count = 0
+    for year in required_years:
+        year_values = [
+            rank_ic_value(record)
+            for record in source_records
+            if int(record["signal_year"]) == year
+        ]
+        if not year_values:
+            return 0.0, False
+        if sum(year_values) / len(year_values) > 0:
+            positive_year_count += 1
+
+    all_omission_means_positive = True
+    for omitted_year in required_years:
+        remaining_values = [
+            rank_ic_value(record)
+            for record in source_records
+            if omitted_year not in record["label_intersection_years"]
+        ]
+        if (
+            not remaining_values
+            or sum(remaining_values) / len(remaining_values) <= 0
+        ):
+            all_omission_means_positive = False
+            break
+
+    return (
+        positive_year_count / len(required_years),
+        all_omission_means_positive,
+    )
 
 
 def test_required_directories_exist() -> None:
@@ -368,6 +428,8 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "ordered, mutually exclusive, exhaustive decision",
         "exact byte-for-byte copy",
         "No other condition produces a zero target",
+        "Every yearly and leave-one-year-out Rank IC value",
+        "required `trial_inventory.json` child",
     ]:
         assert phrase in contract
 
@@ -399,6 +461,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "formula: -std(one_day_adjusted_close_returns[t-62:t+1], ddof=1)",
         "all_other_zero_target_triggers: FORBIDDEN",
         "byte_relation: EXACT_BYTE_FOR_BYTE_COPY",
+        "rank_ic_input_table: PRIMARY_COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_TABLE",
+        "positive_year_fraction_denominator: ALL_REQUIRED_YEARS",
+        "semantic_relation: EXACT_FROZEN_14_TRIAL_INVENTORY",
     ]:
         assert phrase in preregistration
 
@@ -594,6 +659,40 @@ def test_preregistration_bundle_child_binds_exact_frozen_yaml_bytes() -> None:
     assert "    - preregistration.json" not in preregistration_text
 
 
+def test_trial_inventory_bundle_child_binds_exact_frozen_json_bytes() -> None:
+    inventory_path = (
+        PROJECT_ROOT
+        / "docs/preregistrations/"
+        "eodhd_sp500_three_factor_trial_inventory_v1.json"
+    )
+    preregistration_path = (
+        PROJECT_ROOT
+        / "docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml"
+    )
+    frozen_bytes = inventory_path.read_bytes()
+    bundle_child_bytes = bytes(frozen_bytes)
+    frozen_hash = hashlib.sha256(frozen_bytes).hexdigest()
+
+    assert bundle_child_bytes == frozen_bytes
+    assert hashlib.sha256(bundle_child_bytes).hexdigest() == frozen_hash
+    tampered_bytes = frozen_bytes.replace(
+        b'"cost_bps": 10',
+        b'"cost_bps": 11',
+        1,
+    )
+    assert tampered_bytes != frozen_bytes
+    assert hashlib.sha256(tampered_bytes).hexdigest() != frozen_hash
+    preregistration = preregistration_path.read_text(encoding="utf-8")
+    assert (
+        "source_path: docs/preregistrations/"
+        "eodhd_sp500_three_factor_trial_inventory_v1.json"
+    ) in preregistration
+    assert (
+        "hash_relation: "
+        "CHILD_SHA256_EQUALS_DETACHED_TRIAL_INVENTORY_FREEZE_SHA256"
+    ) in preregistration
+
+
 def test_fixed_bps_cost_fixtures_cover_every_frozen_case() -> None:
     fixtures = {
         0.4: {0: 0.0, 10: 0.0004, 25: 0.0010},
@@ -614,8 +713,8 @@ def test_diagnostic_final_state_assignment_is_exhaustive_at_boundaries() -> None
         "holm_rejections": (True, False, False),
         "active_return_10bps": (0.01, -0.01, -0.01),
         "active_return_25bps": (0.005, -0.01, -0.01),
-        "positive_year_fractions": (0.6, 0.4, 0.4),
-        "all_loyo_means_positive": (True, False, False),
+        "common_case_positive_year_fractions": (0.6, 0.4, 0.4),
+        "common_case_all_loyo_means_positive": (True, False, False),
     }
     cases = [
         (
@@ -651,13 +750,13 @@ def test_diagnostic_final_state_assignment_is_exhaustive_at_boundaries() -> None
         ),
         (
             {
-                "positive_year_fractions": (0.5, 0.4, 0.4),
+                "common_case_positive_year_fractions": (0.5, 0.4, 0.4),
             },
             "MIXED_DIAGNOSTIC",
         ),
         (
             {
-                "all_loyo_means_positive": (False, False, False),
+                "common_case_all_loyo_means_positive": (False, False, False),
             },
             "MIXED_DIAGNOSTIC",
         ),
@@ -700,6 +799,74 @@ def test_diagnostic_final_state_assignment_is_exhaustive_at_boundaries() -> None
         "MIXED_DIAGNOSTIC",
         "POSITIVE_DIAGNOSTIC",
     }
+
+
+def test_final_state_robustness_uses_common_case_not_factor_all_valid() -> None:
+    records = []
+    required_years = (2018, 2019, 2020)
+    for year in required_years:
+        records.extend(
+            [
+                {
+                    "signal_year": year,
+                    "label_intersection_years": (year,),
+                    "rank_ics": (0.1, -0.01, -0.02),
+                },
+                {
+                    "signal_year": year,
+                    "label_intersection_years": (year,),
+                    "rank_ics": (-1.0, None, None),
+                },
+            ]
+        )
+
+    common_fraction, common_loyo_positive = _rank_ic_robustness_from_records(
+        records,
+        factor_index=0,
+        required_years=required_years,
+        sample_basis="COMMON_COMPLETE_CASE",
+    )
+    all_valid_fraction, all_valid_loyo_positive = (
+        _rank_ic_robustness_from_records(
+            records,
+            factor_index=0,
+            required_years=required_years,
+            sample_basis="FACTOR_ALL_VALID",
+        )
+    )
+    classification_inputs = {
+        "hard_valid": True,
+        "prefrozen_coverage_met": True,
+        "common_months": 60,
+        "mean_rank_ics": (0.1, -0.01, -0.02),
+        "holm_rejections": (True, False, False),
+        "active_return_10bps": (0.01, -0.01, -0.01),
+        "active_return_25bps": (0.005, -0.01, -0.01),
+    }
+
+    common_case_state = _classify_diagnostic(
+        **classification_inputs,
+        common_case_positive_year_fractions=(common_fraction, 0.0, 0.0),
+        common_case_all_loyo_means_positive=(
+            common_loyo_positive,
+            False,
+            False,
+        ),
+    )
+    forbidden_all_valid_state = _classify_diagnostic(
+        **classification_inputs,
+        common_case_positive_year_fractions=(all_valid_fraction, 0.0, 0.0),
+        common_case_all_loyo_means_positive=(
+            all_valid_loyo_positive,
+            False,
+            False,
+        ),
+    )
+
+    assert (common_fraction, common_loyo_positive) == (1.0, True)
+    assert (all_valid_fraction, all_valid_loyo_positive) == (0.0, False)
+    assert common_case_state == "POSITIVE_DIAGNOSTIC"
+    assert forbidden_all_valid_state == "MIXED_DIAGNOSTIC"
 
 
 def test_research_program_charter_defines_evidence_and_authorization_gates() -> None:

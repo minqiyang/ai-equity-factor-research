@@ -15,6 +15,55 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Freeze Robustness Sample And Trial Inventory Binding
+
+Context:
+
+- The third exact-head Codex review of PR #177 at `4d832c7` found two P2
+  protocol gaps. The evidence bundle named `trial_inventory.json` without
+  binding it to the frozen 14-trial JSON bytes, and the final-state robustness
+  rules did not choose between factor-specific all-valid Rank IC months and the
+  primary common complete-case table.
+- Different valid sample choices could change yearly signs,
+  leave-one-year-out means, and therefore `POSITIVE_DIAGNOSTIC` versus
+  `MIXED_DIAGNOSTIC` after results were visible.
+
+Decision:
+
+- Require bundle `trial_inventory.json` to be an exact byte-for-byte copy of
+  `docs/preregistrations/eodhd_sp500_three_factor_trial_inventory_v1.json` at
+  the protocol-freeze commit. Its SHA-256 must equal the detached trial-
+  inventory freeze hash; parsing, reordering, normalization, or changing one
+  trial field cannot satisfy the binding.
+- Use only the primary common complete-case monthly Rank IC table for yearly
+  and leave-one-year-out values that enter final-state robustness. Each
+  factor's all-valid-month table remains descriptive only.
+- Freeze yearly grouping to signal-date calendar year. Freeze the
+  outcome-independent required-year set to every year with at least one
+  scheduled primary-evaluation signal whose full label is inside accepted
+  bounds.
+- Use every required year in the positive-year fraction denominator and omit
+  every required year exactly once for leave-one-year-out. A required year with
+  no common-case row, an exact-zero yearly mean, or an empty post-omission table
+  fails robustness.
+
+Rationale:
+
+- Child hashing alone proves only that the bundle lists the bytes it contains;
+  it does not prove those bytes are the preregistered trial inventory.
+- One shared sample basis and an outcome-independent year denominator prevent
+  result-informed switching between more favorable missingness patterns.
+
+Consequences:
+
+- A deterministic fixture now demonstrates that the allowed common-case basis
+  yields `POSITIVE_DIAGNOSTIC` while the forbidden factor-all-valid basis would
+  yield `MIXED_DIAGNOSTIC` on the same configured evidence.
+- These changes freeze protocol and audit behavior only. No data, performance,
+  trial execution, thread resolution, or merge is authorized.
+
+---
+
 ## 2026-07-29 - Remediate Reviews Automatically And Bound Scheduled Waits
 
 Context:
