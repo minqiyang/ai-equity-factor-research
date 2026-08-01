@@ -618,13 +618,21 @@ def test_active_handoff_is_bounded_and_rejects_obsolete_narratives() -> None:
     ]
     stale_pr_state = re.compile(
         r"\b(?:remains|is|currently|still)\s+(?:the\s+)?(?:current\s+)?open\b"
-        r"|\b(?:not merged|unmerged)\b"
+        r"|\bnot merged\b"
+        r"|\bunmerged\b(?!\s+closure\b)"
         r"|\bis next\b"
         r"|\b(?:is|remains)\s+(?:the\s+)?current\b.{0,40}\bgate\b"
     )
+    pr_reference = re.compile(r"\bpr #\d+\b")
+
+    def has_stale_pr_state(paragraph: str) -> bool:
+        normalized = " ".join(paragraph.lower().split())
+        return bool(pr_reference.search(normalized) and stale_pr_state.search(normalized))
+
     for paragraph in paragraphs:
-        if "pr #176" in paragraph or "pr #177" in paragraph:
-            assert not stale_pr_state.search(paragraph)
+        assert not has_stale_pr_state(paragraph)
+
+    assert has_stale_pr_state("PR #987654 remains the current open gate.")
 
 
 def test_active_governance_sources_define_permanent_resume_routing() -> None:
