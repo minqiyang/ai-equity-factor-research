@@ -14,8 +14,8 @@ research-safety review standards.
 - Unless the user narrows the request, an explicit instruction to create or
   publish a PR authorizes the normal protected lifecycle for that same PR:
   readiness transition, required review request, in-scope remediation
-  publication, and eligible normal merge. The user may revoke that lifecycle
-  authorization at any time.
+  publication, verified review-thread reply and resolution, and eligible normal
+  merge. The user may revoke that lifecycle authorization at any time.
 - Lifecycle authorization never covers another PR, scope expansion, auto-merge,
   administrative or protection bypass, deployment, private data, credentials,
   brokerage, or destructive action.

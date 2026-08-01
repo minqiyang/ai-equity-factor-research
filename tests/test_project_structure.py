@@ -521,6 +521,7 @@ def test_governance_documents_define_unique_policy_owners() -> None:
         "readiness transition",
         "required review request",
         "in-scope remediation publication",
+        "verified review-thread reply and resolution",
         "eligible normal merge",
     ]:
         assert authorized_lifecycle_action in authority
@@ -7969,6 +7970,10 @@ def test_controller_applies_same_pr_lifecycle_authorization() -> None:
         "final stable current head",
         "unchanged head",
         "actionable fix changes the head",
+        "reply with its evidence",
+        "resolve only the addressed thread",
+        "leave an unverified or disputed thread open and stop",
+        "thread-write",
         "metadata-only edits may omit it",
         "Codex review has completed on the exact current head",
         "no actionable findings",

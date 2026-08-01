@@ -90,8 +90,10 @@ re-enter this gate before acting on a different PR or changed scope.
 - Never repeat a request for an unchanged head. An actionable fix changes the
   head and requires validation, CI, and one new current-head review.
 - A safe actionable finding may be fixed locally inside the already-authorized
-  scope. Push and review-request actions still pass through the External
-  Authorization Gate; a remediation authorization cannot expand the stage.
+  scope. After publishing and verifying the remediation, reply with its evidence
+  and resolve only the addressed thread; leave an unverified or disputed thread
+  open and stop. Publication, thread-write, and review-request actions still pass
+  through the External Authorization Gate; remediation cannot expand the stage.
 - A review-required PR is technically merge-eligible only when the requested
   Codex review has completed on the exact current head with no actionable
   findings, no review thread remains unresolved, and all required checks and
