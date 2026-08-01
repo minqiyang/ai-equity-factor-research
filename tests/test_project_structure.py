@@ -486,6 +486,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "The sixteenth review of `46679c4` found two P2",
         "equal-weight baseline and primary benchmark remain invested",
         "bootstrap support as an explicit classifier coverage input",
+        "The seventeenth review of `5b08be6` found one P1 and one P2",
+        "complete label but no in-cutoff next monthly execution",
+        "valid/tied/valid economic path",
         "not pending local authorship",
         "The actual remaining gate is exact-head CI on the current head",
         "followed by one current-head Codex review",
@@ -548,6 +551,11 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "The equal-weight eligible-universe baseline is the same frozen target",
         "The random-rank baseline alone inherits all three factor decision-time invalid-",
         "primary benchmark are -0.0110 and -0.0125",
+        "calendar-only strategy schedule includes a signal only when",
+        "being excluded from",
+        "continuous strategy schedule because its next monthly execution",
+        "Removing the month",
+        "A valid/tied/valid three-month fixture",
         "The random baseline does not derive a",
         "seed or consume a permutation for that factor/month",
         "freezes once, campaign-wide, at the earliest signal cutoff",
@@ -617,7 +625,12 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "nondegenerate_bootstrap_support_all_three_factors: REQUIRED",
         "relation_to_primary_benchmark: SAME_FROZEN_TARGET_AND_GROSS_COST_FREE_CONTINUOUS_RETURN_OBJECT",
         "primary_benchmark_reuse_of_factor_or_random_zero_target: FORBIDDEN",
-        "invalid_factor_month_active_return: RETAIN_DESCRIPTIVE_ONLY_EXCLUDE_FROM_FINAL_STATE_SUPPORT",
+        "boundary_signal_with_complete_label_but_next_execution_after_cutoff: EXCLUDE_BEFORE_CONTINUOUS_TARGET_FREEZE_NOT_INVALID",
+        "boundary_exclusion_strategy_artifacts: NO_TARGET_NO_TURNOVER_NO_COST_NO_HARD_VALIDITY_FAILURE",
+        "invalid_factor_month_continuous_path: INCLUDE_UNFILTERED_IN_FULL_STRATEGY_AND_PRIMARY_BENCHMARK_DAILY_PATH",
+        "invalid_factor_month_filtering: FORBIDDEN",
+        "invalid_factor_month_segmentation_or_cash_restart: FORBIDDEN",
+        "matched_factor_invalid_continuous_economic_path: INCLUDED_AS_PRIMARY_BENCHMARK_RETURN_SUBJECT_TO_EARLIER_COVERAGE_GATES",
         "adjusted_close_t_minus_252: 80.0",
         "adjusted_close_t: 90.0",
         "all_other_zero_target_triggers: FORBIDDEN",
@@ -1165,6 +1178,164 @@ def test_invalid_factor_month_separates_invested_benchmark_from_random_cash() ->
         25: -0.0025,
     }
     assert active_returns != forbidden_cash_benchmark_active_returns
+
+
+def test_cutoff_excludes_unexecutable_boundary_target_before_strategy_freeze() -> None:
+    july_2024_xnys_sessions = tuple(
+        date(2024, 7, day)
+        for day in range(1, 32)
+        if date(2024, 7, day).weekday() < 5 and day != 4
+    )
+    accepted_cutoff = date(2024, 7, 31)
+    signal_date = date(2024, 6, 28)
+    execution_date = july_2024_xnys_sessions[0]
+    label_endpoint = july_2024_xnys_sessions[21]
+    next_monthly_signal = july_2024_xnys_sessions[-1]
+    next_monthly_execution = date(2024, 8, 1)
+
+    factor_diagnostic_included = label_endpoint <= accepted_cutoff
+    continuous_target_included = next_monthly_execution <= accepted_cutoff
+    boundary_disposition = {
+        "factor_diagnostic_included": factor_diagnostic_included,
+        "continuous_target_frozen": continuous_target_included,
+        "strategy_invalid": False,
+        "hard_validity_failure": False,
+    }
+
+    assert len(july_2024_xnys_sessions) == 22
+    assert signal_date == date(2024, 6, 28)
+    assert execution_date == date(2024, 7, 1)
+    assert label_endpoint == accepted_cutoff
+    assert next_monthly_signal == accepted_cutoff
+    assert next_monthly_execution > accepted_cutoff
+    assert boundary_disposition == {
+        "factor_diagnostic_included": True,
+        "continuous_target_frozen": False,
+        "strategy_invalid": False,
+        "hard_validity_failure": False,
+    }
+
+
+def test_invalid_month_stays_in_continuous_economic_support_path() -> None:
+    key_a = b"a"
+    key_c = b"c"
+    targets = ({key_a: 1.0}, {}, {key_c: 1.0})
+    turnovers = (
+        1.0,
+        _factor_target_turnover(targets[0], targets[1]),
+        _factor_target_turnover(targets[1], targets[2]),
+    )
+    strategy_gross_returns = (0.02, 0.0, 0.02)
+    benchmark_returns = (0.0, 0.05, 0.0)
+
+    def annualized_active_return(
+        gross_returns: tuple[float, ...],
+        matched_benchmark_returns: tuple[float, ...],
+        path_turnovers: tuple[float, ...],
+        bps: int,
+    ) -> float:
+        net_returns = tuple(
+            gross_return
+            - (1.0 + gross_return) * turnover * bps / 10000
+            for gross_return, turnover in zip(
+                gross_returns, path_turnovers, strict=True
+            )
+        )
+        strategy_annualized = (
+            math.prod(1.0 + value for value in net_returns)
+            ** (252 / len(net_returns))
+            - 1.0
+        )
+        benchmark_annualized = (
+            math.prod(1.0 + value for value in matched_benchmark_returns)
+            ** (252 / len(matched_benchmark_returns))
+            - 1.0
+        )
+        return strategy_annualized - benchmark_annualized
+
+    full_path_active = tuple(
+        annualized_active_return(
+            strategy_gross_returns,
+            benchmark_returns,
+            turnovers,
+            bps,
+        )
+        for bps in (10, 25)
+    )
+    forbidden_filtered_active = tuple(
+        annualized_active_return(
+            (strategy_gross_returns[0], strategy_gross_returns[2]),
+            (benchmark_returns[0], benchmark_returns[2]),
+            (
+                turnovers[0],
+                _factor_target_turnover(targets[0], targets[2]),
+            ),
+            bps,
+        )
+        for bps in (10, 25)
+    )
+    forbidden_segment_restart_active = tuple(
+        annualized_active_return(
+            (strategy_gross_returns[0], strategy_gross_returns[2]),
+            (benchmark_returns[0], benchmark_returns[2]),
+            (1.0, 1.0),
+            bps,
+        )
+        for bps in (10, 25)
+    )
+    base = {
+        "hard_valid": True,
+        "prefrozen_coverage_met": True,
+        "common_months": 60,
+        "bootstrap_support_all_three_factors": True,
+        "primary_matched_benchmark_comparisons_valid": True,
+        "secondary_spy_comparisons_valid": True,
+        "mean_rank_ics": (0.02, -0.01, -0.02),
+        "holm_rejections": (True, False, False),
+        "common_case_positive_year_fractions": (0.6, 0.4, 0.4),
+        "common_case_all_loyo_means_positive": (True, False, False),
+    }
+    full_path_state = _classify_diagnostic(
+        **base,
+        active_return_10bps=(full_path_active[0], -0.01, -0.01),
+        active_return_25bps=(full_path_active[1], -0.01, -0.01),
+    )
+    forbidden_filtered_state = _classify_diagnostic(
+        **base,
+        active_return_10bps=(
+            forbidden_filtered_active[0],
+            -0.01,
+            -0.01,
+        ),
+        active_return_25bps=(
+            forbidden_filtered_active[1],
+            -0.01,
+            -0.01,
+        ),
+    )
+    forbidden_segment_restart_state = _classify_diagnostic(
+        **base,
+        active_return_10bps=(
+            forbidden_segment_restart_active[0],
+            -0.01,
+            -0.01,
+        ),
+        active_return_25bps=(
+            forbidden_segment_restart_active[1],
+            -0.01,
+            -0.01,
+        ),
+    )
+
+    assert turnovers == (1.0, 1.0, 1.0)
+    assert _factor_target_turnover(targets[0], targets[2]) == 2.0
+    assert all(value < 0 for value in full_path_active)
+    assert all(value > 0 for value in forbidden_filtered_active)
+    assert all(value > 0 for value in forbidden_segment_restart_active)
+    assert forbidden_segment_restart_active != forbidden_filtered_active
+    assert full_path_state == "MIXED_DIAGNOSTIC"
+    assert forbidden_filtered_state == "POSITIVE_DIAGNOSTIC"
+    assert forbidden_segment_restart_state == "POSITIVE_DIAGNOSTIC"
 
 
 def test_low_vol_3m_uses_exactly_63_returns_from_64_price_anchors() -> None:

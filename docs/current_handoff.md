@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the sixteenth PR #177 review-remediation round.
+Updated: 2026-07-31 for the seventeenth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -103,16 +103,26 @@ Updated: 2026-07-31 for the sixteenth PR #177 review-remediation round.
   run `30692101398` passed. The sixteenth review of `46679c4` found two P2
   gaps: the prior invalid-month rule incorrectly turned the equal-weight
   baseline and primary benchmark into cash on a tied factor month, and the
-  classifier did not consume the already-frozen bootstrap-support gate. The
-  current branch-head snapshot keeps the factor and random-rank target at zero
+  classifier did not consume the already-frozen bootstrap-support gate. That
+  remediation kept the factor and random-rank target at zero
   for sparse/tied invalid factor months while the equal-weight baseline and
   primary benchmark remain invested in the nonempty unique eligible universe.
-  It retains resulting active returns descriptively and excludes them from
+  It retained resulting active returns descriptively and excluded them from
   final-state support. It also passes all-three-factor nondegenerate bootstrap
   support as an explicit classifier coverage input, with hard-validity
   precedence. Integrated tied-month economic and classifier boundary fixtures
-  are not pending local authorship. The actual remaining gate is exact-head CI
-  on the current head, followed by one current-head Codex review; every finding
+  were remediated by committed and pushed head `5b08be6`; exact-head CI run
+  `30692981109` passed. The seventeenth review of `5b08be6` found one P1 and one
+  P2: an end-of-cutoff signal could have a complete label but no in-cutoff next
+  monthly execution, and invalid-month exclusion left the continuous economic
+  path ambiguous. The current branch-head snapshot excludes that boundary
+  signal before continuous-strategy target freeze without invalidating its
+  retained factor diagnostic. It also keeps every valid/tied/valid economic
+  path row, target transition, turnover, cost, benchmark return, and active
+  return in one unfiltered annualization path. A 22-session July 2024 cutoff
+  fixture and a classifier-discriminating three-month path fixture are not
+  pending local authorship. The actual remaining gate is exact-head CI on the
+  current head, followed by one current-head Codex review; every finding
   restarts that remediation loop. Do not repeat commit or push work from an old
   handoff instruction; resolve current `HEAD`, remote head, CI, and review
   state.

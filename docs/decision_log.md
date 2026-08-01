@@ -15,6 +15,49 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Pre-Filter The Strategy Cutoff And Preserve One Economic Path
+
+Context:
+
+- The seventeenth exact-head Codex review of PR #177 at `5b08be6` found one P1
+  and one P2. A factor-diagnostic label could end at the accepted cutoff even
+  though the corresponding continuous target had no later monthly execution,
+  and excluding invalid-month active returns did not define how to preserve a
+  stateful strategy path.
+
+Decision:
+
+- Before continuous targets are frozen, include a signal in the continuous
+  schedule only if its next monthly execution is on or before the accepted
+  cutoff. A signal with a complete diagnostic label but a later execution
+  beyond cutoff stays in factor diagnostics and is structurally absent from
+  the continuous strategy; it is not an invalid strategy target.
+- Keep every sparse/tied zero-target month in the single continuous strategy
+  and primary-benchmark return path. Preserve its liquidation/redeployment
+  turnover, costs, cash return, invested benchmark return, and active return in
+  the full-path annualization used by economic support.
+
+Rationale:
+
+- A normal 22-session calendar month at a bounded cutoff must not create a hard
+  campaign invalidation merely because factor-label and next-execution
+  endpoints differ.
+- Deleting an invalid factor month or restarting around it changes holdings,
+  costs, annualization, and potentially the final diagnostic label.
+
+Consequences:
+
+- The July 2024 fixture retains the `2024-06-28` factor signal and its
+  `2024-07-31` label but freezes no continuous target whose next execution is
+  `2024-08-01`.
+- A valid/tied/valid fixture retains three turnover-1 transitions and produces
+  `MIXED_DIAGNOSTIC`; the forbidden filtered/direct-bridge path would produce
+  `POSITIVE_DIAGNOSTIC`.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Preserve The Invested Benchmark And Bind Bootstrap Coverage
 
 Context:

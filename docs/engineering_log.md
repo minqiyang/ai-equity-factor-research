@@ -1,5 +1,31 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Seventeenth-Review Cutoff And Path Remediation
+
+- Exact-head Codex review of `5b08be6` completed with one P1 and one P2: a
+  diagnostic label could finish at the accepted cutoff while its continuous
+  target lacked the next monthly execution, and invalid-month exclusion left
+  economic-path treatment undefined.
+- Defined a calendar-only continuous schedule before target freeze. A boundary
+  signal whose label is complete but whose next monthly execution exceeds the
+  cutoff remains in factor diagnostics and creates no strategy target,
+  turnover, cost, invalid output, or hard-validity failure.
+- Kept sparse/tied zero-target months in the single continuous strategy and
+  invested-benchmark path. Filtering, direct target bridges, segment restarts,
+  turnover/cost omission, and separate annualization are forbidden.
+- Added a 22-session July 2024 cutoff fixture and a valid/tied/valid classifier
+  fixture that distinguishes the required continuous economic path from a
+  false-positive filtered path.
+- Focused project-structure validation passed 63 tests. The full suite passed
+  3090 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, `git diff
+  --check`, and added-line privacy, non-ASCII, and hidden-Unicode/control scans
+  passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Sixteenth-Review Benchmark And Classifier Remediation
 
 - Exact-head Codex review of `46679c4` completed with two P2 findings: the

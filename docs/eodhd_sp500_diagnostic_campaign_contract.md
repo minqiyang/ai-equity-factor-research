@@ -299,10 +299,23 @@ diagnostic only. It is never compounded into a strategy equity curve.
 The strategy uses one continuous idealized holdings path. A target formed at
 signal close `t` resets at execution close `e`; it then earns common-calendar
 close-to-close returns after `e` through the next monthly execution close. The
-next execution resets the target again. The final included target must have a
-later scheduled execution endpoint inside the accepted cutoff; otherwise that
-target is retained as invalid for continuous-strategy metrics. Daily holdings,
+next execution resets the target again. Before any continuous target is frozen,
+the calendar-only strategy schedule includes a signal only when its following
+monthly execution close is on or before the accepted cutoff. A boundary signal
+may retain a complete 21-row factor-diagnostic label while being excluded from
+the continuous strategy schedule because its next monthly execution is after
+the cutoff. That exclusion creates no strategy target, turnover, cost, output
+invalidation, or hard-validity failure; the factor diagnostic signal and label
+remain retained. The final included continuous target therefore always has its
+later monthly execution endpoint inside the accepted cutoff. Daily holdings,
 returns, costs, and benchmarks use the same common calendar.
+
+The 22-session-month cutoff fixture freezes signal `2024-06-28`, execution
+`2024-07-01`, and label endpoint `e+21=2024-07-31`, which equals the accepted
+cutoff. July 2024 contains 22 XNYS sessions in the fixture, excluding the July
+4 closure. The next monthly signal is `2024-07-31` and its execution is
+`2024-08-01`, after the cutoff. The signal remains in factor diagnostics but is
+excluded before continuous-target freeze and cannot invalidate the campaign.
 
 At each execution, strategy turnover is the undivided sum of absolute changes
 from drifted pre-trade weights to the new target. The initial cash-to-target
@@ -345,8 +358,13 @@ factor and random-rank targets are zero and carry an invalid-factor-month flag.
 An empty universe or duplicate canonical keys makes the benchmark target
 unformable and retains an invalid comparison gap; it is not replaced by a cash
 benchmark. Reusing the factor or random-rank zero target as the primary
-benchmark is forbidden. Active returns for a decision-time-invalid factor month
-are retained as descriptive evidence but cannot enter final-state support.
+benchmark is forbidden. A sparse or tied factor month remains in the single
+continuous strategy/benchmark path with its zero target, liquidation or later
+redeployment turnover, costs, cash return, and invested benchmark return. Its
+active return enters the full-path annualized active return used by economic
+support, subject to the earlier realized-coverage gates. Removing the month,
+bridging directly between the surrounding targets, or splitting/restarting the
+path is forbidden.
 
 Final-state routing distinguishes the two comparisons. Any missing constituent
 execution or held return that invalidates a required factor-matched primary-
@@ -368,9 +386,10 @@ cost-free continuous return object as the primary factor-matched benchmark,
 serialized under a distinct baseline semantic role. It must never reuse the
 random-rank or factor zero target. For a sparse or tied factor month, a nonempty
 eligible universe with unique canonical keys remains equal-weight invested; its
-return is retained with a matched-factor-month-invalid flag and cannot support
-the final state. An empty universe or duplicate canonical keys instead retains
-an invalid, unformable equal-weight output without inventing a cash substitute.
+return is retained with a matched-factor-month-invalid flag and remains in the
+continuous economic path. An empty universe or duplicate canonical keys
+instead retains an invalid, unformable equal-weight output without inventing a
+cash substitute.
 
 The random-rank baseline alone inherits all three factor decision-time invalid-
 rebalance triggers: fewer than 100 eligible listings, fewer than 10 distinct
@@ -391,7 +410,20 @@ net returns are therefore -0.0010 at 10 bps and -0.0025 at 25 bps, while active
 returns against the still-invested primary benchmark are -0.0110 and -0.0125.
 A forbidden cash benchmark would instead report -0.0010 and -0.0025 active
 returns. The fixture retains the former values descriptively with the invalid-
-factor-month flag; neither value enters final-state support.
+factor-month flag and includes them in the full continuous annualized active-
+return calculation; they are not filtered or separately annualized.
+
+A valid/tied/valid three-month fixture freezes targets `{A:1}`, `{}`, and
+`{C:1}`. Initial deployment, liquidation, and redeployment turnover are each
+1.0 and remain connected in one path. The respective strategy gross returns
+are +2%, 0%, and +2%, while matched-benchmark returns are 0%, +5%, and 0%.
+At both 10 and 25 bps, the full three-row annualized active return is negative,
+so a Holm-supported otherwise robust factor is `MIXED_DIAGNOSTIC`. Deleting the
+tied row and either directly bridging `{A:1}` to `{C:1}` with turnover 2.0 or
+restarting the later segment from cash with turnover 1.0 produces a positive
+active return and the forbidden `POSITIVE_DIAGNOSTIC`; the two forbidden cost
+paths remain distinguishable. No invalid-month filtering, cash-started segment
+restart, turnover omission, or separate annualization is allowed.
 
 Each baseline semantic trial emits an exact output matrix with rows
 `MOM_12_1`, `REV_1M`, and `LOW_VOL_3M` and columns

@@ -127,6 +127,19 @@ Original failures and consequences:
   setuptools/wheel requirements in the network-restricted sandbox. The exact
   build was rerun with approved dependency-download access and produced both
   sdist and wheel without publishing either artifact.
+- The seventeenth review confirmed that excluding an invalid factor month from
+  final-state support is not a complete rule for a stateful continuous path.
+  The correction keeps the row and every surrounding state transition in one
+  annualization path, and the classifier fixture proves that filtering could
+  reverse the final label.
+- The same review found that factor-label completeness does not imply a later
+  monthly strategy execution exists inside the cutoff. Continuous-schedule
+  inclusion is now calendar-filtered before target freeze, so the boundary is
+  structural rather than a hard-invalid missing strategy path.
+- The first seventeenth-round focused run passed both new behavioral fixtures
+  and failed only because one structural contract assertion crossed a Markdown
+  line wrap. It was split into adjacent calendar-schedule fragments without
+  weakening the boundary rule.
 
 Investigation:
 
@@ -188,11 +201,14 @@ Correction:
   and froze listing keys once at campaign-wide earliest any-factor eligibility.
 - Bound that degeneracy gate into classification and added a tied-month fixture
   that rejects a cash substitute for the equal-weight primary benchmark.
+- Replaced invalid-month economic exclusion with a single unfiltered continuous
+  path and excluded no-next-execution boundary signals before continuous-target
+  freeze.
 
 Verification:
 
-- The latest corrected focused structure suite passed 61 tests and the full
-  suite passed 3088 tests with two platform-conditional skips. Full Ruff,
+- The latest corrected focused structure suite passed 63 tests and the full
+  suite passed 3090 tests with two platform-conditional skips. Full Ruff,
   compileall, Skill audit, YAML and JSON parsing, deterministic repo-map
   regeneration, `git diff --check`, added-line privacy and Unicode/control
   scans, and isolated sdist/wheel build passed.

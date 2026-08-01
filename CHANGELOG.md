@@ -64,7 +64,14 @@ profitability, or trading readiness.
   missingness as zero or consuming a random permutation. The equal-weight
   baseline and primary benchmark instead remain invested in a nonempty unique
   eligible universe on sparse/tied factor months; their return is not replaced
-  by cash, and invalid-factor-month active returns are descriptive only.
+  by cash. The zero-target strategy month, invested benchmark return,
+  liquidation/redeployment turnover, costs, and active return remain in one
+  unfiltered continuous path used by economic support; removing a month or
+  restarting the path is forbidden. Continuous strategy targets are also
+  calendar-filtered before freeze to require their next monthly execution on or
+  before the accepted cutoff. A boundary signal with a complete diagnostic
+  label but a later execution beyond cutoff remains a factor diagnostic and
+  cannot become a hard-invalid strategy target.
   Bootstrap segments of two through
   six rows now use genuine one-row within-segment resampling, with a
   nondegenerate-support gate that prevents false Holm support and is an
