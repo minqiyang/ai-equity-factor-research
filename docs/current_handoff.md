@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the seventeenth PR #177 review-remediation round.
+Updated: 2026-07-31 for the eighteenth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -120,9 +120,20 @@ Updated: 2026-07-31 for the seventeenth PR #177 review-remediation round.
   retained factor diagnostic. It also keeps every valid/tied/valid economic
   path row, target transition, turnover, cost, benchmark return, and active
   return in one unfiltered annualization path. A 22-session July 2024 cutoff
-  fixture and a classifier-discriminating three-month path fixture are not
-  pending local authorship. The actual remaining gate is exact-head CI on the
-  current head, followed by one current-head Codex review; every finding
+  fixture and a classifier-discriminating three-month path fixture were
+  remediated by committed and pushed head `242f373`; exact-head CI run
+  `30693611292` passed. The eighteenth review of `242f373` found two P2 gaps:
+  freeze/signal comparison lacked a canonical UTC signal-close instant, and
+  the 12/24 counter could reach threshold before the final label and strategy
+  interval matured. The current branch-head snapshot requires timezone-aware
+  freeze instants normalized to UTC and compares them strictly with the frozen-
+  calendar official XNYS close converted to UTC. It makes threshold increment
+  operational only and delays protected opening until strictly after the later
+  of its label and next-month execution maturity, plus the existing Track B and
+  authorization gates. Same-day before/at/after-close and 12/24 output-maturity
+  fixtures are not pending local authorship. The actual remaining gate is
+  exact-head CI on the current head, followed by one current-head Codex review;
+  every finding
   restarts that remediation loop. Do not repeat commit or push work from an old
   handoff instruction; resolve current `HEAD`, remote head, CI, and review
   state.

@@ -140,6 +140,19 @@ Original failures and consequences:
   and failed only because one structural contract assertion crossed a Markdown
   line wrap. It was split into adjacent calendar-schedule fragments without
   weakening the boundary rule.
+- The first eighteenth-round focused run passed the canonical-instant and
+  threshold-maturity fixtures but reached structural assertions for the
+  superseded date/phase-ambiguous prospective wording. Those assertions were
+  replaced with stable UTC-close and output-maturity fragments.
+- The eighteenth review showed that a strict greater-than sign is insufficient
+  unless both operands use a canonical instant. The freeze and signal sides now
+  fail closed to comparable UTC instants, with explicit same-day phases.
+- It also separated prospective count from evidence availability. The threshold
+  count remains stable, but access waits for both final factor and strategy
+  outputs rather than choosing one endpoint implicitly.
+- The first eighteenth-round count-update patch contained an extra hunk marker
+  and was rejected without changing a file. The corrected two-file patch then
+  updated the verified counts.
 
 Investigation:
 
@@ -204,11 +217,13 @@ Correction:
 - Replaced invalid-month economic exclusion with a single unfiltered continuous
   path and excluded no-next-execution boundary signals before continuous-target
   freeze.
+- Canonicalized every prospective freeze/signal comparison to UTC and delayed
+  threshold opening until both last-period output windows mature.
 
 Verification:
 
-- The latest corrected focused structure suite passed 63 tests and the full
-  suite passed 3090 tests with two platform-conditional skips. Full Ruff,
+- The latest corrected focused structure suite passed 65 tests and the full
+  suite passed 3092 tests with two platform-conditional skips. Full Ruff,
   compileall, Skill audit, YAML and JSON parsing, deterministic repo-map
   regeneration, `git diff --check`, added-line privacy and Unicode/control
   scans, and isolated sdist/wheel build passed.

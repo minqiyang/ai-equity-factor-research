@@ -15,6 +15,46 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Canonicalize Prospective Instants And Mature Threshold Outputs
+
+Context:
+
+- The eighteenth exact-head Codex review of PR #177 at `242f373` found two P2
+  ambiguities. A timezone-aware freeze timestamp could not be ordered against
+  a date-plus-`AFTER_CLOSE` signal representation, and threshold count could
+  precede both final-period outputs.
+
+Decision:
+
+- Normalize every required timezone-aware RFC 3339 freeze timestamp to UTC and
+  compare it with the official frozen-calendar XNYS session close converted to
+  UTC. Reject naive and date-only freeze values. The signal close must be
+  strictly later than the maximum normalized freeze instant.
+- Treat the 12th/24th qualifying signal as an operational counter event only.
+  Protected performance access timing first becomes eligible strictly after
+  the later of that signal's `e+21` label close and following monthly execution
+  close, and only after required outputs and separate access gates are ready.
+
+Rationale:
+
+- Same-calendar-date before-close, exact-close, and after-close freezes must
+  not shift the prospective window according to an implementation's implicit
+  midnight or timezone convention.
+- A prospective threshold does not represent 12/24 complete observations until
+  both factor-label and continuous-strategy outputs for the last signal mature.
+
+Consequences:
+
+- A before-close same-day freeze permits the close signal; exact-close and
+  after-close freezes defer to the next qualifying month.
+- Access at the threshold signal, label close, or exact following execution
+  close is forbidden; the timing gate opens only after the later maturity
+  instant and never bypasses authorization or Track B logging.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Pre-Filter The Strategy Cutoff And Preserve One Economic Path
 
 Context:

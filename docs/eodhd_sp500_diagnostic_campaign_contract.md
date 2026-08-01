@@ -784,23 +784,48 @@ research-pass, profitability, or deployment claim.
 
 ## Prospective Confirmation and Track B
 
-Prospective collection anchors to the maximum of the protocol-freeze, runner-
-code-freeze, and dataset-policy-freeze timestamps. It starts at the first
-monthly signal strictly after that latest required freeze for which all three
-factor rebalances are decision-time valid: each has at least 100 eligible
-listings, at least 10 distinct finite values, and unique canonical keys. A
-signal at the exact maximum timestamp is not prospective. A later signal where
-only a subset of factors is valid is retained as an operational record but
-does not start or increment the prospective counter. Each qualifying common-
-valid signal increments the 12/24-rebalance counter once. No earlier or subset-
-valid month may be backfilled into the prospective count. Ingestion health and
-missing-file checks may be monitored, but factor, portfolio, and cumulative
-performance may not be viewed during accumulation.
+Prospective collection compares only canonical UTC instants. Every protocol-
+freeze, runner-code-freeze, and dataset-policy-freeze timestamp must be
+timezone-aware RFC 3339, is converted to UTC, and is rejected if naive or
+date-only. Each signal instant is the official XNYS session close from the
+frozen calendar converted to UTC; a session date or midnight substitute is
+forbidden. The anchor is the maximum normalized freeze instant. Collection
+starts at the first signal whose canonical close instant is strictly later
+than that anchor and for which all three factor rebalances are decision-time
+valid: each has at least 100 eligible listings, at least 10 distinct finite
+values, and unique canonical keys.
 
-Six months is operational only. Twelve monthly rebalances is preliminary
-evidence only if opening it is separately authorized; opening at month 12
-contaminates months 13-24 and requires a new continuation classification.
-Twenty-four unopened monthly rebalances is the primary prospective target.
+On a shared XNYS month-end date, a required freeze strictly before the official
+close permits that same day's signal to qualify after close. A freeze at the
+exact close or any later instant makes the same day's signal non-prospective;
+the next otherwise qualifying monthly signal is the earliest possible start.
+A later signal where only a subset of factors is valid is retained as an
+operational record but does not start or increment the prospective counter.
+Each qualifying common-valid signal increments the 12/24-rebalance counter
+once. No earlier or subset-valid month may be backfilled into the prospective
+count. Ingestion health and missing-file checks may be monitored, but factor,
+portfolio, and cumulative performance may not be viewed during accumulation.
+
+Six months is operational only. Counter increment at the 12th or 24th
+qualifying signal is also operational only and never authorizes performance
+access. For either threshold signal, calculate the label-maturity instant as
+the official close at `e+21` and the strategy-maturity instant as the following
+monthly execution close. The threshold-output-maturity instant is the later of
+those two UTC instants. Protected opening can occur only strictly after that
+instant, after every required final-period output is persisted, and after all
+separate authorization and Track B protected-access requirements are met.
+Opening at counter increment, at execution `e`, or after the label alone is
+forbidden.
+
+The threshold fixture uses signal `2024-06-28T20:00:00Z`, execution
+`2024-07-01T20:00:00Z`, label maturity `2024-07-31T20:00:00Z`, and following
+monthly execution `2024-08-01T20:00:00Z`. At either count 12 or 24, access at
+the signal, label close, or exact later execution instant remains forbidden;
+the timing gate first becomes true after `2024-08-01T20:00:00Z`. Twelve mature
+monthly rebalances are preliminary evidence only if opening is separately
+authorized; opening then contaminates months 13-24 and requires a new
+continuation classification. Twenty-four mature unopened monthly rebalances
+is the primary prospective target.
 
 Before any prospective performance access, Track B must implement protected
 access logging. Its bounded scope is:

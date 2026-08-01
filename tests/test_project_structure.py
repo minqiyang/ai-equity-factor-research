@@ -489,6 +489,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "The seventeenth review of `5b08be6` found one P1 and one P2",
         "complete label but no in-cutoff next monthly execution",
         "valid/tied/valid economic path",
+        "The eighteenth review of `242f373` found two P2",
+        "canonical UTC signal-close instant",
+        "later of its label and next-month execution maturity",
         "not pending local authorship",
         "The actual remaining gate is exact-head CI on the current head",
         "followed by one current-head Codex review",
@@ -545,8 +548,12 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "Interior-missing fixtures for both factors retain momentum",
         "factor-specific common-calendar lookback position span addressable",
         "no extra observed-price completeness gate",
-        "maximum of the protocol-freeze, runner-",
-        "strictly after that latest required freeze for which all three",
+        "Prospective collection compares only canonical UTC instants",
+        "official XNYS session close from the",
+        "shared XNYS month-end date",
+        "strictly before the official",
+        "threshold-output-maturity instant",
+        "Opening at counter increment",
         "only a subset of factors is valid",
         "The equal-weight eligible-universe baseline is the same frozen target",
         "The random-rank baseline alone inherits all three factor decision-time invalid-",
@@ -608,12 +615,19 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "interior_missing_price_action: NO_FACTOR_VALUE_EFFECT_IF_REFERENCED_ANCHORS_VALID",
         "FACTOR_SPECIFIC_LOOKBACK_COMMON_CALENDAR_POSITION_SPAN_ADDRESSABLE_AT_T",
         "FACTOR_SPECIFIC_REFERENCED_PRICE_ANCHORS_VALID_AT_T",
-        "start_anchor_timestamp: MAXIMUM_OF_ALL_REQUIRED_FREEZE_TIMESTAMPS",
-        "start_rule: FIRST_SIGNAL_STRICTLY_AFTER_START_ANCHOR_SATISFYING_SIGNAL_ELIGIBILITY_PREDICATE",
-        "signal_at_exact_start_anchor_timestamp: NOT_PROSPECTIVE",
+        "canonical_instant_standard: UTC_RFC3339_TIMEZONE_AWARE_EXACT_INSTANT",
+        "freeze_timestamp_normalization: REQUIRE_TIMEZONE_AWARE_CONVERT_TO_UTC_REJECT_NAIVE_OR_DATE_ONLY",
+        "signal_instant: OFFICIAL_XNYS_SESSION_CLOSE_FROM_FROZEN_CALENDAR_CONVERTED_TO_UTC",
+        "start_anchor_timestamp: MAXIMUM_OF_ALL_NORMALIZED_REQUIRED_FREEZE_INSTANTS_UTC",
+        "start_rule: FIRST_SIGNAL_WITH_SIGNAL_INSTANT_UTC_STRICTLY_GT_START_ANCHOR_UTC_SATISFYING_SIGNAL_ELIGIBILITY_PREDICATE",
+        "freeze_at_or_after_official_close: SAME_DAY_SIGNAL_NOT_PROSPECTIVE",
+        "signal_at_exact_start_anchor_instant: NOT_PROSPECTIVE",
         "signal_eligibility_predicate: ALL_THREE_FACTOR_REBALANCES_DECISION_TIME_VALID",
         "subset_factor_eligible_signal_action: RETAIN_OPERATIONAL_RECORD_DO_NOT_START_OR_INCREMENT",
         "rebalance_count_increment: ONE_ONLY_WHEN_SIGNAL_ELIGIBILITY_PREDICATE_TRUE",
+        "threshold_output_maturity_instant: MAXIMUM_OF_LABEL_AND_STRATEGY_MATURITY_INSTANTS",
+        "protected_opening_timing: STRICTLY_AFTER_THRESHOLD_OUTPUT_MATURITY_INSTANT",
+        "opening_at_counter_increment_or_label_only: FORBIDDEN",
         "random_seed_or_permutation_consumption: NONE",
         "episodic_return: INVALID_MISSING_NOT_ZERO",
         "required_output_reconciliation: INVALID_OUTPUT_PRESENT_NOT_MISSING_TRIAL_OUTPUT",
@@ -1033,6 +1047,71 @@ def test_prospective_start_uses_latest_required_freeze_boundary() -> None:
     assert forbidden_any_factor_start == eligible_signal_timestamps[2]
     assert prospective_start != forbidden_protocol_only_start
     assert prospective_start != forbidden_any_factor_start
+
+
+def test_prospective_same_day_freeze_uses_canonical_close_instant() -> None:
+    signal_close = datetime(2026, 7, 31, 20, tzinfo=timezone.utc)
+    next_signal_close = datetime(2026, 8, 31, 20, tzinfo=timezone.utc)
+    freezes = {
+        "before_close": datetime(2026, 7, 31, 19, 59, 59, tzinfo=timezone.utc),
+        "at_close": signal_close,
+        "after_close": datetime(2026, 7, 31, 20, 0, 1, tzinfo=timezone.utc),
+    }
+
+    def first_prospective_signal(freeze_instant: datetime) -> datetime:
+        if freeze_instant.tzinfo is None:
+            raise ValueError("freeze instant must be timezone-aware")
+        normalized_freeze = freeze_instant.astimezone(timezone.utc)
+        return min(
+            instant
+            for instant in (signal_close, next_signal_close)
+            if instant > normalized_freeze
+        )
+
+    assert first_prospective_signal(freezes["before_close"]) == signal_close
+    assert first_prospective_signal(freezes["at_close"]) == next_signal_close
+    assert first_prospective_signal(freezes["after_close"]) == next_signal_close
+    try:
+        first_prospective_signal(datetime(2026, 7, 31, 19, 59, 59))
+    except ValueError as error:
+        assert str(error) == "freeze instant must be timezone-aware"
+    else:
+        raise AssertionError("naive freeze instant must fail closed")
+
+
+def test_prospective_threshold_waits_for_label_and_strategy_maturity() -> None:
+    threshold_signal = datetime(2024, 6, 28, 20, tzinfo=timezone.utc)
+    threshold_execution = datetime(2024, 7, 1, 20, tzinfo=timezone.utc)
+    label_maturity = datetime(2024, 7, 31, 20, tzinfo=timezone.utc)
+    next_monthly_execution = datetime(2024, 8, 1, 20, tzinfo=timezone.utc)
+    output_maturity = max(label_maturity, next_monthly_execution)
+
+    def timing_gate_open(
+        qualifying_count: int,
+        threshold: int,
+        access_instant: datetime,
+    ) -> bool:
+        return qualifying_count >= threshold and access_instant > output_maturity
+
+    for threshold in (12, 24):
+        assert not timing_gate_open(threshold, threshold, threshold_signal)
+        assert not timing_gate_open(threshold, threshold, threshold_execution)
+        assert not timing_gate_open(threshold, threshold, label_maturity)
+        assert not timing_gate_open(
+            threshold,
+            threshold,
+            next_monthly_execution,
+        )
+        assert timing_gate_open(
+            threshold,
+            threshold,
+            datetime(2024, 8, 1, 20, 0, 1, tzinfo=timezone.utc),
+        )
+        assert not timing_gate_open(
+            threshold - 1,
+            threshold,
+            datetime(2024, 8, 1, 20, 0, 1, tzinfo=timezone.utc),
+        )
 
 
 def test_invalid_factor_month_separates_invested_benchmark_from_random_cash() -> None:

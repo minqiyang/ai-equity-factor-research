@@ -1,5 +1,30 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Eighteenth-Review Prospective-Time Remediation
+
+- Exact-head Codex review of `242f373` completed with two P2 findings: freeze
+  timestamps and signal dates lacked one comparable instant, and the 12/24
+  counter could authorize opening before the threshold observation matured.
+- Required timezone-aware RFC 3339 freeze instants normalized to UTC and
+  official XNYS close instants from the frozen calendar converted to UTC. A
+  same-day signal qualifies only when its close is strictly after the latest
+  normalized freeze instant.
+- Made threshold counter increment operational only. Protected opening must be
+  strictly after the later of the threshold signal's `e+21` label close and
+  following monthly execution close, after outputs are persisted and all
+  separate authorization/Track B access gates pass.
+- Added same-day before/at/after-close and 12/24 label-versus-strategy maturity
+  fixtures, including rejection of naive timestamps and exact-maturity access.
+- Focused project-structure validation passed 65 tests. The full suite passed
+  3092 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, `git diff
+  --check`, and added-line privacy, non-ASCII, and hidden-Unicode/control scans
+  passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Seventeenth-Review Cutoff And Path Remediation
 
 - Exact-head Codex review of `5b08be6` completed with one P1 and one P2: a

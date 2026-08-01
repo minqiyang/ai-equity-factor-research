@@ -71,7 +71,13 @@ profitability, or trading readiness.
   calendar-filtered before freeze to require their next monthly execution on or
   before the accepted cutoff. A boundary signal with a complete diagnostic
   label but a later execution beyond cutoff remains a factor diagnostic and
-  cannot become a hard-invalid strategy target.
+  cannot become a hard-invalid strategy target. Prospective boundaries now use
+  timezone-aware freeze instants normalized to UTC and official frozen-calendar
+  XNYS close instants converted to UTC, with strict instant ordering for same-
+  day freezes. The 12/24 counter is operational only: protected opening waits
+  strictly beyond the later of the threshold signal's `e+21` label close and
+  following monthly execution close, without bypassing Track B logging or
+  separate access authorization.
   Bootstrap segments of two through
   six rows now use genuine one-row within-segment resampling, with a
   nondegenerate-support gate that prevents false Holm support and is an
