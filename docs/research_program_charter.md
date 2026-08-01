@@ -32,6 +32,34 @@ platform that can:
 The objective is evidence quality, not the highest historical Sharpe ratio.
 No single metric is sufficient for promotion.
 
+## Long-Term Program Direction
+
+The program is a factor-to-portfolio evidence pipeline. For each candidate,
+state its intended use before evaluation: incremental return prediction, risk
+explanation or control, diversification, tradability filtering, or portfolio
+stability. Then test whether that use survives point-in-time data, frozen
+timing, realistic frictions, sample isolation, and complete trial accounting.
+
+The currently frozen Track A campaign remains exactly three price-only factors
+and 14 semantic trials. It is a provider-bound pilot of the evidence pipeline,
+not the intended final factor breadth and not a license to expand its search
+space after results are visible.
+
+After Track A closes and the required Track B evidence controls are accepted,
+the long-term program should build a versioned library of at least ten
+interpretable price-derived factors. Later campaigns should test registered
+factor families across preselected listed-equity markets, with each market's
+identity, membership, calendar, currency, corporate-action, cost, and license
+contracts accepted before result access. Cross-market work is replication of
+frozen hypotheses, not a search for whichever market produces the best result.
+
+Any study of the common properties of useful factors must preregister the
+candidate set and factor metadata before examining outcomes. Relevant metadata
+include mechanism family, signal horizon and decay, turnover, data complexity,
+microcap and industry dependence, known-factor overlap, capacity, and expected
+failure conditions. The first three factors can validate the workflow but
+cannot support a general theory of good factors.
+
 ## Current Research Scope Boundary
 
 The current phase is research-only. This section records evidence scope and
@@ -60,6 +88,12 @@ The program keeps four evidence layers separate.
 A factor helper is not a strategy. A strategy backtest is not portfolio
 evidence. Portfolio evidence is not execution evidence. Software correctness
 is necessary at every layer but is not empirical validation.
+
+In summary, factor validity means incremental cross-sectional information;
+portfolio validity means that registered strategy and portfolio rules preserve
+useful value after constraints and frictions; deployability means that a
+separately gated execution system is operationally reliable. Passing one level
+does not certify the next.
 
 ## Non-Negotiable Research Principles
 
@@ -203,6 +237,22 @@ for example top-decile benchmark-adjusted forward returns. Report Precision@K,
 Recall@K, NDCG, Rank IC, selected breadth, turnover, and net portfolio results
 together. Recall alone is not an optimization objective.
 
+## Good-Factor Evaluation Standard
+
+No factor is promoted by one return statistic or one attractive chart. Evidence
+must jointly address economic, behavioral, or institutional rationale;
+decision-time observability; incremental information; quantile direction and
+monotonicity; stability across periods, market states, subgroups, and reasonable
+parameter neighborhoods; overlap with known exposures; turnover, cost,
+liquidity, and capacity; multiplicity-adjusted uncertainty; independent
+reproduction; and explicit failure conditions.
+
+These dimensions are a decision framework, not a single composite score. A
+factor may be useful for risk control or diversification without being a
+standalone return signal, but its claimed role must be declared before protected
+evaluation and judged with role-appropriate evidence. Factor implementation and
+registration requirements remain owned by `PROJECT_SPEC.md`.
+
 ## Candidate States
 
 Every evaluated factor, strategy, or portfolio has exactly one state:
@@ -271,6 +321,21 @@ diagnostics, simulations, evidence, and frozen candidate artifacts. Any future
 order-capable execution system should use a separately reviewed boundary so
 research changes cannot access credentials or silently change operational
 behavior.
+
+The research boundary ends at a versioned, timestamped, hash-bound candidate
+artifact such as a `PortfolioIntent` containing target weights, research-level
+portfolio constraints, expiry, and the evidence/model identity that produced
+it. It contains no account, order type, venue, routing, or execution authority,
+and this repository must not turn it into a broker order.
+
+If live execution is ever separately authorized, a private execution repository
+should exclusively own broker and market-data credentials, order intents and
+lifecycle, pre-trade limits, reconciliation, monitoring, incident response, and
+kill switches. It must independently validate, limit, or reject every candidate
+artifact; its fail-closed capital, account, venue, order, and loss controls
+cannot be overridden by research metadata. That future two-repository design is
+an isolation boundary, not an expansion of the current research-only scope and
+not authorization for paper or live trading.
 
 Research responsibilities remain separated: the integration owner maintains
 the canonical roadmap and handoff, read-only auditors may work in parallel,
