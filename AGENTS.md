@@ -22,11 +22,11 @@ research-safety review standards.
 
 ## Startup And Sources
 
-- For staged work, read `docs/current_handoff.md`, then `docs/repo_map.md` for
-  orientation, `docs/current_roadmap.md` for status, and
-  `docs/codex_long_running_controller.md` for workflow and review behavior.
-- Read long logs or contracts only when the handoff or active stage points to
-  them, a check fails, or a sensitive decision needs source evidence.
+- For staged work, including work invoked through a thin routing Skill, read
+  `docs/current_roadmap.md` for current status and latest snapshot, then
+  `docs/repo_map.md` and `docs/codex_long_running_controller.md`.
+  Until compaction, only `docs/current_handoff.md`'s top notice is current; its body is historical.
+- Read long logs or contracts only when the active stage or a failed/sensitive check requires them.
 - Cap unknown output and prefer targeted searches or short views. Regenerate
   `docs/repo_map.md` when workflow-control changes alter the map.
 

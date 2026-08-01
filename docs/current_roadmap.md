@@ -2,10 +2,10 @@
 
 Updated: 2026-08-01 after the protected merge of PR #177.
 
-Canonical responsibility: active stage status, dependencies, and completion
-evidence. Repository authority is owned by [AGENTS.md](../AGENTS.md), and staged
-workflow behavior is owned by the
-[Codex long-running controller](codex_long_running_controller.md). This is the canonical roadmap.
+Canonical responsibility: active stage status, dependencies, latest verified
+snapshot, and completion evidence. Repository authority is [AGENTS.md](../AGENTS.md);
+workflow behavior is owned by the [controller](codex_long_running_controller.md).
+This is the canonical roadmap.
 
 ## Current State
 
@@ -23,8 +23,8 @@ workflow behavior is owned by the
 - The 2025-05-01 through 2026-05-31 interval remains permanently
   `historical_evaluation`, never a pristine holdout.
 
-The [current handoff](current_handoff.md) remains a detailed branch snapshot
-pending refresh; its pre-merge PR #177 status does not supersede this evidence.
+Until the dedicated compaction PR, this roadmap is the sole latest verified snapshot.
+The [current handoff](current_handoff.md) body is historical and defines neither status nor task queue.
 
 ## Authoritative Research Sources
 

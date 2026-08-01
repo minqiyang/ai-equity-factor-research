@@ -63,7 +63,7 @@ IMPORTANT_FILES = [
     ),
     (
         "docs/current_handoff.md",
-        "Transitional status notice above a historical pre-merge body; read the notice first pending compaction.",
+        "Transitional notice above a historical body; the roadmap owns the latest snapshot until compaction.",
     ),
     (
         "docs/research_program_charter.md",
@@ -287,7 +287,7 @@ def build_repo_map() -> str:
             "",
             "## Output Discipline",
             "",
-            "- Read `docs/current_handoff.md` before deeper logs.",
+            "- Read `docs/current_roadmap.md` for current state; consult the handoff through its supersession notice until compaction.",
             "- Do not print full generated reports or large logs by default; inspect targeted ranges only when needed.",
             "- Use capped command output for unknown commands, and save full output to a temp file when full review is necessary.",
         ]

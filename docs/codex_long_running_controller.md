@@ -13,9 +13,11 @@ operation must satisfy that boundary.
 
 ## Startup And Freshness
 
-1. Read `docs/current_handoff.md`, then `docs/repo_map.md` and `AGENTS.md`.
-2. Read the roadmap, this controller, and only active-stage contracts; research
-   or code stages also require `PROJECT_SPEC.md`. Search long logs narrowly.
+1. Read `docs/current_roadmap.md` as the current status and latest snapshot,
+   then `docs/repo_map.md` and `AGENTS.md`.
+2. Read this controller and only active-stage contracts. Until compaction, use
+   `docs/current_handoff.md` only through its top status notice; the retained body
+   is historical. Research or code stages also require `PROJECT_SPEC.md`.
 3. With capped output, check branch/tree state, local and remote `main`, recent
    history, and relevant PR state; verify the live remote before choosing a base.
 4. If the tree is dirty or diverged, preserve it in place and use a clean
@@ -26,8 +28,9 @@ operation must satisfy that boundary.
 
 ## Select And Bound The Stage
 
-- `docs/current_roadmap.md` owns active status and dependencies;
-  `docs/current_handoff.md` owns the latest verified snapshot.
+- Until handoff compaction, `docs/current_roadmap.md` owns active status,
+  dependencies, and the latest verified snapshot; the retained handoff body is
+  historical and does not define the current task queue.
 - Choose one coherent stage; keep unrelated fixes in separate branches and PRs.
 - Research methodology comes from `PROJECT_SPEC.md`, the charter, roadmap, and
   `docs/eodhd_sp500_diagnostic_campaign_contract.md`, not this controller.
@@ -112,5 +115,6 @@ credentials, brokerage/orders, live behavior, or out-of-scope interpretation.
 ## Completion Report
 
 Report branch, commit/PR, risk, files, checks, findings, assumptions, external
-authorization, and next gate. Keep the snapshot in handoff, status in roadmap,
-and history in logs; do not copy history or workflow policy into active status.
+authorization, and next gate. Keep status and snapshots with the owners named in
+`Select And Bound The Stage`, and history in logs; do not copy history or
+workflow policy into active status.

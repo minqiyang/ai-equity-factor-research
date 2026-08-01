@@ -26,7 +26,7 @@ Scope: concise orientation for Codex handoffs. Cache/build directories, generate
 ## Important Files
 
 - `AGENTS.md` (present): Canonical external-action authority boundary and repository invariants.
-- `docs/current_handoff.md` (present): Transitional status notice above a historical pre-merge body; read the notice first pending compaction.
+- `docs/current_handoff.md` (present): Transitional notice above a historical body; the roadmap owns the latest snapshot until compaction.
 - `docs/research_program_charter.md` (present): Canonical long-term research intent and evidence policy; not an external-action authority source.
 - `docs/purged_bounded_split_contract.md` (present): Accepted Stage 1a timing and sample-isolation design.
 - `docs/signal_execution_timing_contract.md` (present): Accepted Stage 2a signal, execution, and metric timing design.
@@ -69,6 +69,6 @@ Scope: concise orientation for Codex handoffs. Cache/build directories, generate
 
 ## Output Discipline
 
-- Read `docs/current_handoff.md` before deeper logs.
+- Read `docs/current_roadmap.md` for current state; consult the handoff through its supersession notice until compaction.
 - Do not print full generated reports or large logs by default; inspect targeted ranges only when needed.
 - Use capped command output for unknown commands, and save full output to a temp file when full review is necessary.

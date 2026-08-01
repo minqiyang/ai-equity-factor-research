@@ -38,9 +38,10 @@ Decision:
 - `docs/codex_long_running_controller.md` is the source for staged execution,
   external gates, review lifecycle, waiting, stop conditions, and completion
   reporting.
-- `docs/current_roadmap.md` owns active stage status and dependencies;
-  `docs/current_handoff.md` owns only the latest verified snapshot. Neither may
-  redefine authority or workflow policy.
+- Until the dedicated handoff compaction, `docs/current_roadmap.md` owns active
+  stage status, dependencies, and the latest verified snapshot. The retained
+  handoff body is historical and may not define the current task queue. Neither
+  file may redefine authority or workflow policy.
 - `docs/research_program_charter.md` owns research intent and evidence policy;
   it references rather than redefines external-action or GitHub review rules.
 - Technical eligibility never grants permission for an external, sensitive, or
