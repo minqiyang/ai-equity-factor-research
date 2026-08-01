@@ -38,7 +38,10 @@ profitability, or trading readiness.
   target now uses the signal date in the seed, treats the permutation as high-
   to-low rank, selects the first remainder-aware top-decile chunk, and
   serializes equal weights by canonical key; the semantic inventory remains
-  exactly 14. Repository
+  exactly 14. Holm adjusted p-values now explicitly use one-based mathematical
+  indices with Python `k-1` access, a capped sorted running maximum, stable
+  factor-order tie breaking, and mapping back to original factor order.
+  Repository
   governance fixes safe in-scope review findings without owner round trips and
   keeps the task active through current-head review and remediation; only a
   genuinely critical owner-decision follow-up retains the four-run,

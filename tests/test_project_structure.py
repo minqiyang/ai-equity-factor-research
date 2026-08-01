@@ -443,6 +443,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "remediated by committed and pushed head `b8149c2`",
         "exact-head CI run `30686852275` passed",
         "The seventh review of `b8149c2` found one P2",
+        "remediated by committed and pushed head `1f6c801`",
+        "exact-head CI run `30687469154` passed",
+        "The eighth review of `1f6c801` found one P2",
         "not pending local authorship",
         "The actual remaining gate is exact",
         "current-head CI followed by one current-head Codex review",
@@ -482,6 +485,8 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "strict signal date `t`, not the later execution date",
         "Select exactly the first such number of",
         "The golden test freezes the complete 103-index permutation",
+        "mathematical index `k` is explicitly one-based",
+        "adjusted values mapped back to factor order",
     ]:
         assert phrase in contract
 
@@ -526,6 +531,9 @@ def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> Non
         "date_token: SIGNAL_DATE_T_STRICT_YYYY_MM_DD_NOT_EXECUTION_DATE",
         "selection: FIRST_TOP_DECILE_SIZE_PERMUTED_INDICES",
         "top_decile_size: 11",
+        "holm_index_origin: ONE_BASED_K_1_THROUGH_3",
+        "holm_python_sorted_access: sorted_raw_p[k-1]",
+        "holm_map_back: ORIGINAL_FACTOR_ORDER_AFTER_SORTED_RUNNING_MAX",
     ]:
         assert phrase in preregistration
 
@@ -902,6 +910,52 @@ def test_post_return_execution_cost_and_random_baseline_golden_fixture() -> None
         random_primary_cost_impact,
         abs_tol=1e-15,
     )
+
+
+def test_holm_one_based_running_max_and_factor_mapping_golden_fixture() -> None:
+    factor_order = ("MOM_12_1", "REV_1M", "LOW_VOL_3M")
+    raw_p_values = (0.04, 0.01, 0.03)
+    stable_sorted_indices = tuple(
+        sorted(
+            range(3),
+            key=lambda index: (raw_p_values[index], index),
+        )
+    )
+    sorted_p_values = tuple(
+        raw_p_values[index] for index in stable_sorted_indices
+    )
+
+    multiplied_sorted = tuple(
+        (3 - k + 1) * sorted_p_values[k - 1]
+        for k in range(1, 4)
+    )
+    adjusted_sorted = tuple(
+        min(1.0, max(multiplied_sorted[:k]))
+        for k in range(1, 4)
+    )
+    adjusted_factor_order = [0.0, 0.0, 0.0]
+    for sorted_index, original_index in enumerate(stable_sorted_indices):
+        adjusted_factor_order[original_index] = adjusted_sorted[sorted_index]
+
+    rejected_sorted = []
+    for sorted_index, raw_p_value in enumerate(sorted_p_values):
+        threshold = 0.05 / (3 - sorted_index)
+        if raw_p_value > threshold:
+            break
+        rejected_sorted.append(stable_sorted_indices[sorted_index])
+    rejected_factor_ids = tuple(
+        factor_order[index] for index in sorted(rejected_sorted)
+    )
+
+    assert tuple(factor_order[index] for index in stable_sorted_indices) == (
+        "REV_1M",
+        "LOW_VOL_3M",
+        "MOM_12_1",
+    )
+    assert multiplied_sorted == (0.03, 0.06, 0.04)
+    assert adjusted_sorted == (0.03, 0.06, 0.06)
+    assert tuple(adjusted_factor_order) == (0.06, 0.03, 0.06)
+    assert rejected_factor_ids == ("REV_1M",)
 
 
 def test_factor_turnover_uses_immediate_frozen_scheduled_predecessor() -> None:

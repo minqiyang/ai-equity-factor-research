@@ -1,5 +1,24 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Eighth-Review Holm-Index Remediation
+
+- Exact-head Codex review of `1f6c801` completed with one P2: the adjusted-p
+  formula did not define whether `k` was zero- or one-based.
+- Froze `k=1..3`, Python access at `k-1`, running maxima over all sorted
+  positions through `k`, capping at 1, stable factor-order tie breaking,
+  sequential stop behavior, and mapping adjusted values back to factor order.
+- Added a three-p-value golden fixture whose sorted multipliers are
+  `0.03,0.06,0.04`, sorted adjusted values are `0.03,0.06,0.06`, factor-order
+  adjusted values are `0.06,0.03,0.06`, and only `REV_1M` is rejected.
+- Focused project-structure validation passed 53 tests. The full suite passed
+  3080 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
 ## 2026-07-31 - PR 177 Seventh-Review Random-Selection Remediation
 
 - Exact-head Codex review of `b8149c2` completed with one P2: the random-rank

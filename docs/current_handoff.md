@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-31 for the seventh PR #177 review-remediation round.
+Updated: 2026-07-31 for the eighth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -48,16 +48,18 @@ Updated: 2026-07-31 for the seventh PR #177 review-remediation round.
   `0179ebb`; exact-head CI run `30686127537` passed. The sixth review of
   `0179ebb` found one P1 and one P2 remediated by committed and pushed head
   `b8149c2`; exact-head CI run `30686852275` passed. The seventh review of
-  `b8149c2` found one P2: the random-rank permutation did not map uniquely to a
-  top-decile target. The current branch-head snapshot containing this handoff
-  freezes signal-date seed input, high-to-low permutation interpretation,
-  first-chunk remainder-aware selection, equal weights, and canonical target
-  serialization. It includes a complete 103-key golden fixture, retains the
-  exact 14-trial inventory, and is not pending local authorship. The actual
-  remaining gate is exact current-head CI followed by one current-head Codex
-  review; every finding restarts that remediation loop. Do not repeat commit
-  or push work from an old handoff instruction; resolve current `HEAD`, remote
-  head, CI, and review state.
+  `b8149c2` found one P2 remediated by committed and pushed head `1f6c801`;
+  exact-head CI run `30687469154` passed. The eighth review of `1f6c801` found
+  one P2: the Holm formula did not define the origin of `k`. The current
+  branch-head snapshot containing this handoff freezes one-based mathematical
+  indices, Python `k-1` access, sorted running maxima, capping, stable factor-
+  order tie breaking, sequential stopping, and mapping back to factor order.
+  It includes a three-p-value golden fixture, retains the exact 14-trial
+  inventory, and is not pending local authorship. The actual remaining gate is
+  exact current-head CI followed by one current-head Codex review; every
+  finding restarts that remediation loop. Do not repeat commit or push work
+  from an old handoff instruction; resolve current `HEAD`, remote head, CI, and
+  review state.
 - Current protected-main baseline: 3064 tests passed with two
   platform-conditional wide-`longdouble` skips. The PR #176 release also
   passed Ruff, compileall, deterministic repo-map, Skill audit, immutable

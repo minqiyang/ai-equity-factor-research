@@ -379,8 +379,20 @@ and do not form additional discovery hypotheses.
 Holm sorts by raw p-value, with factor order `MOM_12_1`, `REV_1M`,
 `LOW_VOL_3M` as the deterministic tie breaker. The sequential thresholds are
 `0.05/3`, `0.05/2`, and `0.05`; testing stops at the first non-rejection.
-Adjusted sorted p-values are the running maximum of
-`(3-k+1) * p_sorted[k]`, capped at 1, then mapped back to factor order.
+For adjusted p-values, mathematical index `k` is explicitly one-based over
+`1..3`, while a Python sequence is accessed as `sorted_raw_p[k-1]`. The exact
+sorted value is
+`min(1, max((3-j+1) * sorted_raw_p[j-1] for j in 1..k))`. Map those three
+values back to original factor order after the running maximum; never use
+`sorted_raw_p[k]` with one-based multipliers.
+
+The Holm golden fixture uses raw factor-order p-values
+`MOM_12_1=0.04`, `REV_1M=0.01`, and `LOW_VOL_3M=0.03`. The stable sorted
+factor order is `REV_1M,LOW_VOL_3M,MOM_12_1`; the multiplied values are
+`0.03,0.06,0.04`; the running-max adjusted sorted values are
+`0.03,0.06,0.06`; and the adjusted values mapped back to factor order are
+`0.06,0.03,0.06`. At alpha 0.05, sequential testing rejects only `REV_1M`
+and stops at `LOW_VOL_3M`.
 
 The dependence-aware method applies to the three primary mean Rank IC effects.
 It is an overlapping, non-circular moving-block bootstrap over a common

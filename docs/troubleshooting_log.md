@@ -82,11 +82,13 @@ Correction:
 - Froze the random permutation's date token, rank direction, remainder-aware
   first-chunk selection, weights, and serialization, with a full non-divisible
   golden fixture.
+- Removed Holm's index ambiguity by freezing one-based mathematical positions,
+  Python `k-1` access, the sorted running maximum, and factor-order mapping.
 
 Verification:
 
-- The latest corrected focused structure suite passed 52 tests and the full
-  suite passed 3079 tests with two platform-conditional skips. Full Ruff,
+- The latest corrected focused structure suite passed 53 tests and the full
+  suite passed 3080 tests with two platform-conditional skips. Full Ruff,
   compileall, Skill audit, YAML and JSON parsing, deterministic repo-map
   regeneration, `git diff --check`, added-line privacy and Unicode/control
   scans, and isolated sdist/wheel build passed.

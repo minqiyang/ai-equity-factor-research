@@ -15,6 +15,40 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Freeze Holm Index Origin And Factor-Order Mapping
+
+Context:
+
+- The eighth exact-head Codex review of PR #177 at `1f6c801` found one P2.
+  The code-like adjusted-p formula combined mathematical multipliers with an
+  undefined `k` origin, so a zero-based implementation could use multipliers
+  4, 3, and 2 instead of Holm's 3, 2, and 1.
+
+Decision:
+
+- Define mathematical `k` as one-based over `1..3` and access a Python sorted
+  p-value sequence at `k-1`.
+- For each sorted position `k`, compute
+  `min(1, max((3-j+1) * sorted_raw_p[j-1] for j in 1..k))`.
+- Sort raw p-values stably with frozen factor order as the tie breaker, stop
+  sequential rejection at the first non-rejection, and map adjusted values
+  back to the original factor order only after the sorted running maximum.
+
+Rationale:
+
+- Explicit index conversion prevents a runner from changing adjusted values,
+  rejection decisions, or the final diagnostic state through a plausible
+  Python-style interpretation of the same YAML.
+
+Consequences:
+
+- A three-p-value golden fixture freezes sorted order, multiplied values,
+  running maxima, factor-order adjusted values, and the rejection set.
+- No data, performance, trial execution, additional hypothesis, merge,
+  brokerage, paper, or live behavior is added.
+
+---
+
 ## 2026-07-31 - Freeze Random-Rank Permutation-To-Target Mapping
 
 Context:
