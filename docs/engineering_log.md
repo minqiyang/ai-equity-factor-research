@@ -1,5 +1,26 @@
 # Engineering Log
 
+## 2026-08-01 - Governance Source-Of-Truth Convergence
+
+- Reduced `AGENTS.md` from 165 to 80 lines, the long-running controller from 468
+  to 117 lines, and the current roadmap from 261 to 120 lines while preserving
+  research-safety, alignment, validation, review, and stop boundaries.
+- Removed duplicated review, polling, push, and merge policy from the roadmap
+  and research charter. Corrected the roadmap to PR #177's protected merge,
+  marked the old handoff narrative as superseded pending its dedicated
+  compaction, and regenerated the repo map with the new responsibility index.
+- Replaced cross-document prose and review-history assertions with canonical
+  owner, reference, authorization, predecessor-gate, and review-lifecycle
+  checks. Contract, registry, preregistration, and golden-fixture semantics
+  remain tested only at their authoritative sources.
+- Project-structure validation passed 73 tests. The full suite passed 3100 tests
+  with two platform-conditional `longdouble` skips. Ruff, compileall, isolated
+  package build, Skill audit, deterministic repo-map regeneration, and all
+  whitespace checks passed.
+- No research runtime, campaign contract, Skill, factor, strategy, accounting,
+  private data, vendor access, performance interpretation, brokerage, paper, or
+  live behavior changed.
+
 ## 2026-07-31 - PR 177 Twenty-Fourth-Review Circular-Bootstrap Remediation
 
 - Exact-head Codex review `4834551495` of `2c6b827` completed with one P1:

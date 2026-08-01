@@ -57,11 +57,17 @@ MAJOR_DIRS = [
 ]
 
 IMPORTANT_FILES = [
-    ("AGENTS.md", "Agent guardrails, command-output controls, and repo safety rules."),
-    ("docs/current_handoff.md", "Shortest current-state handoff; read this first."),
+    (
+        "AGENTS.md",
+        "Canonical external-action authority boundary and repository invariants.",
+    ),
+    (
+        "docs/current_handoff.md",
+        "Current verified snapshot pending the dedicated compaction stage; read this first.",
+    ),
     (
         "docs/research_program_charter.md",
-        "Canonical long-term research evidence and authorization policy.",
+        "Canonical long-term research intent and evidence policy; not an external-action authority source.",
     ),
     (
         "docs/purged_bounded_split_contract.md",
@@ -128,12 +134,19 @@ IMPORTANT_FILES = [
         "eodhd_sp500_three_factor_trial_inventory_v1.json",
         "Exact frozen 14-semantic-trial inventory.",
     ),
-    ("docs/current_roadmap.md", "Canonical staged delivery sequence and active blockers."),
+    ("docs/current_roadmap.md", "Canonical active stage status and dependencies."),
     ("docs/repo_map.md", "Generated concise repo map."),
-    ("docs/codex_long_running_controller.md", "Continuation and stop-condition controller."),
+    (
+        "docs/codex_long_running_controller.md",
+        "Canonical staged workflow and GitHub review lifecycle controller.",
+    ),
     (
         ".agents/skills/staged-quant-workflow/SKILL.md",
         "Thin invocation router for the canonical staged workflow documents.",
+    ),
+    (
+        ".github/workflows/ci.yml",
+        "Canonical continuous-integration commands and platform test matrix.",
     ),
     (
         "PROJECT_SPEC.md",
@@ -155,7 +168,9 @@ TEST_COMMANDS = [
     ("Compile LEAN scaffold", "python -m compileall lean"),
     ("Build distribution", "python -m build"),
     ("Repo map refresh", "python scripts/repo_map.py"),
-    ("Branch whitespace check", "git diff --check origin/main..HEAD"),
+    ("Unstaged whitespace check", "git diff --check"),
+    ("Staged whitespace check", "git diff --cached --check"),
+    ("Committed branch whitespace check", "git diff --check origin/main...HEAD"),
     ("Skill audit for workflow/Skill changes", ".\\scripts\\audit-skills.ps1"),
 ]
 

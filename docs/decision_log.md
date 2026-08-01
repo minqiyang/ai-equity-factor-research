@@ -15,6 +15,64 @@ investment performance.
 
 ---
 
+## 2026-08-01 - Assign One Owner To Each Active Governance Responsibility
+
+Context:
+
+- `AGENTS.md`, the long-running controller, and the current roadmap repeated
+  review, polling, push, and merge rules. Structure tests required the repeated
+  wording, so normal documentation cleanup would fail validation.
+- Repository-local process text treated technical PR eligibility as authority
+  for externally visible actions, conflicting with higher-level authorization
+  boundaries.
+- Draft PR #148 contained useful manual-review trigger rules but overlapped the
+  newer, duplicated policy.
+
+Decision:
+
+- `AGENTS.md` is the repository source for authority, research-safety
+  invariants, alignment requirements, and review severity.
+- `docs/codex_long_running_controller.md` is the source for staged execution,
+  external gates, review lifecycle, waiting, stop conditions, and completion
+  reporting.
+- `docs/current_roadmap.md` owns active stage status and dependencies;
+  `docs/current_handoff.md` owns only the latest verified snapshot. Neither may
+  redefine authority or workflow policy.
+- `docs/research_program_charter.md` owns research intent and evidence policy;
+  it references rather than redefines external-action or GitHub review rules.
+- Technical eligibility never grants permission to push, update a PR, request
+  review, enable auto-merge, merge, close, access private data, or perform a
+  destructive action. Explicit current authorization must cover the action and
+  scope.
+- Preserve the valid PR #148 behavior in the controller: no review on Drafts,
+  one explicit request on a stable current head after validation and CI, no
+  duplicate request for an unchanged head, and re-review only after an
+  actionable fix changes the head.
+- Do not encode fixed polling or follow-up schedules in repository policy.
+  Monitoring occurs only when explicitly requested through the product.
+
+Rationale:
+
+- One owner per responsibility prevents policy drift and lets active status
+  documents remain short without weakening research or review guardrails.
+- Separating eligibility from authority keeps repository rules subordinate to
+  current user and higher-level instructions.
+- Relationship and boundary tests are more stable than duplicated natural-
+  language assertions.
+
+Consequences:
+
+- Governance tests validate canonical responsibilities, references, review
+  triggers, and forbidden authorization-expansion wording.
+- Campaign, ledger, timing, statistical, and fail-closed research tests remain
+  unchanged.
+- This change compresses the roadmap and corrects it to PR #177's protected
+  merge. A subsequent PR will compress the handoff after preserving its review
+  history in durable logs. PR #148 remains an independent Draft until separately
+  dispositioned.
+
+---
+
 ## 2026-07-31 - Use Circular Within-Segment Blocks For Uniform Null Weighting
 
 Context:

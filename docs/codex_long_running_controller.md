@@ -1,468 +1,117 @@
 # Codex Long-Running Controller
 
-This controller defines how Codex should resume and advance the long-running
-staged workflow for this repository without requiring the user to paste a new
-prompt for every small step.
-
-It implements the evidence policy in `docs/research_program_charter.md` and the
-active sequence in `docs/current_roadmap.md`. It is a process document only. It
-does not authorize vendor downloads, remote data access, credentials, paper
-deployment, live trading, brokerage integration, order execution, or
-profitability claims.
-
-## Startup Checklist
-
-At the start of a continuation, read `docs/current_handoff.md` first and use
-`docs/repo_map.md` for concise orientation. Then read `AGENTS.md`,
-`PROJECT_SPEC.md`, `docs/current_roadmap.md`, and this controller. Read
-`docs/research_program_charter.md` when selecting, designing, reviewing, or
-classifying a research-program stage.
-
-Read deeper logs and long documents only when `docs/current_handoff.md` points
-to them, the active stage requires them, a check fails, or a guardrail-sensitive
-decision needs source evidence. Deeper sources include:
-
-- `docs/engineering_log.md`
-- `docs/decision_log.md`
-- `docs/troubleshooting_log.md`
-- `CHANGELOG.md`
-- `EXPERIMENT_LOG.md`
-- generated reports under `reports/`
-
-Then run these state checks:
-
-```bash
-git fetch origin
-git branch --show-current
-git status --porcelain | head -n 50
-git log --oneline -20
-gh pr list --state all --limit 10 --json number,state,isDraft,mergedAt,url,title,headRefName,baseRefName 2>&1 | head -c 8000
-```
-
-If the required predecessor stage PR is not verified merged after this
-current-state check, report one concise gate summary, enter a paused external
-PR gate state, and wait for explicit user resume unless the PR is eligible for
-GitHub-managed auto-merge or normal protected PR merge under this controller's
-protected PR merge policy. Do not repeatedly check reviews, checks, branch
-protection, auto-merge eligibility, or baseline validation while an ineligible
-predecessor remains unmerged unless the user explicitly says the PR merged,
-asks to resume after merge, or asks for PR inspection. If the interface forces
-a response during the paused state, return only:
-`Waiting for PR #X to merge; no checks run.`
-
-An unrelated open or Draft PR is not automatically a predecessor. Classify it
-once from base/head age, changed files, declared scope, and overlap with the
-new stage. It may proceed independently only when the evidence shows no
-dependency or conflicting edits. Record the classification and avoid its files;
-do not merge, close, rebase, or overwrite it without authority.
-
-If an expected controller, log, or Skill file is missing, treat that as a
-workflow-control gap. The next safe stage may be to add or repair the missing
-process artifact before continuing research work.
-
-## Command Output Budget
-
-Protect token budget without hiding evidence:
-
-- cap unknown large command output by default.
-- prefer `git status --porcelain | head -n 50`.
-- prefer `git log --oneline -20`.
-- prefer `git diff --name-only | head -n 80`.
-- use `COMMAND 2>&1 | head -c 8000` for unknown output.
-- in PowerShell, use equivalent caps such as `Select-Object -First` when
-  `head` is unavailable.
-- write full output to temp files and inspect targeted ranges only if full
-  review is needed.
-- never `cat` full generated reports or large logs by default.
-
-## Context Budget And Retrieval Policy
-
-Keep staged workflow continuations evidence-based without exhausting context.
-
-First-pass context is limited to:
-
-- `docs/current_handoff.md`
-- `docs/repo_map.md`
-- `AGENTS.md`
-- `PROJECT_SPEC.md`
-- `docs/current_roadmap.md`
-- `docs/codex_long_running_controller.md`
-
-Read `docs/research_program_charter.md` at Level 2 for research-program stage
-selection or evidence classification. It is policy, not a detailed stage log.
-
-Maintain these short-entry files as retrieval controls:
-
-- `docs/current_handoff.md` should stay short, ideally 100-200 lines. It
-  should contain the latest merged PR, current open PR gate, next recommended
-  stage, known blockers, recent validation result, and a reminder not to read
-  full logs by default.
-- `docs/repo_map.md` should remain an index, not a project history. It should
-  describe directory structure, folder purposes, key file locations, and which
-  files are long enough to require search, tail, or small-range reads.
-- `docs/codex_long_running_controller.md` should define workflow behavior and
-  stop conditions, not duplicate detailed stage history.
-
-Do not read multiple long logs or checkpoint reports in parallel. Long files
-include:
-
-- `docs/engineering_log.md`
-- `docs/decision_log.md`
-- `docs/troubleshooting_log.md`
-- `CHANGELOG.md`
-- `reports/*.md`
-- `reports/experiment_logs/*.json`
-- long checkpoint or design docs
-
-Detailed logs can remain comprehensive, but default access is restricted:
-
-- `docs/engineering_log.md`, `docs/decision_log.md`, and
-  `docs/troubleshooting_log.md`: use `tail`, keyword search, or small line
-  ranges unless a full-file read is explicitly justified.
-- `CHANGELOG.md`: default to `git log`, `git show --stat`, `rg -n
-  "Unreleased" CHANGELOG.md`, or `Get-Content CHANGELOG.md -Tail ...`; do not
-  read the full file by default.
-
-Use this context ladder:
-
-- Level 0: git, PR, branch, and status commands only.
-- Level 1: `docs/current_handoff.md` and `docs/repo_map.md`.
-- Level 2: one targeted roadmap or design document for the active stage only.
-- Level 3: tail or keyword search in long logs.
-- Level 4: full-file read only when absolutely required; explain why before
-  relying on it.
-
-Prefer targeted commands:
-
-```bash
-git diff --name-only
-git diff --stat
-git show --stat
-rg -n "keyword" file
-```
-
-In PowerShell, prefer:
-
-```powershell
-Get-Content path -Tail 120
-Select-String -Path path -Pattern "keyword"
-```
-
-Avoid `cat`, uncapped `Get-Content`, or printing entire long files.
-
-Output policy:
-
-- Do not paste full large files.
-- Summarize command results.
-- Cap output when reading logs.
-- If output is too large, stop and switch to narrower searches.
-- If truncation occurs, do not rely on the truncated output; reread only the
-  targeted sections needed for the active stage.
-
-Generated reports policy:
-
-- Do not read or print full generated reports unless the current stage
-  specifically concerns that report.
-- Prefer headings, keyword search, or small snippets for report inspection.
-
-Final report policy:
-
-- Keep final reports concise.
-- Include branch, PR, files changed, checks, issues, assumptions, and next
-  stage.
-- Do not paste large logs.
-
-Recovery rule:
-
-If this appears:
-
-```text
-Output exceeded the available model context and was truncated
-```
-
-then stop broad reading, record the issue in `docs/troubleshooting_log.md` if
-meaningful, resume with `docs/current_handoff.md` and `docs/repo_map.md`, and
-reread only the targeted files or sections needed for the active stage.
-
-## Merge Gate
-
-Do not start a new stage while its required predecessor PR is open,
-closed-unmerged, unknown, or otherwise not verified merged unless that PR is
-eligible for GitHub-managed auto-merge or normal protected PR merge. Check the
-PR state once, report the gate, and enter a paused external PR gate state when
-the predecessor is not eligible. Automatic continuations without a user-stated
-merge/resume/inspect instruction must not query GitHub again, repeat gate
-reports, print repeated pause notes, mark the goal complete, or mark the goal
-blocked merely because the same ineligible predecessor remains pending.
-
-Independently scoped PRs do not block all work. Before continuing, prove that
-the other PR is not a declared dependency, does not edit the same canonical
-files, and does not create a semantic conflict. Report that classification once
-and leave the other PR unchanged.
-
-If the required predecessor stage PR has merged:
-
-```bash
-git switch main
-git pull --ff-only origin main
-git status --porcelain | head -n 50
-python -m pytest -q
-python -m compileall src tests research
-```
-
-Proceed only if the working tree is clean and baseline validation passes.
-
-## Choosing The Next Safe Stage
-
-Choose the next stage from current evidence, not from stale memory:
-
-- latest merged PRs.
-- `docs/research_program_charter.md`.
-- `docs/current_roadmap.md`.
-- latest checkpoint reports.
-- `docs/engineering_log.md`.
-- `docs/decision_log.md`.
-- `docs/troubleshooting_log.md`.
-- `docs/project_overview.md`.
-- roadmap documents under `docs/`.
-- current tests and repository state.
-
-Prefer the smallest stage that removes a real blocker, refreshes stale
-documentation, clarifies a research decision, or advances a reviewed roadmap.
-
-If a stage changes source code, tests, research scripts, generated reports, or
-strategy behavior, use stricter review gates than a documentation-only stage.
-
-Follow roadmap dependencies. The owner-approved Track A exception in
-`docs/eodhd_sp500_diagnostic_campaign_contract.md` permits only its exact
-three-factor, 14-trial diagnostic sequence without first completing the formal
-ledger runtime or 37-event profile. It does not authorize additional factors,
-parameter variants, formal promotion, or prospective performance access. Do
-not interpret historical results merely because a loader or diagnostic
-completed.
-
-For Track A, enforce the delivery order exactly:
-
-1. protocol and inventory freeze;
-2. private entitlement/retention/publication gate;
-3. blinded dataset-manifest review;
-4. runner implementation without result interpretation;
-5. detached pre-run binding of code, config, environment, protocol, inventory,
-   and accepted dataset hashes; and
-6. all-trial execution, bundle reconciliation, and independent review.
-
-Do not continue one-event registry expansion. Preserve existing immutable
-registry releases as optional `full_ledger_profile_v1`. After Track A closes,
-Track B is limited to 8-12 conceptual event families, at most one design PR and
-one runtime PR, and at most 14 exact wire event types without a new owner
-decision.
-
-## Research Program Gates
-
-Keep factor, strategy, portfolio, and execution evidence separate.
-
-- Factor work freezes formula, expected direction, fields, availability lag,
-  horizon, preprocessing, missing behavior, source, fixture, and trial family.
-- Strategy work starts only for promoted factors and freezes selection,
-  holding, rebalance, buffer, cost, and execution assumptions.
-- Portfolio work starts only after strategy evidence and freezes benchmark,
-  weights, exposures, constraints, liquidity, capacity, and risk policy.
-- Independent reproduction follows frozen historical evaluation.
-- LEAN parity starts only for a `PORTFOLIO_PASS` and requires a separate scope
-  decision. Paper runtime and live behavior remain unauthorized.
-
-Formal real-data interpretation remains blocked until provenance/license,
-point-in-time membership, delistings/corporate actions, field semantics,
-benchmark, missing-data, sample-split, timing, cost, privacy, holdout-exposure,
-trial-accounting, and statistical-methodology gates are accepted.
-
-Every formal trial receives its immutable identifiers before execution.
-Failures, invalid runs, exclusions, abandoned variants, output hashes, review
-outcomes, and protected-sample access must remain visible. A nominal holdout
-whose prior exposure cannot be disproved is `historical_evaluation` or
-`pseudo_holdout`.
-
-Track A historical output is a narrower diagnostic exception, not formal
-interpretation. It must use the campaign's detached protocol/data-binding
-freeze, retain every trial and attempt outcome, and end in one allowed
-`*_DIAGNOSTIC` state. Track B protected-access logging is mandatory before any
-prospective performance is opened.
-
-## Low-Risk Ambiguity
-
-For low-risk ambiguity, make a reasonable assumption, record the assumption in
-the final report and the relevant durable log, and continue.
-
-Low-risk ambiguity includes minor documentation placement choices, wording
-scope, whether to update a workflow log alongside a controller change, and
-whether to create a missing workflow-control scaffold file that the current
-prompt clearly expects.
-
-Do not continue on an assumption if the ambiguity could cause a destructive
-operation, broad architecture change, product behavior change, data loss,
-security or privacy risk, new production dependency, or scope conflict with
-`AGENTS.md`, `PROJECT_SPEC.md`, or this controller.
-
-If a file is missing but the current prompt expects it:
-
-- create it in a separate workflow-control PR when it is a low-risk
-  documentation, logging, controller, or audit-script scaffold.
-- stop and report when the missing file affects product behavior, strategy
-  logic, data access, execution, credentials, or external systems.
+Canonical responsibility: staged workflow state transitions, external gates,
+GitHub review lifecycle, waiting, stop conditions, and completion reporting.
+
+## Scope And Authority
+
+This process is subordinate to the
+[repository authority boundary](../AGENTS.md#authority-and-scope), research
+charter, and current higher-level instructions. Eligibility is not authorization:
+pushes, PR writes, comments, review requests, auto-merge, merges, closes, data
+access, and destructive actions require explicit action-and-scope authorization.
+
+## Startup And Freshness
+
+1. Read `docs/current_handoff.md`, then `docs/repo_map.md` and `AGENTS.md`.
+2. Read the roadmap, this controller, and only active-stage contracts; research
+   or code stages also require `PROJECT_SPEC.md`. Search long logs narrowly.
+3. With capped output, check branch/tree state, local and remote `main`, recent
+   history, and relevant PR state; verify the live remote before choosing a base.
+4. If the tree is dirty or diverged, preserve it in place and use a clean
+   worktree. Do not pull, reset, clean, or stash unreviewed user work.
+5. Classify unrelated open or Draft PRs once by dependency, changed-file overlap,
+   and semantic conflict. Do not rebase, close, merge, or overwrite them without
+   authorization.
+
+## Select And Bound The Stage
+
+- `docs/current_roadmap.md` owns active status and dependencies;
+  `docs/current_handoff.md` owns the latest verified snapshot.
+- Choose one coherent stage; keep unrelated fixes in separate branches and PRs.
+- Research methodology comes from `PROJECT_SPEC.md`, the charter, roadmap, and
+  `docs/eodhd_sp500_diagnostic_campaign_contract.md`, not this controller.
+- Do not infer permission for vendor access, protected samples, private results,
+  deployment, brokerage behavior, or a broader research interpretation from a
+  stage description.
+
+## Local Execution And Validation
+
+- Use a clean `codex/` branch or worktree and state the intended edits first.
+- Add or update tests and durable records required by `AGENTS.md`; stage only
+  files in the declared scope.
+- Run focused tests, then appropriate baselines; defaults are
+  `python -m pytest -q` and `python -m compileall src tests research`.
+- Check whitespace in all states: `git diff --check`,
+  `git diff --cached --check`, and `git diff --check origin/main...HEAD` (or the
+  established base range) for unstaged, staged, and committed changes.
+- For workflow/Skill changes, audit the Skill and deterministically regenerate
+  `docs/repo_map.md`. Before publication, review scope, Unicode, privacy, and guardrails.
+- Use `docs/engineering_log.md` for implementation/process evidence,
+  `docs/decision_log.md` for durable choices, `docs/troubleshooting_log.md` for
+  failures, and `EXPERIMENT_LOG.md` only for research experiments.
+
+## External Authorization Gate
+
+Before any push, PR create/update, comment, review request, auto-merge, merge, or
+close, verify explicit operation-and-scope authorization; otherwise stop after
+local validation. Publish through a PR, never direct `main`, protection bypass,
+merge-queue bypass, or `--admin`.
+
+## Predecessor PR Gate
+
+- If a required predecessor is not verified merged, check once, report one gate
+  summary, and pause. Without an explicit merged/resume/inspect request, do not
+  re-query an unchanged gate, rerun baselines, or start its dependent stage.
+- An unrelated PR is not automatically a predecessor. Record why it is
+  independent and avoid overlapping files.
+- Continue only from the newly verified remote baseline after the predecessor
+  merges. A clean status check must precede any branch switch or update.
+
+## GitHub Review Lifecycle
+
+- Keep GitHub Codex Automatic Review disabled. Drafts get no request; an explicit
+  `@codex review` is sent once only after validation and required CI stabilize on
+  the final stable current head.
+- Review is required for research semantics, returns, costs, benchmarks,
+  implementation, CI, security, data handling, or execution scope. Trivial
+  spelling, date, count, or equivalent metadata-only edits may omit it.
+- Never repeat a request for an unchanged head. An actionable fix changes the
+  head and requires validation, CI, and one new current-head review.
+- A safe actionable finding may be fixed locally inside the already-authorized
+  scope. Push and review-request actions still pass through the External
+  Authorization Gate; a remediation authorization cannot expand the stage.
+- A review-required PR is technically merge-eligible only when its current head
+  has no unresolved actionable finding and all required checks and reviews pass.
+  Technical eligibility never grants merge authority or action authorization.
+
+## Waiting And Follow-Up
+
+- Report an unchanged external gate once and pause; define no polling schedule.
+- Use a product monitor or recurring wait only when the user explicitly requests
+  monitoring. Reuse one matching monitor, perform read-only checks, and never
+  duplicate review requests.
+- Never decide a critical owner choice on the owner's behalf. Missing authority
+  remains a paused gate rather than an implicit approval.
+
+## Protected Merge Eligibility
+
+Technical eligibility requires low/clear risk, expected author/head owner,
+verified protections, checks and reviews, conflict/queue state, and file scope.
+Pending or unverifiable evidence is ineligible; eligibility never authorizes
+auto-merge or merge.
 
 ## Stop Conditions
 
-Stop and report instead of continuing when any of these occurs:
+Stop for missing authority; unclear tree/branch ownership; failed validation
+outside safe remediation; unresolved P1/high risk; unverifiable protection,
+checks, reviews, conflicts, or scope; destructive/security/privacy risk; or
+unresolved provenance, license, point-in-time, benchmark, cost, timing, or
+statistical choices. Also stop before unapproved vendor/private data,
+credentials, brokerage/orders, live behavior, or out-of-scope interpretation.
 
-- the required predecessor or current-stage PR requires a critical owner
-  approval, merge, or close decision after applying the persistent-review and
-  bounded owner-decision wait policy in `AGENTS.md`.
-- the required predecessor or immediately prior stage PR is not verified
-  merged; enter a paused external wait state after one status check without
-  rerunning PR checks, protection queries, or baseline validation.
-- a push, PR creation, or protected PR merge decision is needed after local
-  validation and the policy below cannot resolve it.
-- the current-stage PR has been opened but is not eligible for GitHub-managed
-  auto-merge or normal protected PR merge.
-- the working tree is dirty before a new stage starts.
-- baseline tests fail.
-- `python -m compileall src tests research` fails.
-- `git diff --check` fails.
-- an unclear requirement could cause destructive work or broad architecture
-  change.
-- missing credentials or external access are required.
-- a new production dependency would be required.
-- tests fail in a way that cannot be fixed safely within the current scope.
-- a read-only review finds a high issue or unclear risk.
-- security, privacy, data-loss, or irreversible-operation risk appears.
-- the stage conflicts with `AGENTS.md`, `PROJECT_SPEC.md`, or this controller.
-- the next safe stage would require real data fetching, downloads, vendor APIs,
-  credentials, live trading, brokerage integration, order execution, or a
-  profitability claim.
-- the stage would require changing files outside the intended scope.
-- a technical or methodological issue needs human input after reasonable local
-  investigation.
-- data provenance, license, point-in-time membership, corporate-action
-  semantics, or holdout exposure is unresolved for the proposed interpretation.
-- a formula, operator, benchmark, cost, execution timestamp, or statistical
-  method has materially different valid interpretations.
-- the proposed trial cannot be registered before execution or would hide a
-  failed, invalid, abandoned, or prior variant.
-- shorting would require unavailable borrow or shortability evidence.
-- paper deployment, live capital, credentials, brokerage behavior, or
-  owner-set capital/risk limits would be involved.
+## Completion Report
 
-## Protected PR Merge Policy
-
-Codex must create PRs for reviewability and branch protection. Codex must not
-direct-push or direct-merge to `main`, bypass branch protection, rulesets,
-required checks, required reviews, or merge queue, or use `gh pr merge --admin`.
-
-Keep GitHub Codex Automatic Review disabled. Do not request a Codex review while
-a PR is Draft. Complete local validation and allow required CI to stabilize,
-then post `@codex review` once on the final stable head when the change affects
-research semantics, returns, costs, benchmarks, implementation, CI, security,
-or execution scope. Re-review only when an actionable fix changes the reviewed
-head. Trivial documentation-only metadata may omit Codex review.
-
-An actionable review finding inside the authorized scope is not an owner
-decision gate. Fix it immediately, add or update its tests and durable record,
-validate and push the new exact head, and request one new current-head review.
-When only that review is pending, keep the current task active and, when
-needed, use one thread-scoped five-minute scheduled monitor as required by
-`AGENTS.md`; never post duplicate review requests or return a final response
-while the review remains pending. Continue the current-head review/remediation
-loop until no actionable finding remains. A genuinely critical owner decision
-instead uses one thread-scoped thirty-minute follow-up capped at four runs and
-pauses after its cap.
-
-Do not enable auto-merge or attempt a merge while required checks or an
-applicable current-head Codex review is pending. When Codex review applies, it
-must complete on the current head with no unresolved actionable findings before
-either merge path becomes eligible. An actionable fix invalidates the prior
-review and requires stable CI plus re-review on the new head.
-
-After creating a PR, Codex may enable GitHub auto-merge or perform a normal
-protected PR merge only when all of these are true:
-
-- risk is not high or unclear.
-- GitHub PR metadata verifies the author/head owner as `minqiyang`.
-- branch protection or rulesets are verifiable.
-- required checks pass.
-- any applicable Codex review completed on the current head with no unresolved
-  actionable findings.
-- no other required review is pending.
-- changed-file scope matches the declared stage.
-
-If author/head owner, protection, checks, reviews, merge queue, conflict status,
-or changed-file scope cannot be verified, stop for human review. If CI remains
-pending, unstable, blocked, or unclear after a bounded wait, pause and report
-the gate.
-
-Generated-output-heavy PRs are not automatically human-gated merely because
-they are generated-output-heavy. They may use the protected PR merge path when
-they are non-high-risk, synthetic-only, fully validated, and pushed by
-`minqiyang`.
-
-## Logging Requirements
-
-For any meaningful stage, update the relevant durable logs before final checks.
-
-Use:
-
-- `docs/engineering_log.md` for implementation decisions, correctness reviews,
-  process infrastructure, and stage summaries.
-- `docs/decision_log.md` for durable research, workflow, or architecture
-  decisions and their rationale.
-- `docs/troubleshooting_log.md` for failures, missing prerequisites, confusing
-  environment behavior, bad assumptions, failed checks, and recovery steps.
-- `CHANGELOG.md` for user-visible repository changes.
-- `EXPERIMENT_LOG.md` only for actual research experiments or planned
-  experiment records.
-
-When a technical, methodological, environment, testing, workflow, or reasoning
-problem occurs, the log entry should include:
-
-- the original mistake or incorrect assumption.
-- the consequence.
-- the exact error or evidence.
-- investigation steps.
-- correction attempts.
-- final fix.
-- verification results.
-- remaining caveats.
-- prevention measures.
-
-## Stage Completion
-
-Before committing:
-
-```bash
-python -m pytest -q
-python -m compileall src tests research
-git diff --check origin/main..HEAD
-```
-
-For Skill or workflow-control changes, also run:
-
-```powershell
-.\scripts\audit-skills.ps1
-python scripts/repo_map.py
-```
-
-Before opening a PR, confirm:
-
-- changed files match the intended stage.
-- `git diff --name-only origin/main..HEAD | head -n 80` contains only intended
-  files.
-- guardrail grep results are prohibitions, caveats, tests, or documentation
-  warnings only.
-- no generated reports changed unless explicitly intended.
-- no real data, live trading, brokerage, order execution, credential, or
-  profitability logic was added.
-
-After opening a PR, report branch, commit, PR link, changed files, validation,
-issues, risk classification, GitHub author/head-owner verification, branch
-protection/check/review verification, auto-merge or normal protected PR merge
-status, and confirmation that Codex did not direct-push/direct-merge to `main`,
-bypass protection, or use `--admin`.
+Report branch, commit/PR, risk, files, checks, findings, assumptions, external
+authorization, and next gate. Keep the snapshot in handoff, status in roadmap,
+and history in logs; do not copy history or workflow policy into active status.
