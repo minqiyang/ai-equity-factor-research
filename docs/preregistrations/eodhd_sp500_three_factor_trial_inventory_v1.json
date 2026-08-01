@@ -1,0 +1,162 @@
+{
+  "campaign_id": "eodhd_historical_sp500_price_factor_baselines_v1",
+  "inventory_status": "PROTOCOL_FROZEN_PENDING_BLINDED_DATA_ACCEPTANCE",
+  "schema_version": "eodhd_sp500_three_factor_trial_inventory_v1",
+  "semantic_trial_count": 14,
+  "trials": [
+    {
+      "output_factor_ids": [
+        "MOM_12_1",
+        "REV_1M",
+        "LOW_VOL_3M"
+      ],
+      "output_series_per_factor": [
+        "episode_21_row_return",
+        "continuous_daily_return"
+      ],
+      "output_contract_per_series": {
+        "continuous_daily_return": {
+          "cost_bps": 0,
+          "return_basis": "GROSS_COST_FREE"
+        },
+        "episode_21_row_return": {
+          "aggregation": "SUM_FROZEN_EXECUTION_WEIGHT_TIMES_CONSTITUENT_SIMPLE_ADJUSTED_CLOSE_RETURN",
+          "anchor_field": "adjusted_close",
+          "anchor_lineage_policy": "factor_anchor_lineage_v1",
+          "anchor_validation": "BOTH_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE",
+          "cost_bps": 0,
+          "constituent_return_kind": "SIMPLE_NOT_LOG",
+          "endpoint": "EXECUTION_E_PLUS_21_COMMON_CALENDAR_ROWS",
+          "holding_rule": "STATIC_SIGNAL_TIME_TARGET_FROM_EXECUTION_E_THROUGH_E_PLUS_21_IGNORE_INTERVENING_MONTHLY_EXECUTIONS",
+          "invalid_constituent_action": "INVALID_MISSING_RETAIN_EPISODE_NO_SURVIVOR_RENORMALIZATION_FILL_CASH_OR_ZERO",
+          "return_formula": "sum(weight_i_at_e * (adjusted_close_i[e+21] / adjusted_close_i[e] - 1))",
+          "return_basis": "GROSS_COST_FREE_FACTOR_DIAGNOSTIC",
+          "target_rule": "EQUAL_WEIGHT_ALL_FACTOR_SPECIFIC_DECISION_TIME_ELIGIBLE_KEYS_FROZEN_AT_SIGNAL_T"
+        }
+      },
+      "seed": null,
+      "trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE",
+      "type": "BASELINE"
+    },
+    {
+      "output_factor_ids": [
+        "MOM_12_1",
+        "REV_1M",
+        "LOW_VOL_3M"
+      ],
+      "output_series_per_factor": [
+        "episode_21_row_return",
+        "continuous_daily_return"
+      ],
+      "output_contract_per_series": {
+        "continuous_daily_return": {
+          "accounting": "POST_RETURN_EQUITY_CHARGE_AS_BEGINNING_PERIOD_RETURN_IMPACT",
+          "cost_bps": 10,
+          "return_basis": "NET_PRIMARY"
+        },
+        "episode_21_row_return": {
+          "aggregation": "SUM_FROZEN_EXECUTION_WEIGHT_TIMES_CONSTITUENT_SIMPLE_ADJUSTED_CLOSE_RETURN",
+          "anchor_field": "adjusted_close",
+          "anchor_lineage_policy": "factor_anchor_lineage_v1",
+          "anchor_validation": "BOTH_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE",
+          "cost_bps": 0,
+          "constituent_return_kind": "SIMPLE_NOT_LOG",
+          "endpoint": "EXECUTION_E_PLUS_21_COMMON_CALENDAR_ROWS",
+          "holding_rule": "STATIC_SIGNAL_TIME_TARGET_FROM_EXECUTION_E_THROUGH_E_PLUS_21_IGNORE_INTERVENING_MONTHLY_EXECUTIONS",
+          "invalid_constituent_action": "INVALID_MISSING_RETAIN_EPISODE_NO_SURVIVOR_RENORMALIZATION_FILL_CASH_OR_ZERO",
+          "return_formula": "sum(weight_i_at_e * (adjusted_close_i[e+21] / adjusted_close_i[e] - 1))",
+          "return_basis": "GROSS_COST_FREE_FACTOR_DIAGNOSTIC",
+          "target_rule": "EQUAL_WEIGHT_FROZEN_RANDOM_RANK_TOP_DECILE_KEYS_SELECTED_AT_SIGNAL_T"
+        }
+      },
+      "permutation_rank_order": "HIGH_TO_LOW_FIRST_CHUNK_SELECTED",
+      "random_top_decile_size_rule": "N//10_PLUS_ONE_IFF_N_MOD_10_NONZERO",
+      "rng_seed_derivation": "first_16_hex_sha256(random_rank_v1|20260729|factor_id|signal_date_t_YYYY-MM-DD)",
+      "rng_seed_date_token": "SIGNAL_DATE_T_STRICT_YYYY-MM-DD_NOT_EXECUTION_DATE",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "selected_target_rule": "EQUAL_WEIGHT_SELECTED_KEYS_SERIALIZED_IN_ASCENDING_CANONICAL_KEY_BYTES",
+      "seed": 20260729,
+      "trial_id": "BASELINE_RANDOM_RANK_TOP_DECILE",
+      "turnover_convention": "UNDIVIDED_SUM_ABSOLUTE_WEIGHT_CHANGES_FROM_DRIFTED_WEIGHTS",
+      "type": "BASELINE"
+    },
+    {
+      "factor_id": "MOM_12_1",
+      "trial_id": "DIAG_MOM_12_1",
+      "type": "FACTOR_DIAGNOSTIC"
+    },
+    {
+      "factor_id": "REV_1M",
+      "trial_id": "DIAG_REV_1M",
+      "type": "FACTOR_DIAGNOSTIC"
+    },
+    {
+      "factor_id": "LOW_VOL_3M",
+      "trial_id": "DIAG_LOW_VOL_3M",
+      "type": "FACTOR_DIAGNOSTIC"
+    },
+    {
+      "cost_bps": 0,
+      "factor_id": "MOM_12_1",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_MOM_12_1_0BPS",
+      "type": "STRATEGY_DIAGNOSTIC"
+    },
+    {
+      "cost_bps": 10,
+      "factor_id": "MOM_12_1",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_MOM_12_1_10BPS",
+      "type": "STRATEGY_PRIMARY"
+    },
+    {
+      "cost_bps": 25,
+      "factor_id": "MOM_12_1",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_MOM_12_1_25BPS",
+      "type": "STRATEGY_STRESS"
+    },
+    {
+      "cost_bps": 0,
+      "factor_id": "REV_1M",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_REV_1M_0BPS",
+      "type": "STRATEGY_DIAGNOSTIC"
+    },
+    {
+      "cost_bps": 10,
+      "factor_id": "REV_1M",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_REV_1M_10BPS",
+      "type": "STRATEGY_PRIMARY"
+    },
+    {
+      "cost_bps": 25,
+      "factor_id": "REV_1M",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_REV_1M_25BPS",
+      "type": "STRATEGY_STRESS"
+    },
+    {
+      "cost_bps": 0,
+      "factor_id": "LOW_VOL_3M",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_LOW_VOL_3M_0BPS",
+      "type": "STRATEGY_DIAGNOSTIC"
+    },
+    {
+      "cost_bps": 10,
+      "factor_id": "LOW_VOL_3M",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_LOW_VOL_3M_10BPS",
+      "type": "STRATEGY_PRIMARY"
+    },
+    {
+      "cost_bps": 25,
+      "factor_id": "LOW_VOL_3M",
+      "return_contract": "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+      "trial_id": "STRAT_LOW_VOL_3M_25BPS",
+      "type": "STRATEGY_STRESS"
+    }
+  ]
+}

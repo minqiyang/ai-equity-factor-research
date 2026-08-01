@@ -1,0 +1,1008 @@
+# EODHD Historical S&P 500 Diagnostic Campaign
+
+Status: owner-approved scope and protocol reset; no dataset accepted and no
+performance calculation authorized by this document.
+
+Decision date: 2026-07-29.
+
+Canonical machine-readable protocol:
+`docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml`.
+
+Canonical semantic-trial inventory:
+`docs/preregistrations/eodhd_sp500_three_factor_trial_inventory_v1.json`.
+
+## Decision
+
+The project no longer requires completion of the 37-event payload registry
+before bounded empirical diagnostic work. The accepted 37-event vocabulary and
+immutable registry releases remain preserved as `full_ledger_profile_v1`.
+Completing that profile is optional future hardening, not the active delivery
+queue.
+
+Work proceeds on two tracks:
+
+1. **Track A - diagnostic research now.** Acquire and review a private EODHD
+   historical S&P 500 panel, then run exactly the preregistered three-factor,
+   14-trial campaign with purged bounded evaluation, baselines, cost
+   sensitivity, and a content-addressed repository-external evidence bundle.
+2. **Track B - formal evidence infrastructure.** After Track A closes, design
+   and implement a minimal stateful runtime covering 8-12 conceptual event
+   families. It is required before prospective performance access or formal
+   evidence promotion, but it does not block Track A.
+
+Track A's evidence state is permanently `DIAGNOSTIC_ONLY` and it can produce
+only a diagnostic classification. It cannot produce
+`RESEARCH_PASS`, an alpha-validation claim, a profitability claim, or any
+paper/live/trading-readiness claim.
+
+## Frozen Track A Scope
+
+### Provider and sample
+
+- Provider: EODHD.
+- Universe: historical S&P 500 membership effective at each signal cutoff.
+- Candidate raw coverage: 2014-01-01 through a later blinded dataset-acceptance
+  cutoff.
+- Primary quality window: 2018-01-01 onward.
+- Separate descriptive labels:
+  `coverage_all_available`, `coverage_primary_quality_window`, and
+  `coverage_pre_2018_limited`.
+- Every existing EODHD observation used by this campaign is
+  `historical_evaluation`, `diagnostic_only`, and not a pristine holdout.
+- The previously accessed 2025-05-01 through 2026-05-31 interval is permanently
+  `historical_evaluation`.
+
+Claims are limited to this provider, this reviewed membership reconstruction,
+this period, and historical S&P 500 members. Ticker is not treated as a
+permanent security identifier.
+
+### Factors
+
+The search family contains exactly:
+
+- `MOM_12_1`:
+  `adjusted_close[t-21] / adjusted_close[t-252] - 1`.
+- `REV_1M`:
+  `-(adjusted_close[t] / adjusted_close[t-21] - 1)`.
+- `LOW_VOL_3M`: the negative sample standard deviation (`ddof=1`) of the 63
+  one-day **simple** adjusted-close returns ending at `t`. For each common-
+  calendar row `d` from `t-62` through `t`, inclusive, the return is exactly
+  `adjusted_close[d] / adjusted_close[d-1] - 1`; a log return is forbidden.
+  Under the runner's Python half-open slice convention the exact return slice
+  is `[t-62:t+1]`, which includes `t` and requires exactly 64 price anchors
+  from `t-63` through `t`.
+
+Every factor input price anchor is governed by
+`factor_anchor_lineage_v1`, in addition to the numeric gates below. Each
+anchor carries the resolved permanent-security ID, listing ID, listing-episode
+ID, source exchange/ticker, session date, alias effective interval, and
+lineage-resolution evidence ID from the blinded dataset-review-accepted
+normalized security master. The target listing carries the same three resolved
+identity IDs. All anchors must match that target's permanent security, listing,
+and listing episode exactly. These are diagnostic reconstruction IDs, not a
+claim that EODHD supplies a permanent provider identifier, and they do not
+upgrade the campaign beyond `DIAGNOSTIC_ONLY`.
+
+Alias intervals are effective-from inclusive and effective-to exclusive, with
+a null end open. An anchor's session must lie inside its asserted alias
+interval. Traversal across different ticker text is allowed only through a
+contiguous, nonoverlapping, source-evidenced chain accepted as a symbol rename
+of the same permanent security, listing, and listing episode. The no-change
+case requires the same alias and exact target identity. Ticker-text-only joins,
+ticker reuse across securities, relistings or listing-episode changes, venue or
+listing moves, share-class changes, mergers/acquisitions or distinct successor
+securities, and ambiguous, gapped, overlapping, or conflicting alias chains
+are forbidden. An identity mismatch or unresolved path retains an invalid/
+missing factor value, excludes that listing from the factor-specific decision-
+time eligible set, and counts the exact reason; price stitching or ticker
+fallback is forbidden.
+
+The lineage golden fixtures distinguish two cases. An accepted rename uses an
+old and new alias with the same permanent-security, listing, and listing-
+episode IDs and retains momentum `0.25`. A reused-ticker fixture deliberately
+uses identical ticker text for two different permanent securities/listing
+episodes; a ticker-only join would produce `0.25`, but the frozen lineage gate
+must reject it.
+
+Every required `LOW_VOL_3M` anchor must be a real numeric scalar other than a
+Boolean, present, finite, and strictly greater than zero before division. If
+the anchor count is not exactly 64 or any anchor fails that check, the factor
+value for that listing/signal date is retained as invalid/missing and the
+listing is excluded from that factor's decision-time eligible set with the
+reason counted. No zero, forward/backward fill, interpolation, absolute-value
+repair, clipping, alternate row, or log-return fallback is allowed. The
+factor-month remains usable only if the already-frozen eligibility and
+distinct-value minimums are still met.
+
+The simple-return golden fixture builds 64 anchors from returns
+`0.001,0.002,...,0.063`. Its negative sample standard deviation is
+`-0.01833030277982336`; the forbidden log-return calculation would be
+`-0.017765781758667692`. An invalid-anchor mutation fixture covers missing,
+Boolean, non-finite, zero, and negative anchors.
+
+Every adjusted-close anchor referenced by `MOM_12_1` or `REV_1M` is subject
+to the same pre-division scalar gate: it must be a real numeric scalar other
+than a Boolean, present, finite, and strictly greater than zero. This applies
+to both numerator and denominator anchors, so a zero or negative numerator may
+not enter ranks merely because the formula would otherwise return a finite
+number. If any referenced anchor fails, retain the factor value for that
+listing/signal date as invalid/missing, exclude the listing from that factor's
+decision-time eligible set, and count the exact reason. Zero fill, forward or
+backward fill, interpolation, clipping, absolute-value repair, and alternate
+rows are forbidden. Golden anchors `80.0,100.0` produce momentum `0.25`, and
+reversal anchors `100.0,90.0` produce `0.10`; each anchor position is mutated
+through missing, Boolean, non-finite, zero, and negative cases.
+
+For these two endpoint-return factors, the lookback count describes common-
+calendar **positions**, not a contiguous-observed-price requirement. Momentum
+requires the 253-position index span from `t-252` through `t` so its `t-252`
+and `t-21` references are addressable; reversal requires the 22-position span
+from `t-21` through `t`. Each formula consumes exactly its two referenced
+anchors. An adjusted-close value missing or invalid at any other position has
+no effect on that factor value or its eligibility when both referenced anchors
+pass the gate. Such an interior value is not filled, repaired, or incorporated
+into the formula. Interior-missing fixtures for both factors retain momentum
+`0.25` and reversal `0.10`, while a forbidden full-window-contiguity check
+would reject them.
+
+All factors are oriented so higher is better. No formula, direction, lookback,
+cost case, factor, model, liquidity screen, price screen, or parameter variant
+may be added after the protocol freeze.
+
+### Calendar, membership, and return timing
+
+- Signal date: the last common XNYS session close of each calendar month.
+- Signal availability: after that close.
+- Execution: the next common XNYS session close.
+- Evaluation: 21 common-calendar close-to-close returns beginning at the
+  execution close. With signal close `t` and execution close `e=t+1`, the
+  endpoint is common-calendar close `e+21`.
+- The diagnostic forward return is the **simple** adjusted-close return
+  `adjusted_close[e+21] / adjusted_close[e] - 1`; a log return is forbidden.
+  Both anchors must be real numeric non-Boolean scalars that are present,
+  finite, and strictly positive. An invalid anchor invalidates and retains the
+  factor-month outcome with its reason counted; no fill, interpolation,
+  clipping, absolute-value repair, alternate row, or log fallback is allowed.
+  The golden execution/endpoint anchors `100.0` and `121.0` produce simple
+  return `0.21`, while the forbidden log return is `0.1906203596086497`.
+- A security-specific later observation must never substitute for a missing
+  common-calendar execution or endpoint.
+- A label is valid only when its complete execution-to-end interval lies
+  inside the bounded evaluation fold. On the signal axis this label ends at
+  `t+22`, so `horizon_purge_signal_axis_rows=22`.
+- The label kind is `execution_anchored_forward_return_v1`, with
+  `label_start=e=t+1` and `label_end=e+21=t+22`. PR 3 must implement this
+  execution-anchored interval explicitly; it must not reuse the current
+  signal-anchored `price_forward_return` helper with horizon 21.
+- `embargo_rows=0` is frozen because the factors and trials are fixed and no
+  model fitting, tuning, or adaptive selection occurs. Any later adaptive use
+  requires a new preregistration.
+- Primary reporting uses calendar-year walk-forward evaluation folds beginning
+  in 2018, plus one final bounded partial-year fold when the frozen cutoff is
+  not year-end. Earlier rows may supply factor warm-up only. A fold uses no
+  later data and retains all purged, missing, and invalid counts.
+
+Membership must be effective and known by the signal cutoff. Provider date-only
+boundary semantics may not be guessed: unresolved addition/removal boundary
+rows are invalid until the blinded dataset review records an evidence-backed
+inclusive/exclusive rule. Current-constituent substitution and future
+membership are forbidden.
+
+### Price fields and terminal events
+
+Factor inputs, diagnostic forward returns, continuous strategy held returns,
+both long-only baseline held returns, and primary factor-matched benchmark
+held returns use the reviewed EODHD dividend-and-split-adjusted close return
+proxy. The campaign must not call it an exact total-return index until the
+dataset review verifies the provider semantics and corporate-action
+reconciliation.
+
+The continuous held-return policy is
+`adjusted_close_simple_held_return_v1`. For every security and each adjacent
+common-calendar interval after execution through the next monthly execution
+close, the return is exactly
+`adjusted_close[d] / adjusted_close[d-1] - 1`. This same field and simple-
+return formula apply to the factor strategy, random-rank long-only baseline,
+equal-weight eligible-universe baseline, and factor-matched primary benchmark.
+A log return, raw close, or alternate price field is forbidden.
+
+Both adjusted-close anchors must be real numeric non-Boolean scalars that are
+present, finite, and strictly positive, and their identity/path must pass
+`factor_anchor_lineage_v1`. There is no zero/forward/backward fill,
+interpolation, clipping, absolute-value repair, alternate row, security-
+specific next observation, or log fallback. An invalid held anchor retains and
+invalidates the affected strategy trial with its exact reason. For the primary
+benchmark it invalidates the required comparison and routes through the
+already-frozen `INVALID_DIAGNOSTIC` hard-validity rule; benchmark membership is
+not renormalized over surviving returns. Because the adjusted-close proxy is
+used, separately adding split or dividend cash flows is forbidden as double
+counting.
+
+The corporate-action fixture holds a split security and an unaffected security
+at equal weights. Across a 2-for-1 split, the split security's raw close moves
+from `100` to `50`, while its adjusted close remains `50`; the unaffected
+adjusted close remains `100`. The required adjusted-close path therefore has
+portfolio and primary-benchmark gross return `0`, drifted weights `(0.5,0.5)`,
+and turnover `0` back to equal weight. The forbidden raw-close path instead
+has gross return `-0.25`, drifted weights `(1/3,2/3)`, turnover `1/3`, and
+10-bps post-return-equity cost impact `0.00025`.
+
+Raw OHLC, splits, dividends, and volume may be retained privately for audit
+only while the active subscription terms or written permission allow that
+retention. Volume, liquidity, capacity, and share-level execution are outside
+the campaign. Raw close multiplied by provider split-adjusted volume is
+forbidden.
+
+No missing execution or terminal endpoint is silently dropped, filled, or
+replaced. Delisting, cash acquisition, stock consideration, merger, spinoff,
+halt, final distribution, and symbol-successor treatment require explicit
+dataset-review evidence. An unresolved return-relevant identity or terminal
+event blocks the affected row and is counted. The blinded dataset-acceptance
+record must freeze materiality and campaign-invalidation thresholds before
+performance access.
+
+### Eligibility and diagnostics
+
+Eligibility is factor-specific and evaluated only with information known at
+the signal cutoff `t`. Decision-time eligibility requires:
+
+- point-in-time membership effective and known at `t`;
+- listing lineage resolved through `t`;
+- the factor-specific common-calendar lookback position span addressable at
+  `t`, every price anchor actually referenced by that factor numerically valid
+  at `t`, and every such anchor's `factor_anchor_lineage_v1` identity and path
+  valid at `t`;
+- no extra observed-price completeness gate: an unreferenced interior missing
+  or invalid adjusted close cannot exclude `MOM_12_1` or `REV_1M`;
+- a finite factor value at `t`;
+- corporate actions announced or effective through `t` treated under the
+  blinded accepted policy; and
+- at least 100 decision-time eligible securities for a factor-month.
+
+Execution-price availability, forward-endpoint availability, later halts,
+later delistings, and every other post-`t` field are forbidden inputs to
+decision-time eligibility. At `t`, the runner freezes the ordered eligible
+listing-key set, factor ranks, decile assignments, long-only target, and
+equal-weight matched-benchmark membership. Mutating any post-`t` availability
+or return field must leave those frozen objects byte-identical.
+
+Outcome observation is a separate gate. A factor-month is retained as invalid
+if any decision-time eligible listing lacks an accepted finite
+execution-to-endpoint return after the frozen lineage and terminal-event rules
+are applied; the listing is not removed from ranks, deciles, or the matched
+benchmark. A selected strategy listing without a finite accepted execution
+price invalidates the affected strategy trial, and a later missing held return
+does the same. No substitute listing, renormalization over future survivors,
+zero fill, or security-specific next observation is allowed.
+
+A factor-month below the decision-time floor is retained as invalid. No fill
+or silent exclusion is allowed. Rank IC uses cross-sectional Spearman
+correlation: average ranks for ties followed by Pearson correlation of the two
+rank vectors. It requires at least 10 distinct finite factor values and at
+least 2 distinct finite forward returns; otherwise the factor-month is
+invalid. No winsorization, normalization, or sign reversal is applied.
+
+Deciles use this exact procedure:
+
+1. Sort finite factor values from higher to lower; break equal factor values by
+   the canonical listing-lineage key in ascending byte order.
+2. Let `base = N // 10` and `remainder = N % 10`.
+3. In high-to-low order, the first `remainder` deciles receive `base + 1`
+   securities and the rest receive `base`. The first chunk is `D10` and the
+   last is `D1`.
+
+Report decile means in `D1` through `D10` order. Adjacent monotonicity values
+are `mean(D{k+1}) - mean(D{k})` for `k=1..9`; monotonicity share is the fraction
+of those nine differences that are nonnegative, and `fully_monotone` is true
+only when all nine are nonnegative. The diagnostic spread is
+`mean(D10) - mean(D1)`.
+
+The canonical listing-lineage byte encoding is
+`listing_lineage_key_bytes_v1`. It is:
+
+1. the ASCII magic bytes `listing_lineage_key_v1` followed by one zero byte;
+2. `exchange` normalized to Unicode NFC, encoded as UTF-8, and prefixed by its
+   unsigned 32-bit big-endian byte length;
+3. `ticker` encoded by the same NFC/UTF-8/length rule;
+4. `effective_from` as exactly ten ASCII bytes in strict Gregorian
+   `YYYY-MM-DD` form; and
+5. one zero byte for a null/open `effective_to`, or one byte with value 1
+   followed by its strict ten-byte ASCII `YYYY-MM-DD` value.
+
+Exchange and ticker must be nonempty Unicode scalar strings and must not
+contain control characters. Dates must round-trip through strict Gregorian
+date parsing. There is no trimming, case folding, locale collation, or
+delimiter-based serialization. Ascending byte order means lexicographic order
+over unsigned bytes. This same encoding controls factor-value ties, factor
+turnover alignment, and random-baseline input order.
+
+The key freezes once, campaign-wide, at the earliest signal cutoff where the
+listing first becomes decision-time eligible for any of `MOM_12_1`, `REV_1M`,
+or `LOW_VOL_3M`. `effective_to` means the lineage endpoint known at that
+earliest any-factor cutoff; it is null when no endpoint was then known. Every
+factor reuses those same frozen key bytes when it later becomes eligible. A
+per-factor freeze or re-encoding is forbidden. A halt, removal, symbol change,
+delisting, provider backfill, or endpoint learned between staggered factor-
+eligibility dates cannot rewrite the key. The subsequently observed actual
+endpoint remains separate interval/audit metadata and is tested by the post-
+`t` mutation oracle. A staggered fixture freezes a null-ended key at reversal's
+earlier eligibility and rejects a later momentum-specific endpoint encoding.
+
+Factor turnover is target-to-target top-decile turnover, not a cost model:
+align the union of canonical listing keys, assign zero to absent or nonselected
+names, and calculate `sum(abs(w_t - w_previous))`. Every scheduled signal
+month freezes one decision-time factor target: either the ranked top-decile
+target or the zero target caused by one of the three enumerated decision-time
+conditions below. The first scheduled frozen target inside the bounded
+evaluation schedule is `not_applicable`.
+
+For every later scheduled month, `w_previous` is the immediately preceding
+scheduled frozen decision-time target, including an intervening zero target.
+This predecessor is retained even when that preceding month later becomes
+outcome-invalid. Forward-return, endpoint, or comparison validity may flag the
+corresponding factor-month outcome invalid, but may not delete its frozen
+target, make turnover skip back to the last outcome-valid month, or change any
+later turnover. Factor turnover remains a decision-time diagnostic with the
+outcome-invalid flag retained separately. No drifted holdings enter this
+factor diagnostic.
+
+Each factor reports Rank IC, the ten-decile curve, top-minus-bottom diagnostic
+spread, adjacent-decile monotonicity, factor turnover, coverage, invalid
+counts, yearly results, leave-one-year-out sensitivity, and contribution
+summaries. Top-minus-bottom is not an executable short strategy.
+
+Descriptive Rank IC mean, median, sample standard deviation, and ICIR use all
+valid months for that factor. The confirmatory mean, interval, p-value, and Holm
+decision use only the common complete-case monthly table defined below. Both
+sample counts are reported and are never conflated.
+
+### Strategy diagnostics and benchmarks
+
+For each factor, the simulated strategy is long-only, equal-weight, top
+decile. The fixed execution-to-21-row episode remains a factor/decile
+diagnostic only. It is never compounded into a strategy equity curve.
+
+The strategy uses one continuous idealized holdings path. A target formed at
+signal close `t` resets at execution close `e`; it then earns the exact
+`adjusted_close_simple_held_return_v1` common-calendar close-to-close returns
+after `e` through the next monthly execution close. The factor-matched primary
+benchmark uses the identical held-return field, formula, calendar, and invalid-
+anchor policy. The next execution resets the target again. Before any
+continuous target is frozen,
+the calendar-only strategy schedule includes a signal only when its following
+monthly execution close is on or before the accepted cutoff. A boundary signal
+may retain a complete 21-row factor-diagnostic label while being excluded from
+the continuous strategy schedule because its next monthly execution is after
+the cutoff. That exclusion creates no strategy target, turnover, cost, output
+invalidation, or hard-validity failure; the factor diagnostic signal and label
+remain retained. The final included continuous target therefore always has its
+later monthly execution endpoint inside the accepted cutoff. Daily holdings,
+returns, costs, and benchmarks use the same common calendar.
+
+The 22-session-month cutoff fixture freezes signal `2024-06-28`, execution
+`2024-07-01`, and label endpoint `e+21=2024-07-31`, which equals the accepted
+cutoff. July 2024 contains 22 XNYS sessions in the fixture, excluding the July
+4 closure. The next monthly signal is `2024-07-31` and its execution is
+`2024-08-01`, after the cutoff. The signal remains in factor diagnostics but is
+excluded before continuous-target freeze and cannot invalidate the campaign.
+
+At each execution, strategy turnover is the undivided sum of absolute changes
+from drifted pre-trade weights to the new target. The initial cash-to-target
+deployment has turnover 1.0, a complete invested-name switch has turnover 2.0,
+and no terminal liquidation is invented after the final measured return.
+
+Exactly three decision-time conditions make a factor rebalance invalid and
+produce a zero target at the next execution:
+
+1. fewer than 100 securities remain after the frozen signal-time eligibility
+   rules are applied;
+2. fewer than 10 distinct finite factor values remain; or
+3. the eligible set contains duplicate canonical
+   `listing_lineage_key_bytes_v1` values, so a unique target cannot be formed.
+
+No other condition produces a zero target. A later missing execution-to-
+endpoint diagnostic outcome for an unselected listing may invalidate the
+factor-month or benchmark comparison, but it cannot alter the frozen strategy
+target, create a liquidation, or change the cash path. A missing selected
+execution price or unresolved held-security return invalidates the affected
+strategy trial; it does not retroactively replace the frozen target with zero
+and is never filled or repaired through an alternate path. The zero target's
+resulting liquidation turnover and non-interest-bearing cash return are
+retained only for the three decision-time conditions above.
+
+The primary benchmark is the continuous equal-weight decision-time eligible
+universe frozen at the matching factor signal close under the same
+execution/reset/cost-free calendar. Its membership is not recomputed from
+future execution or endpoint availability. The secondary benchmark is an
+EODHD adjusted-close SPY return proxy over the identical daily intervals.
+Missing constituent execution or held returns, or missing SPY benchmark dates,
+invalidate the comparison; they do not change benchmark membership and are not
+filled.
+
+A factor month with fewer than 100 eligible listings or fewer than 10 distinct
+finite factor values does not turn the primary benchmark into cash. When the
+decision-time eligible universe is nonempty and has unique canonical keys, the
+primary benchmark remains invested at equal weights even though the matched
+factor and random-rank targets are zero and carry an invalid-factor-month flag.
+An empty universe or duplicate canonical keys makes the benchmark target
+unformable and retains an invalid comparison gap; it is not replaced by a cash
+benchmark. Reusing the factor or random-rank zero target as the primary
+benchmark is forbidden. A sparse or tied factor month remains in the single
+continuous strategy/benchmark path with its zero target, liquidation or later
+redeployment turnover, costs, cash return, and invested benchmark return. Its
+active return enters the full-path annualized active return used by economic
+support, subject to the earlier realized-coverage gates. Removing the month,
+bridging directly between the surrounding targets, or splitting/restarting the
+path is forbidden.
+
+Final-state routing distinguishes the two comparisons. Any missing constituent
+execution or held return that invalidates a required factor-matched primary-
+benchmark comparison is a hard-validity failure for the campaign and produces
+`INVALID_DIAGNOSTIC` under the first ordered rule. It is not a realized-
+coverage failure, a merely false economic predicate, or an interval that may
+be omitted. The primary annualized active return is calculated only from a
+complete valid factor-matched comparison.
+
+A missing SPY date invalidates and retains only the secondary SPY comparison.
+SPY is descriptive, never enters `economically_supported(f)`, and has no effect
+on the ordered final state when every required primary comparison is valid.
+The invalid secondary output and missing-date count remain required bundle
+evidence; they may not be filled, omitted, or substituted with another date or
+benchmark.
+
+The equal-weight eligible-universe baseline is the same frozen target and gross,
+cost-free continuous return object as the primary factor-matched benchmark,
+serialized under a distinct baseline semantic role. It must never reuse the
+random-rank or factor zero target. For a sparse or tied factor month, a nonempty
+eligible universe with unique canonical keys remains equal-weight invested; its
+return is retained with a matched-factor-month-invalid flag and remains in the
+continuous economic path. An empty universe or duplicate canonical keys
+instead retains an invalid, unformable equal-weight output without inventing a
+cash substitute.
+
+The random-rank baseline alone inherits all three factor decision-time invalid-
+rebalance triggers: fewer than 100 eligible listings, fewer than 10 distinct
+finite factor values, or duplicate canonical listing keys. For any trigger, its
+factor-matched output record is retained as invalid with a zero target and full
+cash. The episodic return is invalid/missing, never zero. Its continuous path
+applies the zero-target liquidation turnover and then non-interest-bearing cash
+while retaining the invalid-month flag. The random baseline does not derive a
+seed or consume a permutation for that factor/month. The invalid output
+satisfies required-output reconciliation and inherits the factor-month coverage
+invalidity; it is not a missing trial output or a new hard-validity failure.
+
+The integrated tied-month fixture contains 100 unique eligible keys with one
+distinct finite factor value, an incoming zero gross factor return, a prior
+fully invested factor target, and a +1% gross cost-free equal-weight benchmark
+return. The factor and random-rank paths liquidate with turnover 1.0. The factor
+net returns are therefore -0.0010 at 10 bps and -0.0025 at 25 bps, while active
+returns against the still-invested primary benchmark are -0.0110 and -0.0125.
+A forbidden cash benchmark would instead report -0.0010 and -0.0025 active
+returns. The fixture retains the former values descriptively with the invalid-
+factor-month flag and includes them in the full continuous annualized active-
+return calculation; they are not filtered or separately annualized.
+
+A valid/tied/valid three-month fixture freezes targets `{A:1}`, `{}`, and
+`{C:1}`. Initial deployment, liquidation, and redeployment turnover are each
+1.0 and remain connected in one path. The respective strategy gross returns
+are +2%, 0%, and +2%, while matched-benchmark returns are 0%, +5%, and 0%.
+At both 10 and 25 bps, the full three-row annualized active return is negative,
+so a Holm-supported otherwise robust factor is `MIXED_DIAGNOSTIC`. Deleting the
+tied row and either directly bridging `{A:1}` to `{C:1}` with turnover 2.0 or
+restarting the later segment from cash with turnover 1.0 produces a positive
+active return and the forbidden `POSITIVE_DIAGNOSTIC`; the two forbidden cost
+paths remain distinguishable. No invalid-month filtering, cash-started segment
+restart, turnover omission, or separate annualization is allowed.
+
+Each baseline semantic trial emits an exact output matrix with rows
+`MOM_12_1`, `REV_1M`, and `LOW_VOL_3M` and columns
+`episode_21_row_return` and `continuous_daily_return`. These factor-matched
+series remain one frozen baseline trial each and do not create extra hypotheses
+or semantic trials. Both baselines' episodic 21-row outputs are gross,
+cost-free factor diagnostics. The equal-weight baseline's continuous path is
+also gross and cost-free. The random-rank baseline's continuous path is net at
+the primary 10-bps all-in fixed-cost case; it does not emit 0-bps or 25-bps
+continuous alternatives, and this fixed output basis does not add a semantic
+trial. Its path uses the same continuous execution-to-execution return
+contract, undivided drifted-weight turnover, post-return-equity cost order,
+initial deployment turnover, and no-terminal-liquidation rule as each factor
+strategy.
+
+`episode_21_row_return` is a separate overlapping diagnostic, never a slice of
+that continuous path. For each factor and valid signal month, freeze the
+factor-matched baseline target at signal close `t` using decision-time
+information only. The equal-weight baseline target contains every factor-
+specific eligible canonical key at weight `1/N`; the random-rank target is the
+already-frozen selected top-decile key set at weight `1/K`. The weights sum
+exactly to one for a valid nonempty target. Begin at next common-calendar close
+`e=t+1` and hold those exact initial weights statically through common-calendar
+close `e+21`, with no intermediate rebalance, drift reset, cost, or turnover.
+
+For every targeted constituent, compute the simple adjusted-close return
+`adjusted_close_i[e+21] / adjusted_close_i[e] - 1` under the same strict anchor,
+lineage, and terminal-event policy as the diagnostic label. The baseline
+episode gross return is exactly
+`sum(weight_i_at_e * constituent_return_i)`. If any target constituent lacks a
+valid accepted return, retain the whole baseline episode as invalid/missing
+with its exact reason. Survivor renormalization, zero/fill, cash substitution,
+an alternate row, and reuse of a continuous-path segment are forbidden.
+Overlapping later baseline episodes are retained as dependent diagnostics and
+are not compounded.
+
+The short-month fixture sets `e` to row 0, the next monthly execution to row
+20, and the episode endpoint to row 21. Two securities begin at equal weights.
+Their adjusted-close triples at `(e,next_execution,e+21)` are respectively
+`(100,110,121)` and `(100,90,81)`, so their endpoint returns are `0.21` and
+`-0.19` and the frozen-target episode return is `0.01`. A forbidden continuous-
+path slice resets to target `(1,0)` at row 20 and returns `0.10`; the episode
+must remain `0.01` even though the next execution precedes `e+21`.
+
+For the random-rank baseline, derive a separate RNG for each factor/month as
+follows: SHA-256 the ASCII string
+`random_rank_v1|20260729|<factor_id>|<signal_date_t_YYYY-MM-DD>`, using the
+strict signal date `t`, not the later execution date. Interpret the first 16
+hex digits as an unsigned big-endian integer seed, initialize NumPy
+`PCG64DXSM`, place eligible canonical listing-key bytes in ascending unsigned-
+byte lexicographic order, and permute the integer indices `0..N-1` exactly
+once. Treat the resulting index order as high-to-low random rank. The selected
+top-decile count is `N // 10 + (1 if N % 10 else 0)`, identical to the frozen
+high-ranked-decile remainder rule. Select exactly the first such number of
+permuted indices, never the final chunk; map those keys to equal weights
+`1 / selected_count`; and serialize the target in ascending canonical-key
+order. No global mutable RNG stream, execution-date token, last-chunk
+selection, floor-only decile size, or iteration-order dependence is allowed.
+
+The non-divisible mapping fixture uses factor `MOM_12_1`, signal date
+`2026-07-29`, and 103 ascending canonical keys for `XNYS/T000` through
+`XNYS/T102`, all with `effective_from=2014-01-01` and null `effective_to`. The
+seed preimage SHA-256 is
+`4f3c72a41c74ed307cc6a86e734268f2266be31b4977ed99336462b234251e97`,
+the unsigned seed is `5709564476776574256`, and the 11 selected ticker labels
+in permutation order are `T063,T102,T092,T077,T018,T042,T025,T036,T066,T001,T094`.
+The golden test freezes the complete 103-index permutation and the selected
+canonical key bytes, so a different date token, end-of-permutation selection,
+or floor-only size cannot pass.
+
+Cost cases are exactly 0, 10, and 25 bps. Ten bps is primary. Zero bps is
+diagnostic only. Each scalar is an all-in fixed-bps diagnostic execution-cost
+proxy that bundles commission, bid-ask spread, slippage, exchange/regulatory
+fees, and other ordinary execution friction. No separate commission, spread,
+slippage, fee, tax, borrow, market-impact, capacity, or participation-rate
+charge may be added. This is not a calibrated fill or capacity model.
+
+On every rebalance row, first apply the incoming close-to-close held-position
+return. Then charge cost against that post-return equity at the ending
+execution close. Expressed as an impact on beginning-period return, strategy
+cost is `gross_multiplier * turnover * bps / 10000`, where
+`gross_multiplier = 1 + gross_return`; net row return is gross return minus
+that impact. This is the accepted
+`after_close_signal_next_observed_close_v1` accounting order. The initial
+deployment row has no preceding held-position market return. The following
+unit-gross-multiplier fixtures isolate the turnover-rate multiplication:
+
+| Turnover | 0 bps | 10 bps | 25 bps |
+| ---: | ---: | ---: | ---: |
+| 0.4 | 0.0 | 0.0004 | 0.0010 |
+| 1.0 | 0.0 | 0.0010 | 0.0025 |
+| 2.0 | 0.0 | 0.0020 | 0.0050 |
+
+A nonzero-incoming-return rebalance fixture freezes the accounting basis: at
+10% gross return, gross multiplier 1.10, turnover 2.0, and 25 bps, the
+beginning-period cost impact is `1.10 * 2.0 * 0.0025 = 0.0055`, so net return
+is `0.0945`. For the random-rank continuous baseline's primary 10-bps basis,
+the same gross return and turnover produce cost impact `0.0022` and net return
+`0.0978`.
+
+## Frozen Statistical Minimum
+
+The primary hypothesis family contains only the three one-sided factor
+direction tests:
+
+```text
+H0: mean monthly Rank IC <= 0
+H1: mean monthly Rank IC > 0
+```
+
+Holm controls familywise error at 0.05 across those three p-values. Strategy,
+cost, benchmark, decile, yearly, and leave-one-year-out outputs are descriptive
+and do not form additional discovery hypotheses.
+
+Holm sorts by raw p-value, with factor order `MOM_12_1`, `REV_1M`,
+`LOW_VOL_3M` as the deterministic tie breaker. The sequential thresholds are
+`0.05/3`, `0.05/2`, and `0.05`; testing stops at the first non-rejection.
+For adjusted p-values, mathematical index `k` is explicitly one-based over
+`1..3`, while a Python sequence is accessed as `sorted_raw_p[k-1]`. The exact
+sorted value is
+`min(1, max((3-j+1) * sorted_raw_p[j-1] for j in 1..k))`. Map those three
+values back to original factor order after the running maximum; never use
+`sorted_raw_p[k]` with one-based multipliers.
+
+The Holm golden fixture uses raw factor-order p-values
+`MOM_12_1=0.04`, `REV_1M=0.01`, and `LOW_VOL_3M=0.03`. The stable sorted
+factor order is `REV_1M,LOW_VOL_3M,MOM_12_1`; the multiplied values are
+`0.03,0.06,0.04`; the running-max adjusted sorted values are
+`0.03,0.06,0.06`; and the adjusted values mapped back to factor order are
+`0.06,0.03,0.06`. At alpha 0.05, sequential testing rejects only `REV_1M`
+and stops at `LOW_VOL_3M`.
+
+The dependence-aware method applies to the three primary mean Rank IC effects.
+It is an overlapping circular moving-block bootstrap within each segment of a
+common complete-case monthly Rank IC table:
+
+- long-segment block length: 6 monthly records, with the short-segment rule
+  below;
+- replicates: 20,000;
+- minimum valid monthly records for primary inference: 60;
+- random baseline seed: 20260729;
+- bootstrap seed: 20260730;
+- generator: NumPy `PCG64DXSM`;
+- percentile quantile method: NumPy `linear`;
+- a record is included only when all three factor Rank IC values are valid on
+  that signal date; factor-specific non-complete records remain visible in
+  coverage but do not enter any of the three primary tests;
+- order records chronologically and split them into maximal contiguous segments
+  at every fold boundary, purged month, invalid or missing month, or
+  leave-one-year-out gap;
+- compute each factor's observed mean across all retained records; the null
+  table subtracts that factor mean from every value;
+- for each replicate, process segments in chronological order; for a segment
+  of length `n>6`, set `L=6`. For `2<=n<=6`, set `L=1` and draw `n` single-row
+  blocks uniformly with replacement from all `n` positions, producing genuine
+  within-segment resampling instead of copying the full segment. A singleton
+  uses `L=1` and necessarily retains its only row;
+- enumerate every circular block start `0..n-1`, draw `ceil(n/L)` starts
+  uniformly with replacement, map each block offset to
+  `(start + offset) mod n`, concatenate the selected blocks, and retain the
+  first `n` rows. Circular wrap remains inside the current segment and may
+  never cross a fold, purge, invalid/missing-month, or leave-one-year-out gap;
+- this circular start rule gives every retained row expected inclusion weight
+  exactly one even when `n` is not divisible by `L`: each of the `q` complete
+  retained blocks contributes `L/n` and the final retained prefix of length
+  `r` contributes `r/n`, where `qL+r=n`. The former non-circular start rule
+  plus tail truncation is forbidden because it gives boundary rows unequal
+  marginal weights and can make the globally centered null mean nonzero;
+- use identical block-start draws for all three columns, concatenate the
+  resampled segments, and compute the unweighted mean across all retained rows,
+  so a fold's weight equals its retained complete-case month count;
+- for each replicate and segment, call NumPy `Generator.integers` once with
+  `low=0`, `high=n`, `size=ceil(n/L)`, and `endpoint=False`; apply the circular
+  index rule, concatenate, and truncate that segment's row indices exactly as
+  above;
+- reuse that exact row-index vector jointly for all three factor columns and
+  for both the uncentered table used by interval resamples and the globally
+  null-centered table used by p-value resamples. There is one RNG pass per
+  replicate, never separate centered/uncentered passes or pass-order choice;
+- primary inference additionally requires at least one segment of length two
+  or more and at least two distinct null-bootstrap means for every factor. If
+  this resampling support is degenerate, retain all counts and outputs but mark
+  primary inference invalid, grant no Holm support, and route through the
+  realized-coverage gate to `INCONCLUSIVE_DIAGNOSTIC` unless an earlier ordered
+  rule applies;
+- consume RNG draws in replicate-major, then chronological-segment order;
+- primary one-sided p-value is
+  `(1 + count(null_bootstrap_mean >= observed_mean)) / 20001`; and
+- uncentered resamples provide the 95% two-sided percentile interval.
+
+The shared-draw golden fixture uses seed `20260730`, three replicates, segment
+lengths 8 and 7, block length 6, and row-index factor columns
+`i/100`, `(14-i)/200`, and `((i%4)-1.5)/100`. Its starts by replicate/segment
+are `[[2,2],[3,4]]`, `[[2,7],[6,0]]`, and `[[0,3],[4,6]]`. The golden test
+freezes each complete 15-row index vector and both uncentered and null-centered
+mean matrices from those same rows, so a second RNG pass cannot pass.
+
+The nonmultiple-segment null-mean golden fixture uses 63 records in nine
+seven-record segments with block length 6 and exhaustively enumerates all 49
+ordered circular-start pairs per segment. Every local row has expected
+inclusion weight exactly `1`, and the expected mean of each globally centered
+factor is zero within absolute floating tolerance `1e-15`. The forbidden
+non-circular rule has expected local weights `[1,1.5,1,1,1,1,0.5]` and, for
+the frozen fixture columns, nonzero MOM and LOW_VOL null means. This fixture
+rejects the truncation-biased implementation even if seeded spot draws happen
+to look plausible.
+
+The short-segment golden fixture uses 60 records in ten consecutive six-record
+segments. Every segment therefore uses six one-row draws with replacement.
+Three seeded replicates must differ from the identity copy and from each other,
+must sample only within their source segment, and must produce multiple null-
+bootstrap means for each factor. The forbidden former `L=n=6` implementation
+copies all 60 rows unchanged and fails the fixture.
+
+The run manifest records Python, NumPy, calendar, and ordered signal-index
+identities. Mean, median, sample standard deviation, and monthly ICIR
+(`mean / std`, `ddof=1`) are reported. Annualized ICIR, if shown, is labelled
+and uses `sqrt(12)`.
+
+For the continuous daily strategy path:
+
+- annualized return:
+  `(product(1 + r_d)) ** (252 / valid_daily_returns) - 1`;
+- annualized volatility: daily sample standard deviation times `sqrt(252)`;
+- Sharpe-style metric: mean 10-bps net daily return divided by its daily sample
+  standard deviation, times `sqrt(252)`, with fixed cash rate zero; and
+- maximum drawdown uses the daily net equity curve anchored at 1.0.
+
+Gross and net cumulative returns are the product of their respective daily
+return paths minus one. Daily active return is strategy return minus the
+cost-free matched-benchmark return. Annualized active return is strategy
+annualized geometric return minus benchmark annualized geometric return. Cost
+drag is gross annualized return minus net annualized return, with total
+execution cost also reported separately.
+
+Year contribution to mean Rank IC is `n_year * mean_ic_year / N` and sums to
+the full-sample mean. Security gross contribution on daily return `d` is
+`pre_return_weight[i,d] * security_return[i,d]`; security cost contribution at
+an execution is
+`-gross_multiplier[d] * (bps / 10000) * abs(delta_weight[i])`. The security
+cost contributions sum to the negative beginning-period cost impact
+`-gross_multiplier[d] * turnover[d] * bps / 10000`. Aggregate these
+arithmetic daily contributions by security and calendar year. They sum to the
+corresponding daily gross return and execution cost series, not to compounded
+annual return. Rank IC has no additive per-security contribution claim.
+
+Every yearly and leave-one-year-out Rank IC value used by the final-state
+robustness predicate comes exclusively from the primary common complete-case
+monthly Rank IC table used by all three factor tests. A factor's larger
+all-valid-month table remains descriptive and is forbidden for final-state
+robustness.
+
+Yearly means group common-case records by signal-date calendar year. The
+outcome-independent required-year set is frozen before performance access as
+every calendar year containing at least one scheduled primary-evaluation
+signal whose complete execution-to-end label lies inside the accepted bounds.
+The positive-year fraction denominator is every required year; its numerator
+is the number of required years whose common-case mean Rank IC is strictly
+positive for that factor. Every required year must contain at least one
+common-case record. A missing required-year record set or an exact-zero mean
+makes `robustness_supported(f)` false and may not be removed from the
+denominator.
+
+Leave-one-year-out is descriptive only. Factor inference drops every label
+whose execution-to-end interval intersects the omitted year and reuses the
+fixed bootstrap rules without another Holm family. Continuous strategy
+sensitivity treats the pre-omission and post-omission portions as separate
+cash-started paths with no holdings or cost bridge across the gap; pooled daily
+statistics concatenate the two return segments, and maximum drawdown is the
+larger segment drawdown.
+
+For final-state robustness, every required year is omitted exactly once from
+the same primary common-case source table. If no common-case records remain
+after an omission, that omission fails robustness. Otherwise the remaining
+unweighted factor mean must be strictly positive. Factor-specific all-valid
+rows never enter this predicate.
+
+The Sharpe-style item must be labelled `zero_cash_rate_sharpe_style`, is
+diagnostic only, and is not used for factor discovery. No bootstrap interval is
+claimed for strategy metrics in this minimum campaign.
+
+## Exact Trial Inventory
+
+The immutable semantic-trial count is 14:
+
+1. equal-weight eligible-universe baseline;
+2. fixed-seed random-rank top-decile baseline;
+3. `MOM_12_1` factor diagnostics;
+4. `REV_1M` factor diagnostics;
+5. `LOW_VOL_3M` factor diagnostics;
+6-8. `MOM_12_1` at 0, 10, and 25 bps;
+9-11. `REV_1M` at 0, 10, and 25 bps;
+12-14. `LOW_VOL_3M` at 0, 10, and 25 bps.
+
+An exact technical rerun is an attempt of the same semantic trial. It does not
+increase the inventory. Every configured outcome, failure, invalid run, abort,
+and not-produced artifact remains visible.
+
+## Freeze Sequence
+
+The protocol must not embed a hash of itself. Freeze uses detached records:
+
+1. **Protocol freeze (this stage):** hash the exact preregistration and trial
+   inventory after merge. This freezes factors, directions, trial semantics,
+   timing, costs, metrics, inference, seeds, and diagnostic-only claims.
+2. **Blinded dataset-acceptance freeze (private gate and PR 2):** bind the
+   accepted cutoff, full private manifest hash, safe public projection hash,
+   calendar version, lineage/terminal rules, exclusions, coverage thresholds,
+   and dataset-review decision. Dataset-quality review remains blind to factor,
+   portfolio, and cumulative performance.
+3. **Detached run binding (after PR 3 merge and before the first result-bearing
+   job):** bind the protected runner code SHA, exact configuration, environment
+   identity, protocol hash, inventory hash, and accepted dataset-record hash.
+
+No result-bearing job may run before the detached run binding is complete.
+
+## Entitlement, Retention, and Publication Gate
+
+The current EOD Historical Data - All World plan does not prove access to
+historical index membership. A private capability probe must separately record
+whether `GSPC.INDX` `HistoricalTickerComponents`, dated historical snapshots,
+or an S&P historical-constituents marketplace entitlement is available. Codex
+must not purchase any entitlement.
+
+Before expanded retrieval, durable retention, or public derived output, obtain
+written permission covering:
+
+- frozen-snapshot retention after cancellation;
+- public noncommercial GitHub use;
+- aggregate statistics and charts;
+- hashes, row counts, and non-sensitive metadata; and
+- deletion obligations for raw, normalized, cached, backup, and derived
+  artifacts.
+
+Until written permission exists, public repository content is limited to
+protocol, schema, validator, and non-provider-authored methodology material.
+It contains no derived projection values, hashes, row/security/date counts,
+raw rows, ticker lists, private paths, provider responses, or performance
+values.
+
+## Track A Evidence
+
+The private bundle is repository-external and contains the artifacts listed in
+the machine-readable preregistration. `bundle_manifest.json` lists and verifies
+the child artifacts but does not hash itself. A detached root record binds the
+bundle-manifest hash, code, configuration, data manifest, semantic-trial
+count, attempt count, per-trial status, environment, and final classification.
+
+The required preregistration child is named
+`eodhd_sp500_three_factor_diagnostic_v1.yaml` and is an exact byte-for-byte copy
+of `docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml` at the
+protocol-freeze commit. Its child SHA-256 must equal the detached
+protocol-freeze SHA-256. A derived `preregistration.json` may be retained only
+as a non-authoritative convenience artifact; it cannot replace or satisfy the
+exact-YAML child requirement.
+
+The required `trial_inventory.json` child is likewise an exact byte-for-byte
+copy of
+`docs/preregistrations/eodhd_sp500_three_factor_trial_inventory_v1.json` at the
+protocol-freeze commit. Its child SHA-256 must equal the detached trial-
+inventory freeze SHA-256. A parsed, reordered, normalized, or field-modified
+inventory cannot satisfy this requirement even when its own child hash is
+listed in `bundle_manifest.json`.
+
+Final-state assignment is an ordered, mutually exclusive, exhaustive decision
+tree. Evaluate it in this order:
+
+1. `INVALID_DIAGNOSTIC` if any hard-validity gate fails: protocol or detached
+   binding preceded by result exposure; dataset acceptance other than
+   `DIAGNOSTIC_READY`; a hash, inventory, or bundle-integrity failure; anything
+   other than exactly 14 terminally reconciled semantic trials and all required
+   outputs; a pre-frozen membership/identity/terminal invalidation threshold
+   exceeded; a required strategy execution/held-return path invalid; or a Holm
+   rejection paired with a nonpositive observed mean Rank IC; or any required
+   factor-matched primary-benchmark comparison invalid. A secondary SPY
+   comparison invalidation is descriptive only and is not a hard-validity or
+   coverage failure.
+2. Otherwise, `INCONCLUSIVE_DIAGNOSTIC` if any pre-frozen realized coverage
+   threshold fails, the common complete-case primary sample contains fewer
+   than 60 monthly records, or nondegenerate bootstrap support is not available
+   for all three factors under the frozen segment rules. Bootstrap-support
+   failure cannot produce Holm support.
+3. Otherwise, define `holm_supported(f)` as a Holm rejection for factor `f`
+   with observed common-complete-case mean Rank IC strictly greater than zero.
+   Define `economically_supported(f)` as strictly positive net annualized
+   active return against that factor's valid factor-matched primary benchmark
+   at both 10 and 25 bps. The secondary SPY comparison never enters this
+   predicate.
+   Define `robustness_supported(f)` as strictly positive leave-one-year-out
+   common-case mean Rank IC for every required-year omission and a strictly
+   greater than 0.5 fraction of required calendar-year common-case mean Rank IC
+   values above zero, using all required years as the denominator. Exact zero,
+   a missing required-year common-case set, or an empty post-omission table
+   fails robustness.
+4. `POSITIVE_DIAGNOSTIC` if at least one factor satisfies all three support
+   predicates.
+5. Otherwise, `MIXED_DIAGNOSTIC` if at least one factor is Holm-supported.
+6. Otherwise, `NEGATIVE_DIAGNOSTIC` if all three observed
+   common-complete-case mean Rank IC values are strictly below zero.
+7. Otherwise, `INCONCLUSIVE_DIAGNOSTIC`.
+
+Strategy and robustness predicates are coherence requirements for the final
+diagnostic label, not new discovery hypotheses. They do not change the
+three-test Holm family. These labels remain `DIAGNOSTIC_ONLY`; none is a
+research-pass, profitability, or deployment claim.
+
+## Prospective Confirmation and Track B
+
+Prospective collection compares only canonical UTC instants. Every protocol-
+freeze, runner-code-freeze, dataset-policy-freeze, and completed detached-run-
+binding timestamp must be timezone-aware RFC 3339, is converted to UTC, and is
+rejected if naive or date-only. The detached binding is complete only when it
+binds the exact protocol, trial inventory, accepted data record, runner code,
+configuration, and environment identity before any result-bearing job. Runner-
+code freeze alone is insufficient, and prospective counting is forbidden
+while the detached binding is incomplete. Each signal instant is the official
+XNYS session close from the frozen calendar converted to UTC; a session date
+or midnight substitute is forbidden. The anchor is the maximum normalized
+required instant, including detached-binding completion. Collection starts at
+the first signal whose canonical close instant is strictly later than that
+anchor and for which all three factor rebalances are decision-time valid: each
+has at least 100 eligible listings, at least 10 distinct finite values, and
+unique canonical keys.
+
+The staggered binding fixture freezes runner code at
+`2026-08-15T20:00:00Z`, observes an otherwise qualifying signal at
+`2026-08-31T20:00:00Z`, and completes the detached run binding only at
+`2026-09-05T20:00:00Z`. The August signal cannot count; the next otherwise
+qualifying signal at `2026-09-30T20:00:00Z` is the prospective start. A code-
+freeze-only implementation incorrectly starts in August and fails the fixture.
+
+The detached binding does not pretend to hash future provider bytes. It binds
+an exact immutable historical seed data record and cutoff plus the prospective
+append-succession policy before the first prospective signal. The repository-
+external prospective chain starts at seed sequence 0. Each later append record
+contains sequence, exact immediately preceding record SHA-256, batch-manifest
+SHA-256, strictly nonoverlapping new-session bounds after the preceding
+accepted cutoff, and a timezone-aware UTC ingestion instant. The record itself
+is content addressed. Sequence must increase by one; no prior artifact may be
+mutated or deleted.
+
+Future batch bytes are bound by that frozen succession policy and their append
+records, not by rewriting the original detached binding. A valid append never
+changes the original prospective start anchor. A provider correction to an
+earlier observation is retained as a new correction record; it cannot overwrite
+the prior batch or retroactively recompute a frozen signal and must retain the
+affected output-validity consequence. Ingestion health and append integrity may
+be checked while performance access remains forbidden.
+
+The append fixture binds a seed cutoff `2026-01-30` before detached-binding
+completion at `2026-02-05T20:00:00Z`, then chains February and March batch
+records with consecutive sequences and previous hashes. Qualifying February
+and March signals occur after the unchanged binding anchor, and after their
+respective output maturities the matured prospective count reaches two. A
+forbidden implementation that replaces the seed manifest and re-anchors on
+each batch ingestion counts neither month.
+
+On a shared XNYS month-end date, a required freeze strictly before the official
+close permits that same day's signal to qualify after close. A freeze at the
+exact close or any later instant makes the same day's signal non-prospective;
+the next otherwise qualifying monthly signal is the earliest possible start.
+A later signal where only a subset of factors is valid is retained as an
+operational record but does not start or increment the prospective counter.
+Each qualifying common-valid signal increments the 12/24-rebalance counter
+once. No earlier or subset-valid month may be backfilled into the prospective
+count. Ingestion health and missing-file checks may be monitored, but factor,
+portfolio, and cumulative performance may not be viewed during accumulation.
+
+Six months is operational only. Counter increment at the 12th or 24th
+qualifying signal is also operational only and never authorizes performance
+access. For either threshold signal, calculate the label-maturity instant as
+the official close at `e+21` and the strategy-maturity instant as the following
+monthly execution close. The threshold-output-maturity instant is the later of
+those two UTC instants. Protected opening can occur only strictly after that
+instant, after every required final-period output is persisted, and after all
+separate authorization and Track B protected-access requirements are met.
+Opening at counter increment, at execution `e`, or after the label alone is
+forbidden.
+
+The threshold fixture uses signal `2024-06-28T20:00:00Z`, execution
+`2024-07-01T20:00:00Z`, label maturity `2024-07-31T20:00:00Z`, and following
+monthly execution `2024-08-01T20:00:00Z`. At either count 12 or 24, access at
+the signal, label close, or exact later execution instant remains forbidden;
+the timing gate first becomes true after `2024-08-01T20:00:00Z`. Twelve mature
+monthly rebalances are preliminary evidence only if opening is separately
+authorized; opening then contaminates months 13-24 and requires a new
+continuation classification. Twenty-four mature unopened monthly rebalances
+is the primary prospective target.
+
+Before any prospective performance access, Track B must implement protected
+access logging. Its bounded scope is:
+
+- 8-12 conceptual event families, reusing accepted vocabulary where practical;
+- no completion of 37/37 and no second general-purpose DSL;
+- at most one design PR and one stdlib-SQLite runtime PR;
+- append-only atomic transactions, sequence and previous hash, idempotency,
+  restart/replay, retained failed/invalid/aborted work, artifact disposition,
+  campaign freeze/closure, review decision, protected access, and safe public
+  projection; and
+- no more than 14 exact wire event types without a new owner decision.
+
+## Stop Conditions
+
+Stop for owner input when entitlement requires a purchase, written
+retention/publication permission is unresolved, historical membership is
+materially incomplete, identity or terminal-event reconstruction cannot
+support diagnostic use, adjusted-return semantics are inconsistent, private
+licensed data could enter public Git, the dataset review is blocked,
+preregistration was exposed to expanded results before freeze, validation or
+review fails, or brokerage/paper/live scope appears.
+
+Do not stop because all factors fail, costs erase returns, Rank IC is negative,
+or the result is mixed. Those are valid diagnostic outcomes.

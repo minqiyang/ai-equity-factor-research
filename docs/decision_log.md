@@ -15,6 +15,1060 @@ investment performance.
 
 ---
 
+## 2026-07-31 - Use Circular Within-Segment Blocks For Uniform Null Weighting
+
+Context:
+
+- The twenty-fourth exact-head Codex review of PR #177 at `2c6b827` found one
+  P1. For `n>6`, the prior non-circular start set `0..n-L` combined with
+  `ceil(n/L)` blocks and tail truncation did not give every row equal expected
+  inclusion when `n` was not divisible by `L=6`.
+- With `n=7`, the expected local weights were
+  `[1,1.5,1,1,1,1,0.5]`, so global null centering did not guarantee that the
+  expected resampled null mean was zero.
+
+Decision:
+
+- For every long segment, draw starts uniformly from all `n` positions and map
+  each block offset by `(start + offset) mod n`. Circular wrap is confined to
+  that segment and may not cross any fold, purge, missing-month, or
+  leave-one-year-out boundary.
+- Continue drawing `ceil(n/L)` blocks and retain the first `n` concatenated
+  rows. If `n=qL+r`, the full blocks contribute expected weight `qL/n` per row
+  and the retained circular prefix contributes `r/n`, for exact total expected
+  weight one.
+- Preserve the previously frozen one-row resampling for segment lengths two
+  through six and the fixed singleton rule.
+
+Rationale:
+
+- Uniform marginal row weights make the expected resampled mean of the globally
+  centered table zero while retaining length-six local dependence and all
+  segment boundaries.
+- Re-centering each bootstrap statistic would add a different inferential rule;
+  the circular construction removes the bias directly and remains auditable.
+
+Consequences:
+
+- The seeded shared-draw fixture now freezes circular starts, complete row
+  vectors, and both uncentered and null-centered mean matrices.
+- A separate 63-record fixture exhaustively enumerates all 49 ordered start
+  pairs in each of nine seven-row segments, proves unit expected row weights,
+  and rejects the former non-circular MOM and LOW_VOL null-mean offsets.
+- No data, performance, trial execution, factor, cost case, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Separate Baseline Episodes From Continuous Resets
+
+Context:
+
+- The twenty-third exact-head Codex review of PR #177 at `93adce5` found one
+  P2. Both baseline trials required `episode_21_row_return`, but target,
+  holding, aggregation, endpoint, and invalid-constituent semantics were not
+  frozen when a later monthly reset occurred before `e+21`.
+
+Decision:
+
+- For each factor-valid signal month, freeze the equal-weight eligible-universe
+  or random-rank top-decile target at signal close `t`, begin at execution
+  close `e=t+1`, and hold the exact initial weights statically through `e+21`.
+- Compute each constituent's simple adjusted-close `e` to `e+21` return and
+  aggregate exactly `sum(weight_i_at_e * constituent_return_i)`. Ignore any
+  intervening monthly execution for this episode; overlapping later episodes
+  remain separate dependent diagnostics.
+- If any targeted constituent lacks a valid accepted return, retain the whole
+  episode as invalid/missing. Forbid survivor renormalization, fill, cash/zero
+  substitution, alternate rows, and continuous-path reuse.
+
+Rationale:
+
+- A fixed-horizon factor diagnostic and a monthly-reset continuous strategy
+  answer different questions and can diverge in short exchange months.
+- Binding the exact episode calculation prevents implementations from
+  silently choosing whichever baseline path is convenient.
+
+Consequences:
+
+- The short-month fixture places the next monthly execution at row 20 before
+  endpoint row 21. The frozen episode returns `0.01`; a forbidden reset to a
+  new target at row 20 returns `0.10`.
+- Both series remain outputs of the same two baseline semantic trials; the
+  immutable semantic trial count stays 14.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Freeze Continuous Held Returns To Adjusted Close
+
+Context:
+
+- The twenty-second exact-head Codex review of PR #177 at `9bbc2c3` found one
+  P2. The continuous strategy and primary-benchmark path froze timing but not
+  the price field, adjacent-return formula, or held-anchor failure policy.
+
+Decision:
+
+- Use `adjusted_close_simple_held_return_v1` for the factor strategy, both
+  long-only baselines, and factor-matched primary benchmark: each adjacent
+  common-calendar held return is exactly
+  `adjusted_close[d] / adjusted_close[d-1] - 1`.
+- Require both anchors to be real numeric non-Boolean, present, finite,
+  strictly positive, and valid under `factor_anchor_lineage_v1`. Invalid
+  strategy anchors invalidate the affected trial; invalid primary-benchmark
+  anchors invalidate the required comparison and route to the existing hard-
+  validity state. No membership renormalization or repair is allowed.
+- Forbid raw-close fallback and separately adding split or dividend cash flows
+  to the adjusted-close proxy.
+
+Rationale:
+
+- Corporate actions can make raw-close returns economically incompatible with
+  the reviewed dividend-and-split-adjusted proxy and change every downstream
+  stateful calculation.
+- Strategy and primary-benchmark returns must use the same field, formula,
+  calendar, and missingness semantics for active-return evidence to be
+  interpretable.
+
+Consequences:
+
+- The 2-for-1 split fixture freezes adjusted gross return `0`, equal drifted
+  weights, zero turnover/cost/active return, and rejects the raw alternative's
+  `-0.25` gross return, `1/3` turnover, and `0.00025` 10-bps cost impact.
+- This remains an idealized diagnostic total-return proxy, not a share-level
+  execution or exact total-return-index claim.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Bind Factor Anchors To Resolved Listing Lineage
+
+Context:
+
+- The twenty-first exact-head Codex review of PR #177 at `5869193` found one
+  P2. Numeric factor-anchor validity did not determine whether lookback prices
+  could cross an accepted rename, a listing episode, or ticker reuse by a
+  different issuer.
+
+Decision:
+
+- Require every factor input price anchor to carry the blinded dataset-review-
+  accepted normalized permanent-security, listing, and listing-episode IDs,
+  plus its source alias interval and lineage evidence. Every anchor must match
+  the signal target's three resolved identity IDs exactly.
+- Permit alias traversal only for a contiguous, nonoverlapping, evidenced
+  symbol rename inside the same permanent security, listing, and listing
+  episode. Reject ticker-text-only joins, ticker reuse, relisting, venue or
+  listing moves, share-class changes, distinct successor securities, and any
+  ambiguous lineage path.
+
+Rationale:
+
+- Ticker is an alias, so numeric adjusted-close anchors cannot establish
+  longitudinal security identity by themselves.
+- A verified rename can preserve one diagnostic listing episode, whereas a
+  reused ticker can silently combine unrelated issuers and manufacture a
+  return.
+
+Consequences:
+
+- An accepted old-alias/new-alias fixture retains momentum `0.25` only because
+  both anchors resolve to the same security/listing episode. An equal-ticker
+  different-issuer fixture shows the same ticker-only `0.25` calculation and
+  rejects it before factor eligibility.
+- The internal resolved IDs remain diagnostic reconstruction evidence; they do
+  not assert an EODHD permanent provider ID or upgrade the evidence tier.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Chain Prospective Batches Without Rebinding The Seed
+
+Context:
+
+- The twentieth exact-head Codex review of PR #177 at `e6c7ad5` found one P2.
+  A detached binding to one latest-cutoff manifest could not accept future
+  observations without rebinding and moving the start anchor.
+
+Decision:
+
+- Bind an immutable historical seed data record/cutoff and the append-
+  succession policy before the first prospective signal. Bind future batches
+  through consecutive content-addressed append records containing previous
+  hash, batch manifest hash, increasing nonoverlapping session bounds, and UTC
+  ingestion time. Valid appends do not reset the original anchor.
+- Never overwrite prior artifacts. Provider corrections append a correction
+  record, retain the affected validity state, and do not retroactively
+  recompute a frozen signal.
+
+Rationale:
+
+- Future bytes cannot be known at initial binding, but their admissible order,
+  immutability, identity, and audit treatment can be frozen in advance.
+- Rebinding the root on every batch makes a strictly-post-binding prospective
+  window impossible to accumulate.
+
+Consequences:
+
+- The fixture binds a January seed and successfully chains/counts matured
+  February and March batches under the unchanged February binding anchor.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Anchor Prospective Time To Completed Run Binding
+
+Context:
+
+- The nineteenth exact-head Codex review of PR #177 at `3aeeb5a` found one P2.
+  Runner code could freeze before a signal while the detached record binding
+  exact configuration and environment identity completed after it.
+
+Decision:
+
+- Add detached-run-binding completion to the required canonical UTC anchors.
+  The binding is complete only after exact protocol, trial inventory, accepted
+  data, runner code, configuration, and environment identity are bound before
+  result-bearing work. An incomplete binding forbids prospective counting.
+
+Rationale:
+
+- Code identity alone does not freeze dependencies, configuration, dataset
+  acceptance, or the executable environment needed to reproduce seeded and
+  deterministic outputs.
+
+Consequences:
+
+- In the staggered fixture, an August signal after code freeze but before
+  binding completion cannot count; the next qualifying September signal is the
+  prospective start.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Canonicalize Prospective Instants And Mature Threshold Outputs
+
+Context:
+
+- The eighteenth exact-head Codex review of PR #177 at `242f373` found two P2
+  ambiguities. A timezone-aware freeze timestamp could not be ordered against
+  a date-plus-`AFTER_CLOSE` signal representation, and threshold count could
+  precede both final-period outputs.
+
+Decision:
+
+- Normalize every required timezone-aware RFC 3339 freeze timestamp to UTC and
+  compare it with the official frozen-calendar XNYS session close converted to
+  UTC. Reject naive and date-only freeze values. The signal close must be
+  strictly later than the maximum normalized freeze instant.
+- Treat the 12th/24th qualifying signal as an operational counter event only.
+  Protected performance access timing first becomes eligible strictly after
+  the later of that signal's `e+21` label close and following monthly execution
+  close, and only after required outputs and separate access gates are ready.
+
+Rationale:
+
+- Same-calendar-date before-close, exact-close, and after-close freezes must
+  not shift the prospective window according to an implementation's implicit
+  midnight or timezone convention.
+- A prospective threshold does not represent 12/24 complete observations until
+  both factor-label and continuous-strategy outputs for the last signal mature.
+
+Consequences:
+
+- A before-close same-day freeze permits the close signal; exact-close and
+  after-close freezes defer to the next qualifying month.
+- Access at the threshold signal, label close, or exact following execution
+  close is forbidden; the timing gate opens only after the later maturity
+  instant and never bypasses authorization or Track B logging.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Pre-Filter The Strategy Cutoff And Preserve One Economic Path
+
+Context:
+
+- The seventeenth exact-head Codex review of PR #177 at `5b08be6` found one P1
+  and one P2. A factor-diagnostic label could end at the accepted cutoff even
+  though the corresponding continuous target had no later monthly execution,
+  and excluding invalid-month active returns did not define how to preserve a
+  stateful strategy path.
+
+Decision:
+
+- Before continuous targets are frozen, include a signal in the continuous
+  schedule only if its next monthly execution is on or before the accepted
+  cutoff. A signal with a complete diagnostic label but a later execution
+  beyond cutoff stays in factor diagnostics and is structurally absent from
+  the continuous strategy; it is not an invalid strategy target.
+- Keep every sparse/tied zero-target month in the single continuous strategy
+  and primary-benchmark return path. Preserve its liquidation/redeployment
+  turnover, costs, cash return, invested benchmark return, and active return in
+  the full-path annualization used by economic support.
+
+Rationale:
+
+- A normal 22-session calendar month at a bounded cutoff must not create a hard
+  campaign invalidation merely because factor-label and next-execution
+  endpoints differ.
+- Deleting an invalid factor month or restarting around it changes holdings,
+  costs, annualization, and potentially the final diagnostic label.
+
+Consequences:
+
+- The July 2024 fixture retains the `2024-06-28` factor signal and its
+  `2024-07-31` label but freezes no continuous target whose next execution is
+  `2024-08-01`.
+- A valid/tied/valid fixture retains three turnover-1 transitions and produces
+  `MIXED_DIAGNOSTIC`; the forbidden filtered/direct-bridge path would produce
+  `POSITIVE_DIAGNOSTIC`.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Preserve The Invested Benchmark And Bind Bootstrap Coverage
+
+Context:
+
+- The sixteenth exact-head Codex review of PR #177 at `46679c4` found two P2
+  gaps. The fourteenth-round baseline generalization incorrectly made the
+  equal-weight eligible-universe benchmark reuse a factor's zero target, and
+  the final-state classifier did not accept the frozen bootstrap-support gate
+  as an input.
+
+Decision:
+
+- For sparse or tied factor months, keep the factor and random-rank targets at
+  zero but keep the equal-weight baseline and primary benchmark invested in
+  the nonempty unique decision-time eligible universe. Duplicate canonical
+  keys or an empty universe make that benchmark unformable; cash is not a
+  substitute.
+- Retain invalid-factor-month active returns as descriptive evidence and
+  forbid them from final-state support.
+- Require nondegenerate bootstrap support for all three factors as an explicit
+  realized-coverage input. Failure routes to `INCONCLUSIVE_DIAGNOSTIC` unless
+  an earlier hard-validity rule produces `INVALID_DIAGNOSTIC`.
+
+Rationale:
+
+- The primary benchmark measures the invested eligible universe and cannot be
+  silently converted into the same cash path as an invalid factor portfolio.
+- A bootstrap unable to generate nondegenerate null support cannot justify a
+  Holm-supported conclusion, while ordered hard-validity precedence must stay
+  intact.
+
+Consequences:
+
+- A tied-month fixture fixes the 10/25-bps active-return contrast against an
+  invested benchmark and rejects a cash-benchmark implementation.
+- Classifier boundary cases cover false bootstrap support and its precedence
+  interaction with hard validity.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Resample Short Segments And Freeze Keys Campaign-Wide
+
+Context:
+
+- The fifteenth exact-head Codex review of PR #177 at `e9c2707` found one P1
+  and one P2. `L=min(6,n)` copied every segment of at most six rows into every
+  bootstrap replicate, and first-decision-time eligibility did not say how to
+  aggregate staggered eligibility across factors for key freezing.
+
+Decision:
+
+- For segments longer than six, retain overlapping non-circular length-six
+  blocks. For segment lengths two through six, use length-one blocks and draw
+  `n` positions uniformly with replacement. A singleton necessarily stays
+  fixed.
+- Require at least one resampleable segment and at least two distinct null-
+  bootstrap means for each factor. Degenerate support retains all evidence but
+  makes primary inference invalid, grants no Holm support, and routes to the
+  realized-coverage `INCONCLUSIVE_DIAGNOSTIC` rule unless an earlier rule wins.
+- Freeze each listing-lineage key once, campaign-wide, at the earliest signal
+  cutoff where the listing is decision-time eligible for any of the three
+  factors. Later factor eligibility reuses the same bytes; per-factor key
+  freezing or re-encoding is forbidden.
+
+Rationale:
+
+- A centered bootstrap that copies all rows can assign the minimum p-value to
+  a positive mean without representing sampling uncertainty.
+- One key identity must control ties, turnover, and random-baseline ordering
+  across all factors even when their lookbacks become eligible on different
+  dates.
+
+Consequences:
+
+- A 60-record fixture in ten six-row segments proves genuine within-segment
+  resampling and nondegenerate null means; an all-singleton case fails support.
+- A staggered-factor fixture freezes a null-ended key at reversal eligibility
+  and rejects later momentum-specific endpoint bytes.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Freeze Common Prospective Eligibility And Invalid Baselines
+
+Context:
+
+- The fourteenth exact-head Codex review of PR #177 at `fc561e4` found two P2
+  ambiguities. Prospective counting did not aggregate the three factor-specific
+  eligibility states, and random-rank baseline behavior was undefined for the
+  three decision-time invalid-rebalance triggers.
+
+Decision:
+
+- A prospective signal qualifies only when all three factor rebalances are
+  decision-time valid: each has at least 100 eligible listings, at least 10
+  distinct finite factor values, and unique canonical keys. A subset-valid
+  signal is retained operationally but neither starts nor increments the
+  prospective counter.
+- Both equal-weight and random-rank factor-matched baseline outputs inherit the
+  same three invalid triggers. They retain an invalid output record, freeze a
+  zero target and full cash, keep episodic return invalid/missing rather than
+  zero, and carry the invalid flag through liquidation turnover and later cash.
+  Random seeds and permutations are not consumed for invalid factor months.
+
+Rationale:
+
+- One common predicate prevents different implementations from opening the
+  protected 12/24-rebalance windows in different months.
+- Baselines must not invest a sparse or non-unique sample after the matched
+  factor strategy has already failed the same decision-time gate.
+
+Consequences:
+
+- The prospective boundary fixture now includes a subset-valid month that does
+  not count. Sparse, tied, and duplicate-key fixtures apply the retained zero-
+  target behavior to both baselines and distinguish valid random draw use.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Bind Eligibility And Prospective Start To Their Full Gates
+
+Context:
+
+- The thirteenth exact-head Codex review of PR #177 at `12cacaa` found two P2
+  inconsistencies. A generic complete-history eligibility input could still
+  exclude endpoint-valid MOM/REV rows with an interior missing price, and the
+  machine-readable prospective start waited only for the protocol freeze.
+
+Decision:
+
+- Decision-time eligibility uses the factor-specific common-calendar position
+  span and only the price anchors actually referenced by that factor. There is
+  no independent full observed-price-history gate for MOM/REV.
+- Prospective counting anchors to the maximum of the protocol-freeze, runner-
+  code-freeze, and dataset-policy-freeze timestamps. The first eligible signal
+  must be strictly later than that maximum; equality is not prospective and no
+  earlier month may be backfilled.
+
+Rationale:
+
+- Factor definitions and the eligibility path must produce the same listing
+  set, ranks, targets, and benchmark membership.
+- A month observed before every required freeze cannot provide prospective
+  confirmation merely because the protocol was already committed.
+
+Consequences:
+
+- An integrated 100-listing fixture retains the endpoint-valid interior-
+  missing listing in each MOM/REV target and benchmark; a forbidden full-
+  window exclusion leaves 99 and invalidates the rebalance.
+- A staggered-freeze fixture makes a signal equal to the latest freeze
+  non-prospective and starts at the following eligible monthly signal.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Freeze Endpoint-Only MOM/REV Price Completeness
+
+Context:
+
+- The twelfth exact-head Codex review of PR #177 at `d2ac8cd` found one P2.
+  The preregistration validated the two formula anchors but described 253 and
+  22 required history price anchors, which could also be implemented as a
+  full-window contiguous-observation requirement.
+
+Decision:
+
+- Treat 253 for `MOM_12_1` and 22 for `REV_1M` as inclusive common-calendar
+  position spans needed to address the formulas, not counts of price values
+  that must all be observed.
+- Each factor consumes exactly its two referenced anchors. An interior missing
+  or invalid adjusted-close value has no factor-value or eligibility effect
+  when both referenced anchors pass the strict validity gate. It is not filled,
+  repaired, or otherwise incorporated.
+
+Rationale:
+
+- The two frozen formulas are endpoint returns. Requiring unreferenced
+  intermediate observations would silently introduce a different missingness
+  screen and could change ranks, targets, and coverage across implementations.
+
+Consequences:
+
+- Separate 253-position momentum and 22-position reversal fixtures retain
+  `0.25` and `0.10` with an interior missing value and explicitly distinguish
+  the forbidden all-prices-contiguous interpretation.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Freeze MOM_12_1 And REV_1M Anchor Validity
+
+Context:
+
+- The eleventh exact-head Codex review of PR #177 at `bc4c201` found one P2.
+  Momentum and reversal had no strict price-anchor validity or invalid-value
+  policy, so corrupt zero, negative, or Boolean numerators could still produce
+  finite factor values.
+
+Decision:
+
+- Require every adjusted-close anchor referenced by `MOM_12_1` and `REV_1M`
+  to be present, finite, strictly positive, real, and non-Boolean before any
+  division. The rule applies equally to numerator and denominator anchors.
+- If any anchor fails, retain the listing/signal-date factor value as invalid/
+  missing, exclude the listing from factor-specific decision-time eligibility,
+  and count the exact reason. No fill, interpolation, clipping, absolute-value
+  repair, or alternate row is allowed.
+
+Rationale:
+
+- A finite formula output is not sufficient evidence that its provider price
+  anchors are valid. Corrupt anchors must not enter ranks, deciles, or targets.
+
+Consequences:
+
+- Golden fixtures freeze momentum `80->100` as `0.25` and reversal `100->90`
+  as `0.10`, then mutate each anchor position through every invalid class.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Freeze Diagnostic Forward Returns And Shared Bootstrap Draws
+
+Context:
+
+- The tenth exact-head Codex review of PR #177 at `a5b6695` found two P2
+  ambiguities: the execution-to-endpoint diagnostic return did not distinguish
+  simple from log returns, and bootstrap centered/uncentered distributions did
+  not state whether they shared draws or consumed two RNG passes.
+
+Decision:
+
+- Define diagnostic forward return as
+  `adjusted_close[e+21] / adjusted_close[e] - 1`. Both anchors must be present,
+  finite, strictly positive real non-Boolean scalars. Invalid anchors retain
+  and invalidate the factor-month outcome with a counted reason and no repair.
+- For every bootstrap replicate and chronological segment, draw block starts
+  exactly once. Reuse the resulting row-index vector jointly for all factors,
+  the uncentered interval table, and the globally null-centered p-value table.
+- Use one RNG pass per replicate. Separate centered/uncentered passes and a
+  pass-order choice are forbidden.
+
+Rationale:
+
+- Simple and log endpoint returns produce different decile evidence from the
+  same prices.
+- Two seeded bootstrap passes produce different draws depending on pass order;
+  shared indices bind p-value and interval distributions to one immutable
+  resampling experiment.
+
+Consequences:
+
+- Separate golden fixtures distinguish endpoint simple/log returns and freeze
+  three segmented bootstrap replicates, row indices, uncentered means,
+  null-centered means, and the rejected second-pass alternative.
+- No data, performance, trial execution, additional hypothesis, merge,
+  brokerage, paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Freeze LOW_VOL_3M Simple Returns And Anchor Validity
+
+Context:
+
+- The ninth exact-head Codex review of PR #177 at `86f6929` found one P2.
+  `one_day_adjusted_close_returns` did not distinguish simple from log returns
+  or define invalid price-anchor handling.
+
+Decision:
+
+- Define each `LOW_VOL_3M` observation as the adjacent-price simple return
+  `adjusted_close[d] / adjusted_close[d-1] - 1` for `d=t-62..t`, inclusive.
+  Log returns are forbidden.
+- Require exactly 64 anchors from `t-63..t`. Every anchor must be a present,
+  finite, strictly positive real numeric scalar other than a Boolean.
+- If any anchor fails, retain the listing/signal-date factor value as invalid/
+  missing, exclude that listing from the factor-specific decision-time
+  eligible set, and count the reason. Filling, interpolation, clipping,
+  absolute-value repair, alternate rows, and log fallback are forbidden.
+
+Rationale:
+
+- Simple and log return volatilities can rank securities differently, changing
+  deciles, targets, Rank IC, and final diagnostic state.
+- Invalid-anchor behavior must be decision-time deterministic and visible,
+  rather than silently repaired by an implementation.
+
+Consequences:
+
+- The 63-return golden fixture now freezes distinct simple and forbidden-log
+  sample standard deviations and mutates every invalid-anchor class.
+- No data, performance, trial execution, additional factor, merge, brokerage,
+  paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Freeze Holm Index Origin And Factor-Order Mapping
+
+Context:
+
+- The eighth exact-head Codex review of PR #177 at `1f6c801` found one P2.
+  The code-like adjusted-p formula combined mathematical multipliers with an
+  undefined `k` origin, so a zero-based implementation could use multipliers
+  4, 3, and 2 instead of Holm's 3, 2, and 1.
+
+Decision:
+
+- Define mathematical `k` as one-based over `1..3` and access a Python sorted
+  p-value sequence at `k-1`.
+- For each sorted position `k`, compute
+  `min(1, max((3-j+1) * sorted_raw_p[j-1] for j in 1..k))`.
+- Sort raw p-values stably with frozen factor order as the tie breaker, stop
+  sequential rejection at the first non-rejection, and map adjusted values
+  back to the original factor order only after the sorted running maximum.
+
+Rationale:
+
+- Explicit index conversion prevents a runner from changing adjusted values,
+  rejection decisions, or the final diagnostic state through a plausible
+  Python-style interpretation of the same YAML.
+
+Consequences:
+
+- A three-p-value golden fixture freezes sorted order, multiplied values,
+  running maxima, factor-order adjusted values, and the rejection set.
+- No data, performance, trial execution, additional hypothesis, merge,
+  brokerage, paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Freeze Random-Rank Permutation-To-Target Mapping
+
+Context:
+
+- The seventh exact-head Codex review of PR #177 at `b8149c2` found one P2.
+  The baseline froze seed derivation and RNG but did not say which date entered
+  the seed, which end of the permutation was selected, or how a non-divisible
+  universe determined top-decile size.
+
+Decision:
+
+- Use strict signal date `t`, never execution date, in the factor/month seed
+  preimage. Interpret the first 16 SHA-256 hex digits as an unsigned big-endian
+  seed for NumPy `PCG64DXSM`.
+- Sort canonical listing-key bytes ascending, permute integer indices once, and
+  interpret the permutation as high-to-low random rank.
+- Reuse the factor-decile remainder rule: select the first
+  `N // 10 + (1 if N % 10 else 0)` permuted indices. The final chunk and a
+  floor-only size are forbidden.
+- Assign `1 / selected_count` to every selected key and serialize the target in
+  ascending canonical-key order. The random baseline remains one semantic
+  trial and the complete inventory remains exactly 14.
+
+Rationale:
+
+- Otherwise multiple reasonable implementations can produce different
+  baseline holdings and returns from the same frozen seed.
+- Reusing the existing high-ranked-decile size rule avoids introducing a
+  second quantile convention solely for the random baseline.
+
+Consequences:
+
+- A 103-key golden fixture freezes the exact digest, unsigned seed, complete
+  permutation, 11 selected canonical keys, equal weights, and serialization.
+- No data, performance, trial execution, additional hypothesis or cost case,
+  merge, brokerage, paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Align Diagnostic Costs And Freeze Random-Baseline Cost Basis
+
+Context:
+
+- The sixth exact-head Codex review of PR #177 at `0179ebb` found one P1 and
+  one P2. The campaign formula omitted the accepted post-return gross
+  multiplier, and the random-rank continuous baseline did not state whether
+  its return was gross or net at a frozen cost rate.
+
+Decision:
+
+- On each rebalance row, apply held-position incoming returns first, then
+  charge execution cost against post-return equity at the ending close. As a
+  beginning-period return impact, cost is
+  `gross_multiplier * turnover * bps / 10000` and net row return is gross row
+  return minus that impact.
+- Multiply every security-level cost contribution by the same gross
+  multiplier so the contributions sum exactly to the portfolio cost impact.
+- Keep both baselines' 21-row episodic outputs gross and cost-free. Keep the
+  equal-weight continuous baseline gross and cost-free. Freeze the random-rank
+  continuous baseline as net at the primary 10-bps all-in cost case, using the
+  same drifted-weight turnover and execution-to-execution accounting as factor
+  strategies.
+- Do not emit random-baseline 0-bps or 25-bps continuous variants. The baseline
+  remains one semantic trial and the complete inventory remains exactly 14.
+
+Rationale:
+
+- The accepted Stage 2 timing authority charges at the close after the row's
+  incoming return. Omitting the gross multiplier understates a post-gain
+  charge and overstates a post-loss charge relative to that contract.
+- A single cost-frozen random strategy baseline is reproducible and comparable
+  to the campaign's primary strategy case without creating a hidden parameter
+  search.
+
+Consequences:
+
+- Hand-calculated fixtures cover a nonzero 10% incoming return, turnover 2.0,
+  the 25-bps factor stress case, and the 10-bps random-baseline primary case.
+- No data, performance, trial execution, extra semantic trial, merge,
+  brokerage, paper, or live behavior is added.
+
+---
+
+## 2026-07-31 - Freeze Benchmark-Comparison Final-State Routing
+
+Context:
+
+- The fifth exact-head Codex review of PR #177 at `e5d72c2` found one P2.
+  Missing factor-matched constituent returns or SPY dates invalidated their
+  comparisons, but the ordered final-state tree did not state whether each gap
+  was a hard failure, coverage failure, or false economic predicate.
+
+Decision:
+
+- Any invalid required factor-matched primary-benchmark comparison is a hard-
+  validity failure for the campaign and routes to `INVALID_DIAGNOSTIC` under
+  the first ordered rule. It may not be omitted, filled, or treated as merely
+  economically unsupported.
+- The secondary SPY comparison is descriptive only. A missing SPY date retains
+  an invalid secondary output and missing count but has no final-state effect
+  when every required primary comparison is valid.
+- `economically_supported(f)` uses only the valid factor-matched primary-
+  benchmark annualized active return at 10 and 25 bps.
+
+Rationale:
+
+- The primary comparison is required for the preregistered economic coherence
+  predicate, so incomplete primary evidence cannot support another final state.
+- SPY was frozen as a secondary proxy and should not silently become a hard
+  requirement for a final state whose primary benchmark is factor-matched.
+
+Consequences:
+
+- Separate fixtures route a primary matched-universe gap to
+  `INVALID_DIAGNOSTIC` and show that a SPY-only gap leaves an otherwise
+  `POSITIVE_DIAGNOSTIC` state unchanged.
+- Both invalid comparisons remain visible in the required evidence outputs.
+- No data, performance, trial execution, merge, brokerage, paper, or live
+  behavior is added.
+
+---
+
+## 2026-07-31 - Persist Through Review And Freeze Factor-Turnover Predecessors
+
+Context:
+
+- The fourth exact-head Codex review of PR #177 at `6a7445f` found two P2
+  gaps. Factor turnover did not specify whether an outcome-invalid intervening
+  month remained the next month's predecessor, and the mandatory handoff still
+  called already-completed commit/push work pending.
+- The owner also corrected the review-wait terminal condition: creating a
+  monitor is not completion, and the task must continue through review and any
+  safe remediation until the exact current head has no actionable finding.
+
+Decision:
+
+- Freeze factor turnover to the immediately preceding scheduled frozen
+  decision-time target, including an intervening zero target and a target whose
+  later outcome becomes invalid. Outcome validity is retained separately and
+  cannot make turnover skip back to the last outcome-valid target.
+- The first scheduled frozen target in the bounded evaluation schedule has
+  `not_applicable` turnover. Every later scheduled target has exactly one
+  immediate predecessor.
+- Treat a pending current-head Codex review as a nonterminal task state. Keep
+  the task active, use a single five-minute monitor only when needed, never
+  duplicate a review request, and repeat fix, validation, push, CI, and review
+  until no actionable finding remains.
+- Retain the separate four-run, thirty-minute cap for a genuinely critical
+  owner decision; this decision supersedes only the prior eight-run pause rule
+  for a pending Codex review.
+
+Rationale:
+
+- Later endpoint missingness must not rewrite a previously knowable target or
+  any later decision-time turnover. Skipping an outcome-invalid target would
+  make a future diagnostic depend on post-signal information.
+- A scheduled callback is an implementation mechanism for waiting, not proof
+  that the requested review gate completed.
+
+Consequences:
+
+- A three-month mutation fixture distinguishes the required immediate-target
+  turnover from the forbidden last-outcome-valid alternative.
+- The handoff records `6a7445f` as committed, pushed, and CI-passed, names the
+  fourth-review findings, and directs continuations to current-head CI/review
+  state rather than redundant publication work.
+- This changes protocol and workflow control only. It adds no data access,
+  performance result, merge, brokerage, paper, or live behavior.
+
+---
+
+## 2026-07-31 - Freeze Robustness Sample And Trial Inventory Binding
+
+Context:
+
+- The third exact-head Codex review of PR #177 at `4d832c7` found two P2
+  protocol gaps. The evidence bundle named `trial_inventory.json` without
+  binding it to the frozen 14-trial JSON bytes, and the final-state robustness
+  rules did not choose between factor-specific all-valid Rank IC months and the
+  primary common complete-case table.
+- Different valid sample choices could change yearly signs,
+  leave-one-year-out means, and therefore `POSITIVE_DIAGNOSTIC` versus
+  `MIXED_DIAGNOSTIC` after results were visible.
+
+Decision:
+
+- Require bundle `trial_inventory.json` to be an exact byte-for-byte copy of
+  `docs/preregistrations/eodhd_sp500_three_factor_trial_inventory_v1.json` at
+  the protocol-freeze commit. Its SHA-256 must equal the detached trial-
+  inventory freeze hash; parsing, reordering, normalization, or changing one
+  trial field cannot satisfy the binding.
+- Use only the primary common complete-case monthly Rank IC table for yearly
+  and leave-one-year-out values that enter final-state robustness. Each
+  factor's all-valid-month table remains descriptive only.
+- Freeze yearly grouping to signal-date calendar year. Freeze the
+  outcome-independent required-year set to every year with at least one
+  scheduled primary-evaluation signal whose full label is inside accepted
+  bounds.
+- Use every required year in the positive-year fraction denominator and omit
+  every required year exactly once for leave-one-year-out. A required year with
+  no common-case row, an exact-zero yearly mean, or an empty post-omission table
+  fails robustness.
+
+Rationale:
+
+- Child hashing alone proves only that the bundle lists the bytes it contains;
+  it does not prove those bytes are the preregistered trial inventory.
+- One shared sample basis and an outcome-independent year denominator prevent
+  result-informed switching between more favorable missingness patterns.
+
+Consequences:
+
+- A deterministic fixture now demonstrates that the allowed common-case basis
+  yields `POSITIVE_DIAGNOSTIC` while the forbidden factor-all-valid basis would
+  yield `MIXED_DIAGNOSTIC` on the same configured evidence.
+- These changes freeze protocol and audit behavior only. No data, performance,
+  trial execution, thread resolution, or merge is authorized.
+
+---
+
+## 2026-07-29 - Remediate Reviews Automatically And Bound Scheduled Waits
+
+Context:
+
+- The second exact-head review of PR #177 found three actionable P2 protocol
+  gaps after the first remediation commit.
+- The prior workflow treated each review round as a potential owner stop even
+  when the finding was safe, concrete, and within the already-authorized
+  stage. It also lacked exact polling bounds for a pending Codex review or a
+  genuinely critical owner decision.
+- Draft PR #148 already edits `AGENTS.md` from an older base, but the owner
+  explicitly directed PR #177 to establish the new behavior now.
+
+Decision:
+
+- Fix actionable in-scope review findings immediately without waiting for a
+  separate owner confirmation. Revalidate, push, and request one current-head
+  rereview after each changed head.
+- While only `@codex review` is pending, use one thread-scoped schedule every
+  five minutes for at most eight runs. Do not post duplicate review requests;
+  stop early when the review completes, the head changes, or a finding arrives.
+- When a critical owner decision is genuinely required, use one thread-scoped
+  follow-up every thirty minutes for at most four runs. Never make the
+  decision on the owner's behalf, and remain paused after the fourth unanswered
+  run.
+- Freeze `LOW_VOL_3M` as the Python half-open slice `[t-62:t+1]`, exactly 63
+  returns ending at `t` from 64 price anchors.
+- Permit a zero strategy target only for three signal-time conditions: fewer
+  than 100 eligible securities, fewer than 10 distinct finite factor values,
+  or duplicate canonical listing-key bytes. Later unselected outcome
+  missingness cannot change the target, liquidation, or cash path.
+- Require the evidence bundle to contain an exact-byte YAML child whose
+  SHA-256 equals the detached protocol-freeze hash. A derived JSON file is not
+  authoritative.
+
+Rationale:
+
+- Safe review remediation is ordinary implementation work inside an authorized
+  PR, while purchases, protected access, destructive work, external scope
+  expansion, and materially different research interpretations remain owner
+  decisions.
+- Bounded scheduled waits prevent both silent abandonment and unbounded polling
+  or reminder spam.
+- Exact slices, zero-target predicates, and byte-level evidence binding remove
+  implementation-dependent behavior before result access.
+
+Consequences:
+
+- PR #148 now overlaps `AGENTS.md`; it remains untouched but must be rebased and
+  compared before future use.
+- The review schedule will be created only when the new exact head is actually
+  waiting for review. No schedule is needed while actionable findings are being
+  fixed.
+- The remediation changes protocol and governance only. It does not fetch data,
+  calculate performance, resolve review threads, or authorize merge.
+
+---
+
+## 2026-07-29 - Freeze Decision-Time Eligibility And Diagnostic Classification
+
+Context:
+
+- Final review of PR #177 found that the first protocol draft allowed future
+  execution/endpoint availability inside the only eligibility definition.
+- The draft enumerated five final states without an exhaustive assignment
+  rule, left listing-key byte serialization implementation-dependent, and did
+  not say whether fixed-bps costs were all-in or composable.
+
+Decision:
+
+- Freeze factor ranks, deciles, long-only targets, and matched-benchmark
+  membership using only information known at signal close `t`. Future
+  availability or return mutations cannot change those objects.
+- Treat missing future outcomes only through explicit invalidation. Do not
+  drop, substitute, or renormalize over future survivors.
+- Use `listing_lineage_key_bytes_v1`: NFC UTF-8 length-prefixed exchange and
+  ticker, strict ASCII dates, and a tagged null/present interval end. Freeze
+  the key at first decision-time eligibility so later endpoints cannot rewrite
+  historical order or identity.
+- Interpret 0/10/25 bps as mutually exclusive all-in diagnostic execution-cost
+  cases. No separate commission, spread, slippage, fee, impact, or capacity
+  charge may be added.
+- Assign the five final states with the ordered decision tree in the canonical
+  campaign contract and preregistration. Hard-validity failure precedes
+  coverage insufficiency; positive classification requires Holm, 10/25-bps
+  economic, and frozen robustness coherence.
+
+Rationale:
+
+- Signal targets and benchmark membership must be invariant to halts,
+  delistings, missing endpoints, and provider backfills that occur after the
+  signal cutoff.
+- Canonical bytes, fixed cost composition, and exhaustive classification
+  predicates prevent implementation- or result-dependent choices after the
+  protocol freeze.
+
+Consequences:
+
+- Missing selected execution prices or held returns can make the diagnostic
+  invalid; this is preferable to silent survivorship conditioning.
+- Exact zero fails every strict-positive economic or robustness predicate.
+- Economic and robustness predicates constrain the final diagnostic label but
+  do not create new discovery hypotheses outside the three-factor Holm family.
+
+---
+
+## 2026-07-29 - Reset To A Diagnostic-First Two-Track Program
+
+Context:
+
+- PR #176 completed R1I on protected main at `6386c59`.
+- The roadmap still required completion of the full 37-event payload registry
+  before statistical or empirical research.
+- The owner determined that event-schema, test, and PR counts had displaced
+  empirical research progress and supplied an exact EODHD historical S&P 500
+  three-factor diagnostic scope.
+- EODHD entitlement, historical-membership coverage, retention after
+  cancellation, and public derived-output permission remain unverified.
+
+Decision:
+
+- Preserve the accepted 37-event vocabulary and immutable releases as optional
+  `full_ledger_profile_v1`; do not continue R1J or one-event registry PRs.
+- Run Track A first: one `DIAGNOSTIC_ONLY` historical EODHD campaign containing
+  exactly `MOM_12_1`, `REV_1M`, `LOW_VOL_3M`, two baselines, and nine
+  factor/cost strategy trials, for 14 semantic trials total.
+- Freeze research choices in a public protocol and a separate JSON inventory.
+  Use detached hashes rather than a self-referential preregistration hash.
+- Bind cutoff, manifest, calendar, exclusions, coverage thresholds, and dataset
+  review in a blinded dataset-acceptance record. After the runner merges and
+  before any expanded-data performance access, create a detached run binding
+  over code, configuration, environment, protocol, inventory, and accepted
+  dataset hashes.
+- Require entitlement and written retention/publication permission before
+  expanded retrieval, durable retention, or public derived output. Codex must
+  not purchase an entitlement.
+- After Track A closes, implement Track B as an 8-12-conceptual-event-family
+  stateful runtime in at most one design PR and one runtime PR. More than 14
+  exact wire types requires a new owner decision.
+
+Rationale:
+
+- A public preregistration, exact trial inventory, immutable code/data/config
+  binding, all-outcome retention, content-addressed private bundle, and
+  independent review can constrain cherry-picking for a diagnostic campaign
+  without pretending to provide formal protected-access evidence.
+- A minimal stateful runtime is still needed before prospective performance
+  access or formal evidence promotion, but it need not delay the first
+  falsifiable historical diagnostic.
+- Separating protocol freeze, blinded data acceptance, and the final pre-run
+  binding prevents data-quality decisions or runner revisions from becoming
+  hidden result-dependent research choices.
+
+Consequences:
+
+- Track A may end only in one of the five allowed `*_DIAGNOSTIC` states.
+- Track A can never produce `RESEARCH_PASS`, alpha validation, profitability,
+  market-wide validity, paper readiness, or live readiness.
+- Weak, negative, mixed, invalid, and cost-erased outcomes remain valid and
+  must not stop or disappear from the campaign.
+- Track B does not block Track A, but Track B protected-access logging blocks
+  opening prospective performance.
+
+Follow-up:
+
+- Resolve the private EODHD entitlement/retention/publication gate.
+- Add the public manifest validator and complete a blinded dataset review.
+- Implement only the frozen Stage 5-MVP/6-MVP runner, then execute and
+  reconcile all 14 trials.
+- Report progress using accepted dataset, eligible assets/dates, trial
+  reconciliation, bundle completeness, conclusion, prospective months, and
+  replication status, not schema, test, or PR counts.
+
+---
+
 ## 2026-07-29 - Select R1I-A Attempt Start Authority
 
 Context:

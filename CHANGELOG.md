@@ -9,6 +9,115 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the owner-approved EODHD historical S&P 500 diagnostic campaign scope
+  reset. R1I is complete, the accepted 37-event work is preserved as optional
+  `full_ledger_profile_v1`, and the public protocol freezes exactly three
+  price-only factors and 14 semantic trials. Track A may proceed through a
+  private entitlement/license gate, blinded dataset review, bounded runner,
+  and repository-external evidence bundle without first implementing the
+  formal ledger runtime. Track B remains required before prospective
+  performance access and is limited to 8-12 conceptual event families. The
+  protocol also freezes decision-time eligibility independently of all future
+  availability, canonical listing-key bytes, all-in fixed-bps cost semantics,
+  and an exhaustive deterministic final-state decision tree. Review remediation
+  further pins the 63-return low-volatility slice, the only three decision-time
+  zero-target conditions, an exact-byte YAML evidence child, and an exact-byte
+  14-trial inventory child. Final-state robustness now uses only the primary
+  common complete-case Rank IC table with an outcome-independent required-year
+  set, all required years in the yearly denominator, and exact required-year
+  omissions. A missing required factor-matched primary comparison is a hard
+  `INVALID_DIAGNOSTIC` failure, while a missing secondary SPY comparison is
+  retained as descriptive-only evidence with no final-state effect. Factor
+  turnover always uses the immediately preceding
+  scheduled frozen decision-time target, so an outcome-invalid middle month
+  cannot make later turnover skip to the last outcome-valid target. Execution
+  cost now follows the accepted post-return-equity order and includes the
+  gross multiplier in both portfolio and security-level return impacts. The
+  random-rank continuous baseline is frozen net at the primary 10-bps case,
+  while episodic baseline diagnostics remain gross and cost-free. Its random
+  target now uses the signal date in the seed, treats the permutation as high-
+  to-low rank, selects the first remainder-aware top-decile chunk, and
+  serializes equal weights by canonical key; the semantic inventory remains
+  exactly 14. Holm adjusted p-values now explicitly use one-based mathematical
+  indices with Python `k-1` access, a capped sorted running maximum, stable
+  factor-order tie breaking, and mapping back to original factor order.
+  `LOW_VOL_3M` now explicitly uses adjacent adjusted-close simple returns and
+  requires exactly 64 finite, strictly positive real non-Boolean anchors;
+  invalid anchors are retained and counted with no fill or log-return fallback.
+  Diagnostic endpoint returns likewise use fail-closed adjusted-close simple
+  returns. Bootstrap interval and null distributions now share one exact block-
+  index draw per replicate/segment across all factors, with no second RNG pass.
+  Long segments now use circular starts over every within-segment position;
+  wrapping never crosses a segment boundary, and truncation preserves uniform
+  expected row inclusion even when segment length is not divisible by six. A
+  63-record exhaustive golden rejects the former non-circular boundary weights
+  and nonzero centered-null expectation.
+  Momentum and reversal now require every referenced numerator and denominator
+  anchor to be a finite, strictly positive real non-Boolean value; invalid
+  anchors are retained, excluded, and counted without repair. Their 253/22
+  lookbacks are common-calendar position spans, not contiguous-price screens:
+  exactly the two formula anchors must be observed, while an unreferenced
+  interior missing value has no factor-value or eligibility effect. The
+  decision-time gate now uses those same factor-specific position/anchor rules
+  rather than a contradictory full-history flag. Prospective counting starts
+  only at the first eligible signal strictly after the latest protocol, runner-
+  code, and dataset-policy freeze timestamp; prior months cannot be backfilled.
+  That signal must have all three factor rebalances decision-time valid; a
+  subset-valid month is retained but does not increment the 12/24 clock. The
+  random-rank baseline inherits the factor's three invalid-month triggers and
+  retains an invalid zero-target/full-cash output without treating episodic
+  missingness as zero or consuming a random permutation. The equal-weight
+  baseline and primary benchmark instead remain invested in a nonempty unique
+  eligible universe on sparse/tied factor months; their return is not replaced
+  by cash. The zero-target strategy month, invested benchmark return,
+  liquidation/redeployment turnover, costs, and active return remain in one
+  unfiltered continuous path used by economic support; removing a month or
+  restarting the path is forbidden. Continuous strategy targets are also
+  calendar-filtered before freeze to require their next monthly execution on or
+  before the accepted cutoff. A boundary signal with a complete diagnostic
+  label but a later execution beyond cutoff remains a factor diagnostic and
+  cannot become a hard-invalid strategy target. Prospective boundaries now use
+  timezone-aware freeze instants normalized to UTC and official frozen-calendar
+  XNYS close instants converted to UTC, with strict instant ordering for same-
+  day freezes. The 12/24 counter is operational only: protected opening waits
+  strictly beyond the later of the threshold signal's `e+21` label close and
+  following monthly execution close, without bypassing Track B logging or
+  separate access authorization. The latest prospective anchor also requires
+  completed detached run binding of the exact protocol, inventory, accepted
+  data, runner code, configuration, and environment identity; runner-code
+  freeze alone cannot start or increment the window. That binding now freezes
+  an immutable historical seed/cutoff and an append-only prospective succession
+  policy rather than pretending to hash future bytes. Consecutive previous-
+  hash/batch-hash records extend strictly increasing session bounds without
+  resetting the original anchor; corrections append audit records and cannot
+  overwrite or retroactively recompute frozen signals. Every factor-input
+  price anchor now also carries the accepted normalized permanent-security,
+  listing, and listing-episode identity. Symbol-change traversal is allowed
+  only for an evidenced rename inside that exact identity; ticker reuse,
+  relisting, venue/listing moves, share-class changes, distinct successor
+  securities, and ambiguous alias chains fail closed. Rename and reused-ticker
+  fixtures reject ticker-text-only stitching. Continuous factor-strategy,
+  long-only baseline, and primary factor-matched benchmark held returns now
+  use one adjacent common-calendar adjusted-close simple-return policy. A
+  split fixture rejects raw-close return, drifted-weight, turnover, cost, and
+  active-return contamination; missing anchors fail closed and separate split
+  or dividend cash-flow addition is forbidden as double counting. Baseline
+  21-row episode outputs now freeze a factor-matched signal-time target and
+  hold its execution weights statically through `e+21`, independent of an
+  intervening monthly continuous reset. Their exact weighted constituent
+  adjusted-close formula fails the whole episode on any invalid target return
+  without survivor renormalization, fill, cash, or zero substitution.
+  Bootstrap segments of two through
+  six rows now use genuine one-row within-segment resampling, with a
+  nondegenerate-support gate that prevents false Holm support and is an
+  explicit all-three-factor classifier coverage input. Listing keys
+  freeze once campaign-wide at earliest any-factor eligibility, so later
+  factor eligibility cannot re-encode an endpoint. Repository
+  governance fixes safe in-scope review findings without owner round trips and
+  keeps the task active through current-head review and remediation; only a
+  genuinely critical owner-decision follow-up retains the four-run,
+  thirty-minute cap. This release changes no research runtime, data, or
+  performance output.
 - Added the bounded Stage 4B-R1I attempt-start release. The owner selected
   bundle `R1I-A`, freezing the exact earlier attempt-allocation reference, a
   complete digest-pinned external readiness record, separate start-actor

@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-07-29 for the Stage 4B-R1I attempt-start release.
+Updated: 2026-07-31 for the twenty-fourth PR #177 review-remediation round.
 
 ## Canonical State
 
@@ -28,25 +28,179 @@ Updated: 2026-07-29 for the Stage 4B-R1I attempt-start release.
   `docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md`.
 - Accepted Stage 4B-R1H authority:
   `docs/experiment_trial_ledger_attempt_allocation_schema_contract.md`.
-- Active Stage 4B-R1I authority:
+- Accepted Stage 4B-R1I authority:
   `docs/experiment_trial_ledger_attempt_start_schema_contract.md`.
+- Active Track A/Track B scope authority:
+  `docs/eodhd_sp500_diagnostic_campaign_contract.md`.
 - Active roadmap: `docs/current_roadmap.md`.
 - Short operational controller: `docs/codex_long_running_controller.md`.
-- Current protected `origin/main`: `26bc9a8`. This retains verified Stage
-  4B-R1H merge `b42b911` and its successful exact merge-head CI run
-  `30489691309`, then adds one independent README-only mainline change. R1I
-  was rebased onto `26bc9a8` before its final exact-head gates.
-- Current base validation reported 2838 tests passed with two
-  platform-conditional wide-`longdouble` skips. The isolated R1I startup
-  baseline also passed Ruff, compilation, exact-base status, and prior
-  registry-artifact hash inspection.
-- Current R1I implementation is design-first in the isolated worktree. Final
-  local validation passed 2229 focused registry/structure tests and 3064 full
-  tests with the same two platform-conditional skips, plus Ruff, compileall,
-  deterministic repo-map, Skill audit, immutable R0-R7 hashes, exact bounded
-  v8-to-v9 succession, source/sdist/wheel package parity and packaged
-  conformance, privacy/Unicode/control/cleanup/diff, and self-adversarial
-  review with no remaining actionable P1/P2 finding.
+- Current protected `origin/main`: `6386c59`, the protected merge of PR #176.
+  Its exact merge-head CI run `30492542975` succeeded.
+- PR #177 is the current open scope-reset gate on
+  `codex/eodhd-diagnostic-scope-reset`; it is not merged. Initial review of
+  `3df9a21` found two P1 and two P2 protocol gaps, which commit `97425c0`
+  remediated. The second review of `97425c0` found three P2 gaps remediated by
+  `4d832c7`; the third review of `4d832c7` found two P2 gaps remediated by
+  committed and pushed head `6a7445f`. Exact-head CI run `30684864773` passed
+  for `6a7445f`. Its fourth review found two P2 gaps remediated by committed and
+  pushed head `e5d72c2`; exact-head CI run `30685562719` passed. The fifth
+  review of `e5d72c2` found one P2 remediated by committed and pushed head
+  `0179ebb`; exact-head CI run `30686127537` passed. The sixth review of
+  `0179ebb` found one P1 and one P2 remediated by committed and pushed head
+  `b8149c2`; exact-head CI run `30686852275` passed. The seventh review of
+  `b8149c2` found one P2 remediated by committed and pushed head `1f6c801`;
+  exact-head CI run `30687469154` passed. The eighth review of `1f6c801` found
+  one P2 remediated by committed and pushed head `86f6929`; exact-head CI run
+  `30687930346` passed. The ninth review of `86f6929` found one P2: the
+  `LOW_VOL_3M` one-day return kind and invalid-anchor behavior were ambiguous.
+  That finding was remediated by committed and pushed head `a5b6695`; CI run
+  `30688393600` passed on that exact head. The tenth review of `a5b6695` found two P2
+  gaps: the forward-return formula/anchors and centered-versus-uncentered
+  bootstrap draw reuse were ambiguous. The current branch-head snapshot
+  containing this handoff freezes a fail-closed simple endpoint return and one
+  shared bootstrap row-index draw across factors and both distributions, with
+  no second RNG pass. It includes endpoint and segmented shared-draw golden
+  fixtures. Those gaps were remediated by committed and pushed head `bc4c201`;
+  exact-head CI run `30689003562` passed. The eleventh review of `bc4c201`
+  found one P2: momentum and reversal anchor validation was incomplete. The
+  strict-anchor gap was remediated by committed and pushed head `d2ac8cd`;
+  exact-head CI run `30689676655` passed. The twelfth review of `d2ac8cd`
+  found one P2: the 253/22 lookback counts could be misread as requiring every
+  intermediate price rather than only each formula's two referenced anchors.
+  The current branch-head snapshot containing this handoff freezes those
+  counts as common-calendar position spans, requires exactly the two formula
+  anchors to be observed and valid, and gives an interior missing or invalid
+  adjusted-close value no factor-value or eligibility effect. Separate MOM/
+  REV interior-missing fixtures reject the forbidden full-window-contiguity
+  interpretation. That gap was remediated by committed and pushed head
+  `12cacaa`; exact-head CI run `30690253765` passed. The thirteenth review of
+  `12cacaa` found two P2 gaps: the generic complete-history eligibility gate
+  still contradicted endpoint-only MOM/REV behavior, and the machine-readable
+  prospective start did not wait for code and dataset-policy freezes. The
+  current branch-head snapshot replaces the generic gate with factor-specific
+  lookback-position and referenced-anchor validity, binds targets and benchmark
+  membership to that rule, and starts prospective counting strictly after the
+  latest protocol, runner-code, and dataset-policy freeze timestamp. It adds
+  integrated target and staggered-freeze boundary fixtures. Those gaps were
+  remediated by committed and pushed head `fc561e4`; exact-head CI run
+  `30690874955` passed. The fourteenth review of `fc561e4` found two P2 gaps:
+  prospective counting did not aggregate factor-specific eligibility, and the
+  random baseline did not freeze behavior for invalid factor months. That
+  remediation required all three factor rebalances to be
+  decision-time valid for the prospective counter, retains subset-valid dates
+  without counting them, and gives both baselines the same retained invalid
+  zero-target/full-cash behavior for sparse, tied, or duplicate-key months.
+  Random draws are not consumed for invalid months. Those gaps were remediated
+  by committed and pushed head `e9c2707`; exact-head CI run `30691526104`
+  passed. The fifteenth review of `e9c2707` found one P1 and one P2: segments of
+  at most six rows were copied by the bootstrap, and the first-eligibility key
+  freeze did not aggregate staggered factor eligibility. The current branch-
+  head snapshot uses one-row within-segment resampling for lengths two through
+  six, rejects degenerate resampling support, and freezes each listing key once
+  campaign-wide at earliest any-factor eligibility. Sixty-record short-segment
+  and staggered-factor key fixtures retain the exact 14-trial inventory. Those
+  gaps were remediated by committed and pushed head `46679c4`; exact-head CI
+  run `30692101398` passed. The sixteenth review of `46679c4` found two P2
+  gaps: the prior invalid-month rule incorrectly turned the equal-weight
+  baseline and primary benchmark into cash on a tied factor month, and the
+  classifier did not consume the already-frozen bootstrap-support gate. That
+  remediation kept the factor and random-rank target at zero
+  for sparse/tied invalid factor months while the equal-weight baseline and
+  primary benchmark remain invested in the nonempty unique eligible universe.
+  It retained resulting active returns descriptively and excluded them from
+  final-state support. It also passes all-three-factor nondegenerate bootstrap
+  support as an explicit classifier coverage input, with hard-validity
+  precedence. Integrated tied-month economic and classifier boundary fixtures
+  were remediated by committed and pushed head `5b08be6`; exact-head CI run
+  `30692981109` passed. The seventeenth review of `5b08be6` found one P1 and one
+  P2: an end-of-cutoff signal could have a complete label but no in-cutoff next
+  monthly execution, and invalid-month exclusion left the continuous economic
+  path ambiguous. The current branch-head snapshot excludes that boundary
+  signal before continuous-strategy target freeze without invalidating its
+  retained factor diagnostic. It also keeps every valid/tied/valid economic
+  path row, target transition, turnover, cost, benchmark return, and active
+  return in one unfiltered annualization path. A 22-session July 2024 cutoff
+  fixture and a classifier-discriminating three-month path fixture were
+  remediated by committed and pushed head `242f373`; exact-head CI run
+  `30693611292` passed. The eighteenth review of `242f373` found two P2 gaps:
+  freeze/signal comparison lacked a canonical UTC signal-close instant, and
+  the 12/24 counter could reach threshold before the final label and strategy
+  interval matured. The current branch-head snapshot requires timezone-aware
+  freeze instants normalized to UTC and compares them strictly with the frozen-
+  calendar official XNYS close converted to UTC. It makes threshold increment
+  operational only and delays protected opening until strictly after the later
+  of its label and next-month execution maturity, plus the existing Track B and
+  authorization gates. Same-day before/at/after-close and 12/24 output-maturity
+  fixtures were remediated by committed and pushed head `3aeeb5a`; exact-head
+  CI run `30694138955` passed. The nineteenth review of `3aeeb5a` found one P2:
+  runner-code freeze could precede a signal while the complete detached run
+  binding followed it. The current branch-head snapshot adds detached run
+  binding completion to the maximum required UTC anchor and forbids prospective
+  counting until protocol, inventory, data, code, config, and environment are
+  bound. A staggered code-before-signal/binding-after-signal fixture is not
+  pending local authorship. Those gaps were remediated by committed and pushed
+  head `e6c7ad5`; exact-head CI run `30694731334` passed. The twentieth review
+  of `e6c7ad5` found one P2: rebinding an exact monolithic data manifest for
+  each future batch would keep moving the prospective anchor. The current
+  branch-head snapshot binds an immutable historical seed plus an append-only
+  prospective chain with sequence, previous hash, content-addressed batch,
+  strictly increasing session bounds, and no anchor reset. Corrections append
+  audit records without overwriting or retroactively recomputing frozen
+  signals. A seed-plus-two-matured-batch fixture is not pending local
+  authorship. That gap was remediated by committed and pushed head `5869193`;
+  exact-head CI run `30695127750` passed. The twenty-first review of `5869193`
+  found one P2: factor input anchors did not bind their resolved permanent-
+  security/listing identity or distinguish an accepted rename from ticker
+  reuse. The current branch-head snapshot requires every factor price anchor
+  to match the target permanent-security, listing, and listing-episode IDs and
+  permits alias traversal only for a contiguous, evidenced same-episode symbol
+  rename. Ticker-only joins, reused tickers across issuers, relistings, listing
+  moves, share-class changes, distinct successors, and ambiguous chains fail
+  closed. Accepted-rename and equal-ticker/different-issuer fixtures are not
+  pending local authorship. That gap was remediated by committed and pushed
+  head `9bbc2c3`; exact-head CI run `30696026141` passed. The twenty-second
+  review of `9bbc2c3` found one P2: the continuous holdings path did not bind
+  strategy and primary-benchmark held returns to one price field/formula. The
+  current branch-head snapshot uses adjacent common-calendar adjusted-close
+  simple returns for the factor strategy, both long-only baselines, and the
+  primary factor-matched benchmark, with strict positive real non-Boolean
+  anchors and no repair, raw-close fallback, or separate split/dividend cash-
+  flow addition. A 2-for-1 split fixture distinguishes adjusted from raw gross
+  return, drifted weights, turnover, cost, and active return and is not pending
+  local authorship. That gap was remediated by committed and pushed head
+  `93adce5`; exact-head CI run `30696493027` passed. The twenty-third review of
+  `93adce5` found one P2: baseline `episode_21_row_return` did not define
+  whether an intervening monthly execution reset the diagnostic target. The
+  current branch-head snapshot freezes the factor-matched signal-time equal-
+  weight or random-rank target, holds its execution weights statically through
+  `e+21`, aggregates exact weighted constituent adjusted-close endpoint
+  returns, and invalidates the whole episode on any invalid target return
+  without survivor renormalization or continuous-path reuse. A short-month
+  fixture distinguishes the required `0.01` episode from a forbidden `0.10`
+  monthly-reset slice and is not pending local authorship. That gap was
+  remediated by committed and pushed head `2c6b827`; exact-head CI run
+  `30697181943` passed. The twenty-fourth review of `2c6b827` found one P1:
+  non-circular length-six blocks followed by tail truncation gave unequal row
+  inclusion weights whenever segment length was not divisible by six, so a
+  globally centered null table could still have a nonzero bootstrap mean. The
+  current branch-head snapshot draws circular starts uniformly across every
+  position, wraps only inside the current segment, and retains the first `n`
+  concatenated rows. Each row therefore has expected inclusion weight one.
+  A 63-record fixture exhaustively checks nine seven-row segments and rejects
+  the former `[1,1.5,1,1,1,1,0.5]` marginal weights and their nonzero MOM and
+  LOW_VOL null means. The actual remaining gate is exact-head CI on the current
+  head, followed by one current-head Codex review; every finding restarts that
+  remediation loop. Do not repeat commit or push work from an old handoff
+  instruction; resolve current `HEAD`, remote head, CI, and review state.
+- Current protected-main baseline: 3064 tests passed with two
+  platform-conditional wide-`longdouble` skips. The PR #176 release also
+  passed Ruff, compileall, deterministic repo-map, Skill audit, immutable
+  R0-R7 hashes, exact bounded v8-to-v9 succession, package parity, privacy,
+  Unicode/control, cleanup/diff, and final review gates.
+- R1I is complete. Do not start R1J or another one-event registry expansion.
+- The accepted 37-event vocabulary is preserved as optional
+  `full_ledger_profile_v1`; 37/37 coverage is not a prerequisite for Track A or
+  the later minimal Track B runtime.
 - Stage 1 split isolation and Stage 2 signal/execution timing are complete on
   protected main. Stage 3 methodology is accepted; it does not accept a
   provider, dataset, license, universe, field, benchmark, or historical claim.
@@ -247,7 +401,7 @@ The current schema-v1 JSON logs cannot prove these properties and remain
 dependency, migrated log, research trial, private access, or generated
 performance evidence.
 
-## Accepted R0 Through R1H And Active R1I Attempt Start
+## Accepted R0 Through R1I And Optional Full Ledger Profile
 
 Six non-overlapping read-only audits found that Stage 4a intentionally froze
 only the common event envelope and `LEDGER_EPOCH_CREATED` payload. Exact
@@ -548,6 +702,11 @@ capability mint, idempotency, one-time consumption, durable append, execution,
 artifact, protected access, or research behavior; every such stateful use
 remains fail closed.
 
+R1I is accepted on protected main through PR #176 and exact merge-head CI run
+`30492542975`. The accepted registry work is retained unchanged as
+`full_ledger_profile_v1`. The remaining 26 incomplete payloads are optional
+future hardening and are not the current task queue.
+
 ## Verified Implementation Baseline
 
 - Strict local CSV validation and metadata inventory; no downloader.
@@ -599,11 +758,10 @@ acceptance/actor-authority, expected-output, and first/retry references. Stage
 4B-R1I adds attempt-start shape with exact allocation/readiness/start-authority
 and one-shot capability references. These releases pin external authority and
 currentness references but do not implement the stateful ledger, capability
-service, or executor. Additional blockers
-include incomplete runtime trial retention,
-absent dependence/multiplicity/overfit controls, and diagnostic-only
-cost/capacity assumptions. See `docs/current_roadmap.md` for the prioritized
-list.
+service, or executor. Track A therefore uses a frozen protocol, exact
+14-semantic-trial inventory, detached hashes, complete outcome retention, and a
+repository-external private bundle. This is sufficient only for
+`DIAGNOSTIC_ONLY`; it cannot support formal promotion or prospective access.
 
 The 2026-07-11 conformance audit remains historical evidence at its audited
 SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
@@ -612,8 +770,13 @@ SHA. Its prior no-P1/P2 conclusion does not supersede these later findings.
 
 At the last verification, PR #148 was an independent Draft governance PR from
 an older base that changed only `AGENTS.md`. It was not a predecessor for PRs
-#158-#174. The Stage 4B-R1I implementation slice does not edit `AGENTS.md`,
-merge/close that draft, or overwrite its policy. Independent thin-router PR
+#158-#176. On 2026-07-29 the owner explicitly required PR #177 to add automatic
+review-remediation and bounded scheduled-wait rules to `AGENTS.md`. PR #148 is
+still neither a predecessor nor authorized for merge/close, but it now has a
+direct file overlap and stale-base conflict risk. Before any future work on
+#148, rebase it and compare its review-trigger policy against the newer
+protected-main policy; do not overwrite either change silently. Independent
+thin-router PR
 #168 merged at `4ac5adb` while the first R1C head was being published. Its
 overlap was limited to `docs/repo_map.md`, `scripts/repo_map.py`, and
 `tests/test_project_structure.py`; there was no R1C contract, registry,
@@ -623,38 +786,37 @@ local gates before updating its remote head.
 
 ## Next Safe Stage
 
-Complete Stage 4B-R1I in the current isolated worktree. Preserve R0-R7
-byte/hash/behavior/package parity; publish the separate immutable `0.9.0`
-authority; keep exact R1I-A attempt/allocation/trial/scope,
-readiness/start-authority, role-independence, one-shot capability, lost-ack,
-single-start, and consumption rules; and promote only `ATTEMPT_STARTED`.
-Require an independent positive fixture, literal namespace/source/readiness/
-authority/capability/privacy/currentness/single-start/lost-ack oracles,
-arbitrary-promotion rejection, focused and full validation, self-adversarial
-read-only review, exact-head CI, one final current-head Codex review, normal
-protected merge, and exact merge-head CI. Do not enable auto-merge or merge
-while CI or review is pending.
+Complete PR 1 scope and campaign reset without data access or performance
+calculation:
 
-After R1I is accepted on protected main, perform a read-only dependency/risk
-analysis over the remaining 26 incomplete events. Continue with the smallest
-safe strict successor without inventing terminal evidence, artifact identity,
-protected-access authorization, private result fields, or event boundaries.
+- keep R1I complete at `6386c59`;
+- preserve the accepted registry releases unchanged as optional
+  `full_ledger_profile_v1`;
+- freeze the exact three-factor protocol and 14-trial inventory;
+- reconcile the roadmap, specification, controller, decision/engineering logs,
+  and repo map; and
+- pass local/full validation and final review before protected merge.
 
-Do not call the registry accepted until all 37 events have exact schemas and no
-incomplete or wildcard entry remains.
+After PR 1 merges, enter the private entitlement, retention, and publication
+gate. Probe current EODHD capability without exposing credentials or raw
+responses; do not purchase. Written permission must cover frozen-snapshot
+retention, aggregate charts/statistics, hashes/counts, and public noncommercial
+GitHub use. A missing paid entitlement or unresolved permission is the next
+owner stop.
 
-Only after the registry boundary is reviewable should Stage 4b select a
-physical backend, private storage location, transaction/recovery policy, or
-external checkpoint/currentness authority; materially different valid
-architecture choices require an explicit owner decision. That decision must
-cover append-only anti-rollback, latest/pending generation queries, fork
-handling, authority/signature policy, recovery, and retention. Runtime work
-must use a separate ledger namespace and caller-supplied temporary storage in
-tests until the private-location decision is accepted. Require behavioral
-fault, restart, concurrency, tamper, rollback, access-capability,
-campaign-closure, and privacy tests. Do not retrofit the legacy writer, run
-real-data campaigns, or interpret historical diagnostics while Stage 4b and
-later statistical gates remain incomplete.
+Only after that private gate may PR 2 add public manifest/validator and safe
+projection support while private acquisition/normalization remains outside the
+repository. Dataset review must be blind to factor and portfolio performance
+and must freeze the cutoff, manifest, calendar identity, lineage/terminal
+rules, exclusions, and diagnostic-ready or blocked decision.
+
+PR 3 then implements the bounded Stage 5-MVP/6-MVP runner; PR 4 runs and
+freezes all 14 outcomes. After PR 3 merges and before the first result-bearing
+job, a detached run binding must link the exact code, configuration,
+environment, protocol, inventory, and accepted dataset hashes. Only after
+Track A closes does the 8-12-event-family Track B runtime become the main
+engineering priority. Track B is required before prospective performance
+access, but it does not block Track A.
 
 ## Freshness Checklist
 

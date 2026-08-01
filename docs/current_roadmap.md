@@ -1,11 +1,10 @@
 # Current Roadmap
 
-Updated: 2026-07-29 for the Stage 4B-R1I attempt-start release.
+Updated: 2026-07-29 for the EODHD diagnostic campaign scope reset.
 
-Current protected-main base: `26bc9a8`. This retains the verified Stage 4B-R1H
-PR #174 merge at `b42b911` and its successful exact merge-head CI run
-`30489691309`, then adds one independent README-only mainline change. R1I is
-rebased onto this current protected base.
+Current protected-main base: `6386c59`, the verified protected merge of PR
+#176. Stage 4B-R1I is complete. The next delivery path is the bounded Track A
+diagnostic campaign; another one-event registry expansion is not authorized.
 
 This is the canonical roadmap. `docs/research_program_charter.md` defines the
 long-term evidence policy. Older checkpoints, gap refreshes, plans, and audits
@@ -82,7 +81,7 @@ relations with monotonic policy-bounded ordinals and no reset. R1H publishes
 immutable registry `0.8.0`, promotes only `ATTEMPT_ALLOCATED`, and adds no
 record resolver, append/storage, attempt-start/execution, artifact, access,
 research, or trading runtime.
-`docs/experiment_trial_ledger_attempt_start_schema_contract.md` is the active
+`docs/experiment_trial_ledger_attempt_start_schema_contract.md` is the accepted
 Stage 4B-R1I authority. The owner selected bundle `R1I-A`, freezing the exact
 earlier attempt-allocation reference, singleton campaign scope, a complete
 digest-pinned external `attempt_start_readiness_record_v1`, separate current
@@ -92,6 +91,10 @@ with a complete private external record. R1I publishes immutable registry
 `0.9.0`, promotes only `ATTEMPT_STARTED`, and adds no record resolver,
 authority/capability service, append/storage, executor, terminal/artifact/
 access event, research, or trading runtime.
+`docs/eodhd_sp500_diagnostic_campaign_contract.md` is the active Track A/Track
+B scope authority. It freezes the three-factor, 14-semantic-trial diagnostic
+protocol, separates the private dataset-acceptance binding from the public
+protocol freeze, and makes `full_ledger_profile_v1` optional future hardening.
 
 ## Objective
 
@@ -119,10 +122,11 @@ authorized.
 | Private diagnostics | Local-only EODHD validation and factor diagnostics on a fixed cohort; not accepted point-in-time real-data interpretation. |
 | LEAN | Non-executing metadata/signal scaffold only; no algorithm runtime, parity evidence, brokerage, orders, paper, or live path. |
 
-Protected main has a reported baseline of 2838 passing tests with two
-platform-conditional wide-`longdouble` skips after PR #174. Stages 1-3, Stage
+Protected main has a reported baseline of 3064 passing tests with two
+platform-conditional wide-`longdouble` skips after PR #176. Stages 1-3, Stage
 4a, Stage 4B-R0, Stage 4B-R1A, Stage 4B-R1B, Stage 4B-R1C, Stage 4B-R1D, and
-Stage 4B-R1E, Stage 4B-R1F, Stage 4B-R1G, and Stage 4B-R1H are complete.
+Stage 4B-R1E, Stage 4B-R1F, Stage 4B-R1G, Stage 4B-R1H, and Stage 4B-R1I are
+complete.
 Stage 4a defines the accepted ledger contract and deterministic synthetic event
 fixture; Stage 4B-R0 adds only a fail-closed registry foundation. Neither
 implements
@@ -211,17 +215,25 @@ timing, holdout, statistical, or public-documentation findings above.
 | 4b-R1F. Semantic trial-allocation schema | Complete on protected main via PR #172 | Publish immutable registry `0.6.0` under unchanged schema-language `0.2.0`; preserve R0/R1/R2/R3/R4 bytes and behavior; promote only `TRIAL_ALLOCATED`. Use exact trial identity, singleton campaign scope, exact prior parent/source references, complete canonical trial-definition and independent acceptance/publication/actor-authority tuples, and closed relation/code-identity unions. | Registry `0.6.0` supports exactly eight events and leaves the other 29 incomplete. Independent original/rerun fixtures plus literal child/clone cases, namespace/parent/authority/relation/code/privacy/scope killers, prior-release and package parity, focused/full gates, exact-head CI, one final current-head review, protected merge, and exact merge-head CI passed. Local shape acceptance is not represented as proof of parent existence/order, retained bytes, authority/currentness, relation acyclicity, uniqueness, append, or research behavior. |
 | 4b-R1G. Initial campaign-inventory-seal schema | Complete on protected main via PR #173 | Publish immutable registry `0.7.0` under unchanged schema-language `0.2.0`; preserve R0-R5 bytes and behavior; promote only `CAMPAIGN_INVENTORY_SEALED`. Use campaign subject and singleton scope, exact campaign allocation, a complete external canonical inventory record with independent acceptance and seal authority, a 4096-trial bound, and the exact nonrecursive pre-seal head. | Registry `0.7.0` supports exactly nine events and leaves the other 28 incomplete. Independent standard/maximum fixtures, literal scope/authority/count/preseal killers, prior-release and package parity, 1661 focused and 2496 full tests with two platform skips, exact-head CI, one final current-head review, protected merge, and exact merge-head CI passed. Local shape acceptance is not represented as proof of record retrieval, all-and-only completeness, reviewer independence, currentness, source/order, unique seal, atomic append, or research behavior. |
 | 4b-R1H. Attempt-allocation schema | Complete on protected main via PR #174 | Publish immutable registry `0.8.0` under unchanged schema-language `0.2.0`; preserve R0-R6 bytes and behavior; promote only `ATTEMPT_ALLOCATED`. Use exact attempt identity, singleton campaign scope, exact earlier trial/seal references, a complete external canonical attempt plan with independent acceptance and allocation authority, and closed first/retry branches with policy-bounded monotonic ordinals. | Registry `0.8.0` supports exactly ten events and leaves the other 27 incomplete. Independent first/retry fixtures, literal namespace/source/authority/acceptance/relation/ordinal killers, prior-release and package parity, 2003 focused and 2838 full tests with two platform skips, exact-head CI, one final current-head review, protected merge, and exact merge-head CI passed. Local shape acceptance is not represented as proof of source existence/order, plan retrieval, role independence, currentness, terminal predecessor, retry permission/budget, durable append, execution, artifact, access, or research behavior. |
-| 4b-R1I. Attempt-start schema | Active in the current tree; owner selected bundle R1I-A | Publish immutable registry `0.9.0` under unchanged schema-language `0.2.0`; preserve R0-R7 bytes and behavior; promote only `ATTEMPT_STARTED`. Bind exact earlier allocation/trial/campaign identity, a complete external readiness record, separate current start authority, reviewer/executor/allocation/plan role independence, and one ledger-owned one-shot execution capability with fail-closed lost-ack, currentness, and single-consumption rules. | Registry `0.9.0` must support exactly eleven events and leave the other 26 incomplete. Independent fixture plus literal namespace/source/readiness/authority/capability/privacy/currentness/single-start/lost-ack killers, prior-release and package parity, focused/full gates, exact-head CI, one final current-head review, protected merge, and exact merge-head CI must pass. Local shape acceptance must not be represented as proof of source order, record retrieval, readiness truth, independence, authority/currentness, atomic mint, idempotency, one-time consumption, durable append, execution, artifact, access, or research behavior. |
-| 4b. Experiment/trial ledger implementation | Blocked by complete 37-event payload-registry acceptance and later runtime architecture decisions | Freeze exact schemas in separately reviewed event-family batches, then close 37-of-37 coverage without incomplete, wildcard, open-object, or free-string stand-ins. Only afterward implement the accepted contract in a separate namespace with atomic allocation, append-only events, restart/concurrency/tamper tests, protected-access capability enforcement, campaign completeness, and safe projection. Material backend/private-location/recovery/checkpoint-currentness architecture choices require a separately recorded owner decision. | Complete registry coverage rejects every missing, unknown, or incompletely specified event before append. Later behavioral tests prove no silent overwrite, backfilled holdout laundering, failed-before-write loss, retry hiding, prefix/tail truncation, currentness rollback, checkpoint fork, or private projection leak. |
-| 5. Statistical validation | Blocked by Stage 4b | Add descriptive, dependence-aware, bootstrap, placebo, multiplicity, DSR, PBO, and stability controls in design-first increments. | Registered inference policy and deterministic synthetic/golden tests pass. |
-| 6. Canonical factor registry | Blocked by Stages 3-5 | Register interpretable price/volume baselines first; fundamentals wait for filing-availability support. | Formula, direction, source, fields, lag, parameters, fixture, tests, limitations, and trial family are complete. |
-| 7. WorldQuant batches | Blocked by Stage 6 | Add 5-10 formulas per compatible data family after operator contracts are ready. | Formula transcription/parity, missing/warm-up, timing, and traceability tests pass; no strategy claim. |
-| 8. Factor campaign runner | Blocked by Stages 3-7 | Run broad point-in-time single-factor campaigns across registered horizons and subgroups. | All trials/failures retained; multiple-testing-adjusted promotion only. |
-| 9. Strategy factory | Blocked by Stage 8 promotion | Add registered selection, holding, rebalance, buffer, and reviewed long-short families. | Every variant counted; costs and execution frozen. |
-| 10. Portfolio/risk engine | Blocked by Stage 9 | Add reviewed exposure, turnover, liquidity, volatility, concentration, weighting, and infeasibility contracts. | Drift-aware accounting and constraint tests pass. |
-| 11. Frozen historical evaluation | Blocked by Stages 3-10 | Freeze candidates, rules, costs, metrics, thresholds, and trial policy before purged walk-forward evaluation. | Correct sample classification, complete access ledger, and no tuning on protected results. |
-| 12. Independent reproduction | Blocked by Stage 11 promotion | Reproduce promoted results from the frozen manifest through an independent path. | Data/config/code/output and metric parity pass. |
-| 13. LEAN parity/paper candidate | Blocked by `PORTFOLIO_PASS` and separate scope decision | Compare signals, holdings, trades, costs, and reconciliation only. | Explicit authorization is still required before paper runtime; live remains unauthorized. |
+| 4b-R1I. Attempt-start schema | Complete on protected main via PR #176 | Publish immutable registry `0.9.0` under unchanged schema-language `0.2.0`; preserve R0-R7 bytes and behavior; promote only `ATTEMPT_STARTED`. | Registry `0.9.0` supports exactly eleven events and leaves the other 26 incomplete. Focused/full gates, exact-head CI, final current-head review, protected merge, and exact merge-head CI passed. |
+| Track A PR 1. Scope and campaign reset | Active scope | Mark R1I complete; preserve the 37-event vocabulary as optional `full_ledger_profile_v1`; freeze the exact three-factor protocol and 14-trial inventory; separate Track A from Track B. Change no research runtime and calculate no performance. | Canonical roadmap/handoff/spec/controller agree; preregistration contains no open research-choice placeholders or self-hash; trial inventory contains exactly 14 unique trials; local/full checks and review pass. |
+| Track A private gate. Entitlement, retention, and publication | Blocked pending private evidence | Probe the existing EODHD entitlement without exposing credentials or responses; obtain written retention and public-derived-output permission; optionally check WRDS/CRSP access. Do not purchase automatically. | A private permitted-use record names the exact entitlement, retention/deletion duty, publication allowlist, and owner action. Missing paid entitlement or unresolved permission stops once for owner input. |
+| Track A PR 2. Dataset manifest and validation | Blocked by the private gate | Add public manifest schema/validator and safe projection. Keep acquisition and normalization private. Audit membership, lineage, delistings, terminal events, corporate actions, field semantics, calendar alignment, and the separate 2018-plus quality window without viewing performance. | A non-self-issued blinded dataset-review decision binds cutoff, calendar, private manifest hash, public projection hash, exclusions, thresholds, and diagnostic-ready or blocked status. |
+| Track A PR 3. Stage 5-MVP/6-MVP diagnostic runner | Blocked by accepted PR 2 dataset review | Implement only the preregistered factors, execution-anchored 21-row diagnostics with signal-axis 22-row purge, continuous monthly-rebalanced long-only paths, two factor-matched baselines, 0/10/25-bps costs, exact moving-block bootstrap, Holm correction, robustness summaries, and machine-readable outputs. | Deterministic alignment, missing/invalid, baseline, cost, bootstrap, multiplicity, and evidence-output tests pass. No result is interpreted and no extra trial is introduced. After protected merge, a detached pre-run binding freezes code, config, environment, protocol, inventory, and accepted data hashes. |
+| Track A PR 4. Frozen diagnostic evidence | Blocked by validated PR 3 runner and detached pre-run binding | Run all 14 trials once against the accepted private binding, retain every attempt/outcome, build and verify the repository-external bundle, obtain independent read-only review, and publish only a license-approved safe aggregate projection. | Bundle completeness is 100%; all 14 trials reconcile; final state is one allowed `*_DIAGNOSTIC`; no formal, profitability, deployment, or market-wide claim is made. |
+| Track B. Minimal formal evidence runtime | Blocked only by Track A closure, not a Track A prerequisite | In at most one design PR and one runtime PR, implement 8-12 conceptual event families using accepted vocabulary where practical and repository-external stdlib SQLite. | Append-only atomicity, hashes/sequences, idempotency, restart/replay, failure retention, artifact disposition, campaign closure, review, protected access, and safe projection pass. More than 14 exact wire event types requires a new owner decision. |
+| Optional `full_ledger_profile_v1` | Deferred optional hardening | Preserve accepted 37-event artifacts and immutable releases. Do not continue one-event PRs or require 37/37 for diagnostic or minimal-runtime delivery. | Any future completion is separately prioritized and cannot rewrite prior immutable releases. |
+| Broad formal statistics/factor-zoo/strategy program | Deferred beyond Track A and Track B | DSR, PBO/CSCV, SPA/Reality Check, broad factor registration, WorldQuant batches, strategy factory, portfolio/risk promotion, independent cross-provider reproduction, and LEAN parity remain later formal stages. | Each later stage receives a separate owner-approved scope and may not retroactively upgrade Track A evidence. |
+
+## Progress Reporting
+
+Report the accepted dataset version, eligible security/date counts, frozen
+semantic-trial count (14), completed and reconciled trial percentage, bundle
+completeness, diagnostic conclusion, prospective months accumulated, and
+independent replication status.
+
+Do not use total tests, event schemas, registry versions, documentation lines,
+mutation cases, or PR count as the primary measure of research progress.
 
 ## Review and Change Policy
 
@@ -231,6 +243,14 @@ timing, holdout, statistical, or public-documentation findings above.
 - After local validation and CI are stable, request `@codex review` once on the
   final stable head when review is required. Re-review only after an actionable
   fix changes that head.
+- Fix every safe actionable review finding inside the authorized scope without
+  waiting for owner confirmation. A pending review is not a terminal task
+  state: keep the task active, use one five-minute thread monitor when needed,
+  never duplicate the review request, and continue through every safe finding
+  until the exact current head has no actionable finding.
+- A genuinely critical owner decision uses one thirty-minute thread follow-up
+  schedule capped at four runs; no scheduled run may make the decision for the
+  owner.
 - Do not enable auto-merge or merge a review-required PR until Codex review has
   completed on the current head with no unresolved actionable findings.
 - Do not let multiple agents edit the roadmap, handoff, same factor/operator,

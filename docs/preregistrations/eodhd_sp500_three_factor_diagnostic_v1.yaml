@@ -1,0 +1,901 @@
+schema_version: eodhd_sp500_three_factor_diagnostic_v1
+
+campaign:
+  campaign_id: eodhd_historical_sp500_price_factor_baselines_v1
+  evidence_class: DIAGNOSTIC_ONLY
+  semantic_trial_count: 14
+  status: PROTOCOL_FROZEN_PENDING_BLINDED_DATA_ACCEPTANCE
+  protocol_hash_location: DETACHED_POST_MERGE_RECORD
+  code_sha_location: DETACHED_RUN_BINDING_AFTER_RUNNER_MERGE
+  environment_identity_location: DETACHED_RUN_BINDING_AFTER_RUNNER_MERGE
+  dataset_manifest_sha256_location: BLINDED_DATA_ACCEPTANCE_RECORD
+  public_projection_sha256_location: BLINDED_DATA_ACCEPTANCE_RECORD_IF_LICENSED
+  result_access_before_detached_run_binding: FORBIDDEN
+
+provider:
+  label: EODHD
+  current_known_plan: EOD_HISTORICAL_DATA_ALL_WORLD
+  historical_membership_entitlement: UNVERIFIED_PRIVATE_GATE
+  retention_permission: UNVERIFIED_WRITTEN_PERMISSION_REQUIRED
+  aggregate_publication_permission: UNVERIFIED_WRITTEN_PERMISSION_REQUIRED
+  raw_publication: FORBIDDEN
+  credentials_publication: FORBIDDEN
+  purchase_by_codex: FORBIDDEN
+
+dataset:
+  universe_name: HISTORICAL_SP500_MEMBERS
+  index_symbol: GSPC.INDX
+  candidate_start: 2014-01-01
+  cutoff_rule: LATEST_FULLY_INGESTED_SESSION_FROZEN_IN_BLINDED_DATA_ACCEPTANCE
+  primary_quality_start: 2018-01-01
+  pre_2018_classification: LIMITED_UNLESS_DATASET_REVIEW_ACCEPTS
+  coverage_outputs:
+    - coverage_all_available
+    - coverage_primary_quality_window
+    - coverage_pre_2018_limited
+  required_roles:
+    - historical_membership
+    - member_eod
+    - delisted_symbols
+    - symbol_change_history
+    - splits
+    - dividends
+    - benchmark_spy
+  private_manifest_required: true
+  safe_public_projection_required: CONDITIONAL_ON_WRITTEN_PERMISSION
+  blinded_data_acceptance_required: true
+
+identity:
+  permanent_provider_security_id_available: false
+  diagnostic_listing_key:
+    - exchange
+    - ticker
+    - effective_from
+    - effective_to
+  canonical_tie_breaker: DIAGNOSTIC_LISTING_LINEAGE_KEY
+  canonical_byte_encoding:
+    version: listing_lineage_key_bytes_v1
+    magic_ascii_then_zero_byte: listing_lineage_key_v1
+    exchange: NFC_UTF8_PREFIXED_BY_UINT32_BIG_ENDIAN_BYTE_LENGTH
+    ticker: NFC_UTF8_PREFIXED_BY_UINT32_BIG_ENDIAN_BYTE_LENGTH
+    effective_from: STRICT_GREGORIAN_YYYY_MM_DD_EXACTLY_10_ASCII_BYTES
+    effective_to_null: SINGLE_ZERO_BYTE
+    effective_to_present: SINGLE_0X01_BYTE_THEN_STRICT_10_BYTE_ASCII_DATE
+    effective_to_semantics: ENDPOINT_KNOWN_AT_CAMPAIGN_WIDE_FIRST_ANY_FACTOR_DECISION_TIME_ELIGIBILITY_ELSE_NULL
+    key_freeze: FIRST_ANY_FACTOR_DECISION_TIME_ELIGIBILITY_CAMPAIGN_WIDE
+    key_freeze_factor_aggregation: EARLIEST_SIGNAL_CUTOFF_ACROSS_MOM_12_1_REV_1M_AND_LOW_VOL_3M_FIRST_ELIGIBILITY
+    per_factor_key_freeze_or_reencoding: FORBIDDEN
+    later_factor_first_eligibility_reuses_campaign_frozen_key_bytes: true
+    later_actual_endpoint_or_provider_backfill_rewrites_key: false
+    string_constraints: NONEMPTY_UNICODE_SCALARS_NO_CONTROL_CHARACTERS
+    transformations_forbidden:
+      - TRIMMING
+      - CASE_FOLDING
+      - LOCALE_COLLATION
+      - DELIMITER_SERIALIZATION
+    ordering: LEXICOGRAPHIC_UNSIGNED_BYTES_ASCENDING
+    uses:
+      - FACTOR_TIE_BREAK
+      - FACTOR_TURNOVER_ALIGNMENT
+      - RANDOM_BASELINE_INPUT_ORDER
+  symbol_change_chain_required: true
+  factor_anchor_lineage_policy:
+    version: factor_anchor_lineage_v1
+    resolved_identity_origin: BLINDED_DATASET_REVIEW_ACCEPTED_NORMALIZED_SECURITY_MASTER_NOT_TICKER_TEXT
+    evidence_tier_limit: DIAGNOSTIC_ONLY_DOES_NOT_ASSERT_PROVIDER_PERMANENT_IDENTITY
+    required_on_every_factor_price_anchor:
+      - RESOLVED_PERMANENT_SECURITY_ID
+      - RESOLVED_LISTING_ID
+      - RESOLVED_LISTING_EPISODE_ID
+      - SOURCE_EXCHANGE
+      - SOURCE_TICKER
+      - SESSION_DATE
+      - ALIAS_EFFECTIVE_FROM
+      - ALIAS_EFFECTIVE_TO
+      - LINEAGE_RESOLUTION_EVIDENCE_ID
+    required_target_identity_fields:
+      - RESOLVED_PERMANENT_SECURITY_ID
+      - RESOLVED_LISTING_ID
+      - RESOLVED_LISTING_EPISODE_ID
+    anchor_to_target_identity_match: EXACT_PERMANENT_SECURITY_LISTING_AND_LISTING_EPISODE
+    alias_interval_semantics: EFFECTIVE_FROM_INCLUSIVE_EFFECTIVE_TO_EXCLUSIVE_NULL_OPEN
+    allowed_alias_traversal: ACCEPTED_SYMBOL_RENAME_SAME_PERMANENT_SECURITY_SAME_LISTING_AND_LISTING_EPISODE_ONLY
+    accepted_path_requirements: CONTIGUOUS_NONOVERLAPPING_ALIAS_INTERVALS_WITH_ACCEPTED_SOURCE_EVIDENCE
+    no_alias_change_path: SAME_ALIAS_EXACT_TARGET_IDENTITY
+    forbidden_traversal:
+      - TICKER_TEXT_ONLY_JOIN
+      - TICKER_REUSE_ACROSS_PERMANENT_SECURITIES
+      - RELISTING_OR_LISTING_EPISODE_CHANGE
+      - LISTING_OR_VENUE_MOVE
+      - SHARE_CLASS_CHANGE
+      - MERGER_ACQUISITION_OR_DISTINCT_SUCCESSOR_SECURITY
+      - AMBIGUOUS_GAPPED_OVERLAPPING_OR_CONFLICTING_ALIAS_CHAIN
+    factor_action_on_identity_mismatch_or_unresolved_path: INVALID_MISSING_FACTOR_VALUE_EXCLUDE_LISTING_FROM_FACTOR_DECISION_TIME_ELIGIBILITY_AND_COUNT_EXACT_REASON
+    price_stitch_or_ticker_fallback: FORBIDDEN
+  collision_and_gap_report_required: true
+  price_continuity_only_mapping: FORBIDDEN
+  unresolved_return_relevant_identity_issue: BLOCK_AFFECTED_ROWS
+  campaign_invalidation_thresholds:
+    status: FREEZE_IN_BLINDED_DATA_ACCEPTANCE_WITHOUT_PERFORMANCE_ACCESS
+    performance_informed_selection: FORBIDDEN
+
+price_policy:
+  factor_field: adjusted_close
+  factor_field_claim: EODHD_DIVIDEND_AND_SPLIT_ADJUSTED_CLOSE_RETURN_PROXY
+  forward_return_field: adjusted_close
+  forward_return_kind: SIMPLE_NOT_LOG
+  forward_return_formula: adjusted_close[label_end] / adjusted_close[label_start] - 1
+  forward_return_label_start: EXECUTION_CLOSE
+  forward_return_label_end: EXECUTION_CLOSE_PLUS_21_COMMON_CALENDAR_ROWS
+  forward_return_anchor_validation: BOTH_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE
+  invalid_forward_anchor_action: INVALIDATE_AND_RETAIN_FACTOR_MONTH_OUTCOME_WITH_REASON_COUNT
+  invalid_forward_anchor_repairs: FORBIDDEN_ZERO_FILL_FORWARD_FILL_BACKWARD_FILL_INTERPOLATION_CLIPPING_ABSOLUTE_VALUE_ALTERNATE_ROW_OR_LOG_FALLBACK
+  forward_return_golden_fixture:
+    execution_adjusted_close: 100.0
+    endpoint_adjusted_close: 121.0
+    simple_return: 0.21
+    forbidden_log_return: 0.1906203596086497
+  continuous_held_return_policy:
+    version: adjusted_close_simple_held_return_v1
+    consumers:
+      - LONG_ONLY_FACTOR_STRATEGY
+      - RANDOM_RANK_LONG_ONLY_BASELINE
+      - EQUAL_WEIGHT_ELIGIBLE_UNIVERSE_BASELINE
+      - PRIMARY_FACTOR_MATCHED_EQUAL_WEIGHT_BENCHMARK
+    strategy_held_return_field: adjusted_close
+    primary_benchmark_held_return_field: adjusted_close
+    field_claim: EODHD_DIVIDEND_AND_SPLIT_ADJUSTED_CLOSE_RETURN_PROXY
+    return_kind: SIMPLE_NOT_LOG
+    return_formula: adjusted_close[d] / adjusted_close[d-1] - 1
+    interval: EACH_ADJACENT_COMMON_CALENDAR_CLOSE_AFTER_EXECUTION_THROUGH_NEXT_MONTHLY_EXECUTION_CLOSE
+    anchor_validation: BOTH_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE
+    anchor_lineage_policy: factor_anchor_lineage_v1
+    strategy_invalid_anchor_action: INVALIDATE_AND_RETAIN_AFFECTED_STRATEGY_TRIAL_WITH_EXACT_REASON
+    primary_benchmark_invalid_anchor_action: INVALIDATE_REQUIRED_PRIMARY_COMPARISON_AND_ROUTE_TO_INVALID_DIAGNOSTIC
+    invalid_anchor_repairs: FORBIDDEN_ZERO_FILL_FORWARD_FILL_BACKWARD_FILL_INTERPOLATION_CLIPPING_ABSOLUTE_VALUE_ALTERNATE_ROW_OR_LOG_FALLBACK
+    raw_close_return_fallback: FORBIDDEN
+    separate_split_or_dividend_cash_flow_addition: FORBIDDEN_TO_PREVENT_DOUBLE_COUNTING
+    corporate_action_split_fixture:
+      split_ratio: 2.0
+      split_security_raw_close_before: 100.0
+      split_security_raw_close_after: 50.0
+      split_security_adjusted_close_before: 50.0
+      split_security_adjusted_close_after: 50.0
+      unaffected_security_adjusted_close_before: 100.0
+      unaffected_security_adjusted_close_after: 100.0
+      equal_weight_strategy_and_primary_benchmark_adjusted_gross_return: 0.0
+      forbidden_raw_close_gross_return: -0.25
+      adjusted_drifted_weights: [0.5, 0.5]
+      forbidden_raw_close_drifted_weights: [0.3333333333333333, 0.6666666666666666]
+      adjusted_turnover_back_to_equal_weight: 0.0
+      forbidden_raw_close_turnover_back_to_equal_weight: 0.3333333333333333
+      forbidden_raw_close_10_bps_cost_impact: 0.00025
+  exact_total_return_index_claim: FORBIDDEN_UNLESS_DATASET_REVIEW_VERIFIES
+  raw_ohlc_use: PRIVATE_AUDIT_ONLY
+  volume_use: FORBIDDEN_IN_CAMPAIGN
+  liquidity_filter: NONE
+  capacity_claim: FORBIDDEN
+  share_level_execution_claim: FORBIDDEN
+  raw_close_times_adjusted_volume: FORBIDDEN
+  missing_fill: NONE
+  security_specific_next_observation_substitution: FORBIDDEN
+  terminal_event_policy:
+    unresolved_terminal_economics: BLOCK_AFFECTED_ROWS
+    silent_drop: FORBIDDEN
+    zero_or_minus_one_imputation: FORBIDDEN
+    arbitrary_next_observed_security_row: FORBIDDEN
+
+universe:
+  membership: POINT_IN_TIME_EFFECTIVE_AND_KNOWN_BY_SIGNAL_CUTOFF
+  interval_boundary_rule: VERIFY_AND_FREEZE_IN_BLINDED_DATA_ACCEPTANCE
+  unresolved_boundary_row: INVALID
+  current_constituent_substitution: FORBIDDEN
+  include_former_members: true
+  include_delisted_where_available: true
+  minimum_factor_history: FACTOR_SPECIFIC
+  factor_month_minimum_eligible_securities: 100
+  claim_scope: HISTORICAL_SP500_MEMBERS_ONLY
+
+decision_time_eligibility:
+  evaluation_cutoff: SIGNAL_CLOSE_T
+  allowed_inputs:
+    - POINT_IN_TIME_MEMBERSHIP_EFFECTIVE_AND_KNOWN_AT_T
+    - LISTING_LINEAGE_RESOLVED_THROUGH_T
+    - FACTOR_SPECIFIC_LOOKBACK_COMMON_CALENDAR_POSITION_SPAN_ADDRESSABLE_AT_T
+    - FACTOR_SPECIFIC_REFERENCED_PRICE_ANCHORS_VALID_AT_T
+    - FACTOR_SPECIFIC_FACTOR_ANCHOR_LINEAGE_V1_IDENTITY_AND_PATH_VALID_AT_T
+    - FINITE_FACTOR_VALUE_AT_T
+    - CORPORATE_ACTION_POLICY_INFORMATION_KNOWN_AT_T
+  forbidden_inputs:
+    - EXECUTION_PRICE_AVAILABILITY_AFTER_T
+    - FORWARD_ENDPOINT_AVAILABILITY
+    - LATER_HALT_OR_DELISTING
+    - ANY_POST_T_RETURN_OR_AVAILABILITY_FIELD
+  frozen_at_t:
+    - ORDERED_ELIGIBLE_LISTING_KEY_SET
+    - FACTOR_RANKS
+    - DECILE_ASSIGNMENTS
+    - LONG_ONLY_TARGET
+    - MATCHED_BENCHMARK_MEMBERSHIP
+  post_t_mutation_effect_on_frozen_objects: NONE_BYTE_IDENTICAL
+  minimum_eligible_securities: 100
+
+outcome_availability:
+  diagnostic_missing_execution_to_endpoint_return:
+    action: INVALIDATE_FACTOR_MONTH
+    membership_or_target_recomputation: FORBIDDEN
+  selected_strategy_missing_execution_price:
+    action: INVALIDATE_AFFECTED_STRATEGY_TRIAL
+    substitute_or_renormalize: FORBIDDEN
+  strategy_missing_held_return:
+    action: INVALIDATE_AFFECTED_STRATEGY_TRIAL
+  matched_benchmark_missing_constituent_execution_or_return:
+    action: INVALIDATE_COMPARISON
+    membership_recomputation: FORBIDDEN
+
+calendar_and_timing:
+  calendar: XNYS_VERSION_BOUND_IN_BLINDED_DATA_ACCEPTANCE
+  signal_frequency: MONTHLY
+  signal_date_rule: LAST_COMMON_XNYS_SESSION_CLOSE_OF_CALENDAR_MONTH
+  signal_availability: AFTER_CLOSE
+  execution_contract: after_close_signal_next_observed_close_v1
+  execution_row: NEXT_COMMON_XNYS_SESSION_CLOSE
+  forward_horizon_return_rows: 21
+  forward_endpoint: EXECUTION_CLOSE_PLUS_21_COMMON_CALENDAR_ROWS
+  label_kind: execution_anchored_forward_return_v1
+  label_start: SIGNAL_CLOSE_PLUS_1_COMMON_CALENDAR_ROW
+  label_end: SIGNAL_CLOSE_PLUS_22_COMMON_CALENDAR_ROWS
+  bounded_windows: REQUIRED
+  walk_forward_folds: CALENDAR_YEAR_FOLDS_FROM_2018_PLUS_FINAL_BOUNDED_PARTIAL_YEAR
+  later_data_in_earlier_fold: FORBIDDEN
+  horizon_purge_signal_axis_rows: 22
+  embargo_rows: 0
+  embargo_reason: FIXED_FACTORS_NO_FIT_NO_TUNING_NO_ADAPTIVE_SELECTION
+  cross_split_labels: FORBIDDEN
+  common_calendar_endpoint_required: true
+
+factors:
+  - factor_id: MOM_12_1
+    formula: adjusted_close[t-21] / adjusted_close[t-252] - 1
+    direction: HIGHER_IS_BETTER
+    referenced_price_anchors:
+      - T_MINUS_252
+      - T_MINUS_21
+    anchor_lineage_policy: factor_anchor_lineage_v1
+    price_anchor_validation: ALL_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE
+    invalid_anchor_action: INVALID_MISSING_FACTOR_VALUE_EXCLUDE_LISTING_FROM_FACTOR_DECISION_TIME_ELIGIBILITY_AND_COUNT_REASON
+    invalid_anchor_repairs: FORBIDDEN_ZERO_FILL_FORWARD_FILL_BACKWARD_FILL_INTERPOLATION_CLIPPING_ABSOLUTE_VALUE_OR_ALTERNATE_ROW
+    lookback_common_calendar_positions: 253
+    required_observed_price_anchors: 2
+    intermediate_adjusted_close_values_required: false
+    interior_missing_price_action: NO_FACTOR_VALUE_EFFECT_IF_REFERENCED_ANCHORS_VALID
+    golden_fixture:
+      adjusted_close_t_minus_252: 80.0
+      adjusted_close_t_minus_21: 100.0
+      factor_value: 0.25
+  - factor_id: REV_1M
+    formula: -(adjusted_close[t] / adjusted_close[t-21] - 1)
+    direction: HIGHER_IS_BETTER
+    referenced_price_anchors:
+      - T_MINUS_21
+      - T
+    anchor_lineage_policy: factor_anchor_lineage_v1
+    price_anchor_validation: ALL_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE
+    invalid_anchor_action: INVALID_MISSING_FACTOR_VALUE_EXCLUDE_LISTING_FROM_FACTOR_DECISION_TIME_ELIGIBILITY_AND_COUNT_REASON
+    invalid_anchor_repairs: FORBIDDEN_ZERO_FILL_FORWARD_FILL_BACKWARD_FILL_INTERPOLATION_CLIPPING_ABSOLUTE_VALUE_OR_ALTERNATE_ROW
+    lookback_common_calendar_positions: 22
+    required_observed_price_anchors: 2
+    intermediate_adjusted_close_values_required: false
+    interior_missing_price_action: NO_FACTOR_VALUE_EFFECT_IF_REFERENCED_ANCHORS_VALID
+    golden_fixture:
+      adjusted_close_t_minus_21: 100.0
+      adjusted_close_t: 90.0
+      factor_value: 0.10
+  - factor_id: LOW_VOL_3M
+    formula: "-std([adjusted_close[d] / adjusted_close[d-1] - 1 for d=t-62..t], ddof=1)"
+    direction: HIGHER_IS_BETTER
+    one_day_return_kind: SIMPLE_NOT_LOG
+    one_day_return_formula: adjusted_close[d] / adjusted_close[d-1] - 1
+    return_row_range: D_EQUALS_T_MINUS_62_THROUGH_T_INCLUSIVE
+    required_return_rows: 63
+    required_history_price_anchors: 64
+    price_anchor_range: T_MINUS_63_THROUGH_T_INCLUSIVE
+    anchor_lineage_policy: factor_anchor_lineage_v1
+    price_anchor_validation: REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE
+    invalid_anchor_action: INVALID_MISSING_FACTOR_VALUE_EXCLUDE_LISTING_FROM_FACTOR_DECISION_TIME_ELIGIBILITY_AND_COUNT_REASON
+    invalid_anchor_repairs: FORBIDDEN_ZERO_FILL_FORWARD_FILL_BACKWARD_FILL_INTERPOLATION_CLIPPING_ABSOLUTE_VALUE_ALTERNATE_ROW_OR_LOG_FALLBACK
+    slice_convention: PYTHON_HALF_OPEN_END_T_PLUS_1_INCLUDES_T
+    golden_fixture:
+      simple_return_sequence: 0.001_THROUGH_0.063_STEP_0.001
+      simple_negative_sample_std_ddof_1: -0.01833030277982336
+      forbidden_log_negative_sample_std_ddof_1: -0.017765781758667692
+
+factor_diagnostics:
+  quantiles: 10
+  rank_ic: SPEARMAN_AVERAGE_TIE_RANKS_THEN_PEARSON
+  minimum_distinct_factor_values: 10
+  minimum_distinct_forward_returns: 2
+  winsorization: NONE
+  normalization: NONE
+  post_result_sign_reversal: FORBIDDEN
+  binning: HIGH_TO_LOW_EQUAL_COUNT_TOP_REMAINDER_FIRST
+  tie_breaker: DIAGNOSTIC_LISTING_LINEAGE_KEY
+  decile_size_rule: "base=N//10; first N%10 high-ranked deciles receive base+1"
+  decile_output_order: D1_LOW_TO_D10_HIGH
+  adjacent_monotonicity: "mean(D{k+1}) - mean(D{k}) for k=1..9"
+  monotonicity_share: FRACTION_OF_9_ADJACENT_DIFFERENCES_NONNEGATIVE
+  fully_monotone: ALL_9_ADJACENT_DIFFERENCES_NONNEGATIVE
+  factor_turnover: TARGET_TO_TARGET_UNDIVIDED_SUM_ABSOLUTE_WEIGHT_CHANGES
+  factor_turnover_target_schedule: EVERY_SCHEDULED_SIGNAL_MONTH_FREEZES_TOP_DECILE_OR_ENUMERATED_ZERO_TARGET
+  factor_turnover_predecessor: IMMEDIATELY_PRECEDING_SCHEDULED_FROZEN_DECISION_TIME_TARGET
+  factor_turnover_zero_target_predecessor: INCLUDED
+  factor_turnover_outcome_validity_dependence: FORBIDDEN
+  outcome_invalid_middle_target_retention: RETAIN_AS_NEXT_TURNOVER_PREDECESSOR
+  outcome_invalid_factor_turnover_reporting: RETAIN_WITH_SEPARATE_OUTCOME_INVALID_FLAG
+  first_scheduled_factor_turnover: NOT_APPLICABLE
+  outputs:
+    - coverage
+    - invalid_and_missing_counts
+    - descriptive_mean_rank_ic_all_valid_factor_months
+    - descriptive_median_rank_ic_all_valid_factor_months
+    - descriptive_rank_ic_std_ddof_1_all_valid_factor_months
+    - descriptive_monthly_icir_all_valid_factor_months
+    - primary_mean_rank_ic_common_complete_case
+    - primary_common_complete_case_count
+    - dependence_aware_interval
+    - holm_adjusted_direction_test
+    - decile_returns
+    - top_minus_bottom_spread
+    - adjacent_decile_monotonicity
+    - factor_turnover
+    - yearly_results
+    - leave_one_year_out
+    - contribution_by_year
+    - contribution_by_security_where_additive
+  top_minus_bottom_is_tradable_short_strategy: false
+
+strategy:
+  portfolio: LONG_ONLY_TOP_DECILE_EQUAL_WEIGHT
+  episode_21_row_return_use: FACTOR_AND_DECILE_DIAGNOSTIC_ONLY_NOT_COMPOUNDED
+  return_object: CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH
+  held_return_policy: adjusted_close_simple_held_return_v1
+  strategy_held_return_field: adjusted_close
+  primary_benchmark_held_return_field: adjusted_close
+  selected_target_execution_anchor_field: adjusted_close
+  primary_benchmark_execution_anchor_field: adjusted_close
+  first_earned_return: EXECUTION_CLOSE_TO_NEXT_COMMON_CALENDAR_CLOSE
+  continuous_schedule_inclusion: SIGNAL_TARGET_REQUIRES_NEXT_MONTHLY_EXECUTION_ON_OR_BEFORE_ACCEPTED_CUTOFF
+  boundary_signal_with_complete_label_but_next_execution_after_cutoff: EXCLUDE_BEFORE_CONTINUOUS_TARGET_FREEZE_NOT_INVALID
+  boundary_exclusion_factor_diagnostic_effect: NONE_FACTOR_DIAGNOSTIC_SIGNAL_AND_LABEL_RETAINED
+  boundary_exclusion_strategy_artifacts: NO_TARGET_NO_TURNOVER_NO_COST_NO_HARD_VALIDITY_FAILURE
+  final_included_target: MUST_HAVE_LATER_MONTHLY_EXECUTION_ON_OR_BEFORE_ACCEPTED_CUTOFF
+  zero_target_decision_time_conditions:
+    - ELIGIBLE_SECURITY_COUNT_BELOW_100_AT_T
+    - DISTINCT_FINITE_FACTOR_VALUE_COUNT_BELOW_10_AT_T
+    - DUPLICATE_CANONICAL_LISTING_KEY_BYTES_AT_T
+  invalid_rebalance_action: ZERO_TARGET_AT_NEXT_EXECUTION
+  all_other_zero_target_triggers: FORBIDDEN
+  later_unselected_diagnostic_outcome_failure:
+    may_invalidate_factor_month_or_comparison: true
+    strategy_target_mutation: FORBIDDEN
+    liquidation_creation: FORBIDDEN
+    cash_path_mutation: FORBIDDEN
+  selected_target_missing_execution_price: INVALIDATE_AFFECTED_STRATEGY_TRIAL
+  selected_execution_failure_zero_target_rewrite: FORBIDDEN
+  missing_held_return: INVALIDATE_AFFECTED_STRATEGY_TRIAL
+  missing_held_return_zero_target_rewrite: FORBIDDEN
+  primary_benchmark: FACTOR_MATCHED_CONTINUOUS_EQUAL_WEIGHT_DECISION_TIME_ELIGIBLE_UNIVERSE
+  primary_benchmark_membership_freeze: SIGNAL_CLOSE_T
+  primary_benchmark_sparse_or_tied_factor_month: REMAIN_INVESTED_IN_NONEMPTY_UNIQUE_DECISION_TIME_ELIGIBLE_UNIVERSE
+  primary_benchmark_duplicate_key_or_empty_universe: INVALID_UNFORMABLE_NO_CASH_SUBSTITUTE
+  primary_benchmark_reuse_of_factor_or_random_zero_target: FORBIDDEN
+  invalid_factor_month_continuous_path: INCLUDE_UNFILTERED_IN_FULL_STRATEGY_AND_PRIMARY_BENCHMARK_DAILY_PATH
+  invalid_factor_month_active_return_final_state_role: INCLUDED_IN_ANNUALIZED_ACTIVE_RETURN_SUBJECT_TO_EARLIER_COVERAGE_GATES
+  invalid_factor_month_filtering: FORBIDDEN
+  invalid_factor_month_segmentation_or_cash_restart: FORBIDDEN
+  invalid_factor_month_turnover_and_cost_bridge: PRESERVE_EXACT_CONTINUOUS_SCHEDULE
+  future_availability_membership_recomputation: FORBIDDEN
+  primary_benchmark_comparison_gap: INVALIDATE_REQUIRED_PRIMARY_COMPARISON
+  primary_benchmark_comparison_gap_final_state: INVALID_DIAGNOSTIC_HARD_VALIDITY_FAILURE
+  primary_benchmark_gap_is_coverage_or_false_economic_predicate: false
+  secondary_benchmark: SPY_ADJUSTED_CLOSE_PROXY_ON_IDENTICAL_DAILY_INTERVALS
+  missing_spy_return: INVALIDATE_SECONDARY_COMPARISON_ONLY
+  secondary_spy_comparison_final_state_role: DESCRIPTIVE_ONLY_NO_EFFECT
+  invalid_comparison_interval_omission_or_fill: FORBIDDEN
+  economically_supported_benchmark: PRIMARY_FACTOR_MATCHED_BENCHMARK_ONLY
+  shorting: false
+  borrow_assumptions: NONE
+  turnover_convention: UNDIVIDED_SUM_ABSOLUTE_WEIGHT_CHANGES_FROM_DRIFTED_WEIGHTS
+  initial_deployment_turnover: 1.0
+  full_switch_turnover: 2.0
+  terminal_liquidation: NONE_AFTER_FINAL_MEASURED_RETURN
+  cost_cases_bps:
+    - 0
+    - 10
+    - 25
+  primary_cost_bps: 10
+  gross_multiplier: 1 + gross_return
+  cost_formula: gross_multiplier * turnover * bps / 10000
+  cost_return_basis: BEGINNING_PERIOD_RETURN_IMPACT_OF_POST_RETURN_EQUITY_CHARGE
+  cost_application: DEDUCT_ONCE_FROM_PORTFOLIO_EQUITY_AT_EXECUTION_CLOSE
+  fixed_bps_interpretation: ALL_IN_DIAGNOSTIC_EXECUTION_COST_PROXY
+  included_components:
+    - COMMISSION
+    - BID_ASK_SPREAD
+    - SLIPPAGE
+    - EXCHANGE_AND_REGULATORY_FEES
+    - OTHER_ORDINARY_EXECUTION_FRICTION
+  separately_added_components: NONE
+  excluded_models:
+    - TAX
+    - BORROW
+    - MARKET_IMPACT
+    - CAPACITY
+    - PARTICIPATION_RATE
+    - CALIBRATED_FILL
+  unit_gross_multiplier_cost_fixtures:
+    turnover_0_4:
+      bps_0: 0.0
+      bps_10: 0.0004
+      bps_25: 0.0010
+    turnover_1_0:
+      bps_0: 0.0
+      bps_10: 0.0010
+      bps_25: 0.0025
+    turnover_2_0:
+      bps_0: 0.0
+      bps_10: 0.0020
+      bps_25: 0.0050
+  nonzero_incoming_return_cost_fixture:
+    gross_return: 0.10
+    gross_multiplier: 1.10
+    turnover: 2.0
+    bps: 25
+    beginning_period_cost_impact: 0.0055
+    net_return: 0.0945
+  random_rank_primary_cost_fixture:
+    gross_return: 0.10
+    gross_multiplier: 1.10
+    turnover: 2.0
+    bps: 10
+    beginning_period_cost_impact: 0.0022
+    net_return: 0.0978
+  zero_cost_interpretation: DIAGNOSTIC_ONLY
+
+trials:
+  inventory_path: eodhd_sp500_three_factor_trial_inventory_v1.json
+  exact_count: 14
+  hidden_trials: FORBIDDEN
+  exact_rerun_classification: ATTEMPT_OF_EXISTING_SEMANTIC_TRIAL
+
+baselines:
+  episode_21_row_return_contract:
+    version: frozen_target_execution_to_e_plus_21_v1
+    output_scope: EACH_BASELINE_X_EACH_FACTOR_X_EACH_VALID_FACTOR_SIGNAL_MONTH
+    target_freeze: FACTOR_MATCHED_SIGNAL_CLOSE_T_USING_DECISION_TIME_INFORMATION_ONLY
+    equal_weight_target: ALL_FACTOR_SPECIFIC_DECISION_TIME_ELIGIBLE_KEYS_AT_EQUAL_WEIGHT
+    random_rank_target: FROZEN_RANDOM_RANK_TOP_DECILE_KEYS_SELECTED_AT_SIGNAL_T_AT_EQUAL_WEIGHT
+    execution_start: NEXT_COMMON_CALENDAR_CLOSE_E_EQUALS_T_PLUS_1
+    endpoint: EXECUTION_E_PLUS_21_COMMON_CALENDAR_ROWS
+    holding_rule: STATIC_FROZEN_TARGET_FROM_E_THROUGH_E_PLUS_21
+    intervening_monthly_execution_before_endpoint: IGNORE_FOR_THIS_EPISODE_NO_TARGET_RESET_OR_CONTINUOUS_PATH_SLICE
+    constituent_return_field: adjusted_close
+    constituent_return_kind: SIMPLE_NOT_LOG
+    constituent_return_formula: adjusted_close_i[e+21] / adjusted_close_i[e] - 1
+    aggregation_formula: sum(weight_i_at_e * constituent_return_i)
+    weight_sum: EXACTLY_1_FOR_VALID_NONEMPTY_TARGET
+    costs_and_turnover: NONE_GROSS_COST_FREE_FACTOR_DIAGNOSTIC
+    anchor_validation: BOTH_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE
+    anchor_lineage_policy: factor_anchor_lineage_v1
+    invalid_target_constituent_action: INVALID_MISSING_RETAIN_EPISODE_AND_EXACT_REASON
+    invalid_constituent_repairs: FORBIDDEN_SURVIVOR_RENORMALIZATION_ZERO_FILL_FORWARD_FILL_BACKWARD_FILL_INTERPOLATION_CASH_SUBSTITUTE_ALTERNATE_ROW_OR_CONTINUOUS_PATH_REUSE
+    overlap_with_later_episode: ALLOWED_AND_RETAINED_AS_DIAGNOSTIC_DEPENDENCE_NOT_COMPOUNDED
+    short_month_golden_fixture:
+      execution_row: 0
+      next_monthly_execution_row: 20
+      endpoint_row: 21
+      frozen_target_weights: [0.5, 0.5]
+      security_a_adjusted_close_e_next_execution_endpoint: [100.0, 110.0, 121.0]
+      security_b_adjusted_close_e_next_execution_endpoint: [100.0, 90.0, 81.0]
+      constituent_episode_returns: [0.21, -0.19]
+      frozen_target_episode_gross_return: 0.01
+      forbidden_continuous_reset_target_at_row_20: [1.0, 0.0]
+      forbidden_continuous_path_slice_return: 0.10
+  equal_weight_eligible_universe:
+    relation_to_primary_benchmark: SAME_FROZEN_TARGET_AND_GROSS_COST_FREE_CONTINUOUS_RETURN_OBJECT
+    semantic_role_serialization: DISTINCT_BASELINE_AND_PRIMARY_BENCHMARK_ROLES
+    sparse_or_tied_factor_month_target: EQUAL_WEIGHT_NONEMPTY_UNIQUE_DECISION_TIME_ELIGIBLE_UNIVERSE
+    sparse_or_tied_factor_month_output: RETAIN_INVESTED_RETURN_WITH_MATCHED_FACTOR_MONTH_INVALID_FLAG
+    duplicate_key_or_empty_universe_output: RETAIN_INVALID_UNFORMABLE_OUTPUT_WITHOUT_CASH_SUBSTITUTE
+    matched_factor_invalid_continuous_economic_path: INCLUDED_AS_PRIMARY_BENCHMARK_RETURN_SUBJECT_TO_EARLIER_COVERAGE_GATES
+    reuse_as_random_rank_or_factor_zero_target: FORBIDDEN
+  random_rank_invalid_factor_month_policy:
+    triggers: SAME_THREE_DECISION_TIME_ZERO_TARGET_TRIGGERS_AS_FACTOR_STRATEGY
+    applies_to: RANDOM_RANK_FACTOR_MATCHED_OUTPUT_ONLY
+    output_disposition: RETAIN_INVALID_OUTPUT_RECORD
+    target: ZERO_TARGET
+    cash_weight: 1.0
+    episodic_return: INVALID_MISSING_NOT_ZERO
+    continuous_path: APPLY_ZERO_TARGET_LIQUIDATION_TURNOVER_THEN_NON_INTEREST_BEARING_CASH_WITH_INVALID_FLAG
+    random_seed_or_permutation_consumption: NONE
+    required_output_reconciliation: INVALID_OUTPUT_PRESENT_NOT_MISSING_TRIAL_OUTPUT
+    validity_role: SAME_FACTOR_MONTH_COVERAGE_INVALIDITY_NOT_NEW_HARD_VALIDITY_FAILURE
+  random_rank_top_decile:
+    seed_preimage: random_rank_v1|20260729|factor_id|signal_date_t_YYYY-MM-DD
+    date_token: SIGNAL_DATE_T_STRICT_YYYY_MM_DD_NOT_EXECUTION_DATE
+    input_order: ASCENDING_CANONICAL_LISTING_KEY_UNSIGNED_BYTES
+    permutation_input: INTEGER_INDICES_0_THROUGH_N_MINUS_1
+    permutation_interpretation: HIGH_TO_LOW_RANDOM_RANK
+    top_decile_size: N // 10 + (1 if N % 10 else 0)
+    selection: FIRST_TOP_DECILE_SIZE_PERMUTED_INDICES
+    forbidden_selection: LAST_CHUNK_OR_FLOOR_ONLY_SIZE
+    target_weight: 1 / selected_count
+    target_serialization: ASCENDING_CANONICAL_LISTING_KEY_BYTES
+    golden_fixture:
+      factor_id: MOM_12_1
+      signal_date: 2026-07-29
+      exchange: XNYS
+      ticker_sequence: T000_THROUGH_T102
+      effective_from: 2014-01-01
+      effective_to: null
+      universe_size: 103
+      top_decile_size: 11
+      seed_sha256: 4f3c72a41c74ed307cc6a86e734268f2266be31b4977ed99336462b234251e97
+      seed_uint64: 5709564476776574256
+      selected_tickers_in_permutation_order:
+        - T063
+        - T102
+        - T092
+        - T077
+        - T018
+        - T042
+        - T025
+        - T036
+        - T066
+        - T001
+        - T094
+
+inference:
+  primary_hypothesis_family:
+    - MOM_12_1_MEAN_MONTHLY_RANK_IC_GREATER_THAN_ZERO
+    - REV_1M_MEAN_MONTHLY_RANK_IC_GREATER_THAN_ZERO
+    - LOW_VOL_3M_MEAN_MONTHLY_RANK_IC_GREATER_THAN_ZERO
+  alternative: ONE_SIDED_POSITIVE_PREREGISTERED_DIRECTION
+  familywise_alpha: 0.05
+  multiplicity_method: HOLM
+  holm_tie_breaker_factor_order:
+    - MOM_12_1
+    - REV_1M
+    - LOW_VOL_3M
+  holm_sequential_thresholds:
+    - 0.016666666666666666
+    - 0.025
+    - 0.05
+  holm_stop_rule: STOP_AT_FIRST_NON_REJECTION
+  holm_index_origin: ONE_BASED_K_1_THROUGH_3
+  holm_python_sorted_access: sorted_raw_p[k-1]
+  holm_adjusted_p_value: "for k=1..3: min(1, max((3-j+1) * sorted_raw_p[j-1] for j=1..k))"
+  holm_map_back: ORIGINAL_FACTOR_ORDER_AFTER_SORTED_RUNNING_MAX
+  holm_golden_fixture:
+    raw_factor_order:
+      MOM_12_1: 0.04
+      REV_1M: 0.01
+      LOW_VOL_3M: 0.03
+    sorted_factor_order:
+      - REV_1M
+      - LOW_VOL_3M
+      - MOM_12_1
+    multiplied_sorted:
+      - 0.03
+      - 0.06
+      - 0.04
+    adjusted_sorted_running_max:
+      - 0.03
+      - 0.06
+      - 0.06
+    adjusted_original_factor_order:
+      MOM_12_1: 0.06
+      REV_1M: 0.03
+      LOW_VOL_3M: 0.06
+    rejected_factor_ids:
+      - REV_1M
+  dependence_aware_method: OVERLAPPING_CIRCULAR_MOVING_BLOCK_BOOTSTRAP_WITHIN_SEGMENT
+  bootstrap_unit: COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_RECORD
+  complete_case_rule: ALL_THREE_PRIMARY_FACTOR_RANK_ICS_VALID
+  missing_record_breaks_segment: true
+  segment_boundaries:
+    - FOLD_BOUNDARY
+    - PURGED_MONTH
+    - INVALID_OR_MISSING_MONTH
+    - LEAVE_ONE_YEAR_OUT_GAP
+  block_sampling: OVERLAPPING_CIRCULAR_STARTS_UNIFORM_WITH_REPLACEMENT_WITHIN_SEGMENT
+  segment_block_length: 6_IF_SEGMENT_LENGTH_GT_6_ELSE_1
+  short_segment_rule: LENGTH_2_THROUGH_6_DRAW_N_SINGLE_ROW_BLOCKS_UNIFORMLY_WITH_REPLACEMENT
+  singleton_segment_rule: DRAW_ONLY_INDEX_ZERO_RETAIN_FIXED_SINGLETON
+  blocks_drawn_per_segment: ceil(segment_length / segment_block_length)
+  concatenation: CHRONOLOGICAL_SEGMENT_ORDER_THEN_TRUNCATE_EACH_SEGMENT
+  circular_index_rule: (START_PLUS_OFFSET)_MOD_SEGMENT_LENGTH
+  circular_wrap_scope: WITHIN_CURRENT_SEGMENT_ONLY_NEVER_ACROSS_SEGMENT_BOUNDARY
+  tail_truncation_rule: RETAIN_FIRST_SEGMENT_LENGTH_ROWS_AFTER_CONCATENATING_FULL_CIRCULAR_BLOCKS
+  uniform_marginal_row_weight: REQUIRED_EACH_RETAINED_ROW_EXPECTED_INCLUSION_ONE_PER_SEGMENT_REPLICATE
+  fold_weighting: RETAINED_COMPLETE_CASE_MONTH_COUNT
+  joint_factor_draws: true
+  rng_consumption_order: REPLICATE_MAJOR_THEN_CHRONOLOGICAL_SEGMENT
+  block_start_draw_api: GENERATOR_INTEGERS_LOW_0_HIGH_N_SIZE_CEIL_N_OVER_L_ENDPOINT_FALSE
+  short_segment_resampling_support: AT_LEAST_ONE_SEGMENT_LENGTH_GE_2_AND_AT_LEAST_TWO_DISTINCT_NULL_BOOTSTRAP_MEANS_PER_FACTOR
+  degenerate_resampling_action: PRIMARY_INFERENCE_INVALID_NO_HOLM_SUPPORT_RETAIN_COUNTS
+  draw_reuse_across_distributions: SAME_ROW_INDEX_VECTOR_FOR_UNCENTERED_AND_NULL_CENTERED_TABLES
+  rng_passes_per_replicate: ONE_NO_SECOND_CENTERED_OR_UNCENTERED_PASS
+  null_centering: SUBTRACT_EACH_FACTOR_GLOBAL_OBSERVED_COMPLETE_CASE_MEAN
+  bootstrap_shared_draw_golden_fixture:
+    replicates: 3
+    segment_lengths:
+      - 8
+      - 7
+    factor_columns:
+      MOM_12_1: row_index / 100
+      REV_1M: (14 - row_index) / 200
+      LOW_VOL_3M: ((row_index % 4) - 1.5) / 100
+    observed_means_factor_order:
+      - 0.07
+      - 0.035
+      - -0.001
+    starts_by_replicate_then_segment:
+      - [[2, 2], [3, 4]]
+      - [[2, 7], [6, 0]]
+      - [[0, 3], [4, 6]]
+    row_indices_by_replicate:
+      - [2, 3, 4, 5, 6, 7, 2, 3, 11, 12, 13, 14, 8, 9, 12]
+      - [2, 3, 4, 5, 6, 7, 7, 0, 14, 8, 9, 10, 11, 12, 8]
+      - [0, 1, 2, 3, 4, 5, 3, 4, 12, 13, 14, 8, 9, 10, 14]
+    uncentered_means_by_replicate_factor_order:
+      - [0.074, 0.033, 0.0003333333333333334]
+      - [0.07066666666666667, 0.034666666666666665, -0.00033333333333333294]
+      - [0.068, 0.036000000000000004, -0.0030000000000000005]
+    null_centered_means_by_replicate_factor_order:
+      - [0.0039999999999999975, -0.0020000000000000035, 0.0013333333333333335]
+      - [0.0006666666666666636, -0.0003333333333333359, 0.0006666666666666673]
+      - [-0.0020000000000000057, 0.000999999999999998, -0.002]
+  bootstrap_nonmultiple_segment_null_mean_golden_fixture:
+    record_count: 63
+    segment_lengths: [7, 7, 7, 7, 7, 7, 7, 7, 7]
+    block_length: 6
+    factor_columns:
+      MOM_12_1: row_index / 100
+      REV_1M: ((row_index % 5) - 2) / 100
+      LOW_VOL_3M: ((row_index * row_index) % 11) / 100
+    exhaustive_draws: ALL_49_ORDERED_PAIRS_OF_STARTS_0_THROUGH_6_PER_SEGMENT
+    expected_circular_row_inclusion_weights_each_segment: [1, 1, 1, 1, 1, 1, 1]
+    expected_global_null_mean_factor_order:
+      - 7.401486830834377e-17
+      - 4.2679704567683347e-19
+      - 9.141717365465079e-18
+    expected_global_null_mean_absolute_tolerance: 1.0e-15
+    forbidden_noncircular_row_inclusion_weights_each_segment: [1, 1.5, 1, 1, 1, 1, 0.5]
+    forbidden_noncircular_global_null_mean_factor_order:
+      - -0.0035714285714285128
+      - 3.441911658684141e-19
+      - 0.00023809523809524734
+    forbidden_noncircular_action: REJECT_AS_TRUNCATION_BIASED_NOT_NULL_CENTERED
+  long_segment_block_length_monthly_records: 6
+  bootstrap_replicates: 20000
+  minimum_valid_monthly_records_for_primary_inference: 60
+  random_rank_seed: 20260729
+  bootstrap_seed: 20260730
+  numpy_bit_generator: PCG64DXSM
+  percentile_quantile_method: linear
+  rank_ic_interval: TWO_SIDED_95_PERCENT_PERCENTILE_UNCENTERED_RESAMPLES
+  primary_p_value: NULL_CENTERED_ONE_SIDED_MEAN_RANK_IC
+  primary_p_value_formula: "(1 + count(null_bootstrap_mean >= observed_mean)) / (bootstrap_replicates + 1)"
+  block_cross_fold_or_gap: FORBIDDEN
+  icir:
+    frequency: MONTHLY
+    formula: mean_rank_ic / sample_std_rank_ic_ddof_1
+    annualized_display_multiplier: sqrt(12)
+    hypothesis_decision_use: FORBIDDEN
+  strategy_metrics:
+    annualized_return: product(1 + daily_return) ** (252 / valid_daily_returns) - 1
+    annualized_volatility: sample_std_daily_return_ddof_1 * sqrt(252)
+    sharpe_style: mean_10bps_net_daily_return / sample_std_ddof_1 * sqrt(252)
+    cash_rate: 0
+    sharpe_label: zero_cash_rate_sharpe_style
+    max_drawdown: DAILY_NET_EQUITY_CURVE_ANCHORED_AT_1
+    gross_cumulative_return: product(1 + gross_daily_return) - 1
+    net_cumulative_return: product(1 + net_daily_return) - 1
+    daily_active_return: strategy_daily_return - cost_free_matched_benchmark_daily_return
+    annualized_active_return: strategy_annualized_geometric_return - benchmark_annualized_geometric_return
+    annualized_cost_drag: gross_annualized_return - net_annualized_return
+    total_execution_cost: sum(execution_cost_return)
+    dependence_interval: NOT_CLAIMED_IN_MINIMUM_CAMPAIGN
+    hypothesis_decision_use: FORBIDDEN
+  yearly_results_required: true
+  leave_one_year_out_required: true
+  contribution_by_year_required: true
+  contribution_by_security_required_where_additive: true
+  contribution_rules:
+    rank_ic_year: n_year * mean_ic_year / total_complete_case_months
+    strategy_security_gross_daily: pre_return_weight * security_daily_return
+    strategy_security_cost_at_execution: -gross_multiplier * (bps / 10000) * abs(delta_weight)
+    strategy_security_cost_sum: -gross_multiplier * turnover * bps / 10000
+    compounded_annual_return_contribution_claim: FORBIDDEN
+  final_state_robustness:
+    rank_ic_input_table: PRIMARY_COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_TABLE
+    factor_specific_all_valid_month_table_use: DESCRIPTIVE_ONLY_FORBIDDEN_FOR_FINAL_STATE
+    yearly_mean_assignment: SIGNAL_DATE_CALENDAR_YEAR
+    required_year_set: YEARS_WITH_AT_LEAST_ONE_SCHEDULED_PRIMARY_EVALUATION_SIGNAL_AND_FULL_LABEL_INSIDE_ACCEPTED_BOUNDS
+    required_year_set_outcome_dependence: FORBIDDEN
+    required_year_missing_common_case_row: ROBUSTNESS_FALSE
+    positive_year_fraction_numerator: REQUIRED_YEARS_WITH_COMMON_CASE_MEAN_RANK_IC_STRICTLY_GT_ZERO
+    positive_year_fraction_denominator: ALL_REQUIRED_YEARS
+    leave_one_year_out_required_omissions: EVERY_REQUIRED_YEAR_EXACTLY_ONCE
+    leave_one_year_out_drop_rule: DROP_COMMON_CASE_ROWS_WHOSE_EXECUTION_TO_END_INTERVAL_INTERSECTS_OMITTED_YEAR
+    leave_one_year_out_empty_remaining_table: ROBUSTNESS_FALSE
+  leave_one_year_out:
+    hypothesis_family: DESCRIPTIVE_ONLY_NO_NEW_HOLM_FAMILY
+    factor_label_intersects_omitted_year: DROP
+    strategy_segments: SEPARATE_CASH_STARTED_PRE_AND_POST_PATHS
+    holdings_or_cost_bridge_across_gap: FORBIDDEN
+    pooled_daily_statistics: CONCATENATE_SEGMENT_RETURNS
+    max_drawdown: MAX_OF_SEGMENT_DRAWDOWNS
+  deferred:
+    - DSR
+    - PBO
+    - CSCV
+    - SPA
+    - BROAD_FACTOR_ZOO_CONTROL
+
+sample_classification:
+  all_existing_eodhd_data: HISTORICAL_EVALUATION
+  pristine_holdout_claim: FORBIDDEN
+  exposed_interval:
+    start: 2025-05-01
+    end: 2026-05-31
+    classification: HISTORICAL_EVALUATION_PERMANENT
+
+prospective_confirmation:
+  required_freeze_timestamps:
+    - PROTOCOL_FREEZE_TIMESTAMP
+    - RUNNER_CODE_FREEZE_TIMESTAMP
+    - DATASET_POLICY_FREEZE_TIMESTAMP
+    - DETACHED_RUN_BINDING_COMPLETION_TIMESTAMP
+  detached_run_binding_completion_predicate: EXACT_PROTOCOL_INVENTORY_DATA_CODE_CONFIG_AND_ENVIRONMENT_IDENTITY_BOUND_BEFORE_RESULT_BEARING_JOB
+  detached_run_binding_incomplete: PROSPECTIVE_COUNT_FORBIDDEN
+  prospective_data_binding:
+    historical_seed: EXACT_IMMUTABLE_ACCEPTED_DATA_RECORD_AND_CUTOFF_BOUND_AT_DETACHED_RUN_BINDING
+    succession_policy_freeze: BOUND_IN_DETACHED_RUN_BINDING_BEFORE_FIRST_PROSPECTIVE_SIGNAL
+    append_record_chain: SEQUENCE_PREVIOUS_RECORD_SHA256_BATCH_MANIFEST_SHA256_SESSION_BOUNDS_INGESTED_AT_UTC
+    sequence_origin: 1_AFTER_HISTORICAL_SEED_SEQUENCE_0
+    previous_hash_rule: EXACT_IMMEDIATELY_PRECEDING_RECORD_SHA256
+    new_session_rule: STRICTLY_AFTER_PREVIOUS_ACCEPTED_CUTOFF_NO_OVERLAP
+    prior_artifact_mutation_or_deletion: FORBIDDEN
+    original_start_anchor_reset_on_append: FORBIDDEN
+    future_batch_bytes_bound_by: FROZEN_SUCCESSION_POLICY_AND_APPEND_RECORD_NOT_ORIGINAL_DETACHED_BINDING
+    correction_policy: APPEND_CORRECTION_RECORD_NO_OVERWRITE_NO_RETROACTIVE_SIGNAL_RECOMPUTE_AND_RETAIN_AFFECTED_VALIDITY
+    performance_access_during_append: FORBIDDEN
+  canonical_instant_standard: UTC_RFC3339_TIMEZONE_AWARE_EXACT_INSTANT
+  freeze_timestamp_normalization: REQUIRE_TIMEZONE_AWARE_CONVERT_TO_UTC_REJECT_NAIVE_OR_DATE_ONLY
+  signal_instant: OFFICIAL_XNYS_SESSION_CLOSE_FROM_FROZEN_CALENDAR_CONVERTED_TO_UTC
+  start_anchor_timestamp: MAXIMUM_OF_ALL_NORMALIZED_REQUIRED_FREEZE_INSTANTS_UTC
+  signal_eligibility_predicate: ALL_THREE_FACTOR_REBALANCES_DECISION_TIME_VALID
+  factor_rebalance_validity: NONE_OF_THREE_DECISION_TIME_ZERO_TARGET_TRIGGERS
+  start_rule: FIRST_SIGNAL_WITH_SIGNAL_INSTANT_UTC_STRICTLY_GT_START_ANCHOR_UTC_SATISFYING_SIGNAL_ELIGIBILITY_PREDICATE
+  same_day_freeze_before_official_close: SAME_DAY_SIGNAL_MAY_QUALIFY_IF_STRICTLY_LATER
+  freeze_at_or_after_official_close: SAME_DAY_SIGNAL_NOT_PROSPECTIVE
+  signal_at_exact_start_anchor_instant: NOT_PROSPECTIVE
+  subset_factor_eligible_signal_action: RETAIN_OPERATIONAL_RECORD_DO_NOT_START_OR_INCREMENT
+  rebalance_count_increment: ONE_ONLY_WHEN_SIGNAL_ELIGIBILITY_PREDICATE_TRUE
+  intermediate_performance_access: FORBIDDEN
+  operational_checkpoint_months: 6
+  preliminary_evidence_monthly_rebalances: 12
+  primary_confirmation_monthly_rebalances: 24
+  threshold_counter_event: QUALIFYING_SIGNAL_INSTANT_OPERATIONAL_ONLY
+  threshold_signal_label_maturity: EXECUTION_CLOSE_PLUS_21_COMMON_CALENDAR_ROWS_CLOSE_INSTANT_UTC
+  threshold_signal_strategy_maturity: FOLLOWING_MONTHLY_EXECUTION_CLOSE_INSTANT_UTC
+  threshold_output_maturity_instant: MAXIMUM_OF_LABEL_AND_STRATEGY_MATURITY_INSTANTS
+  protected_opening_timing: STRICTLY_AFTER_THRESHOLD_OUTPUT_MATURITY_INSTANT
+  opening_at_counter_increment_or_label_only: FORBIDDEN
+  opening_at_12_contaminates_later_window: true
+  protected_access_runtime_required_before_opening: true
+
+allowed_final_states:
+  - INVALID_DIAGNOSTIC
+  - INCONCLUSIVE_DIAGNOSTIC
+  - NEGATIVE_DIAGNOSTIC
+  - MIXED_DIAGNOSTIC
+  - POSITIVE_DIAGNOSTIC
+
+final_state_assignment:
+  evaluation: ORDERED_FIRST_MATCH_WINS_MUTUALLY_EXCLUSIVE_EXHAUSTIVE
+  hard_validity_gates:
+    protocol_and_detached_binding_precede_result_exposure: REQUIRED
+    dataset_acceptance: DIAGNOSTIC_READY
+    hashes_inventory_bundle_integrity: VALID
+    semantic_trials: EXACTLY_14_TERMINALLY_RECONCILED_WITH_ALL_REQUIRED_OUTPUTS
+    prefrozen_membership_identity_terminal_thresholds: NOT_EXCEEDED
+    required_strategy_execution_and_held_return_paths: VALID
+    required_factor_matched_primary_benchmark_comparisons: VALID
+    secondary_spy_comparison_validity: DESCRIPTIVE_ONLY_NOT_A_HARD_OR_COVERAGE_GATE
+    holm_rejection_with_nonpositive_observed_mean_rank_ic: INVALID
+  realized_coverage_gate:
+    prefrozen_thresholds: ALL_MET
+    minimum_common_complete_case_monthly_records: 60
+    nondegenerate_bootstrap_support_all_three_factors: REQUIRED
+  factor_predicates:
+    holm_supported: HOLM_REJECT_AND_OBSERVED_COMMON_CASE_MEAN_RANK_IC_STRICTLY_GT_ZERO
+    economically_supported: VALID_PRIMARY_FACTOR_MATCHED_NET_ANNUALIZED_ACTIVE_RETURN_STRICTLY_GT_ZERO_AT_BOTH_10_AND_25_BPS
+    robustness_supported:
+      rank_ic_input_table: PRIMARY_COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_TABLE
+      required_years: INFERENCE_FINAL_STATE_ROBUSTNESS_REQUIRED_YEAR_SET
+      leave_one_year_out_mean_rank_ic: STRICTLY_GT_ZERO_FOR_EVERY_REQUIRED_OMISSION
+      fraction_calendar_year_mean_rank_ic_strictly_gt_zero: STRICTLY_GT_0_5_USING_ALL_REQUIRED_YEARS_DENOMINATOR
+    exact_zero: FAILS_EVERY_STRICT_POSITIVE_PREDICATE
+  ordered_rules:
+    - state: INVALID_DIAGNOSTIC
+      when: ANY_HARD_VALIDITY_GATE_FAILS
+    - state: INCONCLUSIVE_DIAGNOSTIC
+      when: ANY_REALIZED_COVERAGE_GATE_FAILS
+    - state: POSITIVE_DIAGNOSTIC
+      when: ANY_FACTOR_IS_HOLM_AND_ECONOMICALLY_AND_ROBUSTNESS_SUPPORTED
+    - state: MIXED_DIAGNOSTIC
+      when: ANY_FACTOR_IS_HOLM_SUPPORTED
+    - state: NEGATIVE_DIAGNOSTIC
+      when: ALL_THREE_OBSERVED_COMMON_CASE_MEAN_RANK_ICS_STRICTLY_LT_ZERO
+    - state: INCONCLUSIVE_DIAGNOSTIC
+      when: OTHERWISE
+  strategy_and_robustness_create_new_hypotheses: false
+  claim_scope: DIAGNOSTIC_ONLY
+
+forbidden_claims:
+  - RESEARCH_PASS
+  - ALPHA_VALIDATED
+  - PROFITABLE
+  - TRADING_READY
+  - PAPER_READY
+  - LIVE_READY
+
+evidence_bundle:
+  repository_external: true
+  frozen_preregistration_child:
+    source_path: docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml
+    bundle_path: eodhd_sp500_three_factor_diagnostic_v1.yaml
+    byte_relation: EXACT_BYTE_FOR_BYTE_COPY
+    hash_relation: CHILD_SHA256_EQUALS_DETACHED_PROTOCOL_FREEZE_SHA256
+    json_conversion_is_authoritative: false
+  frozen_trial_inventory_child:
+    source_path: docs/preregistrations/eodhd_sp500_three_factor_trial_inventory_v1.json
+    bundle_path: trial_inventory.json
+    byte_relation: EXACT_BYTE_FOR_BYTE_COPY
+    hash_relation: CHILD_SHA256_EQUALS_DETACHED_TRIAL_INVENTORY_FREEZE_SHA256
+    semantic_relation: EXACT_FROZEN_14_TRIAL_INVENTORY
+  required_artifacts:
+    - dataset_full_manifest.json
+    - dataset_public_projection.json
+    - eodhd_sp500_three_factor_diagnostic_v1.yaml
+    - trial_inventory.json
+    - run_manifest.json
+    - factor_diagnostics.parquet
+    - decile_returns.parquet
+    - strategy_returns.parquet
+    - baseline_comparison.json
+    - cost_sensitivity.json
+    - yearly_robustness.json
+    - invalid_and_missing_summary.json
+    - review_record.json
+    - bundle_manifest.json
+  bundle_manifest_self_hash: FORBIDDEN
+  detached_root_record_required: true
+  hash_and_verify_every_child_artifact: true
+  retain_every_trial_outcome_subject_to_license: true
+  artifact_disposition_required: true
+
+track_b:
+  blocks_track_a: false
+  start_after_track_a_closure: true
+  conceptual_event_family_minimum: 8
+  conceptual_event_family_maximum: 12
+  exact_wire_event_type_owner_limit: 14
+  design_pr_maximum: 1
+  runtime_pr_maximum: 1
+  default_backend: REPOSITORY_EXTERNAL_STDLIB_SQLITE
+  complete_full_37_event_profile_first: false
+  second_general_purpose_dsl: FORBIDDEN

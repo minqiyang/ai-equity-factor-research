@@ -34,6 +34,10 @@ protected-main Stage 4B-R0 fail-closed registry foundation. R0 supports only
 the exact epoch schema, rejects the other 36 known events as
 `SCHEMA_INCOMPLETE_DIAGNOSTIC_ONLY`, and does not claim a complete payload
 registry or Stage 4b runtime enforcement.
+The owner-approved diagnostic exception in
+`docs/eodhd_sp500_diagnostic_campaign_contract.md` supersedes the registry-first
+delivery dependency only for Track A. It does not change the immutable ledger
+contracts or make a diagnostic result formally eligible.
 `docs/experiment_trial_ledger_allocation_registration_schema_contract.md`
 defines the owner-selected Stage 4B-R1A architecture-A decision. It preserves
 R0 unchanged, retains the 37-event vocabulary, selects reservation-only
@@ -141,6 +145,18 @@ readiness truth, effective-principal role independence, authority/currentness,
 single-start history, atomic capability mint, idempotency, consumption,
 durable append, execution, artifact, access, and research behavior remain
 fail-closed stateful requirements.
+R1I is complete on protected main through PR #176 at `6386c59`. The accepted
+37-event vocabulary and immutable releases are preserved as optional
+`full_ledger_profile_v1`; completing 37/37 is not required before the bounded
+Track A campaign or the later minimal Track B runtime.
+
+`docs/eodhd_sp500_diagnostic_campaign_contract.md` defines the active
+owner-approved two-track program. Track A freezes exactly three price-only
+factors and 14 semantic trials, uses purged bounded historical evaluation,
+dependence-aware inference, fixed cost cases, complete result retention, and a
+repository-external content-addressed evidence bundle. Track B is a later
+8-12-event-family stateful runtime required before prospective performance
+access or formal promotion. Track B does not block Track A.
 
 ## Current Phase and Boundary
 
@@ -148,8 +164,10 @@ The current phase is research-only.
 
 - No brokerage connection, orders, paper deployment, live deployment, or
   real-money execution.
-- No vendor download, credential use, or remote data access is authorized by
-  this specification.
+- This scope-reset PR performs no vendor download, credential use, remote data
+  access, or performance calculation. A later private entitlement/capability
+  probe and acquisition may proceed only through the campaign contract's
+  explicit license, privacy, purchase, and blinded dataset-acceptance gates.
 - The public repository may use synthetic data, committed fixtures, and local
   data only under explicit privacy and methodology gates.
 - `lean/` remains a non-executing scaffold until a future `PORTFOLIO_PASS`
@@ -341,27 +359,32 @@ Use exactly one evidence state for each evaluated object:
 Use the lowest state supported by completed gates. A candidate label is not
 authorization to paper trade or trade live.
 
+Track A uses only `INVALID_DIAGNOSTIC`, `INCONCLUSIVE_DIAGNOSTIC`,
+`NEGATIVE_DIAGNOSTIC`, `MIXED_DIAGNOSTIC`, or `POSITIVE_DIAGNOSTIC`. None of
+those states is `RESEARCH_PASS` or evidence of alpha, profitability, broader
+market validity, paper readiness, or live readiness.
+
 ## Development Sequence
 
 The canonical sequence is maintained in `docs/current_roadmap.md`:
 
-1. research charter reset;
-2. purged and bounded sample splits;
-3. signal and execution timing;
-4. point-in-time data methodology;
-5. immutable experiment and trial ledger contract and implementation;
-6. statistical validation;
-7. factor registry and interpretable baselines;
-8. WorldQuant batches;
-9. factor campaign runner;
-10. strategy factory;
-11. portfolio and risk engine;
-12. frozen walk-forward historical evaluation;
-13. independent reproduction; and
-14. separately gated LEAN parity and paper candidacy.
+1. complete the current scope reset and detached protocol freeze;
+2. resolve the private EODHD entitlement, retention, and publication gate;
+3. add dataset-manifest validation and complete a blinded dataset review;
+4. implement the exact Stage 5-MVP/6-MVP three-factor diagnostic runner;
+5. bind the protected runner code, exact configuration, environment, protocol,
+   inventory, and accepted dataset hashes before any result-bearing job;
+6. run and reconcile all 14 trials, freeze the private evidence bundle, obtain
+   independent review, and publish only a licensed safe projection;
+7. implement the minimal Track B formal-evidence runtime before prospective
+   performance access; and
+8. separately scope later formal statistics, broad factors, strategies,
+   portfolio/risk promotion, cross-provider reproduction, LEAN parity, or
+   paper candidacy.
 
-Each stage uses one coherent pull request. No later stage may imply an earlier
-methodology or evidence gate is complete.
+Track A does not require the formal ledger runtime, but it remains permanently
+`DIAGNOSTIC_ONLY`. No later stage may imply an earlier methodology, dataset,
+license, evidence, or authorization gate is complete.
 
 ## Explicit Non-Goals
 

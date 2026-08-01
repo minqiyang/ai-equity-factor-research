@@ -1,15 +1,341 @@
 from copy import deepcopy
+from datetime import date, datetime, timezone
 import hashlib
 from importlib import resources
+import itertools
 import json
+import math
+from numbers import Real
 from pathlib import Path
 import re
 import runpy
 import tomllib
 import unicodedata
 
+import numpy as np
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _listing_lineage_key_bytes_v1(
+    exchange: str,
+    ticker: str,
+    effective_from: str,
+    effective_to: str | None,
+) -> bytes:
+    def encode_text(value: str) -> bytes:
+        if not isinstance(value, str) or not value:
+            raise ValueError("listing-key text must be a nonempty string")
+        normalized = unicodedata.normalize("NFC", value)
+        if any(unicodedata.category(character).startswith("C") for character in normalized):
+            raise ValueError("listing-key text must not contain control characters")
+        encoded = normalized.encode("utf-8")
+        return len(encoded).to_bytes(4, byteorder="big", signed=False) + encoded
+
+    def encode_date(value: str) -> bytes:
+        if date.fromisoformat(value).isoformat() != value or len(value) != 10:
+            raise ValueError("listing-key date must be strict YYYY-MM-DD")
+        return value.encode("ascii")
+
+    end = (
+        b"\x00"
+        if effective_to is None
+        else b"\x01" + encode_date(effective_to)
+    )
+    return (
+        b"listing_lineage_key_v1\x00"
+        + encode_text(exchange)
+        + encode_text(ticker)
+        + encode_date(effective_from)
+        + end
+    )
+
+
+def _factor_anchor_lineage_v1_is_valid(
+    anchors: list[dict[str, object]],
+    target_identity: dict[str, str],
+    alias_chain: list[dict[str, object]],
+) -> bool:
+    identity_fields = (
+        "resolved_permanent_security_id",
+        "resolved_listing_id",
+        "resolved_listing_episode_id",
+    )
+    accepted_rename = (
+        "ACCEPTED_SYMBOL_RENAME_SAME_PERMANENT_SECURITY_"
+        "SAME_LISTING_AND_LISTING_EPISODE"
+    )
+    if not anchors or not alias_chain or any(
+        not target_identity.get(field) for field in identity_fields
+    ):
+        return False
+
+    parsed_chain: list[tuple[date, date | None, dict[str, object]]] = []
+    for alias in alias_chain:
+        try:
+            effective_from = date.fromisoformat(str(alias["alias_effective_from"]))
+            effective_to_raw = alias.get("alias_effective_to")
+            effective_to = (
+                None
+                if effective_to_raw is None
+                else date.fromisoformat(str(effective_to_raw))
+            )
+        except (KeyError, TypeError, ValueError):
+            return False
+        if effective_to is not None and effective_to <= effective_from:
+            return False
+        if any(
+            alias.get(field) != target_identity[field]
+            for field in identity_fields
+        ):
+            return False
+        for required_text in (
+            "source_exchange",
+            "source_ticker",
+            "lineage_resolution_evidence_id",
+        ):
+            if (
+                not isinstance(alias.get(required_text), str)
+                or not alias[required_text]
+            ):
+                return False
+        parsed_chain.append((effective_from, effective_to, alias))
+
+    for index, (effective_from, effective_to, alias) in enumerate(parsed_chain):
+        if index == len(parsed_chain) - 1:
+            if alias.get("transition_to_next") != "TARGET_ALIAS":
+                return False
+            continue
+        next_effective_from = parsed_chain[index + 1][0]
+        if (
+            effective_to != next_effective_from
+            or alias.get("transition_to_next") != accepted_rename
+            or next_effective_from <= effective_from
+        ):
+            return False
+
+    for anchor in anchors:
+        if any(
+            anchor.get(field) != target_identity[field]
+            for field in identity_fields
+        ):
+            return False
+        try:
+            session = date.fromisoformat(str(anchor["session_date"]))
+        except (KeyError, TypeError, ValueError):
+            return False
+        matching_aliases = [
+            alias
+            for effective_from, effective_to, alias in parsed_chain
+            if anchor.get("source_exchange") == alias["source_exchange"]
+            and anchor.get("source_ticker") == alias["source_ticker"]
+            and anchor.get("alias_effective_from") == alias["alias_effective_from"]
+            and anchor.get("alias_effective_to") == alias["alias_effective_to"]
+            and anchor.get("lineage_resolution_evidence_id")
+            == alias["lineage_resolution_evidence_id"]
+            and session >= effective_from
+            and (effective_to is None or session < effective_to)
+        ]
+        if len(matching_aliases) != 1:
+            return False
+    return True
+
+
+def _decision_time_objects(
+    records: list[dict[str, object]],
+) -> tuple[
+    tuple[tuple[bytes, float], ...],
+    tuple[tuple[bytes, float], ...],
+    float,
+]:
+    eligible = [
+        record
+        for record in records
+        if record["membership_known_at_t"]
+        and record["lineage_resolved_through_t"]
+        and record[
+            "factor_specific_lookback_position_span_addressable_at_t"
+        ]
+        and record["factor_specific_required_price_anchors_valid_at_t"]
+        and record["factor_anchor_lineage_v1_valid_at_t"]
+        and record["corporate_action_policy_known_at_t"]
+        and math.isfinite(float(record["factor_value_at_t"]))
+    ]
+    ordered = sorted(
+        eligible,
+        key=lambda record: (
+            -float(record["factor_value_at_t"]),
+            bytes(record["listing_key_bytes"]),
+        ),
+    )
+    listing_keys = [
+        bytes(record["listing_key_bytes"]) for record in ordered
+    ]
+    distinct_factor_values = {
+        float(record["factor_value_at_t"]) for record in ordered
+    }
+    invalid_rebalance = (
+        len(ordered) < 100
+        or len(distinct_factor_values) < 10
+        or len(set(listing_keys)) != len(listing_keys)
+    )
+    if invalid_rebalance:
+        target: tuple[tuple[bytes, float], ...] = ()
+    else:
+        base, remainder = divmod(len(ordered), 10)
+        top_count = base + (1 if remainder else 0)
+        target = tuple(
+            (bytes(record["listing_key_bytes"]), 1.0 / top_count)
+            for record in ordered[:top_count]
+        )
+    benchmark = tuple(
+        sorted(
+            (
+                (bytes(record["listing_key_bytes"]), 1.0 / len(ordered))
+                for record in ordered
+            ),
+            key=lambda item: item[0],
+        )
+    ) if ordered else ()
+    cash_weight = 1.0 if invalid_rebalance else 0.0
+    return target, benchmark, cash_weight
+
+
+def _factor_target_turnover(
+    previous_target: dict[bytes, float],
+    current_target: dict[bytes, float],
+) -> float:
+    listing_keys = previous_target.keys() | current_target.keys()
+    return sum(
+        abs(current_target.get(key, 0.0) - previous_target.get(key, 0.0))
+        for key in listing_keys
+    )
+
+
+def _classify_diagnostic(
+    *,
+    hard_valid: bool,
+    prefrozen_coverage_met: bool,
+    common_months: int,
+    bootstrap_support_all_three_factors: bool,
+    primary_matched_benchmark_comparisons_valid: bool,
+    secondary_spy_comparisons_valid: bool,
+    mean_rank_ics: tuple[float, float, float],
+    holm_rejections: tuple[bool, bool, bool],
+    active_return_10bps: tuple[float, float, float],
+    active_return_25bps: tuple[float, float, float],
+    common_case_positive_year_fractions: tuple[float, float, float],
+    common_case_all_loyo_means_positive: tuple[bool, bool, bool],
+) -> str:
+    if not hard_valid or not primary_matched_benchmark_comparisons_valid or any(
+        rejected and mean_rank_ic <= 0
+        for rejected, mean_rank_ic in zip(
+            holm_rejections, mean_rank_ics, strict=True
+        )
+    ):
+        return "INVALID_DIAGNOSTIC"
+    if (
+        not prefrozen_coverage_met
+        or common_months < 60
+        or not bootstrap_support_all_three_factors
+    ):
+        return "INCONCLUSIVE_DIAGNOSTIC"
+
+    holm_supported = tuple(
+        rejected and mean_rank_ic > 0
+        for rejected, mean_rank_ic in zip(
+            holm_rejections, mean_rank_ics, strict=True
+        )
+    )
+    coherent = tuple(
+        supported
+        and return_10bps > 0
+        and return_25bps > 0
+        and positive_year_fraction > 0.5
+        and loyo_positive
+        for (
+            supported,
+            return_10bps,
+            return_25bps,
+            positive_year_fraction,
+            loyo_positive,
+        ) in zip(
+            holm_supported,
+            active_return_10bps,
+            active_return_25bps,
+            common_case_positive_year_fractions,
+            common_case_all_loyo_means_positive,
+            strict=True,
+        )
+    )
+    if any(coherent):
+        return "POSITIVE_DIAGNOSTIC"
+    if any(holm_supported):
+        return "MIXED_DIAGNOSTIC"
+    if all(value < 0 for value in mean_rank_ics):
+        return "NEGATIVE_DIAGNOSTIC"
+    return "INCONCLUSIVE_DIAGNOSTIC"
+
+
+def _rank_ic_robustness_from_records(
+    records: list[dict[str, object]],
+    *,
+    factor_index: int,
+    required_years: tuple[int, ...],
+    sample_basis: str,
+) -> tuple[float, bool]:
+    def rank_ic_value(record: dict[str, object]) -> float | None:
+        rank_ics = record["rank_ics"]
+        if not isinstance(rank_ics, tuple):
+            raise TypeError("rank_ics must be a tuple")
+        value = rank_ics[factor_index]
+        return None if value is None else float(value)
+
+    if sample_basis == "COMMON_COMPLETE_CASE":
+        source_records = [
+            record
+            for record in records
+            if isinstance(record["rank_ics"], tuple)
+            and all(value is not None for value in record["rank_ics"])
+        ]
+    elif sample_basis == "FACTOR_ALL_VALID":
+        source_records = [
+            record for record in records if rank_ic_value(record) is not None
+        ]
+    else:
+        raise ValueError("unknown Rank IC robustness sample basis")
+
+    positive_year_count = 0
+    for year in required_years:
+        year_values = [
+            rank_ic_value(record)
+            for record in source_records
+            if int(record["signal_year"]) == year
+        ]
+        if not year_values:
+            return 0.0, False
+        if sum(year_values) / len(year_values) > 0:
+            positive_year_count += 1
+
+    all_omission_means_positive = True
+    for omitted_year in required_years:
+        remaining_values = [
+            rank_ic_value(record)
+            for record in source_records
+            if omitted_year not in record["label_intersection_years"]
+        ]
+        if (
+            not remaining_values
+            or sum(remaining_values) / len(remaining_values) <= 0
+        ):
+            all_omission_means_positive = False
+            break
+
+    return (
+        positive_year_count / len(required_years),
+        all_omission_means_positive,
+    )
 
 
 def test_required_directories_exist() -> None:
@@ -52,12 +378,45 @@ def test_required_governance_files_exist() -> None:
         "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md",
         "docs/experiment_trial_ledger_attempt_allocation_schema_contract.md",
         "docs/experiment_trial_ledger_attempt_start_schema_contract.md",
+        "docs/eodhd_sp500_diagnostic_campaign_contract.md",
+        "docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml",
+        "docs/preregistrations/eodhd_sp500_three_factor_trial_inventory_v1.json",
         "docs/current_roadmap.md",
         "docs/current_handoff.md",
     ]
 
     for file_name in required_files:
         assert (PROJECT_ROOT / file_name).is_file(), f"Missing file: {file_name}"
+
+
+def test_agents_requires_active_remediation_and_persistent_review_waits() -> None:
+    agents = (PROJECT_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    controller = (
+        PROJECT_ROOT / "docs/codex_long_running_controller.md"
+    ).read_text(encoding="utf-8")
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+
+    for phrase in [
+        "Do not wait for owner confirmation before fixing an actionable review finding",
+        "A pending `@codex review` is not a terminal task state",
+        "Do not send a final",
+        "thread-scoped monitor at five-minute",
+        "intervals, check the exact current head",
+        "until the exact-current-head review completes",
+        "thirty-minute intervals with at",
+        "most four scheduled runs",
+        "duplicate review request",
+        "owner's behalf",
+    ]:
+        assert phrase in agents
+    assert "five-minute scheduled monitor" in controller
+    assert "return a final response" in controller
+    assert "thirty-minute follow-up" in controller
+    assert "pending review is not a terminal task" in roadmap
+    assert "five-minute thread monitor" in roadmap
+    assert "thirty-minute thread follow-up" in roadmap
 
 
 def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
@@ -113,18 +472,18 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## Stage 2 Timing Decision",
         "## Stage 3 Data Methodology Decision",
         "## Accepted Stage 4a Experiment and Trial Ledger Decision",
-        "## Accepted R0 Through R1H And Active R1I Attempt Start",
+        "## Accepted R0 Through R1I And Optional Full Ledger Profile",
         "## Audited Findings",
         "## PR #148 Interaction",
         "## Next Safe Stage",
-        "Complete Stage 4B-R1I in the current isolated worktree",
+        "Complete PR 1 scope and campaign reset without data access or performance",
     ]:
         assert phrase in handoff
 
     assert "## Status: Historical" in historical_roadmap
     assert "must not be used as the current task queue" in historical_roadmap
-    assert "2838 passing tests" in roadmap
-    assert "Current base validation reported 2838 tests passed" in handoff
+    assert "3064 passing tests" in roadmap
+    assert "Current protected-main baseline: 3064 tests passed" in handoff
     assert "completed holding-episode metrics" in roadmap
     assert "no actionable P1/P2 findings" not in roadmap
     design = (
@@ -140,6 +499,2466 @@ def test_current_roadmap_and_handoff_define_one_active_status_source() -> None:
         "## PR Sequence",
     ]:
         assert phrase in design
+
+
+def test_eodhd_diagnostic_campaign_freezes_protocol_and_trial_inventory() -> None:
+    contract_path = PROJECT_ROOT / "docs/eodhd_sp500_diagnostic_campaign_contract.md"
+    preregistration_path = (
+        PROJECT_ROOT
+        / "docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml"
+    )
+    inventory_path = (
+        PROJECT_ROOT
+        / "docs/preregistrations/"
+        "eodhd_sp500_three_factor_trial_inventory_v1.json"
+    )
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(
+        encoding="utf-8"
+    )
+    handoff = (PROJECT_ROOT / "docs/current_handoff.md").read_text(
+        encoding="utf-8"
+    )
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(
+        encoding="utf-8"
+    )
+    controller = (
+        PROJECT_ROOT / "docs/codex_long_running_controller.md"
+    ).read_text(encoding="utf-8")
+    contract = contract_path.read_text(encoding="utf-8")
+    preregistration = preregistration_path.read_text(encoding="utf-8")
+    inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+    normalized_handoff = " ".join(handoff.split())
+
+    for canonical_doc in [roadmap, handoff, specification, controller]:
+        assert "docs/eodhd_sp500_diagnostic_campaign_contract.md" in canonical_doc
+
+    for phrase in [
+        "committed and pushed head `6a7445f`",
+        "Exact-head CI run `30684864773` passed",
+        "fourth review found two P2 gaps remediated by committed and pushed head `e5d72c2`",
+        "exact-head CI run `30685562719` passed",
+        "The fifth review of `e5d72c2` found one P2",
+        "remediated by committed and pushed head `0179ebb`",
+        "exact-head CI run `30686127537` passed",
+        "The sixth review of `0179ebb` found one P1 and one P2",
+        "remediated by committed and pushed head `b8149c2`",
+        "exact-head CI run `30686852275` passed",
+        "The seventh review of `b8149c2` found one P2",
+        "remediated by committed and pushed head `1f6c801`",
+        "exact-head CI run `30687469154` passed",
+        "The eighth review of `1f6c801` found one P2",
+        "remediated by committed and pushed head `86f6929`",
+        "exact-head CI run `30687930346` passed",
+        "The ninth review of `86f6929` found one P2",
+        "remediated by committed and pushed head `a5b6695`",
+        "CI run `30688393600` passed on that exact head",
+        "The tenth review of `a5b6695` found two P2",
+        "remediated by committed and pushed head `bc4c201`",
+        "exact-head CI run `30689003562` passed",
+        "The eleventh review of `bc4c201` found one P2",
+        "remediated by committed and pushed head `d2ac8cd`",
+        "exact-head CI run `30689676655` passed",
+        "The twelfth review of `d2ac8cd` found one P2",
+        "counts as common-calendar position spans",
+        "remediated by committed and pushed head `12cacaa`",
+        "exact-head CI run `30690253765` passed",
+        "The thirteenth review of `12cacaa` found two P2",
+        "factor-specific lookback-position and referenced-anchor validity",
+        "strictly after the latest protocol, runner-code, and dataset-policy",
+        "remediated by committed and pushed head `fc561e4`",
+        "exact-head CI run `30690874955` passed",
+        "The fourteenth review of `fc561e4` found two P2",
+        "all three factor rebalances to be decision-time valid",
+        "both baselines the same retained invalid zero-target/full-cash",
+        "remediated by committed and pushed head `e9c2707`",
+        "exact-head CI run `30691526104` passed",
+        "The fifteenth review of `e9c2707` found one P1 and one P2",
+        "one-row within-segment resampling for lengths two through six",
+        "campaign-wide at earliest any-factor eligibility",
+        "The sixteenth review of `46679c4` found two P2",
+        "equal-weight baseline and primary benchmark remain invested",
+        "bootstrap support as an explicit classifier coverage input",
+        "The seventeenth review of `5b08be6` found one P1 and one P2",
+        "complete label but no in-cutoff next monthly execution",
+        "valid/tied/valid economic path",
+        "The eighteenth review of `242f373` found two P2",
+        "canonical UTC signal-close instant",
+        "later of its label and next-month execution maturity",
+        "The nineteenth review of `3aeeb5a` found one P2",
+        "detached run binding completion",
+        "The twentieth review of `e6c7ad5` found one P2",
+        "immutable historical seed plus an append-only prospective chain",
+        "remediated by committed and pushed head `2c6b827`",
+        "exact-head CI run `30697181943` passed",
+        "The twenty-fourth review of `2c6b827` found one P1",
+        "Each row therefore has expected inclusion weight one",
+        "not pending local authorship",
+        "The actual remaining gate is exact-head CI on the current head",
+        "followed by one current-head Codex review",
+    ]:
+        assert phrase in normalized_handoff
+    assert "It must be committed and pushed" not in normalized_handoff
+
+    for phrase in [
+        "Track A - diagnostic research now",
+        "Track B - formal evidence infrastructure",
+        "`full_ledger_profile_v1`",
+        "`MOM_12_1`",
+        "`REV_1M`",
+        "`LOW_VOL_3M`",
+        "The immutable semantic-trial count is 14",
+        "`DIAGNOSTIC_ONLY`",
+        "must not embed a hash of itself",
+        "written permission",
+        "no more than 14 exact wire event types",
+        "Mutating any post-`t` availability",
+        "`listing_lineage_key_bytes_v1`",
+        "all-in fixed-bps diagnostic execution-cost",
+        "ordered, mutually exclusive, exhaustive decision",
+        "exact byte-for-byte copy",
+        "No other condition produces a zero target",
+        "Every yearly and leave-one-year-out Rank IC value",
+        "required `trial_inventory.json` child",
+        "For every later scheduled month",
+        "scheduled frozen decision-time target",
+        "make turnover skip back to the last outcome-valid month",
+        "required factor-matched primary-",
+        "benchmark comparison is a hard-validity failure",
+        "SPY is descriptive",
+        "gross_multiplier * turnover * bps / 10000",
+        "random-rank baseline's continuous path is net",
+        "beginning-period cost impact",
+        "strict signal date `t`, not the later execution date",
+        "Select exactly the first such number of",
+        "The golden test freezes the complete 103-index permutation",
+        "mathematical index `k` is explicitly one-based",
+        "adjusted values mapped back to factor order",
+        "one-day **simple** adjusted-close returns",
+        "a log return is forbidden",
+        "value for that listing/signal date is retained as invalid/missing",
+        "diagnostic forward return is the **simple** adjusted-close return",
+        "reuse that exact row-index vector jointly",
+        "There is one RNG pass per",
+        "Every adjusted-close anchor referenced by `MOM_12_1` or `REV_1M`",
+        "to both numerator and denominator anchors",
+        "not enter ranks merely because the formula",
+        "lookback count describes common-",
+        "positions**, not a contiguous-observed-price requirement",
+        "Each formula consumes exactly its two referenced",
+        "Interior-missing fixtures for both factors retain momentum",
+        "Every factor input price anchor is governed by",
+        "All anchors must match that target's permanent security, listing,",
+        "Traversal across different ticker text is allowed only through a",
+        "Ticker-text-only joins,",
+        "A reused-ticker fixture deliberately",
+        "The continuous held-return policy is",
+        "adjusted_close[d] / adjusted_close[d-1] - 1",
+        "A log return, raw close, or alternate price field is forbidden",
+        "The corporate-action fixture holds a split security",
+        "10-bps post-return-equity cost impact",
+        "factor-specific common-calendar lookback position span addressable",
+        "no extra observed-price completeness gate",
+        "Prospective collection compares only canonical UTC instants",
+        "Each signal instant is the official",
+        "XNYS session close from the frozen calendar",
+        "shared XNYS month-end date",
+        "strictly before the official",
+        "threshold-output-maturity instant",
+        "Opening at counter increment",
+        "Runner-",
+        "code freeze alone is insufficient",
+        "staggered binding fixture freezes runner code",
+        "detached binding does not pretend to hash future provider bytes",
+        "valid append never",
+        "append fixture binds a seed cutoff",
+        "only a subset of factors is valid",
+        "The equal-weight eligible-universe baseline is the same frozen target",
+        "The random-rank baseline alone inherits all three factor decision-time invalid-",
+        "`episode_21_row_return` is a separate overlapping diagnostic",
+        "hold those exact initial weights statically",
+        "sum(weight_i_at_e * constituent_return_i)",
+        "Survivor renormalization, zero/fill, cash substitution,",
+        "the next execution precedes `e+21`",
+        "primary benchmark are -0.0110 and -0.0125",
+        "calendar-only strategy schedule includes a signal only when",
+        "being excluded from",
+        "continuous strategy schedule because its next monthly execution",
+        "Removing the month",
+        "A valid/tied/valid three-month fixture",
+        "The random baseline does not derive a",
+        "seed or consume a permutation for that factor/month",
+        "freezes once, campaign-wide, at the earliest signal cutoff",
+        "per-factor freeze or re-encoding is forbidden",
+        "For `2<=n<=6`, set `L=1`",
+        "overlapping circular moving-block bootstrap within each segment",
+        "expected inclusion weight",
+        "nonmultiple-segment null-mean golden fixture uses 63 records",
+        "short-segment golden fixture uses 60 records",
+        "resampling support is degenerate",
+    ]:
+        assert phrase in contract
+
+    for phrase in [
+        "semantic_trial_count: 14",
+        "status: PROTOCOL_FROZEN_PENDING_BLINDED_DATA_ACCEPTANCE",
+        "label_kind: execution_anchored_forward_return_v1",
+        "label_end: SIGNAL_CLOSE_PLUS_22_COMMON_CALENDAR_ROWS",
+        "horizon_purge_signal_axis_rows: 22",
+        "embargo_rows: 0",
+        "random_rank_seed: 20260729",
+        "bootstrap_seed: 20260730",
+        "long_segment_block_length_monthly_records: 6",
+        "bootstrap_replicates: 20000",
+        "minimum_valid_monthly_records_for_primary_inference: 60",
+        "percentile_quantile_method: linear",
+        "multiplicity_method: HOLM",
+        "holm_stop_rule: STOP_AT_FIRST_NON_REJECTION",
+        "complete_case_rule: ALL_THREE_PRIMARY_FACTOR_RANK_ICS_VALID",
+        "rng_consumption_order: REPLICATE_MAJOR_THEN_CHRONOLOGICAL_SEGMENT",
+        "dependence_aware_method: OVERLAPPING_CIRCULAR_MOVING_BLOCK_BOOTSTRAP_WITHIN_SEGMENT",
+        "circular_index_rule: (START_PLUS_OFFSET)_MOD_SEGMENT_LENGTH",
+        "uniform_marginal_row_weight: REQUIRED_EACH_RETAINED_ROW_EXPECTED_INCLUSION_ONE_PER_SEGMENT_REPLICATE",
+        "record_count: 63",
+        "forbidden_noncircular_action: REJECT_AS_TRUNCATION_BIASED_NOT_NULL_CENTERED",
+        "return_object: CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH",
+        "minimum_distinct_factor_values: 10",
+        "minimum_distinct_forward_returns: 2",
+        "complete_full_37_event_profile_first: false",
+        "version: listing_lineage_key_bytes_v1",
+        "version: factor_anchor_lineage_v1",
+        "anchor_to_target_identity_match: EXACT_PERMANENT_SECURITY_LISTING_AND_LISTING_EPISODE",
+        "allowed_alias_traversal: ACCEPTED_SYMBOL_RENAME_SAME_PERMANENT_SECURITY_SAME_LISTING_AND_LISTING_EPISODE_ONLY",
+        "price_stitch_or_ticker_fallback: FORBIDDEN",
+        "version: adjusted_close_simple_held_return_v1",
+        "strategy_held_return_field: adjusted_close",
+        "primary_benchmark_held_return_field: adjusted_close",
+        "selected_target_execution_anchor_field: adjusted_close",
+        "primary_benchmark_execution_anchor_field: adjusted_close",
+        "return_formula: adjusted_close[d] / adjusted_close[d-1] - 1",
+        "raw_close_return_fallback: FORBIDDEN",
+        "separate_split_or_dividend_cash_flow_addition: FORBIDDEN_TO_PREVENT_DOUBLE_COUNTING",
+        "forbidden_raw_close_gross_return: -0.25",
+        "post_t_mutation_effect_on_frozen_objects: NONE_BYTE_IDENTICAL",
+        "fixed_bps_interpretation: ALL_IN_DIAGNOSTIC_EXECUTION_COST_PROXY",
+        "evaluation: ORDERED_FIRST_MATCH_WINS_MUTUALLY_EXCLUSIVE_EXHAUSTIVE",
+        "formula: \"-std([adjusted_close[d] / adjusted_close[d-1] - 1 for d=t-62..t], ddof=1)\"",
+        "one_day_return_kind: SIMPLE_NOT_LOG",
+        "price_anchor_validation: REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE",
+        "invalid_anchor_action: INVALID_MISSING_FACTOR_VALUE_EXCLUDE_LISTING_FROM_FACTOR_DECISION_TIME_ELIGIBILITY_AND_COUNT_REASON",
+        "forward_return_kind: SIMPLE_NOT_LOG",
+        "forward_return_formula: adjusted_close[label_end] / adjusted_close[label_start] - 1",
+        "invalid_forward_anchor_action: INVALIDATE_AND_RETAIN_FACTOR_MONTH_OUTCOME_WITH_REASON_COUNT",
+        "draw_reuse_across_distributions: SAME_ROW_INDEX_VECTOR_FOR_UNCENTERED_AND_NULL_CENTERED_TABLES",
+        "rng_passes_per_replicate: ONE_NO_SECOND_CENTERED_OR_UNCENTERED_PASS",
+        "price_anchor_validation: ALL_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE",
+        "lookback_common_calendar_positions: 253",
+        "lookback_common_calendar_positions: 22",
+        "required_observed_price_anchors: 2",
+        "intermediate_adjusted_close_values_required: false",
+        "interior_missing_price_action: NO_FACTOR_VALUE_EFFECT_IF_REFERENCED_ANCHORS_VALID",
+        "FACTOR_SPECIFIC_LOOKBACK_COMMON_CALENDAR_POSITION_SPAN_ADDRESSABLE_AT_T",
+        "FACTOR_SPECIFIC_REFERENCED_PRICE_ANCHORS_VALID_AT_T",
+        "FACTOR_SPECIFIC_FACTOR_ANCHOR_LINEAGE_V1_IDENTITY_AND_PATH_VALID_AT_T",
+        "canonical_instant_standard: UTC_RFC3339_TIMEZONE_AWARE_EXACT_INSTANT",
+        "freeze_timestamp_normalization: REQUIRE_TIMEZONE_AWARE_CONVERT_TO_UTC_REJECT_NAIVE_OR_DATE_ONLY",
+        "detached_run_binding_completion_predicate: EXACT_PROTOCOL_INVENTORY_DATA_CODE_CONFIG_AND_ENVIRONMENT_IDENTITY_BOUND_BEFORE_RESULT_BEARING_JOB",
+        "detached_run_binding_incomplete: PROSPECTIVE_COUNT_FORBIDDEN",
+        "historical_seed: EXACT_IMMUTABLE_ACCEPTED_DATA_RECORD_AND_CUTOFF_BOUND_AT_DETACHED_RUN_BINDING",
+        "append_record_chain: SEQUENCE_PREVIOUS_RECORD_SHA256_BATCH_MANIFEST_SHA256_SESSION_BOUNDS_INGESTED_AT_UTC",
+        "original_start_anchor_reset_on_append: FORBIDDEN",
+        "correction_policy: APPEND_CORRECTION_RECORD_NO_OVERWRITE_NO_RETROACTIVE_SIGNAL_RECOMPUTE_AND_RETAIN_AFFECTED_VALIDITY",
+        "signal_instant: OFFICIAL_XNYS_SESSION_CLOSE_FROM_FROZEN_CALENDAR_CONVERTED_TO_UTC",
+        "start_anchor_timestamp: MAXIMUM_OF_ALL_NORMALIZED_REQUIRED_FREEZE_INSTANTS_UTC",
+        "start_rule: FIRST_SIGNAL_WITH_SIGNAL_INSTANT_UTC_STRICTLY_GT_START_ANCHOR_UTC_SATISFYING_SIGNAL_ELIGIBILITY_PREDICATE",
+        "freeze_at_or_after_official_close: SAME_DAY_SIGNAL_NOT_PROSPECTIVE",
+        "signal_at_exact_start_anchor_instant: NOT_PROSPECTIVE",
+        "signal_eligibility_predicate: ALL_THREE_FACTOR_REBALANCES_DECISION_TIME_VALID",
+        "subset_factor_eligible_signal_action: RETAIN_OPERATIONAL_RECORD_DO_NOT_START_OR_INCREMENT",
+        "rebalance_count_increment: ONE_ONLY_WHEN_SIGNAL_ELIGIBILITY_PREDICATE_TRUE",
+        "threshold_output_maturity_instant: MAXIMUM_OF_LABEL_AND_STRATEGY_MATURITY_INSTANTS",
+        "protected_opening_timing: STRICTLY_AFTER_THRESHOLD_OUTPUT_MATURITY_INSTANT",
+        "opening_at_counter_increment_or_label_only: FORBIDDEN",
+        "random_seed_or_permutation_consumption: NONE",
+        "version: frozen_target_execution_to_e_plus_21_v1",
+        "intervening_monthly_execution_before_endpoint: IGNORE_FOR_THIS_EPISODE_NO_TARGET_RESET_OR_CONTINUOUS_PATH_SLICE",
+        "aggregation_formula: sum(weight_i_at_e * constituent_return_i)",
+        "invalid_target_constituent_action: INVALID_MISSING_RETAIN_EPISODE_AND_EXACT_REASON",
+        "forbidden_continuous_path_slice_return: 0.10",
+        "episodic_return: INVALID_MISSING_NOT_ZERO",
+        "required_output_reconciliation: INVALID_OUTPUT_PRESENT_NOT_MISSING_TRIAL_OUTPUT",
+        "key_freeze: FIRST_ANY_FACTOR_DECISION_TIME_ELIGIBILITY_CAMPAIGN_WIDE",
+        "per_factor_key_freeze_or_reencoding: FORBIDDEN",
+        "segment_block_length: 6_IF_SEGMENT_LENGTH_GT_6_ELSE_1",
+        "short_segment_rule: LENGTH_2_THROUGH_6_DRAW_N_SINGLE_ROW_BLOCKS_UNIFORMLY_WITH_REPLACEMENT",
+        "degenerate_resampling_action: PRIMARY_INFERENCE_INVALID_NO_HOLM_SUPPORT_RETAIN_COUNTS",
+        "nondegenerate_bootstrap_support_all_three_factors: REQUIRED",
+        "relation_to_primary_benchmark: SAME_FROZEN_TARGET_AND_GROSS_COST_FREE_CONTINUOUS_RETURN_OBJECT",
+        "primary_benchmark_reuse_of_factor_or_random_zero_target: FORBIDDEN",
+        "boundary_signal_with_complete_label_but_next_execution_after_cutoff: EXCLUDE_BEFORE_CONTINUOUS_TARGET_FREEZE_NOT_INVALID",
+        "boundary_exclusion_strategy_artifacts: NO_TARGET_NO_TURNOVER_NO_COST_NO_HARD_VALIDITY_FAILURE",
+        "invalid_factor_month_continuous_path: INCLUDE_UNFILTERED_IN_FULL_STRATEGY_AND_PRIMARY_BENCHMARK_DAILY_PATH",
+        "invalid_factor_month_filtering: FORBIDDEN",
+        "invalid_factor_month_segmentation_or_cash_restart: FORBIDDEN",
+        "matched_factor_invalid_continuous_economic_path: INCLUDED_AS_PRIMARY_BENCHMARK_RETURN_SUBJECT_TO_EARLIER_COVERAGE_GATES",
+        "adjusted_close_t_minus_252: 80.0",
+        "adjusted_close_t: 90.0",
+        "all_other_zero_target_triggers: FORBIDDEN",
+        "byte_relation: EXACT_BYTE_FOR_BYTE_COPY",
+        "rank_ic_input_table: PRIMARY_COMMON_COMPLETE_CASE_MONTHLY_RANK_IC_TABLE",
+        "positive_year_fraction_denominator: ALL_REQUIRED_YEARS",
+        "semantic_relation: EXACT_FROZEN_14_TRIAL_INVENTORY",
+        "factor_turnover_predecessor: IMMEDIATELY_PRECEDING_SCHEDULED_FROZEN_DECISION_TIME_TARGET",
+        "outcome_invalid_middle_target_retention: RETAIN_AS_NEXT_TURNOVER_PREDECESSOR",
+        "primary_benchmark_comparison_gap_final_state: INVALID_DIAGNOSTIC_HARD_VALIDITY_FAILURE",
+        "secondary_spy_comparison_final_state_role: DESCRIPTIVE_ONLY_NO_EFFECT",
+        "cost_formula: gross_multiplier * turnover * bps / 10000",
+        "cost_return_basis: BEGINNING_PERIOD_RETURN_IMPACT_OF_POST_RETURN_EQUITY_CHARGE",
+        "strategy_security_cost_at_execution: -gross_multiplier * (bps / 10000) * abs(delta_weight)",
+        "date_token: SIGNAL_DATE_T_STRICT_YYYY_MM_DD_NOT_EXECUTION_DATE",
+        "selection: FIRST_TOP_DECILE_SIZE_PERMUTED_INDICES",
+        "top_decile_size: 11",
+        "holm_index_origin: ONE_BASED_K_1_THROUGH_3",
+        "holm_python_sorted_access: sorted_raw_p[k-1]",
+        "holm_map_back: ORIGINAL_FACTOR_ORDER_AFTER_SORTED_RUNNING_MAX",
+    ]:
+        assert phrase in preregistration
+
+    assert "TO_BE_FROZEN" not in preregistration
+    assert "COMPLETE_FACTOR_HISTORY_THROUGH_T" not in preregistration
+    assert "preregistration_sha256:" not in preregistration
+    assert inventory["semantic_trial_count"] == 14
+    assert len(inventory["trials"]) == 14
+    trial_ids = [trial["trial_id"] for trial in inventory["trials"]]
+    assert len(set(trial_ids)) == 14
+    assert trial_ids[:5] == [
+        "BASELINE_EQUAL_WEIGHT_UNIVERSE",
+        "BASELINE_RANDOM_RANK_TOP_DECILE",
+        "DIAG_MOM_12_1",
+        "DIAG_REV_1M",
+        "DIAG_LOW_VOL_3M",
+    ]
+    strategy_trials = inventory["trials"][5:]
+    assert {
+        (trial["factor_id"], trial["cost_bps"]) for trial in strategy_trials
+    } == {
+        (factor_id, cost_bps)
+        for factor_id in ["MOM_12_1", "REV_1M", "LOW_VOL_3M"]
+        for cost_bps in [0, 10, 25]
+    }
+    assert inventory["trials"][1]["seed"] == 20260729
+    expected_factor_ids = ["MOM_12_1", "REV_1M", "LOW_VOL_3M"]
+    expected_baseline_outputs = [
+        "episode_21_row_return",
+        "continuous_daily_return",
+    ]
+    episode_common_contract = {
+        "aggregation": (
+            "SUM_FROZEN_EXECUTION_WEIGHT_TIMES_CONSTITUENT_"
+            "SIMPLE_ADJUSTED_CLOSE_RETURN"
+        ),
+        "anchor_field": "adjusted_close",
+        "anchor_lineage_policy": "factor_anchor_lineage_v1",
+        "anchor_validation": (
+            "BOTH_REAL_NUMERIC_NON_BOOLEAN_PRESENT_FINITE_STRICTLY_POSITIVE"
+        ),
+        "cost_bps": 0,
+        "constituent_return_kind": "SIMPLE_NOT_LOG",
+        "endpoint": "EXECUTION_E_PLUS_21_COMMON_CALENDAR_ROWS",
+        "holding_rule": (
+            "STATIC_SIGNAL_TIME_TARGET_FROM_EXECUTION_E_THROUGH_E_PLUS_21_"
+            "IGNORE_INTERVENING_MONTHLY_EXECUTIONS"
+        ),
+        "invalid_constituent_action": (
+            "INVALID_MISSING_RETAIN_EPISODE_NO_SURVIVOR_RENORMALIZATION_"
+            "FILL_CASH_OR_ZERO"
+        ),
+        "return_formula": (
+            "sum(weight_i_at_e * (adjusted_close_i[e+21] / "
+            "adjusted_close_i[e] - 1))"
+        ),
+        "return_basis": "GROSS_COST_FREE_FACTOR_DIAGNOSTIC",
+    }
+    episode_target_rules = (
+        "EQUAL_WEIGHT_ALL_FACTOR_SPECIFIC_DECISION_TIME_ELIGIBLE_KEYS_"
+        "FROZEN_AT_SIGNAL_T",
+        "EQUAL_WEIGHT_FROZEN_RANDOM_RANK_TOP_DECILE_KEYS_"
+        "SELECTED_AT_SIGNAL_T",
+    )
+    for baseline, target_rule in zip(
+        inventory["trials"][:2],
+        episode_target_rules,
+        strict=True,
+    ):
+        assert baseline["output_factor_ids"] == expected_factor_ids
+        assert baseline["output_series_per_factor"] == expected_baseline_outputs
+        assert baseline["output_contract_per_series"][
+            "episode_21_row_return"
+        ] == {**episode_common_contract, "target_rule": target_rule}
+    assert inventory["trials"][0]["output_contract_per_series"][
+        "continuous_daily_return"
+    ] == {
+        "cost_bps": 0,
+        "return_basis": "GROSS_COST_FREE",
+    }
+    assert inventory["trials"][1]["output_contract_per_series"][
+        "continuous_daily_return"
+    ] == {
+        "accounting": (
+            "POST_RETURN_EQUITY_CHARGE_AS_BEGINNING_PERIOD_RETURN_IMPACT"
+        ),
+        "cost_bps": 10,
+        "return_basis": "NET_PRIMARY",
+    }
+    assert inventory["trials"][1]["return_contract"] == (
+        "CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH"
+    )
+    assert inventory["trials"][1]["turnover_convention"] == (
+        "UNDIVIDED_SUM_ABSOLUTE_WEIGHT_CHANGES_FROM_DRIFTED_WEIGHTS"
+    )
+    assert inventory["trials"][1]["rng_seed_date_token"] == (
+        "SIGNAL_DATE_T_STRICT_YYYY-MM-DD_NOT_EXECUTION_DATE"
+    )
+    assert inventory["trials"][1]["permutation_rank_order"] == (
+        "HIGH_TO_LOW_FIRST_CHUNK_SELECTED"
+    )
+    assert inventory["trials"][1]["random_top_decile_size_rule"] == (
+        "N//10_PLUS_ONE_IFF_N_MOD_10_NONZERO"
+    )
+    assert inventory["trials"][1]["selected_target_rule"] == (
+        "EQUAL_WEIGHT_SELECTED_KEYS_SERIALIZED_IN_ASCENDING_CANONICAL_KEY_BYTES"
+    )
+    assert inventory["trials"][1]["rng_seed_derivation"] == (
+        "first_16_hex_sha256("
+        "random_rank_v1|20260729|factor_id|signal_date_t_YYYY-MM-DD)"
+    )
+    assert all(trial["type"].startswith("STRATEGY_") for trial in strategy_trials)
+    assert {
+        trial["return_contract"] for trial in strategy_trials
+    } == {"CONTINUOUS_DAILY_NEXT_MONTHLY_EXECUTION_TO_EXECUTION_PATH"}
+
+
+def test_listing_lineage_key_bytes_v1_golden_fixtures() -> None:
+    assert _listing_lineage_key_bytes_v1(
+        "XNYS", "BRK.B", "2014-01-01", None
+    ).hex() == (
+        "6c697374696e675f6c696e656167655f6b65795f763100"
+        "00000004584e59530000000542524b2e42323031342d30312d303100"
+    )
+    decomposed = _listing_lineage_key_bytes_v1(
+        "XNAS", "A\u030a", "2026-07-29", "2026-07-30"
+    )
+    assert decomposed.hex() == (
+        "6c697374696e675f6c696e656167655f6b65795f763100"
+        "00000004584e415300000002c385323032362d30372d3239"
+        "01323032362d30372d3330"
+    )
+    assert decomposed == _listing_lineage_key_bytes_v1(
+        "XNAS", "\u00c5", "2026-07-29", "2026-07-30"
+    )
+
+
+def test_factor_price_anchors_bind_to_resolved_listing_lineage() -> None:
+    target_identity = {
+        "resolved_permanent_security_id": "SECURITY-001",
+        "resolved_listing_id": "LISTING-001",
+        "resolved_listing_episode_id": "EPISODE-001",
+    }
+    accepted_rename_chain = [
+        {
+            **target_identity,
+            "source_exchange": "XNYS",
+            "source_ticker": "OLD",
+            "alias_effective_from": "2020-01-01",
+            "alias_effective_to": "2025-06-01",
+            "lineage_resolution_evidence_id": "rename-evidence-001",
+            "transition_to_next": (
+                "ACCEPTED_SYMBOL_RENAME_SAME_PERMANENT_SECURITY_"
+                "SAME_LISTING_AND_LISTING_EPISODE"
+            ),
+        },
+        {
+            **target_identity,
+            "source_exchange": "XNYS",
+            "source_ticker": "NEW",
+            "alias_effective_from": "2025-06-01",
+            "alias_effective_to": None,
+            "lineage_resolution_evidence_id": "rename-evidence-001",
+            "transition_to_next": "TARGET_ALIAS",
+        },
+    ]
+    accepted_rename_anchors = [
+        {
+            **accepted_rename_chain[0],
+            "session_date": "2025-01-02",
+            "adjusted_close": 80.0,
+        },
+        {
+            **accepted_rename_chain[1],
+            "session_date": "2025-12-01",
+            "adjusted_close": 100.0,
+        },
+    ]
+
+    assert _factor_anchor_lineage_v1_is_valid(
+        accepted_rename_anchors,
+        target_identity,
+        accepted_rename_chain,
+    )
+    assert (
+        float(accepted_rename_anchors[1]["adjusted_close"])
+        / float(accepted_rename_anchors[0]["adjusted_close"])
+        - 1.0
+    ) == 0.25
+
+    reused_ticker_anchors = deepcopy(accepted_rename_anchors)
+    reused_ticker_chain = deepcopy(accepted_rename_chain)
+    reused_ticker_anchors[0].update(
+        {
+            "source_ticker": "REUSED",
+            "resolved_permanent_security_id": "SECURITY-OLD-ISSUER",
+            "resolved_listing_id": "LISTING-OLD-ISSUER",
+            "resolved_listing_episode_id": "EPISODE-OLD-ISSUER",
+        }
+    )
+    reused_ticker_anchors[1].update(
+        {
+            "source_ticker": "REUSED",
+            "resolved_permanent_security_id": "SECURITY-NEW-ISSUER",
+            "resolved_listing_id": "LISTING-NEW-ISSUER",
+            "resolved_listing_episode_id": "EPISODE-NEW-ISSUER",
+        }
+    )
+    for anchor_index, alias in enumerate(reused_ticker_chain):
+        alias.update(
+            {
+                "source_ticker": "REUSED",
+                "resolved_permanent_security_id": (
+                    "SECURITY-OLD-ISSUER"
+                    if anchor_index == 0
+                    else "SECURITY-NEW-ISSUER"
+                ),
+                "resolved_listing_id": (
+                    "LISTING-OLD-ISSUER"
+                    if anchor_index == 0
+                    else "LISTING-NEW-ISSUER"
+                ),
+                "resolved_listing_episode_id": (
+                    "EPISODE-OLD-ISSUER"
+                    if anchor_index == 0
+                    else "EPISODE-NEW-ISSUER"
+                ),
+            }
+        )
+    reused_ticker_target = {
+        field: str(reused_ticker_anchors[1][field])
+        for field in target_identity
+    }
+    forbidden_ticker_only_join = (
+        reused_ticker_anchors[0]["source_ticker"]
+        == reused_ticker_anchors[1]["source_ticker"]
+    )
+    forbidden_ticker_only_momentum = (
+        float(reused_ticker_anchors[1]["adjusted_close"])
+        / float(reused_ticker_anchors[0]["adjusted_close"])
+        - 1.0
+    )
+
+    assert forbidden_ticker_only_join
+    assert forbidden_ticker_only_momentum == 0.25
+    assert not _factor_anchor_lineage_v1_is_valid(
+        reused_ticker_anchors,
+        reused_ticker_target,
+        reused_ticker_chain,
+    )
+
+    gapped_rename_chain = deepcopy(accepted_rename_chain)
+    gapped_rename_chain[1]["alias_effective_from"] = "2025-06-02"
+    assert not _factor_anchor_lineage_v1_is_valid(
+        accepted_rename_anchors,
+        target_identity,
+        gapped_rename_chain,
+    )
+
+
+def test_listing_key_freezes_at_campaign_first_any_factor_eligibility() -> None:
+    first_eligibility = {
+        "REV_1M": datetime(2026, 7, 31, 20, tzinfo=timezone.utc),
+        "LOW_VOL_3M": datetime(2026, 8, 31, 20, tzinfo=timezone.utc),
+        "MOM_12_1": datetime(2026, 9, 30, 20, tzinfo=timezone.utc),
+    }
+    campaign_freeze = min(first_eligibility.values())
+    endpoint_known_at = datetime(2026, 8, 15, 20, tzinfo=timezone.utc)
+    campaign_effective_to = (
+        "2026-10-15" if endpoint_known_at <= campaign_freeze else None
+    )
+    campaign_key = _listing_lineage_key_bytes_v1(
+        "XNYS", "STAG", "2026-07-01", campaign_effective_to
+    )
+    keys_by_factor = {
+        factor_id: bytes(campaign_key) for factor_id in first_eligibility
+    }
+    forbidden_momentum_specific_key = _listing_lineage_key_bytes_v1(
+        "XNYS", "STAG", "2026-07-01", "2026-10-15"
+    )
+
+    assert campaign_freeze == first_eligibility["REV_1M"]
+    assert campaign_effective_to is None
+    assert len(set(keys_by_factor.values())) == 1
+    assert keys_by_factor["MOM_12_1"] == keys_by_factor["REV_1M"]
+    assert campaign_key != forbidden_momentum_specific_key
+
+
+def test_random_rank_top_decile_nondivisible_golden_fixture() -> None:
+    seed_preimage = "random_rank_v1|20260729|MOM_12_1|2026-07-29"
+    seed_digest = hashlib.sha256(seed_preimage.encode("ascii")).hexdigest()
+    seed = int(seed_digest[:16], 16)
+    ordered_keys = tuple(
+        sorted(
+            _listing_lineage_key_bytes_v1(
+                "XNYS", f"T{index:03d}", "2014-01-01", None
+            )
+            for index in range(103)
+        )
+    )
+    permutation = tuple(
+        int(index)
+        for index in np.random.Generator(
+            np.random.PCG64DXSM(seed)
+        ).permutation(len(ordered_keys))
+    )
+    expected_permutation = (
+        63, 102, 92, 77, 18, 42, 25, 36, 66, 1, 94, 26, 61, 10, 35, 52,
+        57, 82, 6, 87, 56, 27, 99, 44, 33, 28, 11, 100, 9, 64, 62, 90,
+        78, 93, 16, 81, 8, 79, 38, 85, 67, 58, 15, 74, 0, 22, 37, 21,
+        24, 72, 53, 76, 41, 73, 80, 40, 17, 13, 12, 71, 14, 101, 30, 50,
+        60, 59, 69, 47, 3, 19, 83, 54, 91, 4, 84, 68, 43, 39, 29, 97, 23,
+        20, 45, 75, 5, 86, 48, 31, 34, 89, 98, 55, 2, 7, 32, 95, 70, 51,
+        65, 46, 49, 96, 88,
+    )
+    top_decile_size = len(ordered_keys) // 10 + (
+        1 if len(ordered_keys) % 10 else 0
+    )
+    selected_keys_in_permutation_order = tuple(
+        ordered_keys[index] for index in permutation[:top_decile_size]
+    )
+    forbidden_last_chunk = tuple(
+        ordered_keys[index] for index in permutation[-top_decile_size:]
+    )
+    forbidden_floor_only_first_chunk = tuple(
+        ordered_keys[index]
+        for index in permutation[: len(ordered_keys) // 10]
+    )
+    expected_selected_keys = tuple(
+        _listing_lineage_key_bytes_v1(
+            "XNYS", ticker, "2014-01-01", None
+        )
+        for ticker in (
+            "T063", "T102", "T092", "T077", "T018", "T042",
+            "T025", "T036", "T066", "T001", "T094",
+        )
+    )
+    serialized_equal_weight_target = tuple(
+        sorted(
+            (key, 1.0 / top_decile_size)
+            for key in selected_keys_in_permutation_order
+        )
+    )
+
+    assert seed_digest == (
+        "4f3c72a41c74ed307cc6a86e734268f"
+        "2266be31b4977ed99336462b234251e97"
+    )
+    assert seed == 5709564476776574256
+    assert permutation == expected_permutation
+    assert top_decile_size == 11
+    assert selected_keys_in_permutation_order == expected_selected_keys
+    assert tuple(key for key, _ in serialized_equal_weight_target) == tuple(
+        sorted(expected_selected_keys)
+    )
+    assert all(
+        math.isclose(weight, 1.0 / 11.0, abs_tol=1e-15)
+        for _, weight in serialized_equal_weight_target
+    )
+    assert forbidden_last_chunk != expected_selected_keys
+    assert forbidden_floor_only_first_chunk == expected_selected_keys[:-1]
+    assert forbidden_floor_only_first_chunk != expected_selected_keys
+
+
+def test_baseline_episode_ignores_intervening_monthly_reset() -> None:
+    def episode_return(
+        weights_at_execution: tuple[float, ...],
+        execution_adjusted_close: tuple[object, ...],
+        endpoint_adjusted_close: tuple[object, ...],
+    ) -> float | None:
+        if not (
+            weights_at_execution
+            and len(weights_at_execution) == len(execution_adjusted_close)
+            and len(weights_at_execution) == len(endpoint_adjusted_close)
+            and math.isclose(sum(weights_at_execution), 1.0, abs_tol=1e-15)
+        ):
+            return None
+        constituent_returns: list[float] = []
+        for before, after in zip(
+            execution_adjusted_close,
+            endpoint_adjusted_close,
+            strict=True,
+        ):
+            if not all(
+                not isinstance(anchor, bool)
+                and isinstance(anchor, Real)
+                and math.isfinite(float(anchor))
+                and float(anchor) > 0.0
+                for anchor in (before, after)
+            ):
+                return None
+            constituent_returns.append(float(after) / float(before) - 1.0)
+        return sum(
+            weight * constituent_return
+            for weight, constituent_return in zip(
+                weights_at_execution,
+                constituent_returns,
+                strict=True,
+            )
+        )
+
+    execution_row = 0
+    next_monthly_execution_row = 20
+    endpoint_row = 21
+    frozen_weights = (0.5, 0.5)
+    execution_prices = (100.0, 100.0)
+    next_execution_prices = (110.0, 90.0)
+    endpoint_prices = (121.0, 81.0)
+
+    frozen_episode_return = episode_return(
+        frozen_weights,
+        execution_prices,
+        endpoint_prices,
+    )
+    first_continuous_multiplier = sum(
+        weight * next_price / execution_price
+        for weight, next_price, execution_price in zip(
+            frozen_weights,
+            next_execution_prices,
+            execution_prices,
+            strict=True,
+        )
+    )
+    forbidden_reset_weights = (1.0, 0.0)
+    second_continuous_multiplier = sum(
+        weight * endpoint_price / next_price
+        for weight, endpoint_price, next_price in zip(
+            forbidden_reset_weights,
+            endpoint_prices,
+            next_execution_prices,
+            strict=True,
+        )
+    )
+    forbidden_continuous_slice_return = (
+        first_continuous_multiplier * second_continuous_multiplier - 1.0
+    )
+
+    assert execution_row < next_monthly_execution_row < endpoint_row
+    assert frozen_episode_return is not None
+    assert math.isclose(frozen_episode_return, 0.01, abs_tol=1e-15)
+    assert math.isclose(
+        forbidden_continuous_slice_return,
+        0.10,
+        abs_tol=1e-15,
+    )
+    assert not math.isclose(
+        frozen_episode_return,
+        forbidden_continuous_slice_return,
+        abs_tol=1e-15,
+    )
+
+    invalid_endpoint_prices: tuple[object, ...] = (121.0, None)
+    assert episode_return(
+        frozen_weights,
+        execution_prices,
+        invalid_endpoint_prices,
+    ) is None
+    forbidden_survivor_renormalized_return = 121.0 / 100.0 - 1.0
+    assert math.isclose(
+        forbidden_survivor_renormalized_return,
+        0.21,
+        abs_tol=1e-15,
+    )
+
+
+def test_decision_time_targets_ignore_future_availability_mutations() -> None:
+    records = []
+    for index in range(100):
+        records.append(
+            {
+                "listing_key_bytes": _listing_lineage_key_bytes_v1(
+                    "XNYS", f"T{index:03d}", "2018-01-01", None
+                ),
+                "membership_known_at_t": True,
+                "lineage_resolved_through_t": True,
+                "factor_specific_lookback_position_span_addressable_at_t": True,
+                "factor_specific_required_price_anchors_valid_at_t": True,
+                "factor_anchor_lineage_v1_valid_at_t": True,
+                "corporate_action_policy_known_at_t": True,
+                "factor_value_at_t": float(100 - index),
+                "execution_available_after_t": True,
+                "endpoint_available_after_t": True,
+                "endpoint_return": index / 100,
+                "actual_effective_to_observed_after_t": None,
+            }
+        )
+
+    frozen_target, frozen_benchmark, frozen_cash = _decision_time_objects(records)
+    selected_keys = {key for key, _ in frozen_target}
+    mutated = deepcopy(records)
+    for record in mutated:
+        if bytes(record["listing_key_bytes"]) in selected_keys:
+            continue
+        record["execution_available_after_t"] = False
+        record["endpoint_available_after_t"] = False
+        record["endpoint_return"] = None
+        record["actual_effective_to_observed_after_t"] = "2026-07-30"
+
+    assert _decision_time_objects(mutated) == (
+        frozen_target,
+        frozen_benchmark,
+        frozen_cash,
+    )
+    assert frozen_cash == 0.0
+
+    lineage_invalid = deepcopy(records)
+    lineage_invalid[0]["factor_anchor_lineage_v1_valid_at_t"] = False
+    invalid_target, invalid_benchmark, invalid_cash = _decision_time_objects(
+        lineage_invalid
+    )
+    assert invalid_target == ()
+    assert len(invalid_benchmark) == 99
+    assert invalid_cash == 1.0
+
+
+def test_zero_target_has_only_the_three_frozen_decision_time_triggers() -> None:
+    records = []
+    for index in range(100):
+        records.append(
+            {
+                "listing_key_bytes": _listing_lineage_key_bytes_v1(
+                    "XNYS", f"Z{index:03d}", "2018-01-01", None
+                ),
+                "membership_known_at_t": True,
+                "lineage_resolved_through_t": True,
+                "factor_specific_lookback_position_span_addressable_at_t": True,
+                "factor_specific_required_price_anchors_valid_at_t": True,
+                "factor_anchor_lineage_v1_valid_at_t": True,
+                "corporate_action_policy_known_at_t": True,
+                "factor_value_at_t": float(100 - index),
+            }
+        )
+
+    valid_target, _, valid_cash = _decision_time_objects(records)
+    assert len(valid_target) == 10
+    assert valid_cash == 0.0
+
+    sparse_target, _, sparse_cash = _decision_time_objects(records[:-1])
+    assert sparse_target == ()
+    assert sparse_cash == 1.0
+
+    tied = deepcopy(records)
+    for record in tied:
+        record["factor_value_at_t"] = 1.0
+    tied_target, _, tied_cash = _decision_time_objects(tied)
+    assert tied_target == ()
+    assert tied_cash == 1.0
+
+    duplicate_key = deepcopy(records)
+    duplicate_key[-1]["listing_key_bytes"] = duplicate_key[0]["listing_key_bytes"]
+    duplicate_target, _, duplicate_cash = _decision_time_objects(duplicate_key)
+    assert duplicate_target == ()
+    assert duplicate_cash == 1.0
+
+
+def test_endpoint_only_factor_windows_flow_into_decision_time_targets() -> None:
+    for factor_id, key_prefix in (("MOM_12_1", "M"), ("REV_1M", "R")):
+        records: list[dict[str, object]] = []
+        for index in range(100):
+            records.append(
+                {
+                    "factor_id": factor_id,
+                    "listing_key_bytes": _listing_lineage_key_bytes_v1(
+                        "XNYS",
+                        f"{key_prefix}{index:03d}",
+                        "2018-01-01",
+                        None,
+                    ),
+                    "membership_known_at_t": True,
+                    "lineage_resolved_through_t": True,
+                    "factor_specific_lookback_position_span_addressable_at_t": True,
+                    "factor_specific_required_price_anchors_valid_at_t": True,
+                    "factor_anchor_lineage_v1_valid_at_t": True,
+                    "unreferenced_interior_adjusted_close_missing": index == 0,
+                    "corporate_action_policy_known_at_t": True,
+                    "factor_value_at_t": float(100 - index),
+                }
+            )
+
+        missing_interior_key = bytes(records[0]["listing_key_bytes"])
+        target, benchmark, cash_weight = _decision_time_objects(records)
+        forbidden_full_window_records = [
+            record
+            for record in records
+            if not record["unreferenced_interior_adjusted_close_missing"]
+        ]
+
+        assert len(target) == 10
+        assert missing_interior_key in {key for key, _ in target}
+        assert len(benchmark) == 100
+        assert cash_weight == 0.0
+        assert _decision_time_objects(forbidden_full_window_records) == (
+            (),
+            tuple(
+                sorted(
+                    (
+                        (bytes(record["listing_key_bytes"]), 1.0 / 99.0)
+                        for record in forbidden_full_window_records
+                    ),
+                    key=lambda item: item[0],
+                )
+            ),
+            1.0,
+        )
+
+
+def test_prospective_start_uses_latest_required_freeze_boundary() -> None:
+    freeze_timestamps = {
+        "protocol": datetime(2026, 7, 29, 20, tzinfo=timezone.utc),
+        "dataset_policy": datetime(2026, 8, 10, 20, tzinfo=timezone.utc),
+        "runner_code": datetime(2026, 8, 31, 20, tzinfo=timezone.utc),
+    }
+    eligible_signal_timestamps = (
+        datetime(2026, 7, 31, 20, tzinfo=timezone.utc),
+        datetime(2026, 8, 31, 20, tzinfo=timezone.utc),
+        datetime(2026, 9, 30, 20, tzinfo=timezone.utc),
+        datetime(2026, 10, 30, 20, tzinfo=timezone.utc),
+    )
+    factor_order = ("MOM_12_1", "REV_1M", "LOW_VOL_3M")
+    factor_validity_by_signal = {
+        eligible_signal_timestamps[0]: (True, True, True),
+        eligible_signal_timestamps[1]: (True, True, True),
+        eligible_signal_timestamps[2]: (True, True, False),
+        eligible_signal_timestamps[3]: (True, True, True),
+    }
+    start_anchor = max(freeze_timestamps.values())
+    prospective_start = min(
+        signal
+        for signal in eligible_signal_timestamps
+        if signal > start_anchor
+        and all(factor_validity_by_signal[signal])
+    )
+    forbidden_protocol_only_start = min(
+        signal
+        for signal in eligible_signal_timestamps
+        if signal > freeze_timestamps["protocol"]
+        and all(factor_validity_by_signal[signal])
+    )
+    forbidden_any_factor_start = min(
+        signal
+        for signal in eligible_signal_timestamps
+        if signal > start_anchor
+        and any(factor_validity_by_signal[signal])
+    )
+
+    assert start_anchor == eligible_signal_timestamps[1]
+    assert len(factor_order) == 3
+    assert prospective_start == eligible_signal_timestamps[3]
+    assert forbidden_protocol_only_start == eligible_signal_timestamps[0]
+    assert forbidden_any_factor_start == eligible_signal_timestamps[2]
+    assert prospective_start != forbidden_protocol_only_start
+    assert prospective_start != forbidden_any_factor_start
+
+
+def test_prospective_same_day_freeze_uses_canonical_close_instant() -> None:
+    signal_close = datetime(2026, 7, 31, 20, tzinfo=timezone.utc)
+    next_signal_close = datetime(2026, 8, 31, 20, tzinfo=timezone.utc)
+    freezes = {
+        "before_close": datetime(2026, 7, 31, 19, 59, 59, tzinfo=timezone.utc),
+        "at_close": signal_close,
+        "after_close": datetime(2026, 7, 31, 20, 0, 1, tzinfo=timezone.utc),
+    }
+
+    def first_prospective_signal(freeze_instant: datetime) -> datetime:
+        if freeze_instant.tzinfo is None:
+            raise ValueError("freeze instant must be timezone-aware")
+        normalized_freeze = freeze_instant.astimezone(timezone.utc)
+        return min(
+            instant
+            for instant in (signal_close, next_signal_close)
+            if instant > normalized_freeze
+        )
+
+    assert first_prospective_signal(freezes["before_close"]) == signal_close
+    assert first_prospective_signal(freezes["at_close"]) == next_signal_close
+    assert first_prospective_signal(freezes["after_close"]) == next_signal_close
+    try:
+        first_prospective_signal(datetime(2026, 7, 31, 19, 59, 59))
+    except ValueError as error:
+        assert str(error) == "freeze instant must be timezone-aware"
+    else:
+        raise AssertionError("naive freeze instant must fail closed")
+
+
+def test_prospective_start_waits_for_complete_detached_run_binding() -> None:
+    runner_code_freeze = datetime(2026, 8, 15, 20, tzinfo=timezone.utc)
+    august_signal = datetime(2026, 8, 31, 20, tzinfo=timezone.utc)
+    detached_binding_completion = datetime(
+        2026, 9, 5, 20, tzinfo=timezone.utc
+    )
+    september_signal = datetime(2026, 9, 30, 20, tzinfo=timezone.utc)
+    qualifying_signals = (august_signal, september_signal)
+
+    required_anchor = max(runner_code_freeze, detached_binding_completion)
+    prospective_start = min(
+        signal for signal in qualifying_signals if signal > required_anchor
+    )
+    forbidden_code_only_start = min(
+        signal for signal in qualifying_signals if signal > runner_code_freeze
+    )
+
+    assert runner_code_freeze < august_signal < detached_binding_completion
+    assert prospective_start == september_signal
+    assert forbidden_code_only_start == august_signal
+    assert prospective_start != forbidden_code_only_start
+
+
+def test_prospective_data_appends_without_resetting_original_anchor() -> None:
+    detached_binding_completion = datetime(
+        2026, 2, 5, 20, tzinfo=timezone.utc
+    )
+    seed_cutoff = date(2026, 1, 30)
+    seed_manifest_sha256 = hashlib.sha256(
+        b"historical-seed-cutoff-2026-01-30"
+    ).hexdigest()
+
+    def append_record(
+        *,
+        sequence: int,
+        previous_record_sha256: str,
+        session_start: date,
+        session_end: date,
+        signal_instant: datetime,
+        output_maturity: datetime,
+        ingested_at: datetime,
+    ) -> dict[str, object]:
+        payload = {
+            "sequence": sequence,
+            "seed_manifest_sha256": seed_manifest_sha256,
+            "previous_record_sha256": previous_record_sha256,
+            "batch_manifest_sha256": hashlib.sha256(
+                f"batch-{sequence}-{session_start}-{session_end}".encode()
+            ).hexdigest(),
+            "session_start": session_start.isoformat(),
+            "session_end": session_end.isoformat(),
+            "signal_instant": signal_instant.isoformat(),
+            "output_maturity": output_maturity.isoformat(),
+            "ingested_at": ingested_at.isoformat(),
+        }
+        canonical = json.dumps(
+            payload, sort_keys=True, separators=(",", ":")
+        ).encode()
+        return payload | {"record_sha256": hashlib.sha256(canonical).hexdigest()}
+
+    seed_record_sha256 = hashlib.sha256(
+        f"0|{seed_manifest_sha256}|{seed_cutoff}".encode()
+    ).hexdigest()
+    february = append_record(
+        sequence=1,
+        previous_record_sha256=seed_record_sha256,
+        session_start=date(2026, 2, 2),
+        session_end=date(2026, 2, 27),
+        signal_instant=datetime(2026, 2, 27, 21, tzinfo=timezone.utc),
+        output_maturity=datetime(2026, 4, 1, 20, tzinfo=timezone.utc),
+        ingested_at=datetime(2026, 2, 27, 21, 5, tzinfo=timezone.utc),
+    )
+    march = append_record(
+        sequence=2,
+        previous_record_sha256=str(february["record_sha256"]),
+        session_start=date(2026, 3, 2),
+        session_end=date(2026, 3, 31),
+        signal_instant=datetime(2026, 3, 31, 20, tzinfo=timezone.utc),
+        output_maturity=datetime(2026, 5, 1, 20, tzinfo=timezone.utc),
+        ingested_at=datetime(2026, 3, 31, 20, 5, tzinfo=timezone.utc),
+    )
+    records = (february, march)
+    as_of = datetime(2026, 5, 1, 20, 0, 1, tzinfo=timezone.utc)
+
+    previous_hash = seed_record_sha256
+    previous_cutoff = seed_cutoff
+    for expected_sequence, record in enumerate(records, start=1):
+        assert record["sequence"] == expected_sequence
+        assert record["previous_record_sha256"] == previous_hash
+        assert date.fromisoformat(str(record["session_start"])) > previous_cutoff
+        assert record["seed_manifest_sha256"] == seed_manifest_sha256
+        previous_hash = str(record["record_sha256"])
+        previous_cutoff = date.fromisoformat(str(record["session_end"]))
+
+    matured_count = sum(
+        datetime.fromisoformat(str(record["signal_instant"]))
+        > detached_binding_completion
+        and datetime.fromisoformat(str(record["output_maturity"])) < as_of
+        for record in records
+    )
+    forbidden_reanchored_count = sum(
+        datetime.fromisoformat(str(record["signal_instant"]))
+        > datetime.fromisoformat(str(record["ingested_at"]))
+        for record in records
+    )
+
+    assert matured_count == 2
+    assert forbidden_reanchored_count == 0
+    assert detached_binding_completion < datetime.fromisoformat(
+        str(february["signal_instant"])
+    )
+
+
+def test_prospective_threshold_waits_for_label_and_strategy_maturity() -> None:
+    threshold_signal = datetime(2024, 6, 28, 20, tzinfo=timezone.utc)
+    threshold_execution = datetime(2024, 7, 1, 20, tzinfo=timezone.utc)
+    label_maturity = datetime(2024, 7, 31, 20, tzinfo=timezone.utc)
+    next_monthly_execution = datetime(2024, 8, 1, 20, tzinfo=timezone.utc)
+    output_maturity = max(label_maturity, next_monthly_execution)
+
+    def timing_gate_open(
+        qualifying_count: int,
+        threshold: int,
+        access_instant: datetime,
+    ) -> bool:
+        return qualifying_count >= threshold and access_instant > output_maturity
+
+    for threshold in (12, 24):
+        assert not timing_gate_open(threshold, threshold, threshold_signal)
+        assert not timing_gate_open(threshold, threshold, threshold_execution)
+        assert not timing_gate_open(threshold, threshold, label_maturity)
+        assert not timing_gate_open(
+            threshold,
+            threshold,
+            next_monthly_execution,
+        )
+        assert timing_gate_open(
+            threshold,
+            threshold,
+            datetime(2024, 8, 1, 20, 0, 1, tzinfo=timezone.utc),
+        )
+        assert not timing_gate_open(
+            threshold - 1,
+            threshold,
+            datetime(2024, 8, 1, 20, 0, 1, tzinfo=timezone.utc),
+        )
+
+
+def test_invalid_factor_month_separates_invested_benchmark_from_random_cash() -> None:
+    valid_records = []
+    for index in range(100):
+        valid_records.append(
+            {
+                "listing_key_bytes": _listing_lineage_key_bytes_v1(
+                    "XNYS", f"B{index:03d}", "2018-01-01", None
+                ),
+                "membership_known_at_t": True,
+                "lineage_resolved_through_t": True,
+                "factor_specific_lookback_position_span_addressable_at_t": True,
+                "factor_specific_required_price_anchors_valid_at_t": True,
+                "factor_anchor_lineage_v1_valid_at_t": True,
+                "corporate_action_policy_known_at_t": True,
+                "factor_value_at_t": float(100 - index),
+            }
+        )
+
+    def baseline_outputs(
+        records: list[dict[str, object]],
+        baseline_id: str,
+    ) -> dict[str, object]:
+        factor_target, eligible_benchmark, cash_weight = (
+            _decision_time_objects(records)
+        )
+        unique_keys = len(
+            {record["listing_key_bytes"] for record in records}
+        ) == len(records)
+        if baseline_id == "EQUAL_WEIGHT":
+            if not records or not unique_keys:
+                return {
+                    "validity": "INVALID_UNFORMABLE_BENCHMARK",
+                    "target": (),
+                    "cash_weight": None,
+                    "episodic_return": None,
+                    "random_draw_consumed": False,
+                    "output_record_retained": True,
+                }
+            return {
+                "validity": (
+                    "MATCHED_FACTOR_MONTH_INVALID"
+                    if cash_weight == 1.0
+                    else "VALID"
+                ),
+                "target": eligible_benchmark,
+                "cash_weight": 0.0,
+                "episodic_return": "MEASURE_AFTER_OUTCOME_GATE",
+                "random_draw_consumed": False,
+                "output_record_retained": True,
+            }
+        if cash_weight == 1.0:
+            return {
+                "validity": "INVALID_DECISION_TIME_FACTOR_MONTH",
+                "target": (),
+                "cash_weight": 1.0,
+                "episodic_return": None,
+                "random_draw_consumed": False,
+                "output_record_retained": True,
+            }
+        return {
+            "validity": "VALID",
+            "target": factor_target,
+            "cash_weight": 0.0,
+            "episodic_return": "MEASURE_AFTER_OUTCOME_GATE",
+            "random_draw_consumed": baseline_id == "RANDOM_RANK",
+            "output_record_retained": True,
+        }
+
+    invalid_cases = {
+        "sparse": valid_records[:-1],
+        "tied": [
+            {**record, "factor_value_at_t": 1.0}
+            for record in valid_records
+        ],
+        "duplicate_key": [
+            *valid_records[:-1],
+            {
+                **valid_records[-1],
+                "listing_key_bytes": valid_records[0]["listing_key_bytes"],
+            },
+        ],
+    }
+    expected_invalid_output = {
+        "validity": "INVALID_DECISION_TIME_FACTOR_MONTH",
+        "target": (),
+        "cash_weight": 1.0,
+        "episodic_return": None,
+        "random_draw_consumed": False,
+        "output_record_retained": True,
+    }
+
+    assert len(baseline_outputs(valid_records, "EQUAL_WEIGHT")["target"]) == 100
+    assert len(baseline_outputs(valid_records, "RANDOM_RANK")["target"]) == 10
+    assert baseline_outputs(valid_records, "RANDOM_RANK")[
+        "random_draw_consumed"
+    ] is True
+    for case_name in ("sparse", "tied"):
+        records = invalid_cases[case_name]
+        equal_weight_output = baseline_outputs(records, "EQUAL_WEIGHT")
+        assert equal_weight_output["validity"] == (
+            "MATCHED_FACTOR_MONTH_INVALID"
+        )
+        assert len(equal_weight_output["target"]) == len(records)
+        assert equal_weight_output["cash_weight"] == 0.0
+        assert baseline_outputs(records, "RANDOM_RANK") == (
+            expected_invalid_output
+        )
+
+    duplicate_equal_weight = baseline_outputs(
+        invalid_cases["duplicate_key"], "EQUAL_WEIGHT"
+    )
+    assert duplicate_equal_weight == {
+        "validity": "INVALID_UNFORMABLE_BENCHMARK",
+        "target": (),
+        "cash_weight": None,
+        "episodic_return": None,
+        "random_draw_consumed": False,
+        "output_record_retained": True,
+    }
+    assert baseline_outputs(
+        invalid_cases["duplicate_key"], "RANDOM_RANK"
+    ) == expected_invalid_output
+
+    tied_factor_gross_return = 0.0
+    invested_benchmark_return = 0.01
+    liquidation_turnover = 1.0
+    active_returns = {}
+    forbidden_cash_benchmark_active_returns = {}
+    for bps in (10, 25):
+        factor_net_return = tied_factor_gross_return - (
+            (1.0 + tied_factor_gross_return)
+            * liquidation_turnover
+            * bps
+            / 10000
+        )
+        active_returns[bps] = factor_net_return - invested_benchmark_return
+        forbidden_cash_benchmark_active_returns[bps] = factor_net_return
+
+    assert active_returns == {10: -0.011, 25: -0.0125}
+    assert forbidden_cash_benchmark_active_returns == {
+        10: -0.001,
+        25: -0.0025,
+    }
+    assert active_returns != forbidden_cash_benchmark_active_returns
+
+
+def test_cutoff_excludes_unexecutable_boundary_target_before_strategy_freeze() -> None:
+    july_2024_xnys_sessions = tuple(
+        date(2024, 7, day)
+        for day in range(1, 32)
+        if date(2024, 7, day).weekday() < 5 and day != 4
+    )
+    accepted_cutoff = date(2024, 7, 31)
+    signal_date = date(2024, 6, 28)
+    execution_date = july_2024_xnys_sessions[0]
+    label_endpoint = july_2024_xnys_sessions[21]
+    next_monthly_signal = july_2024_xnys_sessions[-1]
+    next_monthly_execution = date(2024, 8, 1)
+
+    factor_diagnostic_included = label_endpoint <= accepted_cutoff
+    continuous_target_included = next_monthly_execution <= accepted_cutoff
+    boundary_disposition = {
+        "factor_diagnostic_included": factor_diagnostic_included,
+        "continuous_target_frozen": continuous_target_included,
+        "strategy_invalid": False,
+        "hard_validity_failure": False,
+    }
+
+    assert len(july_2024_xnys_sessions) == 22
+    assert signal_date == date(2024, 6, 28)
+    assert execution_date == date(2024, 7, 1)
+    assert label_endpoint == accepted_cutoff
+    assert next_monthly_signal == accepted_cutoff
+    assert next_monthly_execution > accepted_cutoff
+    assert boundary_disposition == {
+        "factor_diagnostic_included": True,
+        "continuous_target_frozen": False,
+        "strategy_invalid": False,
+        "hard_validity_failure": False,
+    }
+
+
+def test_invalid_month_stays_in_continuous_economic_support_path() -> None:
+    key_a = b"a"
+    key_c = b"c"
+    targets = ({key_a: 1.0}, {}, {key_c: 1.0})
+    turnovers = (
+        1.0,
+        _factor_target_turnover(targets[0], targets[1]),
+        _factor_target_turnover(targets[1], targets[2]),
+    )
+    strategy_gross_returns = (0.02, 0.0, 0.02)
+    benchmark_returns = (0.0, 0.05, 0.0)
+
+    def annualized_active_return(
+        gross_returns: tuple[float, ...],
+        matched_benchmark_returns: tuple[float, ...],
+        path_turnovers: tuple[float, ...],
+        bps: int,
+    ) -> float:
+        net_returns = tuple(
+            gross_return
+            - (1.0 + gross_return) * turnover * bps / 10000
+            for gross_return, turnover in zip(
+                gross_returns, path_turnovers, strict=True
+            )
+        )
+        strategy_annualized = (
+            math.prod(1.0 + value for value in net_returns)
+            ** (252 / len(net_returns))
+            - 1.0
+        )
+        benchmark_annualized = (
+            math.prod(1.0 + value for value in matched_benchmark_returns)
+            ** (252 / len(matched_benchmark_returns))
+            - 1.0
+        )
+        return strategy_annualized - benchmark_annualized
+
+    full_path_active = tuple(
+        annualized_active_return(
+            strategy_gross_returns,
+            benchmark_returns,
+            turnovers,
+            bps,
+        )
+        for bps in (10, 25)
+    )
+    forbidden_filtered_active = tuple(
+        annualized_active_return(
+            (strategy_gross_returns[0], strategy_gross_returns[2]),
+            (benchmark_returns[0], benchmark_returns[2]),
+            (
+                turnovers[0],
+                _factor_target_turnover(targets[0], targets[2]),
+            ),
+            bps,
+        )
+        for bps in (10, 25)
+    )
+    forbidden_segment_restart_active = tuple(
+        annualized_active_return(
+            (strategy_gross_returns[0], strategy_gross_returns[2]),
+            (benchmark_returns[0], benchmark_returns[2]),
+            (1.0, 1.0),
+            bps,
+        )
+        for bps in (10, 25)
+    )
+    base = {
+        "hard_valid": True,
+        "prefrozen_coverage_met": True,
+        "common_months": 60,
+        "bootstrap_support_all_three_factors": True,
+        "primary_matched_benchmark_comparisons_valid": True,
+        "secondary_spy_comparisons_valid": True,
+        "mean_rank_ics": (0.02, -0.01, -0.02),
+        "holm_rejections": (True, False, False),
+        "common_case_positive_year_fractions": (0.6, 0.4, 0.4),
+        "common_case_all_loyo_means_positive": (True, False, False),
+    }
+    full_path_state = _classify_diagnostic(
+        **base,
+        active_return_10bps=(full_path_active[0], -0.01, -0.01),
+        active_return_25bps=(full_path_active[1], -0.01, -0.01),
+    )
+    forbidden_filtered_state = _classify_diagnostic(
+        **base,
+        active_return_10bps=(
+            forbidden_filtered_active[0],
+            -0.01,
+            -0.01,
+        ),
+        active_return_25bps=(
+            forbidden_filtered_active[1],
+            -0.01,
+            -0.01,
+        ),
+    )
+    forbidden_segment_restart_state = _classify_diagnostic(
+        **base,
+        active_return_10bps=(
+            forbidden_segment_restart_active[0],
+            -0.01,
+            -0.01,
+        ),
+        active_return_25bps=(
+            forbidden_segment_restart_active[1],
+            -0.01,
+            -0.01,
+        ),
+    )
+
+    assert turnovers == (1.0, 1.0, 1.0)
+    assert _factor_target_turnover(targets[0], targets[2]) == 2.0
+    assert all(value < 0 for value in full_path_active)
+    assert all(value > 0 for value in forbidden_filtered_active)
+    assert all(value > 0 for value in forbidden_segment_restart_active)
+    assert forbidden_segment_restart_active != forbidden_filtered_active
+    assert full_path_state == "MIXED_DIAGNOSTIC"
+    assert forbidden_filtered_state == "POSITIVE_DIAGNOSTIC"
+    assert forbidden_segment_restart_state == "POSITIVE_DIAGNOSTIC"
+
+
+def test_continuous_held_returns_use_adjusted_close_across_split() -> None:
+    def simple_held_return(before: object, after: object) -> float | None:
+        anchors = (before, after)
+        if not all(
+            not isinstance(anchor, bool)
+            and isinstance(anchor, Real)
+            and math.isfinite(float(anchor))
+            and float(anchor) > 0.0
+            for anchor in anchors
+        ):
+            return None
+        return float(after) / float(before) - 1.0
+
+    target_weights = (0.5, 0.5)
+    adjusted_returns = (
+        simple_held_return(50.0, 50.0),
+        simple_held_return(100.0, 100.0),
+    )
+    forbidden_raw_returns = (
+        simple_held_return(100.0, 50.0),
+        simple_held_return(100.0, 100.0),
+    )
+    assert all(value is not None for value in adjusted_returns)
+    assert all(value is not None for value in forbidden_raw_returns)
+    adjusted_numeric = tuple(float(value) for value in adjusted_returns)
+    forbidden_raw_numeric = tuple(
+        float(value) for value in forbidden_raw_returns
+    )
+
+    def path_values(
+        returns: tuple[float, float],
+    ) -> tuple[float, tuple[float, float]]:
+        ending_values = tuple(
+            weight * (1.0 + held_return)
+            for weight, held_return in zip(
+                target_weights,
+                returns,
+                strict=True,
+            )
+        )
+        ending_total = sum(ending_values)
+        gross_return = ending_total - 1.0
+        drifted_weights = tuple(
+            value / ending_total for value in ending_values
+        )
+        return gross_return, drifted_weights
+
+    adjusted_gross, adjusted_drifted = path_values(adjusted_numeric)
+    forbidden_raw_gross, forbidden_raw_drifted = path_values(
+        forbidden_raw_numeric
+    )
+    adjusted_turnover = sum(
+        abs(target - drifted)
+        for target, drifted in zip(
+            target_weights,
+            adjusted_drifted,
+            strict=True,
+        )
+    )
+    forbidden_raw_turnover = sum(
+        abs(target - drifted)
+        for target, drifted in zip(
+            target_weights,
+            forbidden_raw_drifted,
+            strict=True,
+        )
+    )
+    adjusted_cost = (
+        (1.0 + adjusted_gross) * adjusted_turnover * 10 / 10000
+    )
+    forbidden_raw_cost = (
+        (1.0 + forbidden_raw_gross)
+        * forbidden_raw_turnover
+        * 10
+        / 10000
+    )
+    adjusted_primary_benchmark_return = adjusted_gross
+    forbidden_raw_primary_benchmark_return = forbidden_raw_gross
+    adjusted_active_return = (
+        adjusted_gross
+        - adjusted_cost
+        - adjusted_primary_benchmark_return
+    )
+    forbidden_raw_active_return = (
+        forbidden_raw_gross
+        - forbidden_raw_cost
+        - forbidden_raw_primary_benchmark_return
+    )
+
+    assert adjusted_numeric == (0.0, 0.0)
+    assert adjusted_gross == 0.0
+    assert adjusted_drifted == (0.5, 0.5)
+    assert adjusted_turnover == 0.0
+    assert adjusted_cost == 0.0
+    assert adjusted_active_return == 0.0
+    assert forbidden_raw_numeric == (-0.5, 0.0)
+    assert forbidden_raw_gross == -0.25
+    assert forbidden_raw_drifted == (
+        0.3333333333333333,
+        0.6666666666666666,
+    )
+    assert math.isclose(forbidden_raw_turnover, 1.0 / 3.0, abs_tol=1e-15)
+    assert math.isclose(forbidden_raw_cost, 0.00025, abs_tol=1e-15)
+    assert math.isclose(forbidden_raw_active_return, -0.00025, abs_tol=1e-15)
+
+    invalid_anchors: tuple[object, ...] = (
+        None,
+        True,
+        float("nan"),
+        float("inf"),
+        0.0,
+        -1.0,
+    )
+    for invalid_anchor in invalid_anchors:
+        assert simple_held_return(invalid_anchor, 100.0) is None
+        assert simple_held_return(100.0, invalid_anchor) is None
+
+
+def test_low_vol_3m_uses_exactly_63_returns_from_64_price_anchors() -> None:
+    def low_vol_from_anchors(anchors: list[object]) -> float | None:
+        if len(anchors) != 64:
+            return None
+        if any(
+            isinstance(anchor, bool)
+            or not isinstance(anchor, Real)
+            or not math.isfinite(float(anchor))
+            or float(anchor) <= 0.0
+            for anchor in anchors
+        ):
+            return None
+        simple_returns = tuple(
+            float(anchors[index]) / float(anchors[index - 1]) - 1.0
+            for index in range(1, len(anchors))
+        )
+        mean_simple_return = sum(simple_returns) / len(simple_returns)
+        return -math.sqrt(
+            sum(
+                (one_day_return - mean_simple_return) ** 2
+                for one_day_return in simple_returns
+            )
+            / (len(simple_returns) - 1)
+        )
+
+    source_returns = tuple(index / 1000 for index in range(1, 64))
+    price_anchors = [100.0]
+    for one_day_return in source_returns:
+        price_anchors.append(price_anchors[-1] * (1.0 + one_day_return))
+
+    recovered_returns = tuple(
+        price_anchors[index] / price_anchors[index - 1] - 1.0
+        for index in range(1, len(price_anchors))
+    )
+    inclusive_t_window = recovered_returns[-63:]
+    mean_return = sum(inclusive_t_window) / len(inclusive_t_window)
+    sample_std = math.sqrt(
+        sum(
+            (one_day_return - mean_return) ** 2
+            for one_day_return in inclusive_t_window
+        )
+        / (len(inclusive_t_window) - 1)
+    )
+    log_returns = tuple(
+        math.log(
+            price_anchors[index] / price_anchors[index - 1]
+        )
+        for index in range(1, len(price_anchors))
+    )
+    mean_log_return = sum(log_returns) / len(log_returns)
+    forbidden_log_sample_std = math.sqrt(
+        sum(
+            (one_day_return - mean_log_return) ** 2
+            for one_day_return in log_returns
+        )
+        / (len(log_returns) - 1)
+    )
+
+    assert len(price_anchors) == 64
+    assert len(inclusive_t_window) == 63
+    assert math.isclose(
+        low_vol_from_anchors(price_anchors),
+        -math.sqrt(336) / 1000,
+        rel_tol=1e-12,
+        abs_tol=1e-15,
+    )
+    assert math.isclose(
+        -sample_std,
+        -0.01833030277982336,
+        rel_tol=1e-15,
+        abs_tol=1e-15,
+    )
+    assert math.isclose(
+        -forbidden_log_sample_std,
+        -0.017765781758667692,
+        rel_tol=1e-15,
+        abs_tol=1e-15,
+    )
+    assert not math.isclose(
+        sample_std,
+        forbidden_log_sample_std,
+        rel_tol=1e-12,
+        abs_tol=1e-15,
+    )
+
+    invalid_anchor_values: tuple[object, ...] = (
+        None,
+        True,
+        float("nan"),
+        float("inf"),
+        0.0,
+        -1.0,
+    )
+    for invalid_anchor in invalid_anchor_values:
+        mutated_anchors: list[object] = list(price_anchors)
+        mutated_anchors[31] = invalid_anchor
+        assert low_vol_from_anchors(mutated_anchors) is None
+    assert low_vol_from_anchors(price_anchors[:-1]) is None
+
+
+def test_diagnostic_forward_return_is_simple_and_fail_closed() -> None:
+    def diagnostic_forward_return(
+        execution_anchor: object,
+        endpoint_anchor: object,
+    ) -> float | None:
+        anchors = (execution_anchor, endpoint_anchor)
+        if any(
+            isinstance(anchor, bool)
+            or not isinstance(anchor, Real)
+            or not math.isfinite(float(anchor))
+            or float(anchor) <= 0.0
+            for anchor in anchors
+        ):
+            return None
+        return float(endpoint_anchor) / float(execution_anchor) - 1.0
+
+    simple_return = diagnostic_forward_return(100.0, 121.0)
+    forbidden_log_return = math.log(121.0 / 100.0)
+    assert math.isclose(simple_return, 0.21, abs_tol=1e-15)
+    assert math.isclose(
+        forbidden_log_return,
+        0.1906203596086497,
+        abs_tol=1e-15,
+    )
+    assert not math.isclose(
+        simple_return,
+        forbidden_log_return,
+        rel_tol=1e-12,
+        abs_tol=1e-15,
+    )
+
+    invalid_anchors: tuple[object, ...] = (
+        None,
+        True,
+        float("nan"),
+        float("inf"),
+        0.0,
+        -1.0,
+    )
+    for invalid_anchor in invalid_anchors:
+        assert diagnostic_forward_return(invalid_anchor, 121.0) is None
+        assert diagnostic_forward_return(100.0, invalid_anchor) is None
+
+
+def test_momentum_and_reversal_price_anchors_fail_closed() -> None:
+    def valid_price_anchor(anchor: object) -> bool:
+        return (
+            not isinstance(anchor, bool)
+            and isinstance(anchor, Real)
+            and math.isfinite(float(anchor))
+            and float(anchor) > 0.0
+        )
+
+    def momentum(
+        adjusted_close_t_minus_252: object,
+        adjusted_close_t_minus_21: object,
+    ) -> float | None:
+        if not all(
+            valid_price_anchor(anchor)
+            for anchor in (
+                adjusted_close_t_minus_252,
+                adjusted_close_t_minus_21,
+            )
+        ):
+            return None
+        return (
+            float(adjusted_close_t_minus_21)
+            / float(adjusted_close_t_minus_252)
+            - 1.0
+        )
+
+    def reversal(
+        adjusted_close_t_minus_21: object,
+        adjusted_close_t: object,
+    ) -> float | None:
+        if not all(
+            valid_price_anchor(anchor)
+            for anchor in (
+                adjusted_close_t_minus_21,
+                adjusted_close_t,
+            )
+        ):
+            return None
+        return -(
+            float(adjusted_close_t)
+            / float(adjusted_close_t_minus_21)
+            - 1.0
+        )
+
+    assert math.isclose(momentum(80.0, 100.0), 0.25, abs_tol=1e-15)
+    assert math.isclose(reversal(100.0, 90.0), 0.10, abs_tol=1e-15)
+
+    invalid_anchors: tuple[object, ...] = (
+        None,
+        True,
+        float("nan"),
+        float("inf"),
+        0.0,
+        -1.0,
+    )
+    for invalid_anchor in invalid_anchors:
+        assert momentum(invalid_anchor, 100.0) is None
+        assert momentum(80.0, invalid_anchor) is None
+        assert reversal(invalid_anchor, 90.0) is None
+        assert reversal(100.0, invalid_anchor) is None
+
+    def momentum_from_calendar_window(
+        adjusted_close: list[object],
+    ) -> float | None:
+        if len(adjusted_close) != 253:
+            return None
+        return momentum(adjusted_close[0], adjusted_close[-22])
+
+    def reversal_from_calendar_window(
+        adjusted_close: list[object],
+    ) -> float | None:
+        if len(adjusted_close) != 22:
+            return None
+        return reversal(adjusted_close[0], adjusted_close[-1])
+
+    momentum_window: list[object] = [95.0] * 253
+    momentum_window[0] = 80.0
+    momentum_window[-22] = 100.0
+    momentum_window[100] = None
+    reversal_window: list[object] = [95.0] * 22
+    reversal_window[0] = 100.0
+    reversal_window[-1] = 90.0
+    reversal_window[10] = None
+
+    assert not all(valid_price_anchor(value) for value in momentum_window)
+    assert not all(valid_price_anchor(value) for value in reversal_window)
+    assert math.isclose(
+        momentum_from_calendar_window(momentum_window),
+        0.25,
+        abs_tol=1e-15,
+    )
+    assert math.isclose(
+        reversal_from_calendar_window(reversal_window),
+        0.10,
+        abs_tol=1e-15,
+    )
+    assert momentum_from_calendar_window(momentum_window[:-1]) is None
+    assert reversal_from_calendar_window(reversal_window[:-1]) is None
+
+
+def test_preregistration_bundle_child_binds_exact_frozen_yaml_bytes() -> None:
+    preregistration_path = (
+        PROJECT_ROOT
+        / "docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml"
+    )
+    frozen_bytes = preregistration_path.read_bytes()
+    bundle_child_bytes = bytes(frozen_bytes)
+    frozen_hash = hashlib.sha256(frozen_bytes).hexdigest()
+
+    assert bundle_child_bytes == frozen_bytes
+    assert hashlib.sha256(bundle_child_bytes).hexdigest() == frozen_hash
+    tampered_bytes = frozen_bytes.replace(
+        b"semantic_trial_count: 14",
+        b"semantic_trial_count: 15",
+        1,
+    )
+    assert tampered_bytes != frozen_bytes
+    assert hashlib.sha256(tampered_bytes).hexdigest() != frozen_hash
+    preregistration_text = frozen_bytes.decode("utf-8")
+    assert "    - eodhd_sp500_three_factor_diagnostic_v1.yaml" in (
+        preregistration_text
+    )
+    assert "    - preregistration.json" not in preregistration_text
+
+
+def test_trial_inventory_bundle_child_binds_exact_frozen_json_bytes() -> None:
+    inventory_path = (
+        PROJECT_ROOT
+        / "docs/preregistrations/"
+        "eodhd_sp500_three_factor_trial_inventory_v1.json"
+    )
+    preregistration_path = (
+        PROJECT_ROOT
+        / "docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml"
+    )
+    frozen_bytes = inventory_path.read_bytes()
+    bundle_child_bytes = bytes(frozen_bytes)
+    frozen_hash = hashlib.sha256(frozen_bytes).hexdigest()
+
+    assert bundle_child_bytes == frozen_bytes
+    assert hashlib.sha256(bundle_child_bytes).hexdigest() == frozen_hash
+    tampered_bytes = frozen_bytes.replace(
+        b'"cost_bps": 10',
+        b'"cost_bps": 11',
+        1,
+    )
+    assert tampered_bytes != frozen_bytes
+    assert hashlib.sha256(tampered_bytes).hexdigest() != frozen_hash
+    preregistration = preregistration_path.read_text(encoding="utf-8")
+    assert (
+        "source_path: docs/preregistrations/"
+        "eodhd_sp500_three_factor_trial_inventory_v1.json"
+    ) in preregistration
+    assert (
+        "hash_relation: "
+        "CHILD_SHA256_EQUALS_DETACHED_TRIAL_INVENTORY_FREEZE_SHA256"
+    ) in preregistration
+
+
+def test_fixed_bps_cost_fixtures_cover_every_frozen_case() -> None:
+    fixtures = {
+        0.4: {0: 0.0, 10: 0.0004, 25: 0.0010},
+        1.0: {0: 0.0, 10: 0.0010, 25: 0.0025},
+        2.0: {0: 0.0, 10: 0.0020, 25: 0.0050},
+    }
+    for turnover, cases in fixtures.items():
+        for bps, expected in cases.items():
+            assert round(turnover * bps / 10000, 10) == expected
+
+
+def test_post_return_execution_cost_and_random_baseline_golden_fixture() -> None:
+    gross_return = 0.10
+    gross_multiplier = 1.0 + gross_return
+    turnover = 2.0
+
+    stress_cost_impact = gross_multiplier * turnover * 25 / 10000
+    stress_net_return = gross_return - stress_cost_impact
+    assert math.isclose(stress_cost_impact, 0.0055, abs_tol=1e-15)
+    assert math.isclose(stress_net_return, 0.0945, abs_tol=1e-15)
+
+    random_primary_cost_impact = gross_multiplier * turnover * 10 / 10000
+    random_primary_net_return = gross_return - random_primary_cost_impact
+    assert math.isclose(random_primary_cost_impact, 0.0022, abs_tol=1e-15)
+    assert math.isclose(random_primary_net_return, 0.0978, abs_tol=1e-15)
+
+    forbidden_pre_return_equity_cost = turnover * 10 / 10000
+    assert not math.isclose(
+        forbidden_pre_return_equity_cost,
+        random_primary_cost_impact,
+        abs_tol=1e-15,
+    )
+
+
+def test_holm_one_based_running_max_and_factor_mapping_golden_fixture() -> None:
+    factor_order = ("MOM_12_1", "REV_1M", "LOW_VOL_3M")
+    raw_p_values = (0.04, 0.01, 0.03)
+    stable_sorted_indices = tuple(
+        sorted(
+            range(3),
+            key=lambda index: (raw_p_values[index], index),
+        )
+    )
+    sorted_p_values = tuple(
+        raw_p_values[index] for index in stable_sorted_indices
+    )
+
+    multiplied_sorted = tuple(
+        (3 - k + 1) * sorted_p_values[k - 1]
+        for k in range(1, 4)
+    )
+    adjusted_sorted = tuple(
+        min(1.0, max(multiplied_sorted[:k]))
+        for k in range(1, 4)
+    )
+    adjusted_factor_order = [0.0, 0.0, 0.0]
+    for sorted_index, original_index in enumerate(stable_sorted_indices):
+        adjusted_factor_order[original_index] = adjusted_sorted[sorted_index]
+
+    rejected_sorted = []
+    for sorted_index, raw_p_value in enumerate(sorted_p_values):
+        threshold = 0.05 / (3 - sorted_index)
+        if raw_p_value > threshold:
+            break
+        rejected_sorted.append(stable_sorted_indices[sorted_index])
+    rejected_factor_ids = tuple(
+        factor_order[index] for index in sorted(rejected_sorted)
+    )
+
+    assert tuple(factor_order[index] for index in stable_sorted_indices) == (
+        "REV_1M",
+        "LOW_VOL_3M",
+        "MOM_12_1",
+    )
+    assert multiplied_sorted == (0.03, 0.06, 0.04)
+    assert adjusted_sorted == (0.03, 0.06, 0.06)
+    assert tuple(adjusted_factor_order) == (0.06, 0.03, 0.06)
+    assert rejected_factor_ids == ("REV_1M",)
+
+
+def test_bootstrap_reuses_segment_draws_for_both_distributions() -> None:
+    factor_table = np.column_stack(
+        (
+            np.arange(15, dtype=float) / 100.0,
+            (14.0 - np.arange(15, dtype=float)) / 200.0,
+            ((np.arange(15, dtype=float) % 4.0) - 1.5) / 100.0,
+        )
+    )
+    observed_means = factor_table.mean(axis=0)
+    null_centered_table = factor_table - observed_means
+    segments = (np.arange(0, 8), np.arange(8, 15))
+    rng = np.random.Generator(np.random.PCG64DXSM(20260730))
+
+    def draw_replicate_indices() -> tuple[tuple[int, ...], ...]:
+        segment_indices = []
+        for segment in segments:
+            segment_length = len(segment)
+            block_length = 6 if segment_length > 6 else 1
+            starts = rng.integers(
+                low=0,
+                high=segment_length,
+                size=math.ceil(segment_length / block_length),
+                endpoint=False,
+            )
+            local_indices = np.concatenate(
+                [
+                    (int(start) + np.arange(block_length)) % segment_length
+                    for start in starts
+                ]
+            )[:segment_length]
+            segment_indices.append(
+                tuple(int(index) for index in segment[local_indices])
+            )
+        return tuple(segment_indices)
+
+    replicate_segment_indices = tuple(
+        draw_replicate_indices() for _ in range(3)
+    )
+    replicate_indices = tuple(
+        tuple(index for segment in replicate for index in segment)
+        for replicate in replicate_segment_indices
+    )
+    expected_replicate_indices = (
+        (2, 3, 4, 5, 6, 7, 2, 3, 11, 12, 13, 14, 8, 9, 12),
+        (2, 3, 4, 5, 6, 7, 7, 0, 14, 8, 9, 10, 11, 12, 8),
+        (0, 1, 2, 3, 4, 5, 3, 4, 12, 13, 14, 8, 9, 10, 14),
+    )
+    uncentered_means = np.asarray(
+        [factor_table[list(indices)].mean(axis=0) for indices in replicate_indices]
+    )
+    null_centered_means = np.asarray(
+        [
+            null_centered_table[list(indices)].mean(axis=0)
+            for indices in replicate_indices
+        ]
+    )
+    expected_uncentered_means = np.asarray(
+        [
+            [0.074, 0.033, 0.0003333333333333334],
+            [0.07066666666666667, 0.034666666666666665, -0.00033333333333333294],
+            [0.068, 0.036000000000000004, -0.0030000000000000005],
+        ]
+    )
+    expected_null_centered_means = np.asarray(
+        [
+            [0.0039999999999999975, -0.0020000000000000035, 0.0013333333333333335],
+            [0.0006666666666666636, -0.0003333333333333359, 0.0006666666666666673],
+            [-0.0020000000000000057, 0.000999999999999998, -0.002],
+        ]
+    )
+
+    assert replicate_indices == expected_replicate_indices
+    np.testing.assert_allclose(observed_means, [0.07, 0.035, -0.001])
+    np.testing.assert_allclose(
+        uncentered_means,
+        expected_uncentered_means,
+        rtol=0.0,
+        atol=1e-15,
+    )
+    np.testing.assert_allclose(
+        null_centered_means,
+        expected_null_centered_means,
+        rtol=0.0,
+        atol=1e-15,
+    )
+    np.testing.assert_allclose(
+        null_centered_means,
+        uncentered_means - observed_means,
+        rtol=0.0,
+        atol=1e-15,
+    )
+
+    forbidden_second_pass_indices = tuple(
+        draw_replicate_indices() for _ in range(3)
+    )
+    assert forbidden_second_pass_indices != replicate_segment_indices
+
+
+def test_circular_bootstrap_nonmultiple_segments_center_null_mean() -> None:
+    segment_length = 7
+    block_length = 6
+    segment_count = 9
+    record_count = segment_length * segment_count
+    row_index = np.arange(record_count, dtype=float)
+    factor_table = np.column_stack(
+        (
+            row_index / 100.0,
+            ((row_index % 5.0) - 2.0) / 100.0,
+            ((row_index * row_index) % 11.0) / 100.0,
+        )
+    )
+    null_centered_table = factor_table - factor_table.mean(axis=0)
+
+    def expected_local_inclusion_weights(
+        starts: range,
+        *,
+        circular: bool,
+    ) -> np.ndarray:
+        inclusion_counts = np.zeros(segment_length)
+        for first_start, second_start in itertools.product(starts, repeat=2):
+            blocks = []
+            for start in (first_start, second_start):
+                indices = start + np.arange(block_length)
+                if circular:
+                    indices %= segment_length
+                blocks.append(indices)
+            sampled = np.concatenate(blocks)[:segment_length]
+            np.add.at(inclusion_counts, sampled, 1)
+        return inclusion_counts / (len(starts) ** 2)
+
+    def expected_global_null_mean(weights: np.ndarray) -> np.ndarray:
+        expected_sum = np.zeros(3)
+        for segment_start in range(0, record_count, segment_length):
+            segment = null_centered_table[
+                segment_start : segment_start + segment_length
+            ]
+            expected_sum += (weights[:, None] * segment).sum(axis=0)
+        return expected_sum / record_count
+
+    circular_weights = expected_local_inclusion_weights(
+        range(segment_length),
+        circular=True,
+    )
+    circular_null_mean = expected_global_null_mean(circular_weights)
+    forbidden_noncircular_weights = expected_local_inclusion_weights(
+        range(segment_length - block_length + 1),
+        circular=False,
+    )
+    forbidden_noncircular_null_mean = expected_global_null_mean(
+        forbidden_noncircular_weights
+    )
+
+    assert record_count == 63
+    np.testing.assert_array_equal(circular_weights, np.ones(segment_length))
+    np.testing.assert_allclose(circular_null_mean, np.zeros(3), atol=1e-15)
+    np.testing.assert_allclose(
+        circular_null_mean,
+        [
+            7.401486830834377e-17,
+            4.2679704567683347e-19,
+            9.141717365465079e-18,
+        ],
+        rtol=0.0,
+        atol=1e-30,
+    )
+    np.testing.assert_array_equal(
+        forbidden_noncircular_weights,
+        [1.0, 1.5, 1.0, 1.0, 1.0, 1.0, 0.5],
+    )
+    np.testing.assert_allclose(
+        forbidden_noncircular_null_mean,
+        [
+            -0.0035714285714285128,
+            3.441911658684141e-19,
+            0.00023809523809524734,
+        ],
+        rtol=0.0,
+        atol=1e-18,
+    )
+    assert abs(forbidden_noncircular_null_mean[0]) > 1e-3
+    assert abs(forbidden_noncircular_null_mean[2]) > 1e-4
+
+
+def test_short_bootstrap_segments_resample_60_records_nondegenerately() -> None:
+    segments = tuple(
+        np.arange(segment_start, segment_start + 6)
+        for segment_start in range(0, 60, 6)
+    )
+    row_index = np.arange(60, dtype=float)
+    factor_table = np.column_stack(
+        (
+            row_index / 100.0,
+            ((row_index % 7.0) - 3.0) / 100.0,
+            ((row_index * row_index) % 17.0) / 100.0,
+        )
+    )
+    null_centered_table = factor_table - factor_table.mean(axis=0)
+    rng = np.random.Generator(np.random.PCG64DXSM(20260730))
+
+    def draw_replicate_indices() -> tuple[int, ...]:
+        sampled_indices: list[int] = []
+        for segment in segments:
+            segment_length = len(segment)
+            block_length = 6 if segment_length > 6 else 1
+            starts = rng.integers(
+                low=0,
+                high=segment_length - block_length + 1,
+                size=math.ceil(segment_length / block_length),
+                endpoint=False,
+            )
+            local_indices = np.concatenate(
+                [
+                    np.arange(start, start + block_length)
+                    for start in starts
+                ]
+            )[:segment_length]
+            sampled_indices.extend(
+                int(index) for index in segment[local_indices]
+            )
+        return tuple(sampled_indices)
+
+    replicate_indices = tuple(draw_replicate_indices() for _ in range(3))
+    identity_copy = tuple(range(60))
+    serialized_replicates = json.dumps(
+        replicate_indices,
+        separators=(",", ":"),
+    ).encode("ascii")
+    null_bootstrap_means = np.asarray(
+        [
+            null_centered_table[list(indices)].mean(axis=0)
+            for indices in replicate_indices
+        ]
+    )
+
+    assert hashlib.sha256(serialized_replicates).hexdigest() == (
+        "1af6fb42e42646a709d038138e5f0d35"
+        "88ac003022ab7950fe1e83cb6811826b"
+    )
+    assert len(set(replicate_indices)) == 3
+    assert all(indices != identity_copy for indices in replicate_indices)
+    for indices in replicate_indices:
+        assert len(indices) == 60
+        for segment_start in range(0, 60, 6):
+            sampled_segment = indices[segment_start : segment_start + 6]
+            assert all(
+                segment_start <= index < segment_start + 6
+                for index in sampled_segment
+            )
+    for factor_index in range(3):
+        assert len(
+            set(np.round(null_bootstrap_means[:, factor_index], 15))
+        ) >= 2
+
+    forbidden_full_segment_copies = (identity_copy,) * 3
+    assert len(set(forbidden_full_segment_copies)) == 1
+    assert forbidden_full_segment_copies != replicate_indices
+    singleton_segments = tuple((index,) for index in range(60))
+    assert not any(len(segment) >= 2 for segment in singleton_segments)
+
+
+def test_factor_turnover_uses_immediate_frozen_scheduled_predecessor() -> None:
+    key_a = b"a"
+    key_b = b"b"
+    key_c = b"c"
+    key_d = b"d"
+    frozen_targets = (
+        {key_a: 0.5, key_b: 0.5},
+        {key_c: 0.5, key_d: 0.5},
+        {key_a: 0.5, key_b: 0.5},
+    )
+
+    def scheduled_turnovers(
+        outcome_validity: tuple[bool, bool, bool],
+    ) -> tuple[None, float, float]:
+        assert len(outcome_validity) == len(frozen_targets)
+        return (
+            None,
+            _factor_target_turnover(frozen_targets[0], frozen_targets[1]),
+            _factor_target_turnover(frozen_targets[1], frozen_targets[2]),
+        )
+
+    all_outcomes_valid = scheduled_turnovers((True, True, True))
+    middle_outcome_invalid = scheduled_turnovers((True, False, True))
+    forbidden_skip_to_last_outcome_valid = _factor_target_turnover(
+        frozen_targets[0],
+        frozen_targets[2],
+    )
+
+    assert all_outcomes_valid == (None, 2.0, 2.0)
+    assert middle_outcome_invalid == all_outcomes_valid
+    assert middle_outcome_invalid[2] == 2.0
+    assert forbidden_skip_to_last_outcome_valid == 0.0
+
+
+def test_diagnostic_final_state_assignment_is_exhaustive_at_boundaries() -> None:
+    base = {
+        "hard_valid": True,
+        "prefrozen_coverage_met": True,
+        "common_months": 60,
+        "bootstrap_support_all_three_factors": True,
+        "primary_matched_benchmark_comparisons_valid": True,
+        "secondary_spy_comparisons_valid": True,
+        "mean_rank_ics": (0.02, -0.01, -0.02),
+        "holm_rejections": (True, False, False),
+        "active_return_10bps": (0.01, -0.01, -0.01),
+        "active_return_25bps": (0.005, -0.01, -0.01),
+        "common_case_positive_year_fractions": (0.6, 0.4, 0.4),
+        "common_case_all_loyo_means_positive": (True, False, False),
+    }
+    cases = [
+        (
+            {"hard_valid": False},
+            "INVALID_DIAGNOSTIC",
+        ),
+        (
+            {
+                "mean_rank_ics": (0.0, -0.01, -0.02),
+                "holm_rejections": (True, False, False),
+            },
+            "INVALID_DIAGNOSTIC",
+        ),
+        (
+            {"prefrozen_coverage_met": False},
+            "INCONCLUSIVE_DIAGNOSTIC",
+        ),
+        (
+            {"common_months": 59},
+            "INCONCLUSIVE_DIAGNOSTIC",
+        ),
+        (
+            {"bootstrap_support_all_three_factors": False},
+            "INCONCLUSIVE_DIAGNOSTIC",
+        ),
+        (
+            {
+                "hard_valid": False,
+                "bootstrap_support_all_three_factors": False,
+            },
+            "INVALID_DIAGNOSTIC",
+        ),
+        (
+            {
+                "active_return_10bps": (0.0, -0.01, -0.01),
+            },
+            "MIXED_DIAGNOSTIC",
+        ),
+        (
+            {
+                "active_return_25bps": (0.0, -0.01, -0.01),
+            },
+            "MIXED_DIAGNOSTIC",
+        ),
+        (
+            {
+                "common_case_positive_year_fractions": (0.5, 0.4, 0.4),
+            },
+            "MIXED_DIAGNOSTIC",
+        ),
+        (
+            {
+                "common_case_all_loyo_means_positive": (False, False, False),
+            },
+            "MIXED_DIAGNOSTIC",
+        ),
+        (
+            {},
+            "POSITIVE_DIAGNOSTIC",
+        ),
+        (
+            {
+                "mean_rank_ics": (-0.01, -0.02, -0.03),
+                "holm_rejections": (False, False, False),
+            },
+            "NEGATIVE_DIAGNOSTIC",
+        ),
+        (
+            {
+                "mean_rank_ics": (0.0, -0.02, -0.03),
+                "holm_rejections": (False, False, False),
+            },
+            "INCONCLUSIVE_DIAGNOSTIC",
+        ),
+        (
+            {
+                "holm_rejections": (False, False, False),
+            },
+            "INCONCLUSIVE_DIAGNOSTIC",
+        ),
+    ]
+
+    observed_states = set()
+    for overrides, expected in cases:
+        observed = _classify_diagnostic(**(base | overrides))
+        observed_states.add(observed)
+        assert observed == expected
+
+    assert observed_states == {
+        "INVALID_DIAGNOSTIC",
+        "INCONCLUSIVE_DIAGNOSTIC",
+        "NEGATIVE_DIAGNOSTIC",
+        "MIXED_DIAGNOSTIC",
+        "POSITIVE_DIAGNOSTIC",
+    }
+
+
+def test_benchmark_comparison_gaps_have_frozen_final_state_routing() -> None:
+    base = {
+        "hard_valid": True,
+        "prefrozen_coverage_met": True,
+        "common_months": 60,
+        "bootstrap_support_all_three_factors": True,
+        "primary_matched_benchmark_comparisons_valid": True,
+        "secondary_spy_comparisons_valid": True,
+        "mean_rank_ics": (0.02, -0.01, -0.02),
+        "holm_rejections": (True, False, False),
+        "active_return_10bps": (0.01, -0.01, -0.01),
+        "active_return_25bps": (0.005, -0.01, -0.01),
+        "common_case_positive_year_fractions": (0.6, 0.4, 0.4),
+        "common_case_all_loyo_means_positive": (True, False, False),
+    }
+
+    matched_universe_gap = _classify_diagnostic(
+        **(base | {"primary_matched_benchmark_comparisons_valid": False})
+    )
+    secondary_spy_gap = _classify_diagnostic(
+        **(base | {"secondary_spy_comparisons_valid": False})
+    )
+
+    assert matched_universe_gap == "INVALID_DIAGNOSTIC"
+    assert secondary_spy_gap == "POSITIVE_DIAGNOSTIC"
+
+
+def test_final_state_robustness_uses_common_case_not_factor_all_valid() -> None:
+    records = []
+    required_years = (2018, 2019, 2020)
+    for year in required_years:
+        records.extend(
+            [
+                {
+                    "signal_year": year,
+                    "label_intersection_years": (year,),
+                    "rank_ics": (0.1, -0.01, -0.02),
+                },
+                {
+                    "signal_year": year,
+                    "label_intersection_years": (year,),
+                    "rank_ics": (-1.0, None, None),
+                },
+            ]
+        )
+
+    common_fraction, common_loyo_positive = _rank_ic_robustness_from_records(
+        records,
+        factor_index=0,
+        required_years=required_years,
+        sample_basis="COMMON_COMPLETE_CASE",
+    )
+    all_valid_fraction, all_valid_loyo_positive = (
+        _rank_ic_robustness_from_records(
+            records,
+            factor_index=0,
+            required_years=required_years,
+            sample_basis="FACTOR_ALL_VALID",
+        )
+    )
+    classification_inputs = {
+        "hard_valid": True,
+        "prefrozen_coverage_met": True,
+        "common_months": 60,
+        "bootstrap_support_all_three_factors": True,
+        "primary_matched_benchmark_comparisons_valid": True,
+        "secondary_spy_comparisons_valid": True,
+        "mean_rank_ics": (0.1, -0.01, -0.02),
+        "holm_rejections": (True, False, False),
+        "active_return_10bps": (0.01, -0.01, -0.01),
+        "active_return_25bps": (0.005, -0.01, -0.01),
+    }
+
+    common_case_state = _classify_diagnostic(
+        **classification_inputs,
+        common_case_positive_year_fractions=(common_fraction, 0.0, 0.0),
+        common_case_all_loyo_means_positive=(
+            common_loyo_positive,
+            False,
+            False,
+        ),
+    )
+    forbidden_all_valid_state = _classify_diagnostic(
+        **classification_inputs,
+        common_case_positive_year_fractions=(all_valid_fraction, 0.0, 0.0),
+        common_case_all_loyo_means_positive=(
+            all_valid_loyo_positive,
+            False,
+            False,
+        ),
+    )
+
+    assert (common_fraction, common_loyo_positive) == (1.0, True)
+    assert (all_valid_fraction, all_valid_loyo_positive) == (0.0, False)
+    assert common_case_state == "POSITIVE_DIAGNOSTIC"
+    assert forbidden_all_valid_state == "MIXED_DIAGNOSTIC"
 
 
 def test_research_program_charter_defines_evidence_and_authorization_gates() -> None:
@@ -233,7 +3052,7 @@ def test_purged_bounded_split_contract_freezes_stage_one_design() -> None:
         "| 2b. Signal/execution timing implementation | "
         "Complete on protected main via PR #162"
     ) in roadmap
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
 
 
 def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
@@ -410,7 +3229,7 @@ def test_signal_execution_timing_contract_freezes_stage_two_design() -> None:
     ) in roadmap
     assert (
         "| 4b-R1I. Attempt-start schema | "
-        "Active in the current tree; owner selected bundle R1I-A"
+        "Complete on protected main via PR #176"
     ) in roadmap
 
 
@@ -1312,7 +4131,7 @@ def test_trial_family_registration_r1c_freezes_owner_bundle_and_release() -> Non
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1C-A`" in normalized_handoff
     assert "leaves the other 33 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1C-A" in " ".join(specification.split())
     assert (
         "Accepted Stage 4B-R1C-A trial-family registration authority" in repo_map
@@ -1494,7 +4313,7 @@ def test_sample_registration_r1d_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1D-A`" in normalized_handoff
     assert "leaves the other 32 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1D-A" in " ".join(specification.split())
     assert (
         "Accepted Stage 4B-R1D-A local sample registration authority" in repo_map
@@ -1685,7 +4504,7 @@ def test_binding_r1e_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1E-A`" in normalized_handoff
     assert "leaves the other 30 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1E-A" in " ".join(
         specification.split()
     )
@@ -1922,7 +4741,7 @@ def test_trial_allocation_r1f_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "the owner selected bundle `R1F-A`" in normalized_handoff
     assert "leaves the other 29 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1F-A" in " ".join(
         specification.split()
     )
@@ -2154,7 +4973,7 @@ def test_campaign_inventory_seal_r1g_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "The owner selected bundle `R1G-A`" in normalized_handoff
     assert "leaves the other 28 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1G-A" in " ".join(
         specification.split()
     )
@@ -2355,7 +5174,7 @@ def test_attempt_allocation_r1h_freezes_owner_bundle_and_release() -> None:
     normalized_handoff = " ".join(handoff.split())
     assert "The owner selected bundle `R1H-A`" in normalized_handoff
     assert "leaves the other 27 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1H-A" in " ".join(
         specification.split()
     )
@@ -2531,16 +5350,16 @@ def test_attempt_start_r1i_freezes_owner_bundle_and_release() -> None:
     ) in roadmap
     assert (
         "| 4b-R1I. Attempt-start schema | "
-        "Active in the current tree; owner selected bundle R1I-A"
+        "Complete on protected main via PR #176"
     ) in roadmap
     normalized_handoff = " ".join(handoff.split())
     assert "The owner selected bundle `R1I-A`" in normalized_handoff
     assert "leaves the other 26 events" in normalized_handoff
-    assert "Complete Stage 4B-R1I in the current isolated worktree" in handoff
+    assert "Complete PR 1 scope and campaign reset without data access or performance" in handoff
     assert "owner-selected Stage 4B-R1I-A" in " ".join(
         specification.split()
     )
-    assert "Active Stage 4B-R1I-A attempt-start authority" in repo_map
+    assert "Accepted Stage 4B-R1I-A attempt-start authority" in repo_map
 
 
 def _ascii_jcs_golden_bytes(value: object) -> bytes:

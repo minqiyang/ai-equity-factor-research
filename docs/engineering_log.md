@@ -1,5 +1,626 @@
 # Engineering Log
 
+## 2026-07-31 - PR 177 Twenty-Fourth-Review Circular-Bootstrap Remediation
+
+- Exact-head Codex review `4834551495` of `2c6b827` completed with one P1:
+  non-circular length-six blocks plus tail truncation assigned unequal expected
+  row weights when segment length was not divisible by six, invalidating the
+  intended globally centered null expectation.
+- Replaced the long-segment rule with circular starts drawn uniformly from all
+  positions. Each block wraps only within its own segment; the concatenated
+  draw is still truncated to `n`, but every local row now has expected
+  inclusion weight exactly one. Short segments retain their frozen one-row
+  resampling and singleton behavior.
+- Updated the seeded shared-draw fixture and added a 63-record exhaustive
+  golden over nine length-seven segments. It proves circular unit weights and
+  centered-null expectation while rejecting the former
+  `[1,1.5,1,1,1,1,0.5]` weights and nonzero MOM/LOW_VOL expected null means.
+- Focused project-structure validation passed 71 tests. The full suite passed
+  3098 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, `git diff
+  --check`, privacy, non-ASCII, and hidden-Unicode/control scans passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Twenty-Third-Review Baseline-Episode Remediation
+
+- Exact-head Codex review `4834522202` of `93adce5` completed with one P2: the
+  two required baseline episode series did not bind how a 21-row diagnostic
+  behaves when the next monthly execution precedes its endpoint.
+- Added `frozen_target_execution_to_e_plus_21_v1` to the preregistration and
+  exact trial inventory. Equal-weight and random-rank targets freeze at signal
+  close, start at execution, and hold static initial weights through `e+21`.
+  Their gross cost-free episode is the weighted sum of target constituent
+  simple adjusted-close returns, not a continuous-path slice.
+- Required any invalid targeted constituent to invalidate and retain the whole
+  episode without survivor renormalization, fill, cash/zero substitution, or
+  alternate rows. Added a short-month fixture where a row-20 reset produces
+  the forbidden `0.10` path while the row-21 frozen episode remains `0.01`.
+- Focused project-structure validation passed 70 tests. The full suite passed
+  3097 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, and `git
+  diff --check` passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Twenty-Second-Review Held-Return Remediation
+
+- Exact-head Codex review `4834496727` of `9bbc2c3` completed with one P2: the
+  continuous holdings path did not bind the strategy and primary benchmark to
+  one held-return price field, adjacent-return formula, and anchor policy.
+- Added `adjusted_close_simple_held_return_v1` for factor strategies, both
+  long-only baselines, and the factor-matched primary benchmark. It uses exact
+  adjacent common-calendar adjusted-close simple returns, strict positive
+  real non-Boolean anchors, the frozen lineage policy, and no repair or raw-
+  close fallback. Strategy anchor failures invalidate the trial; primary-
+  benchmark failures trigger the required hard-invalid comparison route.
+- Added a two-security 2-for-1 split fixture. The required adjusted path keeps
+  gross return, turnover, cost, and active return at zero; the forbidden raw
+  path produces `-0.25` gross return, `1/3` turnover, and `0.00025` 10-bps
+  cost impact. Separate corporate-action cash flows cannot be added to the
+  adjusted proxy.
+- Focused project-structure validation passed 69 tests. The full suite passed
+  3096 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, and `git
+  diff --check` passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Twenty-First-Review Factor-Lineage Remediation
+
+- Exact-head Codex review `4834461569` of `5869193` completed with one P2:
+  factor price anchors were numerically gated but not bound to the resolved
+  permanent-security/listing lineage, leaving rename and ticker-reuse behavior
+  implementation-dependent.
+- Added `factor_anchor_lineage_v1`. Every factor anchor carries accepted
+  normalized permanent-security, listing, listing-episode, alias-interval, and
+  lineage-evidence fields and must match the signal target identity exactly.
+  Only a contiguous, nonoverlapping, evidenced same-identity symbol rename may
+  traverse aliases; ticker-only joins and identity/episode changes fail closed.
+- Added executable accepted-rename and equal-ticker/different-issuer fixtures.
+  The former retains momentum `0.25`; the latter proves a ticker-only `0.25`
+  calculation exists but is rejected before decision-time eligibility. The
+  shared target helper now consumes the lineage gate.
+- Focused project-structure validation passed 68 tests. The full suite passed
+  3095 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, and `git
+  diff --check` passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Twentieth-Review Prospective-Append Remediation
+
+- Exact-head Codex review of `e6c7ad5` completed with one P2: binding a single
+  exact accepted-data manifest would require rebinding on every future batch
+  and reset the prospective anchor indefinitely.
+- Split prospective data identity into an immutable historical seed/cutoff and
+  a succession policy frozen in the detached binding. Future batches use a
+  content-addressed append record with consecutive sequence, previous hash,
+  batch hash, nonoverlapping increasing session bounds, and UTC ingestion time;
+  appends never reset the original anchor.
+- Required corrections to append an audit record without overwriting prior
+  artifacts or retroactively recomputing frozen signals.
+- Added a two-batch chain fixture that starts after a pre-binding seed cutoff,
+  preserves hash succession, and matures/counts February and March while a
+  forbidden per-batch reanchor counts neither.
+- Focused project-structure validation passed 67 tests. The full suite passed
+  3094 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, `git diff
+  --check`, and added-line privacy, non-ASCII, and hidden-Unicode/control scans
+  passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Nineteenth-Review Run-Binding Remediation
+
+- Exact-head Codex review of `3aeeb5a` completed with one P2: prospective
+  counting could begin after runner-code freeze but before the complete
+  detached run binding fixed configuration and environment identity.
+- Added detached-run-binding completion to the maximum normalized UTC anchor.
+  Completion requires exact protocol, inventory, accepted data, code, config,
+  and environment identity binding before any result-bearing job; incomplete
+  binding forbids prospective counting.
+- Added a staggered fixture where code freezes before an August signal but the
+  detached binding completes afterward, forcing the prospective start to the
+  next qualifying September signal.
+- Focused project-structure validation passed 66 tests. The full suite passed
+  3093 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, `git diff
+  --check`, and added-line privacy, non-ASCII, and hidden-Unicode/control scans
+  passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Eighteenth-Review Prospective-Time Remediation
+
+- Exact-head Codex review of `242f373` completed with two P2 findings: freeze
+  timestamps and signal dates lacked one comparable instant, and the 12/24
+  counter could authorize opening before the threshold observation matured.
+- Required timezone-aware RFC 3339 freeze instants normalized to UTC and
+  official XNYS close instants from the frozen calendar converted to UTC. A
+  same-day signal qualifies only when its close is strictly after the latest
+  normalized freeze instant.
+- Made threshold counter increment operational only. Protected opening must be
+  strictly after the later of the threshold signal's `e+21` label close and
+  following monthly execution close, after outputs are persisted and all
+  separate authorization/Track B access gates pass.
+- Added same-day before/at/after-close and 12/24 label-versus-strategy maturity
+  fixtures, including rejection of naive timestamps and exact-maturity access.
+- Focused project-structure validation passed 65 tests. The full suite passed
+  3092 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, `git diff
+  --check`, and added-line privacy, non-ASCII, and hidden-Unicode/control scans
+  passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Seventeenth-Review Cutoff And Path Remediation
+
+- Exact-head Codex review of `5b08be6` completed with one P1 and one P2: a
+  diagnostic label could finish at the accepted cutoff while its continuous
+  target lacked the next monthly execution, and invalid-month exclusion left
+  economic-path treatment undefined.
+- Defined a calendar-only continuous schedule before target freeze. A boundary
+  signal whose label is complete but whose next monthly execution exceeds the
+  cutoff remains in factor diagnostics and creates no strategy target,
+  turnover, cost, invalid output, or hard-validity failure.
+- Kept sparse/tied zero-target months in the single continuous strategy and
+  invested-benchmark path. Filtering, direct target bridges, segment restarts,
+  turnover/cost omission, and separate annualization are forbidden.
+- Added a 22-session July 2024 cutoff fixture and a valid/tied/valid classifier
+  fixture that distinguishes the required continuous economic path from a
+  false-positive filtered path.
+- Focused project-structure validation passed 63 tests. The full suite passed
+  3090 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, `git diff
+  --check`, and added-line privacy, non-ASCII, and hidden-Unicode/control scans
+  passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Sixteenth-Review Benchmark And Classifier Remediation
+
+- Exact-head Codex review of `46679c4` completed with two P2 findings: the
+  invalid-factor-month rule reused factor cash for the equal-weight primary
+  benchmark, and final-state classification did not consume bootstrap-support
+  coverage.
+- Kept the equal-weight baseline and primary benchmark invested in every
+  nonempty unique decision-time eligible universe on sparse/tied factor
+  months. The factor and random-rank targets still liquidate to cash, while
+  their active returns are retained descriptively and excluded from final-
+  state support. Duplicate or empty benchmark targets remain unformable rather
+  than being replaced by cash.
+- Added an integrated tied-factor fixture covering both portfolio paths and
+  exact 10/25-bps active returns. Added nondegenerate bootstrap support for all
+  three factors as an explicit coverage input to the ordered classifier, plus
+  false-support and hard-validity-precedence boundary cases.
+- Focused project-structure validation passed 61 tests. The full suite passed
+  3088 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, safe YAML/JSON parsing with exact 14-trial reconciliation,
+  deterministic repo-map regeneration, isolated sdist/wheel build, `git diff
+  --check`, and added-line privacy, non-ASCII, and hidden-Unicode/control scans
+  passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Fifteenth-Review Bootstrap And Key Remediation
+
+- Exact-head Codex review of `e9c2707` completed with one P1 and one P2: short
+  bootstrap segments were copied unchanged, and key freeze scope across
+  staggered factor eligibility was ambiguous.
+- Changed lengths two through six to one-row within-segment draws with
+  replacement, retained length-six blocks for longer segments, and added a
+  nondegenerate resampling-support coverage gate.
+- Froze keys campaign-wide at earliest any-factor decision-time eligibility,
+  with every later factor reusing the same bytes.
+- Added a deterministic 60-record/ten-segment resampling fixture and a
+  staggered factor-eligibility key fixture. Focused project-structure
+  validation passed 61 tests. The full suite passed 3088 tests with two
+  platform-conditional skips. Full Ruff, compileall, Skill audit, YAML and JSON
+  parsing, deterministic repo-map regeneration, `git diff --check`, added-line
+  privacy and Unicode/control scans, and isolated sdist/wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Fourteenth-Review Common-Clock Baseline Remediation
+
+- Exact-head Codex review of `fc561e4` completed with two P2 findings:
+  prospective eligibility lacked a cross-factor predicate, and random-rank
+  behavior on sparse, tied, or duplicate-key months was unspecified.
+- Froze the prospective clock to all three decision-time-valid factor
+  rebalances, retaining but not counting subset-valid signals.
+- Applied the same three factor invalid-month triggers to both baselines:
+  retained invalid output, zero target, full cash, invalid/missing episodic
+  return, continuous liquidation/cash path with invalid flag, and no random
+  seed or permutation consumption.
+- Added subset-factor and sparse/tied/duplicate integrated fixtures. Focused
+  project-structure validation passed 59 tests. The full suite passed 3086
+  tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Thirteenth-Review Eligibility And Freeze Remediation
+
+- Exact-head Codex review of `12cacaa` completed with two P2 findings: a
+  generic complete-history flag contradicted endpoint-only MOM/REV eligibility,
+  and the prospective start rule omitted code and dataset-policy freezes.
+- Replaced the generic gate in both machine-readable policy and the integrated
+  decision-time helper with factor-specific lookback-position and required-
+  anchor validity. Interior non-input prices cannot alter targets or benchmark
+  membership.
+- Anchored prospective counting to the maximum protocol, runner-code, and
+  dataset-policy freeze timestamp, with a strict-after boundary and no
+  backfill.
+- Added a two-factor 100-listing target/benchmark fixture and a staggered-
+  timestamp prospective-start fixture. Focused project-structure validation
+  passed 58 tests. The full suite passed 3085 tests with two platform-
+  conditional skips. Full Ruff, compileall, Skill audit, YAML and JSON parsing,
+  deterministic repo-map regeneration, `git diff --check`, added-line privacy
+  and Unicode/control scans, and isolated sdist/wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Twelfth-Review Interior-Missing Remediation
+
+- Exact-head Codex review of `d2ac8cd` completed with one P2: the MOM/REV
+  lookback counts could be interpreted as either common-calendar position
+  spans or contiguous observed-price requirements.
+- Replaced the ambiguous price-anchor counts with explicit 253/22 inclusive
+  common-calendar position spans, two required observed formula anchors, and a
+  rule that unreferenced interior missing or invalid prices have no factor-
+  value or eligibility effect and receive no repair.
+- Added both-factor interior-missing fixtures that preserve momentum `0.25`
+  and reversal `0.10` while proving a forbidden full-window validity gate
+  would reject the same inputs.
+- Focused project-structure validation passed 56 tests. The full suite passed
+  3083 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Eleventh-Review Factor-Anchor Remediation
+
+- Exact-head Codex review of `bc4c201` completed with one P2: momentum and
+  reversal lacked the strict price-anchor validation already frozen for low
+  volatility and forward returns.
+- Required every referenced MOM/REV numerator and denominator anchor to be a
+  present, finite, strictly positive real non-Boolean scalar before division.
+  An invalid anchor retains an invalid/missing factor value, excludes and
+  counts the factor-specific listing, and permits no repair path.
+- Added `0.25` momentum and `0.10` reversal golden values plus mutations of
+  every anchor position through missing, Boolean, non-finite, zero, and
+  negative values.
+- Focused project-structure validation passed 56 tests. The full suite passed
+  3083 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Tenth-Review Return And Bootstrap Remediation
+
+- Exact-head Codex review of `a5b6695` completed with two P2 findings: the
+  diagnostic forward return had no simple/log formula or anchor validity, and
+  centered versus uncentered bootstrap draw reuse was unspecified.
+- Froze the 21-row diagnostic endpoint return to adjusted-close simple return
+  with both anchors present, finite, strictly positive, real, and non-Boolean.
+  Invalid anchors retain an invalid factor-month outcome and counted reason,
+  with every repair and log fallback forbidden.
+- Froze one block-start draw per replicate/segment and shared its exact row
+  indices across all factors and both uncentered interval and null-centered
+  p-value tables. A second RNG pass is forbidden.
+- Added endpoint-price and three-replicate segmented-bootstrap fixtures that
+  distinguish log returns, invalid anchors, separate RNG passes, index vectors,
+  and both resampled mean distributions.
+- Focused project-structure validation passed 55 tests. The full suite passed
+  3082 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Ninth-Review LOW_VOL Return Remediation
+
+- Exact-head Codex review of `86f6929` completed with one P2: the low-
+  volatility input did not distinguish simple from log returns or freeze
+  invalid price-anchor behavior.
+- Replaced the alias formula with the exact adjacent adjusted-close simple-
+  return calculation over `d=t-62..t` and explicitly forbade log returns.
+- Required 64 present, finite, strictly positive real non-Boolean anchors.
+  Invalid anchors produce a retained invalid/missing factor value, factor-
+  specific eligibility exclusion, and counted reason with no repair path.
+- Extended the existing off-by-one fixture to distinguish the frozen simple
+  negative sample standard deviation `-0.01833030277982336` from the forbidden
+  log value `-0.017765781758667692` and cover missing, Boolean, non-finite,
+  zero, negative, and short anchor inputs.
+- Focused project-structure validation passed 53 tests. The full suite passed
+  3080 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Eighth-Review Holm-Index Remediation
+
+- Exact-head Codex review of `1f6c801` completed with one P2: the adjusted-p
+  formula did not define whether `k` was zero- or one-based.
+- Froze `k=1..3`, Python access at `k-1`, running maxima over all sorted
+  positions through `k`, capping at 1, stable factor-order tie breaking,
+  sequential stop behavior, and mapping adjusted values back to factor order.
+- Added a three-p-value golden fixture whose sorted multipliers are
+  `0.03,0.06,0.04`, sorted adjusted values are `0.03,0.06,0.06`, factor-order
+  adjusted values are `0.06,0.03,0.06`, and only `REV_1M` is rejected.
+- Focused project-structure validation passed 53 tests. The full suite passed
+  3080 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Seventh-Review Random-Selection Remediation
+
+- Exact-head Codex review of `b8149c2` completed with one P2: the random-rank
+  baseline did not map its frozen permutation uniquely to a top-decile target.
+- Froze the seed's date token to strict signal date `t`, the canonical input to
+  ascending listing-key bytes, the permutation to high-to-low rank, selection
+  to the first remainder-aware top-decile chunk, weights to equal weight, and
+  target serialization back to ascending canonical-key order.
+- Added a valid non-divisible 103-key golden fixture. It asserts the SHA-256
+  preimage digest, uint64 seed, complete `PCG64DXSM` permutation, 11 selected
+  canonical keys, weights, serialization, and a discriminating last-chunk
+  rejection.
+- The random baseline remains one semantic trial and the frozen inventory
+  remains exactly 14.
+- Focused project-structure validation passed 52 tests. The full suite passed
+  3079 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Sixth-Review Cost-Accounting Remediation
+
+- Exact-head Codex review of `0179ebb` completed with one P1 and one P2: the
+  fixed-bps formula omitted post-return growth, and the random-rank baseline's
+  continuous return had no frozen cost basis.
+- Aligned portfolio and security-level costs to the accepted execution timing:
+  held incoming return, gross multiplier, drifted turnover, post-return equity
+  charge, then beginning-period net-return impact.
+- Froze the equal-weight baseline as cost-free and the random-rank continuous
+  baseline as net at primary 10 bps while keeping both 21-row episode outputs
+  gross and cost-free. The random baseline remains one semantic trial and the
+  inventory remains exactly 14.
+- Added discriminating nonzero-return fixtures: 10% gross return and turnover
+  2.0 produce 0.0055 cost impact at 25 bps and 0.0022 at the random baseline's
+  10 bps. A forbidden pre-return-equity computation produces a different
+  value.
+- Focused project-structure validation passed 51 tests. The full suite passed
+  3078 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Fifth-Review Benchmark Routing Remediation
+
+- Exact-head Codex review of `e5d72c2` completed with one P2: invalid primary
+  factor-matched and secondary SPY comparisons had no unique route through the
+  deterministic final-state tree.
+- Made any required primary factor-matched comparison gap a campaign hard-
+  validity failure and therefore `INVALID_DIAGNOSTIC`. Interval omission,
+  filling, and false-economic-predicate treatment are forbidden.
+- Kept a SPY-only comparison gap descriptive with no final-state effect while
+  retaining its invalid output and missing-date count as required evidence.
+- Added separate final-state fixtures for matched-universe and SPY gaps and
+  reconciled the protocol, preregistration, handoff, decision log, changelog,
+  and troubleshooting record.
+- Focused project-structure validation passed 50 tests. The full suite passed
+  3077 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Fourth-Review And Persistent-Wait Remediation
+
+- Exact-head Codex review of `6a7445f` completed with two new P2 findings:
+  factor turnover lacked an exact predecessor after an outcome-invalid middle
+  month, and the handoff still described the third-round commit/push as
+  pending.
+- Froze factor turnover to the immediately preceding scheduled frozen
+  decision-time target regardless of later outcome validity. The outcome-
+  invalid flag remains separate and cannot skip the predecessor back to the
+  last outcome-valid month.
+- Added a three-month mutation oracle whose middle target later becomes
+  outcome-invalid. The required immediate-target path retains turnover 2.0;
+  the forbidden last-outcome-valid path would report 0.0.
+- Corrected the handoff to record committed/pushed/CI-passed head `6a7445f`
+  and identify current-head CI plus review as the actual remaining gate.
+- Replaced the review-monitor exhaustion rule with the owner's latest terminal
+  condition: keep the task active through current-head review and every safe
+  remediation until no actionable finding remains. The four-run critical
+  owner-decision wait remains unchanged.
+- Focused project-structure validation passed 49 tests. The full suite passed
+  3076 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-31 - PR 177 Third-Review Protocol Remediation
+
+- Deleted the prior bounded PR review monitor as soon as the new findings were
+  confirmed. The former temporary worktree had disappeared while its Git
+  metadata remained prunable, so a fresh isolated worktree was recreated at
+  `4d832c7` without editing or cleaning the stale dirty root checkout.
+- Thread-aware GitHub inspection confirmed two new current P2 findings: the
+  bundle inventory was not bound to the frozen 14-trial JSON, and final-state
+  robustness did not freeze its Rank IC sample or year denominator.
+- Added an exact byte/hash/semantic relation from bundle
+  `trial_inventory.json` to the committed frozen inventory. A mutation oracle
+  changes one cost field and proves the detached hash no longer matches.
+- Froze final-state yearly and leave-one-year-out Rank IC robustness to the
+  primary common complete-case monthly table. Required years are derived from
+  the outcome-independent bounded evaluation schedule, grouped by signal year,
+  all remain in the yearly fraction denominator, and are each omitted exactly
+  once. Missing-year, exact-zero, and empty-after-omission cases fail
+  robustness.
+- Added a discriminating fixture where common-case robustness produces
+  `POSITIVE_DIAGNOSTIC` while the forbidden factor-all-valid sample would
+  produce `MIXED_DIAGNOSTIC`.
+- Focused project-structure validation passed 48 tests. The full suite passed
+  3075 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and JSON parsing, deterministic repo-map regeneration, `git diff
+  --check`, added-line privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, review-
+  thread reply/resolution, merge, brokerage, paper, or live behavior was
+  accessed or performed.
+
+## 2026-07-29 - PR 177 Second-Review And Bounded-Wait Remediation
+
+- Thread-aware GitHub inspection at `97425c0` confirmed three new current P2
+  findings: `LOW_VOL_3M` used a Python half-open slice with only 62 returns;
+  the strategy did not enumerate which invalid rebalances create a zero target;
+  and the private evidence bundle required an unbound JSON preregistration
+  instead of the exact frozen YAML bytes.
+- Updated the protocol and machine-readable preregistration to use
+  `[t-62:t+1]`, exactly 63 one-day returns ending at `t` from 64 price anchors.
+- Limited zero-target construction to three decision-time states: fewer than
+  100 eligible securities, fewer than 10 distinct finite factor values, or
+  duplicate canonical listing-key bytes. Later missing outcomes for unselected
+  securities may invalidate the factor-month or comparison but cannot mutate
+  the frozen strategy target, create a liquidation, or change the cash path.
+  Missing selected execution or held-return values invalidate the strategy
+  trial without rewriting its target to zero.
+- Replaced `preregistration.json` in the required bundle children with an exact
+  byte-for-byte `eodhd_sp500_three_factor_diagnostic_v1.yaml` child whose
+  SHA-256 must equal the detached protocol-freeze hash.
+- Added deterministic off-by-one, decision-time trigger, future-missingness,
+  cash-path, and tampered-hash oracles to the project-structure suite.
+- Added the owner-directed `AGENTS.md` policy: safe actionable findings inside
+  the authorized scope are fixed without a confirmation round; pending Codex
+  review uses one five-minute thread schedule capped at eight runs; a critical
+  owner decision uses one thirty-minute follow-up capped at four runs.
+- Reconciled the controller, roadmap, handoff, decision log, and changelog.
+  Draft PR #148 remains untouched but now overlaps `AGENTS.md` and must be
+  rebased and compared before future use.
+- Focused validation passed 46 project-structure tests. The full suite passed
+  3073 tests with two platform-conditional skips. Full Ruff, compileall, Skill
+  audit, YAML and trial-inventory parsing, deterministic repo-map regeneration,
+  `git diff --check`, privacy and Unicode/control scans, and isolated sdist/
+  wheel build passed.
+- No vendor API, credential, private row, performance value, purchase, thread
+  resolution, merge, brokerage, paper, or live behavior was accessed or
+  performed.
+
+## 2026-07-29 - EODHD Diagnostic Campaign Scope Reset
+
+- Verified PR #176 merged at `6386c59` and exact merge-head CI run
+  `30492542975` succeeded. The root checkout was stale and had 43 modified or
+  untracked entries, so it was not switched, reset, cleaned, or used for PR 1.
+  Work was isolated in a temporary linked worktree on
+  `codex/eodhd-diagnostic-scope-reset` from exact `origin/main`.
+- The clean protected-main baseline passed 3064 tests with two
+  platform-conditional skips and compiled `src`, `tests`, `research`, and
+  `lean`.
+- Seven bounded read-only audits covered repository/PR state, EODHD
+  license/entitlement, constituent and delisted coverage, field adjustment
+  semantics, protected-main code capability, minimum statistical design, and
+  adversarial survivorship/identity/publication risk. No credential, vendor
+  API, private market-data row, expanded-data performance value, or purchase
+  was accessed.
+- The supplied owner prompt hashed to
+  `deff30a98216f2e7fd3ea02a38fbaac263606d6d74f9838b529ab45010451959`;
+  the supplied draft preregistration hashed to
+  `830c125be53b31be2683af954ae333093765373f6f668b5ef3856d34d434a197`.
+  The repository protocol records the reviewed corrections rather than
+  pretending the draft placeholders were already frozen.
+- Added the canonical Track A/Track B campaign contract, machine-readable
+  preregistration, and exact 14-trial JSON inventory. The protocol freezes the
+  three factors, higher-is-better directions, monthly after-close/next-close
+  timing, execution-anchored common-calendar 21-return endpoint with
+  signal-axis 22-row purge, continuous monthly-rebalanced strategy paths, zero
+  embargo, 0/10/25-bps undivided-turnover costs, deterministic random-baseline
+  seed derivation, exact common-complete-case six-month moving-block bootstrap,
+  one-sided Holm family, diagnostic metrics, and allowed final states.
+- Replaced the preregistration's open research-choice placeholders with exact
+  values. Cutoff/data/calendar identity move to a blinded dataset-acceptance
+  record; code/config/environment are linked after the runner merges in a
+  detached pre-run binding. The protocol uses a detached hash and does not try
+  to hash itself.
+- Reconciled the roadmap, handoff, specification, and controller so R1I is
+  complete, the 37-event work is optional `full_ledger_profile_v1`, Track A is
+  unblocked without the formal runtime, and Track B becomes the bounded
+  post-Track-A priority.
+- Final validation passed 3065 tests with two platform-conditional skips, the
+  38-test project-structure suite, Ruff, compilation, the Skill audit,
+  standard-library YAML parsing, the exact 14-trial JSON inventory check,
+  deterministic repo-map regeneration, diff checks, and added-content privacy
+  and hidden-Unicode scans.
+- An independent adversarial review identified and prompted correction of the
+  execution-anchored label/purge boundary, the continuous strategy-return
+  contract, bootstrap specification, deterministic baseline outputs, and
+  license-gated public projection. The final read-only rereview found no
+  actionable P1 or P2 issue.
+- The later GitHub final review of PR #177 at `3df9a21` found two P1 and two P2
+  issues that the local rereview missed: future-conditioned eligibility,
+  subjective final-state assignment, unspecified listing-key bytes, and
+  ambiguous cost composition. The remediation freezes a decision-time-only
+  universe and mutation invariance, exact byte encoding with golden fixtures,
+  all-in costs with hand-calculated fixtures, and an exhaustive ordered
+  classification oracle covering every allowed state and boundary.
+- Review-fix validation passed 42 focused project-structure tests and the full
+  3069-test suite with two platform-conditional skips, plus Ruff, compilation,
+  standard-library YAML parsing, exact 14-trial JSON validation, the Skill
+  audit, deterministic repo-map regeneration, package sdist/wheel build,
+  diff checks, and added-line privacy and Unicode/control scans.
+- This change adds no data acquisition, factor calculation, strategy runtime,
+  performance output, formal evidence, brokerage, order, paper, or live
+  behavior.
+
 ## 2026-07-29 - Stage 4B-R1I Attempt Start Schema
 
 - Started from protected `main` merge `b42b911` (PR #174) in the isolated
