@@ -15,6 +15,58 @@ investment performance.
 
 ---
 
+## 2026-08-01 - Adopt The Long-Term Factor-To-Portfolio Direction
+
+Context:
+
+- The owner confirmed that the project should determine what candidate factors
+  are useful for, using point-in-time historical evidence rather than selecting
+  only the best backtest.
+- The long-term ambition includes at least ten price-derived factors,
+  replication across preselected listed-equity markets, and eventual separation
+  between research and any order-capable execution system.
+- The current Track A campaign is already frozen at three factors and 14
+  semantic trials, and its evidence ceiling remains `DIAGNOSTIC_ONLY`.
+
+Decision:
+
+- `docs/research_program_charter.md` is the canonical source for the long-term
+  factor-to-portfolio direction and future research/execution architecture
+  boundary. `PROJECT_SPEC.md` continues to own the current project contract,
+  evidence-layer semantics, and factor registration requirements.
+- Track A remains unchanged. A ten-factor price-derived library and cross-market
+  campaigns are post-Track-A, post-required-Track-B work with separately frozen
+  candidate, market, data, cost, and multiple-testing contracts.
+- The research repository may eventually emit a versioned and hash-bound
+  `PortfolioIntent`; only a separately authorized private execution repository
+  may own broker credentials, execution-time or live-feed market-data
+  credentials, broker-routable order intents and their lifecycle, pre-trade
+  controls, reconciliation, monitoring, and kill switches. Separately authorized
+  historical research-vendor credential use and research-only simulated order
+  intents and fills remain governed by the existing research gates; this
+  decision grants neither data access nor execution.
+
+Rationale:
+
+- Expanding the frozen pilot after observing results would change its search
+  space and weaken its preregistration.
+- Cross-market replication is stronger evidence when markets are selected
+  before outcomes are viewed and each market has an accepted point-in-time data
+  contract.
+- Separating research artifacts from order capability prevents experimental
+  code from gaining broker or live-execution credentials or silently changing
+  live behavior.
+
+Consequences:
+
+- No factor, market, trial, data permission, empirical conclusion, repository
+  name, paper deployment, or live capability changes through this decision.
+- The active roadmap continues to own sequencing. Future implementation must
+  reference the charter rather than duplicate this policy in handoff, roadmap,
+  controller, or campaign documents.
+
+---
+
 ## 2026-08-01 - Separate The Operational Checkpoint From The Program Roadmap
 
 Context:
