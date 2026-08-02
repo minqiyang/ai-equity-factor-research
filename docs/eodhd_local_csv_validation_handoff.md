@@ -2,6 +2,11 @@
 
 Date: 2026-06-27
 
+## Status: Historical
+
+Provenance note: Any referenced private summaries without a tracked producer were
+produced by private-side tooling not retained in the public repository.
+
 This documentation-only handoff records the completed private EODHD local CSV
 validation-only dry run and prepares the next reviewed loader-smoke-test stage.
 It does not copy raw market data into the repository, run a strategy, compute

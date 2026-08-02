@@ -1,7 +1,6 @@
 # Current Handoff
 
-Updated: 2026-08-01 after the protected merge of PR #178 and the unmerged
-closure of Draft PR #148.
+Updated: 2026-08-01 after live verification of the CCA1 roadmap-correction baseline.
 
 Canonical responsibility: the latest recorded operational checkpoint, exact
 last-verified repository and PR facts, immediate blockers or owner decisions,
@@ -25,17 +24,20 @@ requirements.
 ## Latest Recorded Operational Checkpoint
 
 - Last externally verified protected baseline when this handoff was authored:
-  `3e1f30db0aa3019d67300283ad55e89ac62d64a7`, the merge of PR #178 from final
-  head `bcbe2a5c654e229ad16cef0be291a8313e9394c8`.
-- PR #178 converged governance sources and passed 3,100 tests with two
-  platform-conditional skips, exact-head CI, and current-head Codex review.
+  `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
+- PR #180 is merged at that baseline. It records the long-term
+  factor-to-portfolio direction without changing the frozen Track A campaign.
+- PR #181 is merged at `12e280d9afa2f23aa2850b13a08f7e8447c4b89e`. It
+  records the authorized same-PR protected lifecycle.
+- No pull request was open at the verified start of this work.
 - PR #177 remains the accepted Track A PR 1 research baseline at merge
   `f50b6e77b0c3a0226e246459e2a394d1489210ac`, from final head
   `c04133315911c74c96e77984b5968792434aee8f`.
-- Draft PR #148 was closed without merge after its valid intent was absorbed by
-  PR #178. No open PR remained at the last verification.
-- This compaction work began from a clean `codex/handoff-compaction` branch at
-  the PR #178 merge. Its live PR and merge state must be checked separately.
+- PR #178 merged the governance convergence, and Draft PR #148 was
+  closed without merge after that work absorbed its valid intent.
+- This correction began from a clean
+  `codex/roadmap-protocol-core-parallel` branch at the baseline above. Its live
+  PR and merge state must be checked separately after publication.
 - On the originally audited workstation, local `main` remained intentionally
   divergent with unreviewed user work; `backup/local-main-20260801` and a
   recovery bundle were verified there. Verify those protections locally before
@@ -45,19 +47,22 @@ requirements.
 
 ## Recorded Delivery Scope
 
-- This documentation stage is limited to compacting the active handoff,
-  establishing permanent source ownership and startup routing,
-  refreshing the repo map, and hardening relationship/freshness tests.
-- Historical evidence was retained in the decision, engineering, and
-  troubleshooting logs instead of being copied into this active file.
-- The campaign contract, 20-line Staged Quant Workflow Skill, research code,
-  strategy behavior, data handling, and empirical conclusions were unchanged.
+- This correction is limited to allowing already-frozen, golden-backed,
+  dataset-independent protocol-core work to proceed beside the owner EODHD
+  gate, while retaining explicit dataset-bound prohibitions.
+- It also refreshes the active checkpoint, labels three old EODHD checkpoints
+  as historical, records their private-side producer provenance, and adds
+  focused conformance tests.
+- The frozen campaign contract, preregistration, 14-trial inventory, research
+  code, private data, strategy behavior, and empirical conclusions are
+  unchanged.
 
 ## Current Research Gate Summary
 
-Research work is paused at the private-evidence gate identified in
-`docs/current_roadmap.md`. This handoff does not restate program status,
-dependencies, or gate criteria; current missing owner evidence is recorded below.
+The owner-side private-evidence gate and the separately bounded
+dataset-independent protocol-core lane are defined in
+`docs/current_roadmap.md`. This handoff does not restate their criteria; current
+missing owner evidence is recorded below.
 
 ## Immediate Blockers Or Owner Decisions
 
@@ -65,16 +70,18 @@ dependencies, or gate criteria; current missing owner evidence is recorded below
 - Frozen-snapshot retention and deletion duties have not been recorded.
 - Public noncommercial derived-output permission has not been recorded.
 - No dataset manifest or blinded dataset-review decision has been accepted.
+- Dataset-bound implementation and result-bearing execution remain blocked;
+  only roadmap-qualified protocol-core work may proceed separately.
 - Migration of the original dirty workspace is a separate audited workstream;
   it does not block this clean documentation stage.
 
 ## Next Safe Action
 
-- If this checkpoint is not yet on protected `main`, resume only through the
-  controller-defined validation, publication, and external-authorization gates.
-- After its live protected-main state is verified, pause for the owner evidence
-  required by `docs/eodhd_sp500_diagnostic_campaign_contract.md`; the roadmap
-  owns the subsequent stage transition.
+- Complete this correction only through the controller-defined validation,
+  publication, review, and protected-merge gates.
+- After its protected merge is verified, stop this correction task. Any
+  protocol-core implementation begins only in a fresh, separately reviewed PR
+  under the roadmap lane; the owner EODHD gate continues independently.
 - This pointer grants no authority; apply `AGENTS.md` before any action.
 
 ## Source Routing

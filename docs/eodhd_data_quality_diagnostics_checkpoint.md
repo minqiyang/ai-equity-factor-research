@@ -2,6 +2,11 @@
 
 Date: 2026-06-28
 
+## Status: Historical
+
+Provenance note: Any referenced private summaries without a tracked producer were
+produced by private-side tooling not retained in the public repository.
+
 This documentation-only checkpoint records the completed private EODHD
 no-performance data-quality diagnostics dry run. It does not copy private
 market data into the repository, fetch data, call vendor APIs, use

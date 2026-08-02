@@ -1,5 +1,36 @@
 # Engineering Log
 
+## 2026-08-01 - Protocol-Core Parallel-Lane Roadmap Correction
+
+- Began from a clean worktree at verified protected baseline
+  `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`, the merge of PR #180; GitHub
+  also verified PR #181 merged at
+  `12e280d9afa2f23aa2850b13a08f7e8447c4b89e` and that no PR was open at the
+  start of this work.
+- Amended the active roadmap to permit a separately bounded, golden-backed,
+  dataset-independent protocol-core lane while keeping the owner EODHD gate,
+  Track A PR 2, Track A PR 3, and every dataset-bound or result-bearing action
+  blocked. The roadmap now owns four binding PR 3 acceptance criteria.
+- Refreshed the active handoff and marked three retained private EODHD dry-run
+  checkpoints historical. Each now discloses that referenced private summaries
+  without a tracked producer came from private-side tooling not retained in the
+  public repository.
+- Added focused conformance tests for the verified correction checkpoint,
+  historical provenance, the three-condition parallel boundary, the exact
+  blocked inventory, and the operative relations and negations in the four PR 3
+  criteria.
+- Independent P1/P2 review surfaced and remediated an incorrect PR #181 merge
+  SHA, ambiguous use of `Stage 1`, and tests that initially checked policy nouns
+  without binding their relationships. Independent re-review found no remaining
+  P1/P2 issue.
+- Project-structure validation passed 77 tests. The full suite passed 3,104
+  tests with two platform-conditional `longdouble` skips. Ruff, compileall, the
+  isolated package build, and whitespace checks passed.
+- No research runtime, frozen fixture value, campaign contract,
+  preregistration, 14-trial inventory, `PROJECT_SPEC.md`, charter factor count,
+  repo map, hardcoded path, Track B, liquidity, plotting, LEAN, WorldQuant,
+  additional factor, private data, or empirical result changed.
+
 ## 2026-08-01 - Same-PR Protected Lifecycle Authorization
 
 - At the owner's explicit direction, root `AGENTS.md` now interprets an
