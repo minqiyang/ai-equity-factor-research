@@ -319,8 +319,8 @@ does not invite tuning on the same protected sample.
 This repository owns research contracts, data validation, factor replication,
 diagnostics, simulations, evidence, and frozen candidate artifacts. Any future
 order-capable execution system should use a separately reviewed boundary so
-research changes cannot access credentials or silently change operational
-behavior.
+research changes cannot access broker or live-execution credentials or silently
+change operational behavior.
 
 The research boundary ends at a versioned, timestamped, hash-bound candidate
 artifact such as a `PortfolioIntent` containing target weights, research-level
@@ -329,12 +329,19 @@ it. It contains no account, order type, venue, routing, or execution authority,
 and this repository must not turn it into a broker order.
 
 If live execution is ever separately authorized, a private execution repository
-should exclusively own broker and market-data credentials, order intents and
-lifecycle, pre-trade limits, reconciliation, monitoring, incident response, and
-kill switches. It must independently validate, limit, or reject every candidate
+should exclusively own broker credentials, execution-time or live-feed
+market-data credentials, broker-routable order intents and their lifecycle,
+pre-trade limits, reconciliation, monitoring, incident response, and kill
+switches. It must independently validate, limit, or reject every candidate
 artifact; its fail-closed capital, account, venue, order, and loss controls
-cannot be overridden by research metadata. That future two-repository design is
-an isolation boundary, not an expansion of the current research-only scope and
+cannot be overridden by research metadata.
+
+This isolation boundary does not move separately authorized historical
+research-vendor credential use or research-only simulated order intents and
+fills out of the research domain. Those activities remain subject to the
+existing authorization, license, privacy, data-methodology, secret-storage, and
+research-evidence gates, and this charter grants none of them. That future
+two-repository design is not an expansion of the current research-only scope and
 not authorization for paper or live trading.
 
 Research responsibilities remain separated: the integration owner maintains

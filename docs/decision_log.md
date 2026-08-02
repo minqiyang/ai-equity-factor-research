@@ -39,8 +39,12 @@ Decision:
   candidate, market, data, cost, and multiple-testing contracts.
 - The research repository may eventually emit a versioned and hash-bound
   `PortfolioIntent`; only a separately authorized private execution repository
-  may own credentials, broker orders, pre-trade controls, reconciliation,
-  monitoring, and kill switches.
+  may own broker credentials, execution-time or live-feed market-data
+  credentials, broker-routable order intents and their lifecycle, pre-trade
+  controls, reconciliation, monitoring, and kill switches. Separately authorized
+  historical research-vendor credential use and research-only simulated order
+  intents and fills remain governed by the existing research gates; this
+  decision grants neither data access nor execution.
 
 Rationale:
 
@@ -50,7 +54,8 @@ Rationale:
   before outcomes are viewed and each market has an accepted point-in-time data
   contract.
 - Separating research artifacts from order capability prevents experimental
-  code from gaining credentials or silently changing live behavior.
+  code from gaining broker or live-execution credentials or silently changing
+  live behavior.
 
 Consequences:
 
