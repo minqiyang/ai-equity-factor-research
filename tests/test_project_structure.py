@@ -675,6 +675,115 @@ def test_active_handoff_is_bounded_and_rejects_obsolete_narratives() -> None:
     assert has_stale_pr_state("PR #987654 remains the current open gate.")
 
 
+def test_cca1_correction_checkpoint_is_consistent_across_active_sources() -> None:
+    baseline = "c178d16d84a455774bcde73f21a9e3ff39ea7b2c"
+    active_sources = [
+        (PROJECT_ROOT / "docs/current_roadmap.md").read_text(encoding="utf-8"),
+        (PROJECT_ROOT / "docs/current_handoff.md").read_text(encoding="utf-8"),
+    ]
+
+    for source in active_sources:
+        normalized = " ".join(source.lower().split())
+        assert baseline in source
+        assert re.search(r"pr #180.{0,80}\b(?:is|are) merged\b", normalized)
+        assert re.search(r"pr #181.{0,80}\b(?:is|are) merged\b", normalized)
+        assert "no pull request was open at the verified start" in normalized
+
+
+def test_historical_eodhd_checkpoints_declare_status_and_provenance() -> None:
+    historical_paths = [
+        "docs/eodhd_local_csv_validation_handoff.md",
+        "docs/eodhd_data_quality_diagnostics_checkpoint.md",
+        "docs/eodhd_factor_diagnostics_dry_run_checkpoint.md",
+    ]
+
+    for relative_path in historical_paths:
+        document = (PROJECT_ROOT / relative_path).read_text(encoding="utf-8")
+        assert document.count("## Status: Historical") == 1
+        status = " ".join(
+            _markdown_section(document, "Status: Historical").lower().split()
+        )
+        for provenance_phrase in [
+            "referenced private summaries",
+            "without a tracked producer",
+            "private-side tooling",
+            "not retained in the public repository",
+        ]:
+            assert provenance_phrase in status
+
+
+def test_roadmap_bounds_parallel_protocol_core_and_records_pr3_acceptance() -> None:
+    roadmap = (PROJECT_ROOT / "docs/current_roadmap.md").read_text(encoding="utf-8")
+    parallel_lane_source = _markdown_section(
+        roadmap, "Parallel Dataset-Independent Protocol-Core Lane"
+    )
+    parallel_lane = " ".join(parallel_lane_source.lower().split())
+
+    assert "only when all three conditions hold" in parallel_lane
+    for eligibility_phrase in [
+        "exact computation is already frozen",
+        "committed golden fixture exists",
+        "no dataset-specific input or result access",
+    ]:
+        assert eligibility_phrase in parallel_lane
+
+    blocked_marker = "The following remain explicitly blocked:"
+    assert parallel_lane_source.count(blocked_marker) == 1
+    blocked_source = parallel_lane_source.split(blocked_marker, maxsplit=1)[1]
+    blocked_scopes = [
+        " ".join(bullet.lower().split()).rstrip(";.")
+        for bullet in re.findall(r"(?ms)^- (.*?)(?=^- |\Z)", blocked_source)
+    ]
+    assert blocked_scopes == [
+        "ingestion",
+        "security-master construction",
+        "historical membership",
+        "alias lineage",
+        "terminal/delisting-return semantics",
+        "decision-time eligibility",
+        "benchmark-membership construction",
+        "runner orchestration",
+        "private-data access",
+        "result-bearing execution",
+    ]
+
+    assert "neither track a pr 2 nor track a pr 3" in parallel_lane
+    assert "does not start, satisfy, or unblock either stage" in parallel_lane
+    assert "does not satisfy the owner-side gate" in parallel_lane
+
+    acceptance = _markdown_section(
+        roadmap, "Binding Track A PR 3 Acceptance Criteria"
+    )
+    acceptance_bullets = [
+        " ".join(bullet.lower().split())
+        for bullet in re.findall(r"(?ms)^- (.*?)(?=^- |\Z)", acceptance)
+    ]
+    assert len(acceptance_bullets) == 4
+
+    def one_bullet_contains(*phrases: str) -> bool:
+        return any(
+            all(phrase.lower() in bullet for phrase in phrases)
+            for bullet in acceptance_bullets
+        )
+
+    assert one_bullet_contains(
+        "committed golden fixtures execute against shippable runner code",
+        "rather than test-local closures",
+    )
+    assert one_bullet_contains(
+        "each frozen factor id maps to exactly one explicit implementation",
+        "validated by its golden and anchor-mutation fixtures",
+    )
+    assert one_bullet_contains(
+        "generic helper defaults never define campaign semantics"
+    )
+    assert one_bullet_contains(
+        "factor-matched equal-weight benchmark is canonical and strict",
+        "uses no fill, interpolation, or survivor renormalization",
+        "invalid comparisons are retained and routed under the frozen contract",
+    )
+
+
 def test_active_governance_sources_define_permanent_resume_routing() -> None:
     agents = (PROJECT_ROOT / "AGENTS.md").read_text(encoding="utf-8")
     workflow_skill = (

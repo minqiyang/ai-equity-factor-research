@@ -2,6 +2,11 @@
 
 Date: 2026-06-28
 
+## Status: Historical
+
+Provenance note: Any referenced private summaries without a tracked producer were
+produced by private-side tooling not retained in the public repository.
+
 This checkpoint adds a private-output-only EODHD local CSV factor diagnostics
 dry run. It uses existing strict local CSV loaders, existing Alpha#009 and
 Alpha#012 feature helpers, existing IC / Rank IC / quantile-spread diagnostic

@@ -15,6 +15,45 @@ investment performance.
 
 ---
 
+## 2026-08-01 - Permit Frozen Dataset-Independent Protocol Core In Parallel
+
+Context:
+
+- The owner accepted the completed CCA1 conclusion that the program route is
+  sound but that the private EODHD gate need not idle computations that are
+  already frozen, golden-backed, and independent of datasets and results.
+- Track A PR 2 remains the provider-bound dataset-review stage, and Track A
+  PR 3 remains the bounded diagnostic runner. Neither stage has begun.
+
+Decision:
+
+- `docs/current_roadmap.md` is the canonical source for a separate
+  dataset-independent protocol-core lane, its eligibility boundary, the work
+  that remains blocked, and the binding Track A PR 3 acceptance criteria.
+- The parallel lane starts, satisfies, and unblocks neither Track A PR 2 nor PR
+  3. It does not amend the campaign contract, preregistration, trial inventory,
+  evidence ceiling, or owner-side private-evidence gate.
+- A protocol-core implementation PR may begin only after this correction is
+  merged and verified, in a fresh worktree and separately reviewed scope.
+
+Rationale:
+
+- Pure frozen computations can be implemented and tested against committed
+  fixtures without creating provider, membership, lineage, eligibility,
+  orchestration, private-data, or result-bearing behavior.
+- Keeping the full boundary in one active roadmap avoids turning the handoff,
+  controller, or this historical log into competing policy sources.
+
+Consequences:
+
+- This decision changes sequencing only. It grants no data access, result
+  interpretation, campaign expansion, brokerage, paper, live, or deployment
+  authority.
+- The three-factor protocol, 14 semantic trials, and `DIAGNOSTIC_ONLY` ceiling
+  remain frozen.
+
+---
+
 ## 2026-08-01 - Adopt The Long-Term Factor-To-Portfolio Direction
 
 Context:
