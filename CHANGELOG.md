@@ -23,6 +23,15 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added a frozen `campaign` protocol-core package for canonical listing-key
+  bytes, scalar three-factor anchors, deterministic deciles, factor
+  target-to-target turnover, Holm adjustment, prepared-segment circular block
+  bootstrap, common-complete-case robustness, and ordered diagnostic-state
+  classification. Named factor bindings permanently fix `MOM_12_1`, `REV_1M`,
+  and `LOW_VOL_3M`; AST guards keep the package dataset-independent, and
+  conformance tests reuse the existing drift-aware strategy turnover and cost
+  accounting instead of duplicating them. This adds no data ingestion, runner,
+  private-data access, result execution, or empirical interpretation.
 - Added the owner-approved EODHD historical S&P 500 diagnostic campaign scope
   reset. R1I is complete, the accepted 37-event work is preserved as optional
   `full_ledger_profile_v1`, and the public protocol freezes exactly three
