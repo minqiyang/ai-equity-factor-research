@@ -1,5 +1,56 @@
 # Engineering Log
 
+## 2026-08-02 - Frozen Dataset-Independent Protocol Core
+
+- Began in a fresh linked worktree on
+  `codex/protocol-core-extraction` after verifying the worktree `HEAD`, cached
+  `origin/main`, and live GitHub `main` all equalled PR #182's protected merge
+  `d48d294a71829e790922a0b61023ef436bf04084`; ahead/behind was `0/0`, the
+  tree was clean, and no pull request was open.
+- Resolved the historical extraction blueprint against live source, frozen
+  campaign artifacts, and committed golden/mutation assertions before editing.
+  The resulting function inventory is binding for this change:
+
+| Function or binding | Classification | Reuse or extraction decision |
+| --- | --- | --- |
+| `encode_listing_lineage_key_v1` | genuinely missing production logic | Extract the test-local validated encoding into shippable code; no production equivalent exists. |
+| `is_valid_price_anchor` | genuinely missing production logic | Add the exact campaign scalar gate; panel and private backtest gates remain layer-specific. |
+| `mom_12_1_from_anchors` | thin campaign-specific adapter | Bind the frozen scalar gate and formula while leaving the pandas `calculate_12_1_momentum` panel API unchanged. |
+| `rev_1m_from_anchors` | thin campaign-specific adapter | Bind the frozen scalar gate and formula while leaving the pandas `calculate_short_term_reversal` panel API unchanged. |
+| `low_vol_3m_from_anchors` | genuinely missing production logic | Add the exact 64-anchor, 63-simple-return, negative `ddof=1` computation with fixture-preserving arithmetic; the panel volatility API is not adapted. |
+| `order_eligible` | genuinely missing production logic | Add high-to-low factor ordering with ascending canonical-byte tie breaks; pandas rank and portfolio selection semantics differ. |
+| `assign_deciles` | genuinely missing production logic | Add the frozen high-to-low remainder-first assignment and explicit `D1` through `D10` output labels; pandas `qcut` is incompatible. |
+| `top_decile_count` | genuinely missing production logic | Add the exact `N//10 + bool(N%10)` count used by the frozen rank baseline. |
+| `factor_target_turnover` | genuinely missing production logic | Add target-to-target diagnostic turnover in a dedicated module, structurally separate from drift-aware strategy turnover. |
+| `holm_adjust` | genuinely missing production logic | Add the fixed three-factor, alpha-0.05 Holm procedure with frozen tie order and original-factor mapping. |
+| `draw_segment_indices` | genuinely missing production logic | Add one circular within-segment draw using the frozen long/short block rules and one RNG call. |
+| `bootstrap_mean_rank_ic` | genuinely missing production logic | Add joint bootstrap distributions over already-prepared numeric three-factor segments only; no calendar, fold, purge, or dataset construction. |
+| `rank_ic_robustness` | genuinely missing production logic | Add a public common-complete-case-only API; factor-all-valid comparison remains a private test oracle, never a runtime switch. |
+| `classify_diagnostic` | genuinely missing production logic | Add the ordered five-state campaign tree; the existing two-state feature-coverage classifier remains unchanged. |
+| Strategy-turnover conformance tests | conformance test binding to existing production logic | Call `run_long_only_backtest` and bind drifted-pretrade turnover at `0.4`, `1.0`, and `2.0`; add no campaign accounting helper. |
+| Fixed-cost conformance tests | conformance test binding to existing production logic | Call `run_long_only_backtest` and bind every fixed-bps table value plus `0.0055/0.0945` and `0.0022/0.0978`; add no cost implementation. |
+
+- The public inference surface fixes factor order as `MOM_12_1`, `REV_1M`,
+  `LOW_VOL_3M` and uses named `FactorVector` bindings. Bootstrap matrices also
+  carry that explicit `factor_order`; no anonymous positional result is exposed
+  without the binding.
+- Moved or production-bound the existing listing, factor, decile-count,
+  factor-turnover, Holm, bootstrap, final-state, robustness, strategy-turnover,
+  and fixed-cost fixture assertions. An AST-based boundary test permits only
+  standard-library, NumPy, and local campaign imports and checks that public
+  parameters are not dataset-shaped; it does not pin classification prose in
+  docstrings.
+- Added only `src/campaign` to the deterministic repo-map generator and
+  regenerated `docs/repo_map.md` through `python scripts/repo_map.py`. Frozen
+  contracts, preregistration, trial inventory, feature/backtest production
+  modules, CI, private data, and all dataset-bound or result-bearing behavior
+  remain unchanged.
+- Focused campaign and structure validation passed 112 tests. The full suite
+  passed 3,139 tests with two existing platform-conditional `longdouble`
+  skips. Ruff, compileall for `src`, `tests`, `research`, and `lean`, the
+  isolated package build, deterministic repo-map regeneration, and whitespace
+  checks passed.
+
 ## 2026-08-01 - Protocol-Core Parallel-Lane Roadmap Correction
 
 - Began from a clean worktree at verified protected baseline

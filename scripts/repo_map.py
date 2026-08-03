@@ -38,6 +38,10 @@ MAJOR_DIRS = [
     (".github", "Repository automation such as CI workflows."),
     ("docs", "Project process notes, readiness gates, designs, logs, and maps."),
     ("scripts", "Workflow tooling; scripts here must not fetch data or trade."),
+    (
+        "src/campaign",
+        "Frozen dataset-independent computations for bounded research campaigns.",
+    ),
     ("src/features", "Factor calculations, validation, normalization, combination, and diagnostics."),
     ("src/backtest", "Simulated long-only backtester and metrics helpers."),
     ("src/data", "Strict local CSV loaders and metadata review helpers."),
