@@ -63,11 +63,8 @@ research-safety review standards.
   relevant note; record durable process evidence in `docs/engineering_log.md`.
 - Keep reports and experiment records reproducible.
 
-## Review And Conformance
+## Review Priorities
 
-- For changes to roadmaps, handoffs, README/docs, research code, tests, or stage
-  plans, verify behavior and completion claims against implementation and test
-  evidence.
 - Prioritize research-validity risk over style. A P1 requires concrete evidence
   from changed code, tests, or documentation; touching a factor input alone is
   not evidence of leakage.
@@ -87,5 +84,17 @@ research-safety review standards.
 - State scope before editing; afterward report files, tests, caveats, and next gate.
 - Keep branches, PRs, and commits coherent; separate unrelated change types.
 - Never remove, weaken, or skip tests to make a change pass.
-- Prefer narrow modules, clear pandas, deterministic tests, and no unjustified
-  heavyweight dependency. The controller owns workflow and review lifecycle.
+- Choose the simplest implementation that fully meets current requirements;
+  avoid speculative abstractions, configuration, and indirection.
+- Grow the system in working layers: start with the smallest end-to-end
+  version, then add capabilities without trading a working product for
+  unfinished complexity.
+- Keep components modular and concerns clearly separated; prefer narrow modules,
+  clear pandas, and deterministic tests.
+- Prefer established, well-maintained libraries when they reduce complexity or
+  improve reliability; reimplement common functionality only with a clear reason.
+- Reuse existing project dependencies before writing custom implementations or
+  adding packages. Check library documentation and types before deciding a
+  needed capability is missing.
+- Do not add an unjustified heavyweight dependency. The controller owns workflow
+  and review lifecycle.
