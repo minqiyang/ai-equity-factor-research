@@ -84,5 +84,17 @@ research-safety review standards.
 - State scope before editing; afterward report files, tests, caveats, and next gate.
 - Keep branches, PRs, and commits coherent; separate unrelated change types.
 - Never remove, weaken, or skip tests to make a change pass.
-- Prefer narrow modules, clear pandas, deterministic tests, and no unjustified
-  heavyweight dependency. The controller owns workflow and review lifecycle.
+- Choose the simplest implementation that fully meets current requirements;
+  avoid speculative abstractions, configuration, and indirection.
+- Grow the system in working layers: start with the smallest end-to-end
+  version, then add capabilities without trading a working product for
+  unfinished complexity.
+- Keep components modular and concerns clearly separated; prefer narrow modules,
+  clear pandas, and deterministic tests.
+- Prefer established, well-maintained libraries when they reduce complexity or
+  improve reliability; reimplement common functionality only with a clear reason.
+- Reuse existing project dependencies before writing custom implementations or
+  adding packages. Check library documentation and types before deciding a
+  needed capability is missing.
+- Do not add an unjustified heavyweight dependency. The controller owns workflow
+  and review lifecycle.
