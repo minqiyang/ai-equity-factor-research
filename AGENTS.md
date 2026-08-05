@@ -63,8 +63,11 @@ research-safety review standards.
   relevant note; record durable process evidence in `docs/engineering_log.md`.
 - Keep reports and experiment records reproducible.
 
-## Review Priorities
+## Review And Conformance
 
+- For changes to roadmaps, handoffs, README/docs, research code, tests, or stage
+  plans, verify behavior and completion claims against implementation and test
+  evidence.
 - Prioritize research-validity risk over style. A P1 requires concrete evidence
   from changed code, tests, or documentation; touching a factor input alone is
   not evidence of leakage.
