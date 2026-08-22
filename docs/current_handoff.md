@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-08-22 after owner acceptance of Stage 1.
+Updated: 2026-08-23 after public-safe Track A PR 2 progress publication.
 
 Canonical responsibility: the latest recorded operational checkpoint, exact
 last-verified repository and PR facts, immediate blockers or owner decisions,
@@ -24,52 +24,54 @@ requirements.
 ## Latest Recorded Operational Checkpoint
 
 - Last externally verified protected baseline when this handoff was authored:
-  `aacfa58cc6e0e9d7e50a50ef7bd99b3a73bbcf57`.
+  `6957473bdbc5d92c7227d74785d4fc4bc097d035`.
 - Historical CCA1 start baseline:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
 - PR #180 is merged. It records the long-term factor-to-portfolio direction
   and leaves the frozen Track A campaign in place.
 - PR #181 is merged at `12e280d9afa2f23aa2850b13a08f7e8447c4b89e`. It
   records the authorized same-PR protected lifecycle.
-- PR #182, #183, and #184 later merged protocol-core and docs work.
-- No pull request was open at the verified start of this work.
+- PR #182, #183, #184, and #185 later merged protocol-core and Stage 1
+  public-safe records.
 - PR #177 remains the accepted Track A PR 1 research baseline at merge
   `f50b6e77b0c3a0226e246459e2a394d1489210ac`, from final head
   `c04133315911c74c96e77984b5968792434aee8f`.
 - PR #178 merged the governance convergence, and Draft PR #148 was
   closed without merge after that work absorbed its valid intent.
+- No pull request was open at the verified start of this work.
 - This publication began from a clean
-  `codex/stage1-public-progress-sync` branch. Its live PR and merge state
+  `codex/pr2-public-progress-sync` branch. Its live PR and merge state
   must be checked separately after publication.
 - Raw private data, ticker lists, provider responses, and performance values
   remain outside the public repository.
 
 ## Recorded Delivery Scope
 
-- Publish the Stage 1 public-safe acceptance record and identity-evidence
-  aggregates: hashes, counts, and capability conclusions only.
+- Publish the Track A PR 2 validator and public-safe status: hashes, counts,
+  allowlisted projection, and safe decision fields.
+- Bind the private manifest, freeze record, and full decision by hash only.
 - The frozen campaign contract, preregistration, 14-trial inventory, and
   `DIAGNOSTIC_ONLY` ceiling remain in place.
 
 ## Current Research Gate Summary
 
 Stage 1 is accepted. See `docs/current_roadmap.md` and
-`docs/stage1_accepted_public_record_v1.json`. Track A PR 2 is eligible and
-not started. Identity evidence is a separate fail-closed aggregate.
+`docs/track_a_pr2_public_status.md`. Track A PR 2 has a public validator and a
+local `diagnostic_only` dataset-review decision. Dataset acceptance is not granted.
 
 ## Immediate Blockers Or Owner Decisions
 
-- Stage 1 public-safe record is accepted.
-- Identity-evidence aggregate is published at accepted count 0.
-- Track A PR 2 is the next eligible dataset-manifest stage.
-- Roadmap-qualified protocol-core work remains available in its own lane.
+- Materiality thresholds are proposed and await exact-SHA approval.
+- Dataset acceptance of `diagnostic_only` as stage 2 is not granted.
+- Terminal-event policy is explicitly deferred.
+- D8 materialization, result access, the 14-trial run, A2, and purchases
+  stay closed.
 
 ## Next Safe Action
 
-- Complete this documentation publication through the controller-defined
-  validation, publication, review, and protected-merge gates.
-- After its protected merge is verified, open the next stage as a fresh,
-  separately reviewed change under `AGENTS.md`.
+- Owner exact-SHA approve or reject the materiality proposal, then decide
+  stage 2. Continue from `docs/track_a_pr2_public_status.md` and the
+  controller. Private artifact bodies remain on the originating workstation.
 
 ## Source Routing
 

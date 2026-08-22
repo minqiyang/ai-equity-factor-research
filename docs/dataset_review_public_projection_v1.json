@@ -1,0 +1,21 @@
+{
+  "artifact_id": "dataset_review_public_projection_v1",
+  "review_decision_id": "efr-eodhd-track-a-pr2-dataset-review-decision-v1",
+  "decision": "diagnostic_only",
+  "reviewed_at": "2026-08-22T23:25:00Z",
+  "reviewer_id": "efr-dsrev",
+  "reviewer_authority_reference": "owner_pr2_reviewer_appointment_v1",
+  "declared_use": "diagnostic-campaign",
+  "privacy_publication_scope": "public-hashes-and-counts-only",
+  "public_projection_id": "efr-eodhd-track-a-pr2-projection-v1",
+  "public_projection_sha256": "594ec9324d439239ad8b52e8b06b73f6369927e1bc7618ac8a8bd8fdfdfe1111",
+  "canonical_manifest_sha256": "b9d0b1ba7c3851abcf458a83c64cb094df509579d0b73790d3638571923df32a",
+  "decision_record_sha256": "7e77a557532c057aaff1db370234e3ab0f6e7f9e85db47675854812b52de1488",
+  "finding_ids": [
+    "calendar-session-anomalies",
+    "identity-terminal-fail-closed-d7a",
+    "quarantined-fundamentals-unbound",
+    "symbol-change-history-absent",
+    "terminal-event-policy-inactive"
+  ]
+}

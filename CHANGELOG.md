@@ -7,6 +7,11 @@ profitability, or trading readiness.
 
 ## Unreleased
 
+### Added
+
+- Published Track A PR 2 public-safe validator, status hashes, allowlisted
+  projection, and safe dataset-review fields. Raw private data stays out.
+
 ### Changed
 
 - Replaced the 837-line active handoff with a bounded operational checkpoint,

@@ -15,6 +15,44 @@ investment performance.
 
 ---
 
+## 2026-08-23 - Publish Public-Safe Track A PR 2 Progress
+
+Context:
+
+- Local Track A PR 2 produced a validator, a private manifest bound by hash,
+  a freeze record, and a `diagnostic_only` dataset-review decision.
+- The owner authorized GitHub publication of everything except raw private
+  data so another machine can resume from public docs.
+- Terminal-event policy is explicitly deferred. Materiality numbers are
+  proposed and not SHA-approved. Dataset acceptance is not granted.
+
+Decision:
+
+- Publish `pit_manifest_validator_v1` with synthetic fixtures.
+- Publish hashes, counts, the allowlisted projection, and safe decision
+  fields in `docs/track_a_pr2_public_status_v1.json` and companions.
+- Keep the full private manifest, freeze-record body, evidence pack, full
+  decision record, ticker lists, private paths, and raw vendor rows out of
+  GitHub.
+
+Rationale:
+
+- Stage 1 D2–D4 already permit hashes, counts, and non-sensitive metadata.
+- Another workstation can continue public work from these docs. Private
+  artifact bodies remain on the originating workstation.
+
+Consequences:
+
+- Public main, after this PR merges, records PR 2 as in progress rather
+  than unstarted.
+- Stage 2 is not complete. PR 3 stays blocked.
+
+Follow-up:
+
+- Owner exact-SHA on the materiality proposal, then stage 2 acceptance.
+
+---
+
 ## 2026-08-22 - Accept Stage 1 Written Terms And Capability Record
 
 Context:
