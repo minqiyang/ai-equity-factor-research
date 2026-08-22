@@ -53,7 +53,8 @@ The public research path uses local files and committed fixtures. The
 provider-agnostic
 [point-in-time data methodology contract](docs/point_in_time_data_methodology_contract.md)
 defines manifest, universe, corporate-action, field, privacy, and
-holdout-access requirements.
+holdout-access requirements. Stage 3 contract acceptance is
+methodology-process evidence.
 
 ## Current program status
 

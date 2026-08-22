@@ -208,6 +208,9 @@ tests proves implementation behavior, not historical validity.
   point-in-time universe evidence.
 
 No research-grade provider is selected by this specification.
+Stage 3 contract acceptance is methodology-process evidence. Dataset review,
+entitlement, historical validity, and formal interpretation remain later
+accepted records.
 A dataset-specific private manifest, safe public projection, and
 exact-version immutable review decision issued by an authorized
 non-producing reviewer must satisfy the Stage 3 contract for one declared

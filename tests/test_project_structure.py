@@ -7325,6 +7325,11 @@ def test_public_metadata_and_readme_match_implemented_scope() -> None:
     assert "docs/point_in_time_data_methodology_contract.md" in readme
     assert "local files and committed fixtures" in readme
     assert "Plotting is a placeholder module" in readme
+    assert "Stage 3 contract acceptance is" in readme
+    specification = (PROJECT_ROOT / "PROJECT_SPEC.md").read_text(encoding="utf-8")
+    assert "Stage 3 contract acceptance is methodology-process evidence" in (
+        specification
+    )
     assert "POINT-IN-TIME FEATURES" not in readme
     assert "private_data" not in readme
     assert metadata["license"] == "Apache-2.0"
