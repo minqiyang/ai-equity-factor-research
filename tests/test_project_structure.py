@@ -7324,6 +7324,7 @@ def test_public_metadata_and_readme_match_implemented_scope() -> None:
     assert "docs/research_program_charter.md" in readme
     assert "docs/point_in_time_data_methodology_contract.md" in readme
     assert "local files and committed fixtures" in readme
+    assert "Plotting is a placeholder module" in readme
     assert "POINT-IN-TIME FEATURES" not in readme
     assert "private_data" not in readme
     assert metadata["license"] == "Apache-2.0"

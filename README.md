@@ -47,6 +47,8 @@ The timing model, portfolio accounting, control gates, system map, and evidence 
 
 **[Read the research method →](docs/research_method.md)**
 
+Plotting is a placeholder module; the roadmap tracks its delivery.
+
 The public research path uses local files and committed fixtures. The
 provider-agnostic
 [point-in-time data methodology contract](docs/point_in_time_data_methodology_contract.md)
