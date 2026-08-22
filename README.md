@@ -56,6 +56,21 @@ defines future manifest, universe, corporate-action, field, privacy, and
 holdout-access requirements. Accepting that contract does not verify a dataset
 or authorize formal historical interpretation.
 
+## Current program status
+
+Track A remains a frozen three-factor, 14-trial diagnostic. The evidence
+ceiling is still `DIAGNOSTIC_ONLY`. No dataset or formal interpretation has
+been accepted, and no performance result is published.
+
+- Stage 1 (entitlement, retention, publication) is accepted. Public-safe
+  hashes and capability conclusions:
+  [stage1_accepted_public_record_v1.json](docs/stage1_accepted_public_record_v1.json).
+- Identity-evidence aggregates (counts only; no raw rows or ticker lists):
+  [identity_evidence_public_aggregate_v1.json](docs/identity_evidence_public_aggregate_v1.json).
+- Track A PR 2 (dataset manifest and blinded review) is eligible and not
+  started. See the [current roadmap](docs/current_roadmap.md).
+
+Raw private data stays out of this repository.
 
 ## Quality gates
 

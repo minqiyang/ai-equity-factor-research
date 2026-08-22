@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-08-01 after live verification of the CCA1 roadmap-correction baseline.
+Updated: 2026-08-22 after owner acceptance of Stage 1.
 
 Canonical responsibility: the latest recorded operational checkpoint, exact
 last-verified repository and PR facts, immediate blockers or owner decisions,
@@ -25,64 +25,55 @@ requirements.
 
 - Last externally verified protected baseline when this handoff was authored:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
+- Live `origin/main` at this publication check:
+  `aacfa58cc6e0e9d7e50a50ef7bd99b3a73bbcf57`.
 - PR #180 is merged at that baseline. It records the long-term
   factor-to-portfolio direction without changing the frozen Track A campaign.
 - PR #181 is merged at `12e280d9afa2f23aa2850b13a08f7e8447c4b89e`. It
   records the authorized same-PR protected lifecycle.
+- PR #182, #183, and #184 later merged protocol-core and docs work.
 - No pull request was open at the verified start of this work.
 - PR #177 remains the accepted Track A PR 1 research baseline at merge
   `f50b6e77b0c3a0226e246459e2a394d1489210ac`, from final head
   `c04133315911c74c96e77984b5968792434aee8f`.
 - PR #178 merged the governance convergence, and Draft PR #148 was
   closed without merge after that work absorbed its valid intent.
-- This correction began from a clean
-  `codex/roadmap-protocol-core-parallel` branch at the baseline above. Its live
-  PR and merge state must be checked separately after publication.
-- On the originally audited workstation, local `main` remained intentionally
-  divergent with unreviewed user work; `backup/local-main-20260801` and a
-  recovery bundle were verified there. Verify those protections locally before
-  relying on them, and keep migration as a separate audited workstream.
-- No vendor access, credential use, private-data read, performance calculation,
-  purchase, brokerage, paper, live, or real-money action occurred in this stage.
+- This publication began from a clean
+  `codex/stage1-public-progress-sync` branch. Its live PR and merge state
+  must be checked separately after publication.
+- Raw private data, ticker lists, provider responses, and performance values
+  remain outside the public repository.
 
 ## Recorded Delivery Scope
 
-- This correction is limited to allowing already-frozen, golden-backed,
-  dataset-independent protocol-core work to proceed beside the owner EODHD
-  gate, while retaining explicit dataset-bound prohibitions.
-- It also refreshes the active checkpoint, labels three old EODHD checkpoints
-  as historical, records their private-side producer provenance, and adds
-  focused conformance tests.
-- The frozen campaign contract, preregistration, 14-trial inventory, research
-  code, private data, strategy behavior, and empirical conclusions are
-  unchanged.
+- Publish the Stage 1 public-safe acceptance record and identity-evidence
+  aggregates: hashes, counts, and capability conclusions only.
+- Do not start Track A PR 2. Do not accept a dataset. Do not access results.
+- The frozen campaign contract, preregistration, 14-trial inventory, and
+  `DIAGNOSTIC_ONLY` ceiling are unchanged.
 
 ## Current Research Gate Summary
 
-The owner-side private-evidence gate and the separately bounded
-dataset-independent protocol-core lane are defined in
-`docs/current_roadmap.md`. This handoff does not restate their criteria; current
-missing owner evidence is recorded below.
+Stage 1 is accepted. See `docs/current_roadmap.md` and
+`docs/stage1_accepted_public_record_v1.json`. Track A PR 2 is eligible and
+not started. Identity evidence is a separate fail-closed aggregate.
 
 ## Immediate Blockers Or Owner Decisions
 
-- Historical-index-membership capability has not been privately established.
-- Frozen-snapshot retention and deletion duties have not been recorded.
-- Public noncommercial derived-output permission has not been recorded.
 - No dataset manifest or blinded dataset-review decision has been accepted.
-- Dataset-bound implementation and result-bearing execution remain blocked;
-  only roadmap-qualified protocol-core work may proceed separately.
-- Migration of the original dirty workspace is a separate audited workstream;
-  it does not block this clean documentation stage.
+- Track A PR 2 is eligible and not started by Stage 1 acceptance.
+- Dataset-bound implementation and result-bearing execution remain blocked.
+- Identity evidence remains fail-closed with zero accepted identities.
+- Only roadmap-qualified protocol-core work may proceed separately.
 
 ## Next Safe Action
 
-- Complete this correction only through the controller-defined validation,
-  publication, review, and protected-merge gates.
-- After its protected merge is verified, stop this correction task. Any
-  protocol-core implementation begins only in a fresh, separately reviewed PR
-  under the roadmap lane; the owner EODHD gate continues independently.
-- This pointer grants no authority; apply `AGENTS.md` before any action.
+- Complete this documentation publication through the controller-defined
+  validation, publication, review, and protected-merge gates.
+- After its protected merge is verified, stop. PR 2 or protocol-core work
+  begins only in a fresh, separately reviewed change.
+- This pointer grants no network, materialization, or result access; apply
+  `AGENTS.md` before any action.
 
 ## Source Routing
 

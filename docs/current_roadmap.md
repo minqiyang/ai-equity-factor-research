@@ -1,6 +1,6 @@
 # Current Roadmap
 
-Updated: 2026-08-01 after live verification of the CCA1 roadmap-correction baseline.
+Updated: 2026-08-22 after owner acceptance of the Stage 1 entitlement, retention, and publication record.
 
 Canonical responsibility: program stage sequence, dependency order, gate and
 completion criteria, and coarse stage status.
@@ -22,8 +22,9 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 - Governance source convergence and the subsequent handoff and lifecycle work
   are complete through PR #181. They changed no campaign protocol, research
   runtime, private data, or empirical conclusion.
-- The current research gate is private entitlement, retention, and publication
-  evidence. That gate is not yet satisfied.
+- Stage 1 (private entitlement, retention, and publication) is accepted.
+  The public-safe record is `docs/stage1_accepted_public_record_v1.json`.
+  Raw private data remains unpublished. No dataset has been accepted.
 - The evidence ceiling remains `DIAGNOSTIC_ONLY`. No dataset or formal
   interpretation has been accepted.
 - The 2025-05-01 through 2026-05-31 interval remains permanently
@@ -44,13 +45,16 @@ operational checkpoint is in the [current handoff](current_handoff.md).
   contracts without duplicating their semantics here.
 - [Decision log](decision_log.md), [engineering log](engineering_log.md), and
   [troubleshooting log](troubleshooting_log.md): historical evidence, not queues.
+- [Stage 1 public-safe record](stage1_accepted_public_record_v1.json) and
+  [identity-evidence aggregates](identity_evidence_public_aggregate_v1.json):
+  hashes and counts only.
 
 ## Active Dependency Chain
 
 | Order | Stage | Status | Dependency or completion criterion |
 | --- | --- | --- | --- |
-| 1 | Private entitlement, retention, and publication gate | Current; pending private evidence | Complete only with an accepted private record under the campaign contract. |
-| 2 | Track A PR 2: dataset manifest and validation | Blocked by stage 1 | Complete only with an accepted provider-bound manifest, validator, safe projection, and blinded dataset-review decision. Generic preparation cannot satisfy or start this stage. |
+| 1 | Private entitlement, retention, and publication gate | Accepted 2026-08-22 | Accepted private capability and written-term record exists; public-safe hashes are in `docs/stage1_accepted_public_record_v1.json`. |
+| 2 | Track A PR 2: dataset manifest and validation | Eligible; not started | Complete only with an accepted provider-bound manifest, validator, safe projection, and blinded dataset-review decision. Generic preparation cannot satisfy or start this stage. Stage 1 acceptance does not start PR 2. |
 | 3 | Track A PR 3: bounded diagnostic runner | Blocked by accepted PR 2 review | Complete only with an accepted bounded runner implementing the frozen protocol and deterministic validation surface. |
 | 4 | Detached pre-run binding | Blocked by protected PR 3 merge | Complete only when exact code, configuration, environment, protocol, inventory, and accepted dataset identities are bound outside the repository. |
 | 5 | Track A PR 4: frozen diagnostic evidence | Blocked by stages 3 and 4 | Complete only after all 14 trials run once, every outcome is retained externally, and an approved safe aggregate projection is produced. |
@@ -96,13 +100,11 @@ Track A PR 3 must satisfy all of the following:
 
 ## Gate Completion Criteria
 
-Stage 1 completes only when the owner supplies an accepted private record of the
-exact existing capability and written permitted-use, retention, publication,
-and deletion terms required by the campaign contract. Until then, stage 2 and
-all dataset-bound work remain blocked. Qualifying dataset-independent
-protocol-core work may proceed only within the parallel lane above; it neither
-completes this gate nor authorizes any blocked work. The handoff owns the
-timestamped list of currently missing owner evidence.
+Stage 1 is accepted as of 2026-08-22. Stage 2 remains eligible and not started.
+Dataset-bound implementation and result-bearing execution remain blocked until
+an accepted PR 2 review. Qualifying dataset-independent protocol-core work may
+proceed only within the parallel lane above; it does not start or satisfy PR 2.
+The handoff owns the timestamped operational checkpoint.
 
 This section defines dependency and completion state only. It grants no authority
 and adds no vendor, data, publication, or interpretation rule beyond the linked
