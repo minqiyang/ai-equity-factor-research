@@ -24,11 +24,11 @@ requirements.
 ## Latest Recorded Operational Checkpoint
 
 - Last externally verified protected baseline when this handoff was authored:
-  `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
-- Live `origin/main` at this publication check:
   `aacfa58cc6e0e9d7e50a50ef7bd99b3a73bbcf57`.
-- PR #180 is merged at that baseline. It records the long-term
-  factor-to-portfolio direction without changing the frozen Track A campaign.
+- Historical CCA1 start baseline:
+  `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
+- PR #180 is merged. It records the long-term factor-to-portfolio direction
+  and leaves the frozen Track A campaign in place.
 - PR #181 is merged at `12e280d9afa2f23aa2850b13a08f7e8447c4b89e`. It
   records the authorized same-PR protected lifecycle.
 - PR #182, #183, and #184 later merged protocol-core and docs work.
@@ -48,9 +48,8 @@ requirements.
 
 - Publish the Stage 1 public-safe acceptance record and identity-evidence
   aggregates: hashes, counts, and capability conclusions only.
-- Do not start Track A PR 2. Do not accept a dataset. Do not access results.
 - The frozen campaign contract, preregistration, 14-trial inventory, and
-  `DIAGNOSTIC_ONLY` ceiling are unchanged.
+  `DIAGNOSTIC_ONLY` ceiling remain in place.
 
 ## Current Research Gate Summary
 

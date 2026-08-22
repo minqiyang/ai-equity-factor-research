@@ -13,8 +13,10 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 
 ## Program Position
 
-- The verified start baseline for this correction is
+- Historical CCA1 start baseline:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
+- Last live-verified protected main:
+  `aacfa58cc6e0e9d7e50a50ef7bd99b3a73bbcf57`.
 - PR #180 and PR #181 are merged. No pull request was open at the verified
   start of this work.
 - Track A PR 1 is complete through PR #177: the EODHD diagnostic scope,
@@ -68,11 +70,23 @@ EODHD gate only when all three conditions hold:
 - A committed golden fixture exists for that computation.
 - The work requires no dataset-specific input or result access.
 
-This lane is neither Track A PR 2 nor Track A PR 3. Those stages keep their
-own cards, reviews, and completion records. The frozen protocol,
-preregistration, and 14-trial inventory stay as already accepted.
+This lane is neither Track A PR 2 nor Track A PR 3. Track A PR 2 and PR 3
+keep exclusive ownership of starting, satisfying, and unblocking those
+stages. The frozen protocol, preregistration, and 14-trial inventory stay as
+already accepted.
 The lane implements frozen golden-backed protocol-core modules that already
-have committed fixtures.
+have committed fixtures. Later stages own:
+
+- ingestion;
+- security-master construction;
+- historical membership;
+- alias lineage;
+- terminal/delisting-return semantics;
+- decision-time eligibility;
+- benchmark-membership construction;
+- runner orchestration;
+- private-data access;
+- result-bearing execution.
 
 ## Binding Track A PR 3 Acceptance Criteria
 

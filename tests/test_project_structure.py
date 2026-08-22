@@ -605,8 +605,31 @@ def test_roadmap_bounds_parallel_protocol_core_and_records_pr3_acceptance() -> N
     ]:
         assert eligibility_phrase in parallel_lane
 
+    later_marker = "Later stages own:"
+    assert parallel_lane_source.count(later_marker) == 1
+    later_source = parallel_lane_source.split(later_marker, maxsplit=1)[1]
+    later_source = later_source.split("## ", maxsplit=1)[0]
+    later_scopes = [
+        " ".join(bullet.lower().split()).rstrip(";.")
+        for bullet in re.findall(r"(?ms)^- (.*?)(?=^- |\Z)", later_source)
+    ]
+    assert later_scopes == [
+        "ingestion",
+        "security-master construction",
+        "historical membership",
+        "alias lineage",
+        "terminal/delisting-return semantics",
+        "decision-time eligibility",
+        "benchmark-membership construction",
+        "runner orchestration",
+        "private-data access",
+        "result-bearing execution",
+    ]
+
     assert "neither track a pr 2 nor track a pr 3" in parallel_lane
-    assert "those stages keep their own cards" in parallel_lane
+    assert "exclusive ownership of starting, satisfying, and unblocking" in (
+        parallel_lane
+    )
     assert "frozen golden-backed protocol-core modules" in parallel_lane
 
     acceptance = _markdown_section(
