@@ -48,8 +48,8 @@ research-safety review standards.
   cherry-pick only the best parameter or trial.
 - Never use future returns, future universe membership, future fundamentals,
   same-period target returns, or any other look-ahead or survivorship leakage.
-- Real/private-data access or interpretation requires accepted methodology and
-  evidence gates plus explicit authorization; a contract alone grants no access.
+- Real/private-data access or interpretation requires accepted methodology,
+  evidence gates, and explicit authorization.
 - Explain data provenance, missingness, costs, slippage, execution timing,
   benchmark choice, sample splits, and material limitations.
 
@@ -62,6 +62,9 @@ research-safety review standards.
 - Document strategy changes in `EXPERIMENT_LOG.md`, `PROJECT_SPEC.md`, or the
   relevant note; record durable process evidence in `docs/engineering_log.md`.
 - Keep reports and experiment records reproducible.
+- Reports, handoffs, and section closings state completed facts and current
+  measurements. Close a section with what it records. Authority remains in
+  this file rather than in a closing disclaimer.
 
 ## Review Priorities
 

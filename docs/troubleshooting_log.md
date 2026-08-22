@@ -1,5 +1,25 @@
 # Troubleshooting Log
 
+## 2026-08-22 - Invented recognizer grammar vs real interval gap
+
+Original failures and consequences:
+
+- Union readjudication v1 reported C01 fail-closed for every identity. QA
+  passed. Independent review found the detector used a private annotation
+  language with no EDGAR referent, so the 1194 bodies were not evaluated.
+- The replacement EDGAR-referential runner constructed 6024 filed-text
+  records and still accepted zero identities. Almost all iXBRL durations are
+  same-day contexts and do not cover the requested multi-year interval.
+- Authorizing exchange listing records alone cannot cover C01 issuer and
+  instrument primitives. Do not treat a second retrieval as a fix for that
+  gap.
+
+Resolution:
+
+- Keep v1 as a frozen failed lineage. Keep v2 as the terminal fail-closed
+  record under the current policy. Publish only aggregates and hashes.
+
+
 ## 2026-07-31 - Premature Review-Wait Completion Recovery
 
 Original failures and consequences:

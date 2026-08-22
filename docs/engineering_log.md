@@ -1,5 +1,62 @@
 # Engineering Log
 
+## 2026-08-22 - Stage 1 accepted; public-safe aggregates published
+
+- Owner certified local retention of private data and forbade upload of raw
+  private data. Later written terms: no deletion duty; aggregates, charts,
+  hashes, row counts, non-sensitive metadata, and noncommercial aggregates may
+  be public on GitHub.
+- Existing acquisition-manifest capability conclusions were bound without a
+  new probe. `HistoricalTickerComponents` is recorded available. Stage 1 is
+  accepted. Track A PR 2 is eligible and not started.
+- Identity evidence remains a separate fail-closed aggregate: 189 identities,
+  0 accepted, 450 constraints at deficit 100, first blocking claim C01.
+  Materialization was not entered. No A2. No result access.
+- Public files: `docs/stage1_accepted_public_record_v1.json` and
+  `docs/identity_evidence_public_aggregate_v1.json`. They contain hashes,
+  counts, and capability conclusions only.
+
+## 2026-08-22 - EDGAR-referential readjudication of 1194 primary bodies
+
+- After index wrappers failed closed, owner authorized primary-body retrieval
+  and later residual retrieval. Union corpus: 1194 filed-document bodies.
+- v1 readjudication QA passed but CRITICAL 3/3 failed: C01 fail-closed was
+  produced by an invented annotation grammar, not by evaluating the bodies.
+- v3 runner used EDGAR-referential profiles. Production root v2 completed
+  fail-closed with 6024 constructed records and 0 records covering
+  [2014-01-31, 2026-07-01). QA 22/22. This is an evidence-class gap, not a
+  runner defect. A2 listing events cannot cover C01 primitives.
+
+## 2026-08-20 - Residual primary-body retrieval completed
+
+- Owner authorized a new residual root after v2's non-503 timeout hard-stop.
+  Residual execute retrieved 940/940 HTTP 200, including the previously timed
+  out target. Union 254+940=1194. Dead v2 root was not reused.
+
+## 2026-08-20 - Primary-body retrieval v2 hard-stop on non-503 timeout
+
+- Owner authorized one SEC primary-body evidence-extension stage. Discovered
+  link only from frozen v5 index pages. v1 pre-gate rejected: review hashes
+  were not byte-verified. v2 closed that defect, enumerated 1194 targets, and
+  passed shell QA plus a 3/3 pre-network gate.
+- Execute retrieved 254 bodies then hard-stopped on TRANSPORT_TIMEOUTERROR
+  with zero response bytes. Dead root frozen. No timeout retry. No A2.
+
+## 2026-08-20 - Identity adjudication fail-closed on v5 index wrappers
+
+- Owner authorized adjudication-only on frozen Phase-B v5. The corpus is Atom
+  locators plus EDGAR index.htm wrappers, not primary filed document bodies,
+  so no C01-C12 claim can cover [2014-01-31, 2026-07-01).
+- 189/189 identities REJECTED_FAIL_CLOSED, accepted count 0, all 450 deficits
+  exactly 100, first blocking claim C01. Raw retrieval is not acceptance.
+
+## 2026-08-20 - Phase B v5 raw acquisition completed
+
+- Live core_v18 / v5 execute finished with 567 queries, 189 identities, and
+  1761 HTTP 200 responses. Acquisition integrity is not identity acceptance.
+  Accepted identity coverage remained 0.
+
+
 ## 2026-08-02 - Frozen Dataset-Independent Protocol Core
 
 - Began in a fresh linked worktree on

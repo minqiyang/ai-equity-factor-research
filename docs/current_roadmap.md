@@ -1,6 +1,6 @@
 # Current Roadmap
 
-Updated: 2026-08-01 after live verification of the CCA1 roadmap-correction baseline.
+Updated: 2026-08-22 after owner acceptance of the Stage 1 entitlement, retention, and publication record.
 
 Canonical responsibility: program stage sequence, dependency order, gate and
 completion criteria, and coarse stage status.
@@ -13,8 +13,10 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 
 ## Program Position
 
-- The verified start baseline for this correction is
+- Historical CCA1 start baseline:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
+- Last live-verified protected main:
+  `aacfa58cc6e0e9d7e50a50ef7bd99b3a73bbcf57`.
 - PR #180 and PR #181 are merged. No pull request was open at the verified
   start of this work.
 - Track A PR 1 is complete through PR #177: the EODHD diagnostic scope,
@@ -22,8 +24,8 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 - Governance source convergence and the subsequent handoff and lifecycle work
   are complete through PR #181. They changed no campaign protocol, research
   runtime, private data, or empirical conclusion.
-- The current research gate is private entitlement, retention, and publication
-  evidence. That gate is not yet satisfied.
+- Stage 1 (private entitlement, retention, and publication) is accepted.
+  The public-safe record is `docs/stage1_accepted_public_record_v1.json`.
 - The evidence ceiling remains `DIAGNOSTIC_ONLY`. No dataset or formal
   interpretation has been accepted.
 - The 2025-05-01 through 2026-05-31 interval remains permanently
@@ -44,13 +46,16 @@ operational checkpoint is in the [current handoff](current_handoff.md).
   contracts without duplicating their semantics here.
 - [Decision log](decision_log.md), [engineering log](engineering_log.md), and
   [troubleshooting log](troubleshooting_log.md): historical evidence, not queues.
+- [Stage 1 public-safe record](stage1_accepted_public_record_v1.json) and
+  [identity-evidence aggregates](identity_evidence_public_aggregate_v1.json):
+  hashes and counts only.
 
 ## Active Dependency Chain
 
 | Order | Stage | Status | Dependency or completion criterion |
 | --- | --- | --- | --- |
-| 1 | Private entitlement, retention, and publication gate | Current; pending private evidence | Complete only with an accepted private record under the campaign contract. |
-| 2 | Track A PR 2: dataset manifest and validation | Blocked by stage 1 | Complete only with an accepted provider-bound manifest, validator, safe projection, and blinded dataset-review decision. Generic preparation cannot satisfy or start this stage. |
+| 1 | Private entitlement, retention, and publication gate | Accepted 2026-08-22 | Accepted private capability and written-term record exists; public-safe hashes are in `docs/stage1_accepted_public_record_v1.json`. |
+| 2 | Track A PR 2: dataset manifest and validation | Eligible | Complete with an accepted provider-bound manifest, validator, safe projection, and blinded dataset-review decision. |
 | 3 | Track A PR 3: bounded diagnostic runner | Blocked by accepted PR 2 review | Complete only with an accepted bounded runner implementing the frozen protocol and deterministic validation surface. |
 | 4 | Detached pre-run binding | Blocked by protected PR 3 merge | Complete only when exact code, configuration, environment, protocol, inventory, and accepted dataset identities are bound outside the repository. |
 | 5 | Track A PR 4: frozen diagnostic evidence | Blocked by stages 3 and 4 | Complete only after all 14 trials run once, every outcome is retained externally, and an approved safe aggregate projection is produced. |
@@ -65,10 +70,12 @@ EODHD gate only when all three conditions hold:
 - A committed golden fixture exists for that computation.
 - The work requires no dataset-specific input or result access.
 
-This lane is neither Track A PR 2 nor Track A PR 3. It does not start, satisfy,
-or unblock either stage, does not satisfy the owner-side gate, and does not
-reopen the frozen protocol, preregistration, or 14-trial inventory.
-The following remain explicitly blocked:
+This lane is neither Track A PR 2 nor Track A PR 3. Track A PR 2 and PR 3
+keep exclusive ownership of starting, satisfying, and unblocking those
+stages. The frozen protocol, preregistration, and 14-trial inventory stay as
+already accepted.
+The lane implements frozen golden-backed protocol-core modules that already
+have committed fixtures. Later stages own:
 
 - ingestion;
 - security-master construction;
@@ -96,17 +103,9 @@ Track A PR 3 must satisfy all of the following:
 
 ## Gate Completion Criteria
 
-Stage 1 completes only when the owner supplies an accepted private record of the
-exact existing capability and written permitted-use, retention, publication,
-and deletion terms required by the campaign contract. Until then, stage 2 and
-all dataset-bound work remain blocked. Qualifying dataset-independent
-protocol-core work may proceed only within the parallel lane above; it neither
-completes this gate nor authorizes any blocked work. The handoff owns the
-timestamped list of currently missing owner evidence.
-
-This section defines dependency and completion state only. It grants no authority
-and adds no vendor, data, publication, or interpretation rule beyond the linked
-canonical sources.
+Stage 1 is accepted as of 2026-08-22. Stage 2 is eligible. Qualifying
+dataset-independent protocol-core work proceeds in the parallel lane above.
+The handoff owns the timestamped operational checkpoint.
 
 ## Deferred And Out Of Scope
 
@@ -114,6 +113,6 @@ Broad factor-zoo expansion, formal statistics, strategy promotion, independent
 cross-provider replication, LEAN parity, and completion of the remaining 26
 optional ledger event schemas are outside the active queue.
 
-This roadmap grants no authority. Use [AGENTS.md](../AGENTS.md) for authority,
-the [controller](codex_long_running_controller.md) for execution and external
-gates, and the [handoff](current_handoff.md) for the latest recorded checkpoint.
+Authority and execution remain in [AGENTS.md](../AGENTS.md) and the
+[controller](codex_long_running_controller.md). The latest checkpoint is in
+the [handoff](current_handoff.md).

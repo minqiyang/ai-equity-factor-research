@@ -15,6 +15,45 @@ investment performance.
 
 ---
 
+## 2026-08-22 - Accept Stage 1 Written Terms And Capability Record
+
+Context:
+
+- The owner certified that private data may be retained locally and must not
+  be uploaded to the public internet, then wrote that deletion is not required
+  and that aggregates, charts, hashes, row counts, non-sensitive metadata,
+  noncommercial aggregates, and a capability record may be public on GitHub.
+- The owner then authorized the recommended package: bind the existing private
+  acquisition-manifest capability conclusions (no new probe), accept Stage 1,
+  accept the identity program's terminal fail-closed record, and leave
+  materialization unentered.
+
+Decision:
+
+- Stage 1 is accepted. The public-safe record is
+  `docs/stage1_accepted_public_record_v1.json`. Identity counts are in
+  `docs/identity_evidence_public_aggregate_v1.json`. Both contain hashes and
+  aggregates only. Raw private data, ticker lists, provider responses,
+  private paths, and performance values stay out of the public repository.
+- Track A PR 2 becomes eligible and is not started by this decision.
+- Identity acceptance remains a separate fail-closed record and does not
+  satisfy dataset acceptance or materialization.
+
+Rationale:
+
+- The campaign contract required written terms plus a private capability
+  record. Binding an already-recorded `HistoricalTickerComponents=AVAILABLE`
+  conclusion avoids a new network probe and does not purchase an entitlement.
+- Closing Stage 1 without starting PR 2 keeps dataset-bound work behind its
+  own review.
+
+Consequences:
+
+- Stage 1 is accepted and recorded in the public-safe hash file.
+- The evidence ceiling remains `DIAGNOSTIC_ONLY`.
+
+---
+
 ## 2026-08-01 - Permit Frozen Dataset-Independent Protocol Core In Parallel
 
 Context:

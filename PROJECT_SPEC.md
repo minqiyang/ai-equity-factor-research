@@ -208,12 +208,13 @@ tests proves implementation behavior, not historical validity.
   point-in-time universe evidence.
 
 No research-grade provider is selected by this specification.
-Accepting the Stage 3 contract does not verify a dataset, entitlement,
-historical membership, or field semantics and does not establish
-`formal_ready`. A dataset-specific private manifest, safe public projection,
-and exact-version immutable review decision issued by an authorized
-non-producing reviewer must satisfy the contract for one declared use, while
-later trial, statistical, cost, privacy, and evidence-layer gates remain
+Stage 3 contract acceptance is methodology-process evidence. Dataset review,
+entitlement, historical validity, and formal interpretation remain later
+accepted records.
+A dataset-specific private manifest, safe public projection, and
+exact-version immutable review decision issued by an authorized
+non-producing reviewer must satisfy the Stage 3 contract for one declared
+use. Later trial, statistical, cost, privacy, and evidence-layer gates remain
 independently required.
 
 ## Factor Program

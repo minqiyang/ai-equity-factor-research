@@ -7,9 +7,9 @@ GitHub review lifecycle, waiting, stop conditions, and completion reporting.
 
 This process is subordinate to the
 [repository authority boundary](../AGENTS.md#authority-and-scope), research
-charter, and current higher-level instructions. It grants no authority.
-Eligibility is not authorization; every external, sensitive, or destructive
-operation must satisfy that boundary.
+charter, and current higher-level instructions. Authority remains in
+`AGENTS.md`. Eligibility is not authorization; every external, sensitive, or
+destructive operation must satisfy that boundary.
 
 ## Startup And Freshness
 

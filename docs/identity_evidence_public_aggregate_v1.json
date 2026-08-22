@@ -1,0 +1,86 @@
+{
+  "artifact_id": "identity_evidence_public_aggregate_v1",
+  "bodies_by_profile": {
+    "P1A_EDGAR_SGML_COMPLETE_SUBMISSION_PAPER_STUB": 55,
+    "P1B_EDGAR_SGML_COMPLETE_SUBMISSION_WITH_FILED_TEXT": 61,
+    "P2_EDGAR_SGML_DOCUMENT_WRAPPED_FILED_TEXT": 344,
+    "P3_EDGAR_FORM_25NSE_XML": 170,
+    "P4_SEC_INLINE_XBRL_XHTML": 564
+  },
+  "bound_private_artifact_hashes": {
+    "blocking_claims_report_v2": "8a8444ab71dee1907cbc1f89f23d0bd132510de63e2199815d9d0c06c30c8ca2",
+    "detection_census_v1": "e48036f46e5df6ee310f860d875e3a23af289883bd0b060bdd2c555bd8908f50",
+    "qa_report_v2": "c21950d6f521065685d47dc7c6769db5ecf6aca4952f6527a91110223da986ed",
+    "readjudication_stage_state_v2": "ac2b664ef650a99406cf378f1db9e2283dd592274bc5c1cb077d7f2ccc235bc3"
+  },
+  "counts": {
+    "accepted_identity_count": 0,
+    "bodies_examined": 1194,
+    "identities_adjudicated": 189,
+    "identities_with_zero_admissible_items": 189,
+    "interval_bridging_refusals_total": 0,
+    "paper_submission_stub_bodies": 55,
+    "records_constructed_total": 6024,
+    "union_targets_consumed": 1194
+  },
+  "coverage": {
+    "constraint_count": 450,
+    "first_blocking_claim_all_identities": "C01",
+    "insufficiency_code_counts": {
+      "NO_UNION_EVIDENCE": 1,
+      "REQUIRED_PRIMITIVE_UNSUPPORTED": 188
+    },
+    "maximum_attainable_accepted_identities": 188,
+    "maximum_coverage": 0,
+    "maximum_deficit": 100,
+    "minimum_coverage": 0,
+    "minimum_deficit": 100,
+    "threshold_per_constraint": 100
+  },
+  "gates": {
+    "a2_authorized": false,
+    "identity_evidence_ready_for_owner_materialization_gate": false,
+    "materialization": "NOT_ENTERED"
+  },
+  "interpretation": [
+    "Zero accepted identities is a fail-closed evidence-class result under the current identity policy."
+  ],
+  "interval_census": {
+    "by_kind": {
+      "DURATION_CONTEXT": 4370,
+      "NO_CAPTION_FOR_VALIDITY_INTERVAL_ON_THIS_FORM": 1144,
+      "NO_INTERVAL_ELEMENT_IN_SCHEMA": 510
+    },
+    "duration_multi_day": 19,
+    "duration_same_day": 4351,
+    "records_covering_requested_interval": 0
+  },
+  "performance_values_in_this_file": false,
+  "private_absolute_paths_in_this_file": false,
+  "private_raw_data_in_this_file": false,
+  "qa": {
+    "failed": 0,
+    "network_used": false,
+    "tests": 22
+  },
+  "records_constructed_by_type": {
+    "ALIAS_TICKER_EXCHANGE_STATEMENT": 1842,
+    "ISSUER_LEGAL_ENTITY_STATEMENT": 1198,
+    "LISTING_REMOVAL_NOTIFICATION": 170,
+    "NO_TRADING_SYMBOL_NEGATIVE_MARKER": 45,
+    "SECURITY_INSTRUMENT_CLASS_STATEMENT": 2450,
+    "SHARE_CLASS_TERMS_STATEMENT": 319
+  },
+  "records_rejected_by_governing_code": {
+    "BODY_HASH_NOT_UNIQUE_IN_UNION": 9,
+    "EVIDENCE_INTERVAL_INCOMPLETE": 4316,
+    "FILED_TEXT_PRESENT_PROFILE_CARRIES_NO_TOKEN_FOR_THIS_PRIMITIVE": 501,
+    "SUBJECT_BOUND_TO_CO_REGISTRANT_SEGMENT": 52,
+    "SUBJECT_KEY_ABSENT_FROM_FILED_TEXT": 1025,
+    "SUBJECT_KEY_INTERNALLY_INCONSISTENT": 2,
+    "SUBJECT_KEY_NOT_AN_AUTHORIZED_BINDING_KEY": 119
+  },
+  "schema_version": "identity_evidence_public_aggregate_v1",
+  "status": "TERMINAL_FAIL_CLOSED_UNDER_CURRENT_POLICY",
+  "ticker_lists_in_this_file": false
+}
