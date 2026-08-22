@@ -27,7 +27,7 @@ Scope: concise orientation for Codex handoffs. Cache/build directories, generate
 ## Important Files
 
 - `AGENTS.md` (present): Canonical external-action authority boundary and repository invariants.
-- `docs/current_handoff.md` (present): Concise operational handoff with a timestamped checkpoint, blockers, and next safe action; grants no authority.
+- `docs/current_handoff.md` (present): Concise operational handoff with a timestamped checkpoint, blockers, and next safe action. Authority remains in AGENTS.md.
 - `docs/research_program_charter.md` (present): Canonical long-term research intent and evidence policy; not an external-action authority source.
 - `docs/purged_bounded_split_contract.md` (present): Accepted Stage 1a timing and sample-isolation design.
 - `docs/signal_execution_timing_contract.md` (present): Accepted Stage 2a signal, execution, and metric timing design.

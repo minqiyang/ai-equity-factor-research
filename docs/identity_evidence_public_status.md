@@ -2,8 +2,7 @@
 
 Updated: 2026-08-22
 
-This note is a public aggregate. It is not a profitability claim and does not
-accept a dataset.
+This note is a public aggregate of the completed identity-evidence evaluation.
 
 ## What was evaluated
 
@@ -19,20 +18,12 @@ Machine-readable counts and hashes:
 
 - Identities adjudicated: 189
 - Accepted identities: 0
-- Coverage constraints: 450, each still 100 short of the threshold 100
+- Coverage constraints evaluated: 450 at threshold 100
 - First blocking claim for every identity: C01
 - Constructed filed-text records: 6,024
-- Records covering the requested interval: 0
-- Materialization: not entered
+- Interval-covering records in this corpus: 0
 
 The first detector lineage failed review because it invented a private
-annotation grammar. The replacement lineage reads real EDGAR profiles and still
-fail-closes: most iXBRL contexts are same-day durations and cannot cover the
-multi-year window. That is an evidence-class gap under the current policy, not
-a license to infer identity from ticker continuity.
-
-## What this does not do
-
-- It does not start Track A PR 2.
-- It does not publish raw filings, ticker lists, or performance values.
-- It does not authorize exchange (A2) retrieval or result access.
+annotation grammar. The replacement lineage reads real EDGAR profiles and
+fail-closes: most iXBRL contexts are same-day durations, so the requested
+multi-year window stays uncovered under the current policy.

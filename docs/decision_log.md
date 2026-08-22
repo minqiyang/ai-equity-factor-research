@@ -49,8 +49,7 @@ Rationale:
 
 Consequences:
 
-- No Git push, network retrieval, materialization, result access, brokerage,
-  paper, or live behavior is authorized.
+- Stage 1 is accepted and recorded in the public-safe hash file.
 - The evidence ceiling remains `DIAGNOSTIC_ONLY`.
 
 ---

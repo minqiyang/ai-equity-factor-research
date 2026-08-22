@@ -62,8 +62,8 @@ cannot support a general theory of good factors.
 
 ## Current Research Scope Boundary
 
-The current phase is research-only. This section records evidence scope and
-non-goals; it grants no authority. External actions remain governed by
+The current phase is research-only. This section records the current
+research-only evidence scope. External actions remain governed by
 [`AGENTS.md`](../AGENTS.md#authority-and-scope).
 
 - Local synthetic and explicitly accepted historical research are in scope
@@ -71,8 +71,8 @@ non-goals; it grants no authority. External actions remain governed by
 - Vendor downloads, credentials, remote/private data, brokerage connections,
   orders, paper/live deployment, and real-money execution are outside this phase.
 - The existing `lean/` directory remains a non-executing scaffold.
-- A future `PORTFOLIO_PASS` or `LIVE_CANDIDATE` label is evidence state only; it
-  does not change repository scope or external-action authority.
+- A future `PORTFOLIO_PASS` or `LIVE_CANDIDATE` label is evidence state only.
+  Repository scope and external-action authority remain in `AGENTS.md`.
 
 ## Evidence Layers
 
@@ -340,9 +340,8 @@ This isolation boundary does not move separately authorized historical
 research-vendor credential use or research-only simulated order intents and
 fills out of the research domain. Those activities remain subject to the
 existing authorization, license, privacy, data-methodology, secret-storage, and
-research-evidence gates, and this charter grants none of them. That future
-two-repository design is not an expansion of the current research-only scope and
-not authorization for paper or live trading.
+research-evidence gates. Those gates stay with their existing owners. The
+future two-repository design keeps the current research-only scope.
 
 Research responsibilities remain separated: the integration owner maintains
 the canonical roadmap and handoff, read-only auditors may work in parallel,

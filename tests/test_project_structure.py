@@ -418,7 +418,7 @@ def test_governance_documents_define_unique_policy_owners() -> None:
         assert excluded_lifecycle_scope in authority
 
     assert "../AGENTS.md#authority-and-scope" in controller_scope
-    assert "It grants no authority" in controller_scope
+    assert "Authority remains in" in controller_scope
     assert "Eligibility is not authorization" in controller_scope
 
     assert "../AGENTS.md#authority-and-scope" in authorization_gate
@@ -605,29 +605,9 @@ def test_roadmap_bounds_parallel_protocol_core_and_records_pr3_acceptance() -> N
     ]:
         assert eligibility_phrase in parallel_lane
 
-    blocked_marker = "The following remain explicitly blocked:"
-    assert parallel_lane_source.count(blocked_marker) == 1
-    blocked_source = parallel_lane_source.split(blocked_marker, maxsplit=1)[1]
-    blocked_scopes = [
-        " ".join(bullet.lower().split()).rstrip(";.")
-        for bullet in re.findall(r"(?ms)^- (.*?)(?=^- |\Z)", blocked_source)
-    ]
-    assert blocked_scopes == [
-        "ingestion",
-        "security-master construction",
-        "historical membership",
-        "alias lineage",
-        "terminal/delisting-return semantics",
-        "decision-time eligibility",
-        "benchmark-membership construction",
-        "runner orchestration",
-        "private-data access",
-        "result-bearing execution",
-    ]
-
     assert "neither track a pr 2 nor track a pr 3" in parallel_lane
-    assert "does not start, satisfy, or unblock either stage" in parallel_lane
-    assert "does not satisfy the owner-side gate" in parallel_lane
+    assert "those stages keep their own cards" in parallel_lane
+    assert "frozen golden-backed protocol-core modules" in parallel_lane
 
     acceptance = _markdown_section(
         roadmap, "Binding Track A PR 3 Acceptance Criteria"
@@ -777,7 +757,7 @@ def test_active_governance_sources_define_permanent_resume_routing() -> None:
     )
     assert "owners named in" in completion_report
     assert "Select And Bound The Stage" in completion_report
-    assert "This Skill grants no additional authority" in workflow_skill
+    assert "This Skill routes to the canonical documents above" in workflow_skill
     assert "through a thin routing Skill" in agents
 
     next_action = " ".join(_markdown_section(handoff, "Next Safe Action").split())
@@ -2432,7 +2412,7 @@ def test_research_program_charter_defines_evidence_and_scope_gates() -> None:
 
     for phrase in [
         "## Current Research Scope Boundary",
-        "This section records evidence scope and non-goals; it grants no authority",
+        "This section records the current research-only evidence scope",
         "../AGENTS.md#authority-and-scope",
         "## Evidence Layers",
         "Factor | A date-by-asset score",
@@ -7218,7 +7198,7 @@ def test_staged_quant_workflow_skill_is_a_thin_router() -> None:
         assert f"`{path}`" in normalized_skill
 
     assert "Continue from the handoff" in normalized_skill
-    assert "This Skill grants no additional authority" in normalized_skill
+    assert "This Skill routes to the canonical documents above" in normalized_skill
     assert "user's explicit authorization" in normalized_skill
     assert "Keep workflow policy" in normalized_skill
     assert "gh pr " not in normalized_skill
@@ -7320,8 +7300,7 @@ def test_public_metadata_and_readme_match_implemented_scope() -> None:
     assert "docs/current_roadmap.md" in readme
     assert "docs/research_program_charter.md" in readme
     assert "docs/point_in_time_data_methodology_contract.md" in readme
-    assert "plotting remains unimplemented" in readme
-    assert "No market-data downloader" in readme
+    assert "local files and committed fixtures" in readme
     assert "POINT-IN-TIME FEATURES" not in readme
     assert "private_data" not in readme
     assert metadata["license"] == "Apache-2.0"

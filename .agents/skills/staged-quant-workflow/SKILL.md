@@ -14,7 +14,7 @@ Read these canonical sources before acting:
 
 Continue from the handoff, following the controller and current roadmap.
 
-This Skill grants no additional authority. Follow the user's explicit
+This Skill routes to the canonical documents above. Follow the user's explicit
 authorization and `AGENTS.md`; stop when required authorization is missing.
 Keep workflow policy, commands, gates, and research rules in their canonical
 documents, not in this Skill.

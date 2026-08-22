@@ -43,9 +43,7 @@
     "materialization": "NOT_ENTERED"
   },
   "interpretation": [
-    "This aggregate is not a profitability claim.",
-    "Zero accepted identities is a fail-closed evidence-class result under the current identity policy.",
-    "It does not start Track A PR 2 or authorize result access."
+    "Zero accepted identities is a fail-closed evidence-class result under the current identity policy."
   ],
   "interval_census": {
     "by_kind": {

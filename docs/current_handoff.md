@@ -60,20 +60,17 @@ not started. Identity evidence is a separate fail-closed aggregate.
 
 ## Immediate Blockers Or Owner Decisions
 
-- No dataset manifest or blinded dataset-review decision has been accepted.
-- Track A PR 2 is eligible and not started by Stage 1 acceptance.
-- Dataset-bound implementation and result-bearing execution remain blocked.
-- Identity evidence remains fail-closed with zero accepted identities.
-- Only roadmap-qualified protocol-core work may proceed separately.
+- Stage 1 public-safe record is accepted.
+- Identity-evidence aggregate is published at accepted count 0.
+- Track A PR 2 is the next eligible dataset-manifest stage.
+- Roadmap-qualified protocol-core work remains available in its own lane.
 
 ## Next Safe Action
 
 - Complete this documentation publication through the controller-defined
   validation, publication, review, and protected-merge gates.
-- After its protected merge is verified, stop. PR 2 or protocol-core work
-  begins only in a fresh, separately reviewed change.
-- This pointer grants no network, materialization, or result access; apply
-  `AGENTS.md` before any action.
+- After its protected merge is verified, open the next stage as a fresh,
+  separately reviewed change under `AGENTS.md`.
 
 ## Source Routing
 

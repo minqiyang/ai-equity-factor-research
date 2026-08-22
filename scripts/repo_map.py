@@ -67,7 +67,7 @@ IMPORTANT_FILES = [
     ),
     (
         "docs/current_handoff.md",
-        "Concise operational handoff with a timestamped checkpoint, blockers, and next safe action; grants no authority.",
+        "Concise operational handoff with a timestamped checkpoint, blockers, and next safe action. Authority remains in AGENTS.md.",
     ),
     (
         "docs/research_program_charter.md",

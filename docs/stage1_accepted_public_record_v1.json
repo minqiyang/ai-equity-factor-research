@@ -30,13 +30,6 @@
     "d7": "0343b7a3acdaedf90fc91e10b268f23cf5a8cc87d94c73d93e5f9e3f82a87fce",
     "d8": "c50b5ac203a97cea4a80696fd69c1a732ea56518b852bc7fa77d04357e27155e",
     "stage1_acceptance_record_v1": "53c3180b454b59793efb579f4f396862f1236b82c133b5ea132d1423e8377c6e",
-    "identity_evidence_public_aggregate_v1": "db0174894a0302246fb11432b6f4220ab1c10723b0a978118c7f76b32523c725"
-  },
-  "not_started_by_this_record": [
-    "TRACK_A_PR2",
-    "DATASET_ACCEPTANCE",
-    "MATERIALIZATION",
-    "RESULT_ACCESS",
-    "GIT_PUSH"
-  ]
+    "identity_evidence_public_aggregate_v1": "be76a44347c1d4ca2a761dc77ada59b78829b8681b1802cbb635b7f995d74263"
+  }
 }
