@@ -186,11 +186,13 @@ def parse_json_bytes(raw: bytes) -> object:
             parse_float=_reject_float,
             parse_constant=_reject_constant,
         )
+        _reject_surrogates(parsed, field="document")
     except ValidationError:
         raise
+    except RecursionError:
+        fail("INVALID_JSON", "document")
     except json.JSONDecodeError:
         fail("INVALID_JSON", "document")
-    _reject_surrogates(parsed, field="document")
     return parsed
 
 
@@ -462,6 +464,8 @@ def normalize_timestamp(
     _validate_gregorian_date(year, month, day, field, input_id=input_id, locator=locator)
     if not (0 <= hour <= 23 and 0 <= minute <= 59 and 0 <= second <= 59):
         fail("INVALID_TIMESTAMP", field, input_id=input_id, locator=locator)
+    if zone == "-00:00":
+        fail("UNKNOWN_OFFSET", field, input_id=input_id, locator=locator)
     if zone != "Z":
         offset_hours = int(zone[1:3])
         offset_minutes = int(zone[4:6])

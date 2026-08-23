@@ -10,7 +10,7 @@
   "materialization": "NOT_ENTERED",
   "validator": {
     "package": "src/pit_manifest_validator_v1",
-    "package_tree_sha256": "b5f410761794791a8783204222eeb5822fa2b611f3ee308cafd1395dda35fd5e",
+    "package_tree_sha256": "8bf175a3adb753d64a81aa768552b2676fbcde9ff3ef2ce03f376ca5267402a1",
     "canonicalization_id": "pit_canonical_json_v1"
   },
   "plan_v2_sha256": "79ef61a26fe92b750c42a2af079db024a86d6c19fb0295fc10c98fc399bc2a81",

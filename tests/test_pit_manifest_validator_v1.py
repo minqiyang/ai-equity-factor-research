@@ -385,6 +385,8 @@ def test_valid_decision_record_and_binding_tuple() -> None:
             "contract_version": decision["contract_version"],
             "contract_content_sha256": decision["contract_content_sha256"],
             "contract_protected_merge_sha": decision["contract_protected_merge_sha"],
+            "created_at_utc": "2026-08-22T00:00:00Z",
+            "retrieved_at_utc": "2026-08-21T21:00:00Z",
         },
     )
     assert result["projection"]["decision"] in DECISION_STATES
@@ -394,9 +396,34 @@ def test_valid_decision_record_and_binding_tuple() -> None:
         lambda: validate_document(
             mismatched,
             "dataset_review_decision",
-            expected_binding={"manifest_id": "other-manifest"},
+            expected_binding={
+                "manifest_id": "other-manifest",
+                "created_at_utc": "2026-08-22T00:00:00Z",
+            },
         ),
         "BINDING_MISMATCH",
+    )
+
+
+def test_bound_decision_cannot_be_backdated_before_evidence() -> None:
+    decision = deepcopy(_load_json(DECISION_PATH))
+    binding = {
+        "manifest_id": decision["manifest_id"],
+        "canonical_manifest_sha256": decision["canonical_manifest_sha256"],
+        "public_projection_id": decision["public_projection_id"],
+        "public_projection_sha256": decision["public_projection_sha256"],
+        "contract_id": decision["contract_id"],
+        "contract_version": decision["contract_version"],
+        "contract_content_sha256": decision["contract_content_sha256"],
+        "contract_protected_merge_sha": decision["contract_protected_merge_sha"],
+        "created_at_utc": "2026-08-22T00:00:00Z",
+    }
+    decision["reviewed_at"] = "0001-01-01T00:00:00Z"
+    _assert_error(
+        lambda: project_dataset_review_decision(
+            decision, expected_binding=binding, verify_digest=False
+        ),
+        "BACKDATED_DECISION",
     )
 
 
@@ -511,6 +538,17 @@ def test_offset_timestamp_overflow_and_sentinel_fail_closed() -> None:
     _assert_error(lambda: project_freeze_record(freeze), "INVALID_TIMESTAMP")
     freeze["as_of_cutoff"] = "9998-12-31T23:59:59-23:59"
     _assert_error(lambda: project_freeze_record(freeze), "SENTINEL_TIMESTAMP")
+    unknown = deepcopy(_load_json(FREEZE_PATH))
+    unknown["as_of_cutoff"] = "2026-05-29T20:00:00-00:00"
+    _assert_error(lambda: project_freeze_record(unknown), "UNKNOWN_OFFSET")
+
+
+def test_deeply_nested_json_is_a_validation_error(tmp_path: Path) -> None:
+    nested = ("[" * 1100 + "]" * 1100).encode("utf-8")
+    _assert_error(lambda: parse_json_bytes(nested), "INVALID_JSON")
+    path = tmp_path / "nested.json"
+    path.write_bytes(nested)
+    assert cli_main(["validate", str(path)]) == 1
 
 
 def test_accepted_decision_cannot_outrank_diagnostic_findings() -> None:

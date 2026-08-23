@@ -34,6 +34,9 @@ from pit_manifest_validator_v1.canonical import (
 
 DECISION_STATES = frozenset({"accepted", "diagnostic_only", "blocked"})
 DECISION_SEVERITY = {"accepted": 0, "diagnostic_only": 1, "blocked": 2}
+EVIDENCE_TIME_BINDING_KEYS = frozenset(
+    {"created_at_utc", "retrieved_at_utc", "projection_created_at"}
+)
 PRIVATE_FULL_MANIFEST_SCHEMA = "private_full_manifest_v1"
 ORDERED_INVENTORY_SCHEMA = "ordered_component_inventory_v1"
 PUBLIC_PROJECTION_SCHEMA = "public_redacted_projection_v1"
@@ -1267,11 +1270,20 @@ def project_dataset_review_decision(
     }
     _reject_decision_more_permissive_than_findings(projection)
     if expected_binding:
+        evidence_times: list[str] = []
         for field, expected in expected_binding.items():
+            if field in EVIDENCE_TIME_BINDING_KEYS:
+                evidence_times.append(normalize_timestamp(expected, field))
+                continue
             if field not in projection:
                 fail("UNEXPECTED_VALUE", field)
             if projection[field] != expected:
                 fail("BINDING_MISMATCH", field)
+        if not evidence_times:
+            fail("MISSING_EVIDENCE_TIME", "reviewed_at")
+        reviewed_at = str(projection["reviewed_at"])
+        if reviewed_at < max(evidence_times):
+            fail("BACKDATED_DECISION", "reviewed_at")
     computed = canonical_sha256(projection)
     if verify_digest:
         stored = require_sha256(raw["decision_record_sha256"], "decision_record_sha256")
