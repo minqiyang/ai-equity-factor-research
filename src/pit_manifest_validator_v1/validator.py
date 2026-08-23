@@ -37,6 +37,19 @@ DECISION_SEVERITY = {"accepted": 0, "diagnostic_only": 1, "blocked": 2}
 EVIDENCE_TIME_BINDING_KEYS = frozenset(
     {"created_at_utc", "retrieved_at_utc", "projection_created_at"}
 )
+REQUIRED_DECISION_BINDING_KEYS = frozenset(
+    {
+        "manifest_id",
+        "canonical_manifest_sha256",
+        "public_projection_id",
+        "public_projection_sha256",
+        "contract_id",
+        "contract_version",
+        "contract_content_sha256",
+        "contract_protected_merge_sha",
+        "created_at_utc",
+    }
+)
 PRIVATE_FULL_MANIFEST_SCHEMA = "private_full_manifest_v1"
 ORDERED_INVENTORY_SCHEMA = "ordered_component_inventory_v1"
 PUBLIC_PROJECTION_SCHEMA = "public_redacted_projection_v1"
@@ -1136,6 +1149,8 @@ def _validate_findings(source: object) -> list[dict[str, object]]:
             ref_ids.add(evidence_id)
             refs.append({"evidence_ref_id": evidence_id})
         refs = _sorted_objects(refs, "evidence_ref_id")
+        if not refs:
+            fail("EMPTY_EVIDENCE_REFS", "evidence_refs", locator=locator)
         limitation = finding["unresolved_limitation"]
         if limitation is not None:
             limitation = require_nonempty_nfc(
@@ -1270,6 +1285,13 @@ def project_dataset_review_decision(
     }
     _reject_decision_more_permissive_than_findings(projection)
     if expected_binding:
+        provided = set(expected_binding)
+        unknown = sorted(provided - REQUIRED_DECISION_BINDING_KEYS - EVIDENCE_TIME_BINDING_KEYS)
+        if unknown:
+            fail("UNEXPECTED_VALUE", unknown[0])
+        missing = sorted(REQUIRED_DECISION_BINDING_KEYS - provided)
+        if missing:
+            fail("MISSING_KEY", missing[0])
         evidence_times: list[str] = []
         for field, expected in expected_binding.items():
             if field in EVIDENCE_TIME_BINDING_KEYS:
@@ -1279,8 +1301,6 @@ def project_dataset_review_decision(
                 fail("UNEXPECTED_VALUE", field)
             if projection[field] != expected:
                 fail("BINDING_MISMATCH", field)
-        if not evidence_times:
-            fail("MISSING_EVIDENCE_TIME", "reviewed_at")
         reviewed_at = str(projection["reviewed_at"])
         if reviewed_at < max(evidence_times):
             fail("BACKDATED_DECISION", "reviewed_at")

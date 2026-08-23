@@ -398,10 +398,40 @@ def test_valid_decision_record_and_binding_tuple() -> None:
             "dataset_review_decision",
             expected_binding={
                 "manifest_id": "other-manifest",
+                "canonical_manifest_sha256": decision["canonical_manifest_sha256"],
+                "public_projection_id": decision["public_projection_id"],
+                "public_projection_sha256": decision["public_projection_sha256"],
+                "contract_id": decision["contract_id"],
+                "contract_version": decision["contract_version"],
+                "contract_content_sha256": decision["contract_content_sha256"],
+                "contract_protected_merge_sha": decision["contract_protected_merge_sha"],
                 "created_at_utc": "2026-08-22T00:00:00Z",
             },
         ),
         "BINDING_MISMATCH",
+    )
+    _assert_error(
+        lambda: validate_document(
+            decision,
+            "dataset_review_decision",
+            expected_binding={
+                "manifest_id": decision["manifest_id"],
+                "created_at_utc": "2026-08-22T00:00:00Z",
+            },
+        ),
+        "MISSING_KEY",
+    )
+
+
+def test_finding_without_evidence_refs_fails_closed() -> None:
+    decision = deepcopy(_load_json(DECISION_PATH))
+    decision["decision"] = "accepted"
+    decision["findings"][0]["disposition"] = "accepted"
+    decision["findings"][0]["unresolved_limitation"] = None
+    decision["findings"][0]["evidence_refs"] = []
+    _assert_error(
+        lambda: project_dataset_review_decision(decision, verify_digest=False),
+        "EMPTY_EVIDENCE_REFS",
     )
 
 
@@ -549,6 +579,10 @@ def test_deeply_nested_json_is_a_validation_error(tmp_path: Path) -> None:
     path = tmp_path / "nested.json"
     path.write_bytes(nested)
     assert cli_main(["validate", str(path)]) == 1
+    parsed = parse_json_bytes(("[" * 500 + "]" * 500).encode("utf-8"))
+    result = validate_document(parsed, "pit_canonical_json_v1")
+    assert result["kind"] == "pit_canonical_json_v1"
+    assert result["sha256"]
 
 
 def test_accepted_decision_cannot_outrank_diagnostic_findings() -> None:

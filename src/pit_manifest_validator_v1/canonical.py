@@ -570,7 +570,7 @@ def _jcs_string(value: str) -> str:
     return "".join(chunks)
 
 
-def _jcs_dump(value: object) -> str:
+def _jcs_scalar(value: object) -> str | None:
     if value is None:
         return "null"
     if value is True:
@@ -587,26 +587,64 @@ def _jcs_dump(value: object) -> str:
         return _jcs_string(value)
     if isinstance(value, float):
         fail("RAW_FLOAT", "number")
-    if isinstance(value, list):
-        return "[" + ",".join(_jcs_dump(item) for item in value) + "]"
-    if isinstance(value, dict):
-        keys = []
-        for key in value:
-            if not isinstance(key, str):
-                fail("INVALID_KEY", "object")
-            if has_lone_surrogate(key):
-                fail("LONE_SURROGATE", "object")
-            keys.append(key)
-        keys.sort(key=utf16_sort_key)
-        members = [_jcs_string(key) + ":" + _jcs_dump(value[key]) for key in keys]
-        return "{" + ",".join(members) + "}"
-    fail("UNSUPPORTED_TYPE", "value")
-    raise AssertionError("unreachable")
+    return None
+
+
+def _jcs_dump(value: object) -> str:
+    chunks: list[str] = []
+    stack: list[tuple[str, object]] = [("value", value)]
+    while stack:
+        kind, item = stack.pop()
+        if kind == "text":
+            chunks.append(str(item))
+            continue
+        scalar = _jcs_scalar(item)
+        if scalar is not None:
+            chunks.append(scalar)
+            continue
+        if isinstance(item, list):
+            chunks.append("[")
+            if not item:
+                chunks.append("]")
+                continue
+            stack.append(("text", "]"))
+            for index in range(len(item) - 1, -1, -1):
+                stack.append(("value", item[index]))
+                if index > 0:
+                    stack.append(("text", ","))
+            continue
+        if isinstance(item, dict):
+            keys: list[str] = []
+            for key in item:
+                if not isinstance(key, str):
+                    fail("INVALID_KEY", "object")
+                if has_lone_surrogate(key):
+                    fail("LONE_SURROGATE", "object")
+                keys.append(key)
+            keys.sort(key=utf16_sort_key)
+            chunks.append("{")
+            if not keys:
+                chunks.append("}")
+                continue
+            stack.append(("text", "}"))
+            for index in range(len(keys) - 1, -1, -1):
+                key = keys[index]
+                stack.append(("value", item[key]))
+                stack.append(("text", _jcs_string(key) + ":"))
+                if index > 0:
+                    stack.append(("text", ","))
+            continue
+        fail("UNSUPPORTED_TYPE", "value")
+    return "".join(chunks)
 
 
 def canonical_utf8(value: object) -> bytes:
     """Serialize a preprocessed I-JSON value under RFC 8785 JCS."""
-    return _jcs_dump(value).encode("utf-8")
+    try:
+        return _jcs_dump(value).encode("utf-8")
+    except RecursionError:
+        fail("INVALID_JSON", "document")
+        raise AssertionError("unreachable")
 
 
 def canonical_sha256(value: object) -> str:
