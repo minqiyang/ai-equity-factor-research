@@ -9,6 +9,12 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Closed remaining Track A PR 3 exact-head findings: a frozen signal set
+  must contain every continuously included schedule row between its
+  endpoints. Supplying January and March while February remains
+  continuously included is refused, so January membership cannot stay in
+  force across February execution. F-1 and F-2 remain deferred. This
+  adds no private data, result access, or 14-trial run.
 - Closed remaining Track A PR 3 exact-head findings: factor-matched
   benchmark comparison now requires the exact execution-bounded span for
   every nonempty frozen set, including a one-point path dated at signal

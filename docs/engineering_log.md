@@ -1,5 +1,27 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-11 interior included decisions
+
+- Implemented exact-head Codex item from card `EFR-GRK-PR3-FIX-11` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `4d19e20db9817300e7a37cf6765187016a68d6eb`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- `factor_matched_cost_free_comparison` now requires the frozen signal
+  set to contain every continuously included schedule row between its
+  endpoints. Supplying January and March while February is continuously
+  included is refused, even when the daily path is the exact
+  execution-bounded span.
+- Already-closed excluded-row, signal-close, complete-span,
+  prefix/suffix, execution-close reset, sparse/duplicate/reversed
+  calendar, mixed-factor, grant-planning, environment, Rank IC,
+  frozen-child digest, Boolean real-vector, session-identity,
+  complete-root, and per-trial status gates were left in place.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited except `benchmarks.py`. No private panel, performance
+  value, or 14-trial run was accessed.
+- Focused campaign tests passed 164. Full suite after repo-map refresh:
+  2404 passed, 2 existing platform-conditional skipped.
+
 ## 2026-08-23 - Track A PR 3 FIX-10 equal-length bypass and excluded rows
 
 - Implemented exact-head Codex items from card `EFR-GRK-PR3-FIX-10` on

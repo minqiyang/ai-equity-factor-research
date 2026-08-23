@@ -80,10 +80,11 @@ def factor_matched_cost_free_comparison(
     the governing monthly frozen decision. Every nonempty frozen set uses
     that span; a one-point path dated at signal close is not a substitute.
     Each frozen decision must belong to a continuously included schedule
-    row, and the bounded endpoint must not exceed accepted_cutoff. Old
-    holdings earn the return into execution close; the new equal-weight
-    target resets at execution close. The comparison is structurally
-    cost-free.
+    row, the frozen signal set must contain every continuously included
+    schedule row between its endpoints, and the bounded endpoint must not
+    exceed accepted_cutoff. Old holdings earn the return into execution
+    close; the new equal-weight target resets at execution close. The
+    comparison is structurally cost-free.
     """
 
     if not isinstance(role, str) or not role:
@@ -332,11 +333,33 @@ def _require_bound_calendar(
                 "frozen decision must belong to a continuously included "
                 "schedule row"
             )
+    _require_complete_included_decisions(frozen, schedule)
     required = _execution_bounded_span(frozen, schedule)
     if path != required:
         raise ValueError(
             "session dates must match the campaign schedule's exact "
             "execution-bounded session span"
+        )
+
+
+def _require_complete_included_decisions(
+    frozen: tuple[FrozenDecisionTime, ...],
+    schedule: CampaignSchedule,
+) -> None:
+    supplied = {
+        _strict_date(item.signal_date).isoformat() for item in frozen
+    }
+    first = min(supplied)
+    last = max(supplied)
+    required = {
+        row.signal_date
+        for row in schedule.signals
+        if row.continuous_included and first <= row.signal_date <= last
+    }
+    if not required.issubset(supplied):
+        raise ValueError(
+            "frozen signal set must contain every continuously included "
+            "schedule row between its endpoints"
         )
 
 

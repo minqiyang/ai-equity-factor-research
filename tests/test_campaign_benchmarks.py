@@ -813,6 +813,50 @@ def test_excluded_continuous_row_is_refused() -> None:
     assert fixture["forbidden"]["valid_post_cutoff_endpoint"]
 
 
+def test_interior_decision_omission_is_refused() -> None:
+    fixture = load_runner_fixture("benchmark_interior_decision_omission.json")
+    inputs = fixture["inputs"]
+    schedule = fixture_campaign_schedule(inputs["campaign_schedule"])
+    february = next(
+        row
+        for row in schedule.signals
+        if row.signal_date == inputs["omitted_signal_date"]
+    )
+    frozen = tuple(
+        freeze_numeric_universe(
+            inputs["benchmark_universe"],
+            inputs["min_eligible_count"],
+            inputs["min_distinct_values"],
+            FACTOR_ORDER[0],
+            signal_date,
+        )
+        for signal_date in inputs["signal_dates"]
+    )
+    strategy = _uniform_strategy(inputs, inputs["session_dates"])
+    observed = tuple(
+        dated_held_returns(session_date, {})
+        for session_date in inputs["session_dates"]
+    )
+    assert february.continuous_included is fixture["expected"][
+        "february_continuous_included"
+    ]
+    assert february.signal_date not in inputs["signal_dates"]
+    assert inputs["session_dates"] == fixture["expected"]["required_span"]
+    with pytest.raises(ValueError, match=fixture["expected"]["match"]):
+        factor_matched_cost_free_comparison(
+            frozen,
+            strategy,
+            observed,
+            inputs["initial_equity"],
+            inputs["role"],
+            schedule,
+        )
+    assert fixture["forbidden"]["accept_omitted_interior_decision"]
+    assert fixture["forbidden"][
+        "keep_january_membership_through_february_execution"
+    ]
+
+
 def test_raw_session_list_is_not_an_accepted_schedule() -> None:
     fixture = load_runner_fixture("benchmark_membership_complete_span.json")
     inputs = fixture["inputs"]
