@@ -1,0 +1,65 @@
+{
+  "inputs": {},
+  "expected": {
+    "rows": [
+      {
+        "owner_index": 0,
+        "factor_id": "MOM_12_1",
+        "compute": "campaign.factors.mom_12_1_from_anchors",
+        "lookback_common_calendar_positions": 253,
+        "referenced_anchor_offsets": [
+          -252,
+          -21
+        ],
+        "required_history_price_anchor_span": null,
+        "required_anchor_count": null,
+        "direction": "HIGHER_IS_BETTER",
+        "anchor_lineage_policy": "factor_anchor_lineage_v1"
+      },
+      {
+        "owner_index": 1,
+        "factor_id": "REV_1M",
+        "compute": "campaign.factors.rev_1m_from_anchors",
+        "lookback_common_calendar_positions": 22,
+        "referenced_anchor_offsets": [
+          -21,
+          0
+        ],
+        "required_history_price_anchor_span": null,
+        "required_anchor_count": null,
+        "direction": "HIGHER_IS_BETTER",
+        "anchor_lineage_policy": "factor_anchor_lineage_v1"
+      },
+      {
+        "owner_index": 2,
+        "factor_id": "LOW_VOL_3M",
+        "compute": "campaign.factors.low_vol_3m_from_anchors",
+        "lookback_common_calendar_positions": 64,
+        "referenced_anchor_offsets": null,
+        "required_history_price_anchor_span": [
+          -63,
+          0
+        ],
+        "required_anchor_count": 64,
+        "direction": "HIGHER_IS_BETTER",
+        "anchor_lineage_policy": "factor_anchor_lineage_v1"
+      }
+    ]
+  },
+  "forbidden": {
+    "pairings": [
+      {
+        "owner_index": 0,
+        "compute": "campaign.factors.rev_1m_from_anchors"
+      },
+      {
+        "owner_index": 1,
+        "compute": "campaign.factors.low_vol_3m_from_anchors"
+      },
+      {
+        "owner_index": 2,
+        "compute": "campaign.factors.mom_12_1_from_anchors"
+      }
+    ]
+  }
+}

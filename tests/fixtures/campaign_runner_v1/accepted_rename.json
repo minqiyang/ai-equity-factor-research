@@ -1,0 +1,77 @@
+{
+  "inputs": {
+    "owner_index": 0,
+    "target_identity": {
+      "resolved_permanent_security_id": "SECURITY-001",
+      "resolved_listing_id": "LISTING-001",
+      "resolved_listing_episode_id": "EPISODE-001"
+    },
+    "alias_chain": [
+      {
+        "resolved_permanent_security_id": "SECURITY-001",
+        "resolved_listing_id": "LISTING-001",
+        "resolved_listing_episode_id": "EPISODE-001",
+        "source_exchange": "XNYS",
+        "source_ticker": "T000",
+        "alias_effective_from": "2020-01-01",
+        "alias_effective_to": "2025-06-01",
+        "lineage_resolution_evidence_id": "rename-evidence-001",
+        "transition_to_next": "ACCEPTED_SYMBOL_RENAME_SAME_PERMANENT_SECURITY_SAME_LISTING_AND_LISTING_EPISODE"
+      },
+      {
+        "resolved_permanent_security_id": "SECURITY-001",
+        "resolved_listing_id": "LISTING-001",
+        "resolved_listing_episode_id": "EPISODE-001",
+        "source_exchange": "XNYS",
+        "source_ticker": "T001",
+        "alias_effective_from": "2025-06-01",
+        "alias_effective_to": null,
+        "lineage_resolution_evidence_id": "rename-evidence-001",
+        "transition_to_next": "TARGET_ALIAS"
+      }
+    ],
+    "anchors": [
+      {
+        "resolved_permanent_security_id": "SECURITY-001",
+        "resolved_listing_id": "LISTING-001",
+        "resolved_listing_episode_id": "EPISODE-001",
+        "source_exchange": "XNYS",
+        "source_ticker": "T000",
+        "alias_effective_from": "2020-01-01",
+        "alias_effective_to": "2025-06-01",
+        "lineage_resolution_evidence_id": "rename-evidence-001",
+        "transition_to_next": "ACCEPTED_SYMBOL_RENAME_SAME_PERMANENT_SECURITY_SAME_LISTING_AND_LISTING_EPISODE",
+        "session_date": "2025-01-02",
+        "adjusted_close": 80.0
+      },
+      {
+        "resolved_permanent_security_id": "SECURITY-001",
+        "resolved_listing_id": "LISTING-001",
+        "resolved_listing_episode_id": "EPISODE-001",
+        "source_exchange": "XNYS",
+        "source_ticker": "T001",
+        "alias_effective_from": "2025-06-01",
+        "alias_effective_to": null,
+        "lineage_resolution_evidence_id": "rename-evidence-001",
+        "transition_to_next": "TARGET_ALIAS",
+        "session_date": "2025-12-01",
+        "adjusted_close": 100.0
+      }
+    ],
+    "referenced_anchors": [
+      80.0,
+      100.0
+    ],
+    "gapped_next_from": "2025-06-02"
+  },
+  "expected": {
+    "lineage_valid": true,
+    "reason": null,
+    "value": 0.25,
+    "rel_tol": 0.0,
+    "abs_tol": 1e-15
+  },
+  "forbidden": {
+    "gapped_lineage_valid": true
+  }
+}

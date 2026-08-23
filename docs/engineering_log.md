@@ -1,5 +1,23 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 EXEC-1 decision-time spine
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-1` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `98f91acc29f7a208cca22e03b3c9b9051a140ac9`. Plan bytes
+  `237194a9…bc90d` / `dc55651e…8ffca3` remained the immutable input.
+- Added shippable `campaign.registry`, `campaign.lineage`,
+  `campaign.schedule`, and `campaign.returns`. Existing campaign modules,
+  including `inference.py` at `be2e743c…50a130`, were not edited.
+- Bound T-1 through T-8 and the EXEC-1 goldens to committed synthetic
+  fixtures under `tests/fixtures/campaign_runner_v1/`. No private panel,
+  performance value, or 14-trial run was accessed.
+- Focused campaign tests passed 70. Full suite after repo-map refresh:
+  3192 passed, 2 existing platform-conditional skipped.
+- Next card remains PR3-EXEC-2: eligibility, baselines, diagnostics, and
+  the post-`t` mutation oracle. Path, cost, benchmark, precondition, and
+  bundle code stay out of this card.
+
 ## 2026-08-23 - Public-safe Track A PR 2 validator and status
 
 - Added `src/pit_manifest_validator_v1` with synthetic fixtures and 31

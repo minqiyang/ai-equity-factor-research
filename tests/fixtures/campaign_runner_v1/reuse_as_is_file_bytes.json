@@ -1,0 +1,25 @@
+{
+  "inputs": {
+    "files": [
+      "src/campaign/inference.py",
+      "src/campaign/__init__.py",
+      "src/campaign/classifier.py",
+      "src/campaign/deciles.py",
+      "src/campaign/factors.py",
+      "src/campaign/listing_key.py",
+      "src/campaign/turnover.py"
+    ]
+  },
+  "expected": {
+    "file_bytes": {
+      "src/campaign/inference.py": "be2e743c659c87791c99d0e27684cb48c730486719860773721423e08650a130",
+      "src/campaign/__init__.py": "5fd76e27290ac9b1a9360239e48cc8712a0fc41fd45bb3ec97b75158f8c70043",
+      "src/campaign/classifier.py": "316e5b5458aaba3c682b429b36216ccb568cbaed5f3bcdda0ad4b2a94dfd337c",
+      "src/campaign/deciles.py": "194aa4c521e09284cca386192dd78b037e302f7b4a4869f04e3bdc1e27da7841",
+      "src/campaign/factors.py": "95c95be3e5f05533c93c93a9f314b01f72a0a7088c417dae80fd207bec4667c9",
+      "src/campaign/listing_key.py": "18166cc25a5f8a990ba243af422cf874ffc18a87f4e6501840dc755b4c217b4a",
+      "src/campaign/turnover.py": "db51e116bf14f6908c6d2bb24701a3b405be699977f5a2853c0a00ad435bc51b"
+    }
+  },
+  "forbidden": null
+}

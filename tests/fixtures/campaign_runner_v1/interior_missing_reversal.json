@@ -1,0 +1,20 @@
+{
+  "inputs": {
+    "owner_index": 1,
+    "referenced_anchors": [
+      100.0,
+      90.0
+    ],
+    "interior_missing": true
+  },
+  "expected": {
+    "value": 0.1,
+    "valid": true,
+    "reason": null,
+    "rel_tol": 0.0,
+    "abs_tol": 1e-15
+  },
+  "forbidden": {
+    "full_window_contiguity_rejection": true
+  }
+}

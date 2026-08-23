@@ -1,0 +1,68 @@
+{
+  "inputs": {
+    "target_identity": {
+      "resolved_permanent_security_id": "SECURITY-NEW-ISSUER",
+      "resolved_listing_id": "LISTING-NEW-ISSUER",
+      "resolved_listing_episode_id": "EPISODE-NEW-ISSUER"
+    },
+    "alias_chain": [
+      {
+        "resolved_permanent_security_id": "SECURITY-OLD-ISSUER",
+        "resolved_listing_id": "LISTING-OLD-ISSUER",
+        "resolved_listing_episode_id": "EPISODE-OLD-ISSUER",
+        "source_exchange": "XNYS",
+        "source_ticker": "T000",
+        "alias_effective_from": "2020-01-01",
+        "alias_effective_to": "2025-06-01",
+        "lineage_resolution_evidence_id": "reuse-evidence-old",
+        "transition_to_next": "ACCEPTED_SYMBOL_RENAME_SAME_PERMANENT_SECURITY_SAME_LISTING_AND_LISTING_EPISODE"
+      },
+      {
+        "resolved_permanent_security_id": "SECURITY-NEW-ISSUER",
+        "resolved_listing_id": "LISTING-NEW-ISSUER",
+        "resolved_listing_episode_id": "EPISODE-NEW-ISSUER",
+        "source_exchange": "XNYS",
+        "source_ticker": "T000",
+        "alias_effective_from": "2025-06-01",
+        "alias_effective_to": null,
+        "lineage_resolution_evidence_id": "reuse-evidence-new",
+        "transition_to_next": "TARGET_ALIAS"
+      }
+    ],
+    "anchors": [
+      {
+        "resolved_permanent_security_id": "SECURITY-OLD-ISSUER",
+        "resolved_listing_id": "LISTING-OLD-ISSUER",
+        "resolved_listing_episode_id": "EPISODE-OLD-ISSUER",
+        "source_exchange": "XNYS",
+        "source_ticker": "T000",
+        "alias_effective_from": "2020-01-01",
+        "alias_effective_to": "2025-06-01",
+        "lineage_resolution_evidence_id": "reuse-evidence-old",
+        "transition_to_next": "ACCEPTED_SYMBOL_RENAME_SAME_PERMANENT_SECURITY_SAME_LISTING_AND_LISTING_EPISODE",
+        "session_date": "2025-01-02",
+        "adjusted_close": 80.0
+      },
+      {
+        "resolved_permanent_security_id": "SECURITY-NEW-ISSUER",
+        "resolved_listing_id": "LISTING-NEW-ISSUER",
+        "resolved_listing_episode_id": "EPISODE-NEW-ISSUER",
+        "source_exchange": "XNYS",
+        "source_ticker": "T000",
+        "alias_effective_from": "2025-06-01",
+        "alias_effective_to": null,
+        "lineage_resolution_evidence_id": "reuse-evidence-new",
+        "transition_to_next": "TARGET_ALIAS",
+        "session_date": "2025-12-01",
+        "adjusted_close": 100.0
+      }
+    ]
+  },
+  "expected": {
+    "lineage_valid": false,
+    "reason": "ALIAS_IDENTITY_MISMATCH"
+  },
+  "forbidden": {
+    "ticker_only_join_value": 0.25
+  }
+}

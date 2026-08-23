@@ -1,0 +1,11 @@
+{
+  "inputs": {
+    "factor_id": "UNKNOWN_FACTOR"
+  },
+  "expected": {
+    "raises": "KeyError"
+  },
+  "forbidden": {
+    "fallback_factor": true
+  }
+}

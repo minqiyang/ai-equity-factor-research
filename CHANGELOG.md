@@ -9,6 +9,11 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the Track A PR 3 EXEC-1 decision-time spine: a derived factor
+  registry, `factor_anchor_lineage_v1`, the common-session schedule, and
+  one simple adjusted-close return gate, each bound to committed synthetic
+  fixtures. Existing frozen campaign modules are unchanged. This adds no
+  private data, result access, or 14-trial run.
 - Published Track A PR 2 public-safe validator, status hashes, allowlisted
   projection, and safe dataset-review fields. Raw private data stays out.
 
