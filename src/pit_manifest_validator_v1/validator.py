@@ -969,22 +969,27 @@ def _reject_cycles(inputs: list[dict[str, object]]) -> None:
         for parent in item["parent_input_ids"]:
             if parent not in known:
                 fail("UNKNOWN_PARENT", "parent_input_ids", input_id=input_id)
-    visiting: set[str] = set()
-    visited: set[str] = set()
-
-    def walk(node: str) -> None:
-        if node in visited:
-            return
-        if node in visiting:
-            fail("CYCLIC_LINEAGE", "parent_input_ids", input_id=node)
-        visiting.add(node)
-        for parent in children[node]:
-            walk(parent)
-        visiting.remove(node)
-        visited.add(node)
-
-    for node in children:
-        walk(node)
+    WHITE, GRAY, BLACK = 0, 1, 2
+    color = {node: WHITE for node in children}
+    for start in children:
+        if color[start] != WHITE:
+            continue
+        stack = [start]
+        color[start] = GRAY
+        while stack:
+            node = stack[-1]
+            advanced = False
+            for parent in children[node]:
+                if color[parent] == GRAY:
+                    fail("CYCLIC_LINEAGE", "parent_input_ids", input_id=parent)
+                if color[parent] == WHITE:
+                    color[parent] = GRAY
+                    stack.append(parent)
+                    advanced = True
+                    break
+            if not advanced:
+                color[node] = BLACK
+                stack.pop()
 
 
 def _validate_extraction_identity(source: object) -> dict[str, object]:

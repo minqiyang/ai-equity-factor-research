@@ -2,9 +2,9 @@
 
 ## 2026-08-23 - Public-safe Track A PR 2 validator and status
 
-- Added `src/pit_manifest_validator_v1` with synthetic fixtures and 22
-  focused tests. Local full suite on the implementation worktree was
-  3161 passed, 2 skipped.
+- Added `src/pit_manifest_validator_v1` with synthetic fixtures and 27
+  focused tests after Codex remediations on this PR. Local full suite on
+  this worktree is 3166 passed, 2 skipped.
 - Published hashes and counts only: manifest
   `b9d0b1ba…3df32a`, projection `594ec932…fe1111`, decision
   `7e77a557…de1488`, freeze `c160a3b2…4f0ccd`.

@@ -22,6 +22,7 @@ from pit_manifest_validator_v1.canonical import (
 from pit_manifest_validator_v1.cli import main as cli_main
 from pit_manifest_validator_v1.validator import (
     DECISION_STATES,
+    _reject_cycles,
     infer_kind,
     project_dataset_review_decision,
     project_freeze_record,
@@ -353,6 +354,21 @@ def test_cyclic_lineage_and_empty_components_fail_closed() -> None:
     empty = deepcopy(_load_json(MANIFEST_PATH))
     empty["inputs"][0]["physical_components"] = []
     _assert_error(lambda: project_private_full_manifest(empty), "EMPTY_COMPONENTS")
+
+
+def test_deep_acyclic_lineage_does_not_recurse() -> None:
+    depth = 1200
+    chain = [
+        {
+            "input_id": f"in-{index:04d}",
+            "parent_input_ids": [] if index == depth - 1 else [f"in-{index + 1:04d}"],
+        }
+        for index in range(depth)
+    ]
+    _reject_cycles(chain)
+    cycle = deepcopy(chain)
+    cycle[-1]["parent_input_ids"] = ["in-0000"]
+    _assert_error(lambda: _reject_cycles(cycle), "CYCLIC_LINEAGE")
 
 
 def test_valid_decision_record_and_binding_tuple() -> None:
