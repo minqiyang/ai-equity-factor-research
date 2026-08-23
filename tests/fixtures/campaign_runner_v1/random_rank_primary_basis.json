@@ -1,0 +1,29 @@
+{
+  "inputs": {
+    "exchange": "XNYS",
+    "effective_from": "2014-01-01",
+    "effective_to": null,
+    "session_date": "2026-02-03",
+    "initial_equity": 1.0,
+    "initial_weights": {"T000": 1.0},
+    "held_returns": {"T000": 0.1, "T001": 0.0},
+    "reset_weights": {"T001": 1.0},
+    "transaction_cost_bps": 10,
+    "forbidden_bps": [0, 25]
+  },
+  "expected": {
+    "gross_return": 0.1,
+    "gross_multiplier": 1.1,
+    "turnover": 2.0,
+    "cost_impact": 0.0022,
+    "net_return": 0.0978,
+    "rel_tol": 0.0,
+    "abs_tol": 1e-15
+  },
+  "forbidden": {
+    "zero_bps_cost": 0.0,
+    "zero_bps_net": 0.1,
+    "twenty_five_bps_cost": 0.0055,
+    "twenty_five_bps_net": 0.0945
+  }
+}

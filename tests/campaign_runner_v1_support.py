@@ -244,3 +244,82 @@ def _allowed_owner_constant_ids(
             if isinstance(child, ast.Constant):
                 allowed.add(id(child))
     return allowed
+
+
+def runner_weight_map(
+    exchange: str,
+    effective_from: str,
+    effective_to: str | None,
+    weights_by_ticker: dict[str, float],
+) -> dict[bytes, float]:
+    """Encode a ticker-weight mapping into listing-key weights."""
+
+    return {
+        encode_runner_listing_key(
+            exchange,
+            ticker,
+            effective_from,
+            effective_to,
+        ): float(weight)
+        for ticker, weight in weights_by_ticker.items()
+    }
+
+
+def runner_return_map(
+    exchange: str,
+    effective_from: str,
+    effective_to: str | None,
+    values_by_ticker: dict[str, object],
+) -> dict[bytes, object]:
+    """Encode a ticker-return mapping into listing-key observations."""
+
+    return {
+        encode_runner_listing_key(
+            exchange,
+            ticker,
+            effective_from,
+            effective_to,
+        ): value
+        for ticker, value in values_by_ticker.items()
+    }
+
+
+def runner_holding_interval(
+    session_date: str,
+    exchange: str,
+    effective_from: str,
+    effective_to: str | None,
+    held_returns_by_ticker: dict[str, object],
+    reset_weights_by_ticker: dict[str, object] | None,
+) -> Any:
+    """Build one campaign HoldingInterval from ticker-keyed fixture maps."""
+
+    from campaign.paths import holding_interval
+
+    reset = None
+    if reset_weights_by_ticker is not None:
+        reset = runner_weight_map(
+            exchange,
+            effective_from,
+            effective_to,
+            {
+                ticker: float(weight)  # type: ignore[arg-type]
+                for ticker, weight in reset_weights_by_ticker.items()
+            },
+        )
+    return holding_interval(
+        session_date,
+        runner_return_map(
+            exchange,
+            effective_from,
+            effective_to,
+            held_returns_by_ticker,
+        ),
+        reset,
+    )
+
+
+def uniform_return_map(weights: dict[bytes, float], value: object) -> dict[bytes, object]:
+    """Apply one return observation to every supplied listing key."""
+
+    return {listing_key: value for listing_key in weights}

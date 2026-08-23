@@ -1,0 +1,118 @@
+{
+  "inputs": {
+    "exchange": "XNYS",
+    "effective_from": "2014-01-01",
+    "effective_to": null,
+    "initial_equity": 1.0,
+    "periods_per_year": 252,
+    "sample_std_ddof": 1,
+    "role": "factor_matched_primary",
+    "min_eligible_count": 1,
+    "min_distinct_values": 1,
+    "benchmark_universe": {
+      "key_spec": {
+        "exchange": "XNYS",
+        "ticker_prefix": "U",
+        "ticker_width": 3,
+        "effective_from": "2014-01-01",
+        "effective_to": null
+      },
+      "count": 1,
+      "value_mode": "constant",
+      "constant_value": 1.0,
+      "duplicate_last": false
+    },
+    "deployment": {
+      "session_date": "2023-12-29",
+      "held_returns": {},
+      "reset_weights": {"T000": 1.0}
+    },
+    "strategy": {
+      "session_dates": ["2024-01-31", "2024-02-29", "2024-03-28"],
+      "initial_weights": {"T000": 1.0},
+      "intervals": [
+        {"held_returns": {"T000": 0.02}, "reset_weights": {}},
+        {"held_returns": {}, "reset_weights": {"T002": 1.0}},
+        {"held_returns": {"T002": 0.02}, "reset_weights": null}
+      ]
+    },
+    "benchmark_held_returns": [0.0, 0.05, 0.0],
+    "transaction_cost_bps": [10, 25],
+    "bridge": {
+      "session_dates": ["2024-01-31", "2024-03-28"],
+      "initial_weights": {"T000": 1.0},
+      "intervals": [
+        {"held_returns": {"T000": 0.02}, "reset_weights": {"T002": 1.0}},
+        {"held_returns": {"T002": 0.02}, "reset_weights": null}
+      ],
+      "benchmark_held_returns": [0.0, 0.0]
+    },
+    "restart": {
+      "session_dates": ["2024-02-29", "2024-03-28"],
+      "initial_weights": {},
+      "intervals": [
+        {"held_returns": {}, "reset_weights": {"T002": 1.0}},
+        {"held_returns": {"T002": 0.02}, "reset_weights": null}
+      ],
+      "benchmark_held_returns": [0.0, 0.0]
+    }
+  },
+  "expected": {
+    "deployment_turnover": 1.0,
+    "connected_turnovers": [1.0, 1.0, 0.0],
+    "strategy_gross": [0.02, 0.0, 0.02],
+    "benchmark_gross": [0.0, 0.05, 0.0],
+    "by_bps": {
+      "10": {
+        "net": [0.01898, -0.001, 0.02],
+        "annualized_active": -36.700917734151346,
+        "annualized_active_negative": true,
+        "cost_drag": 4.30891083925399,
+        "max_drawdown": -0.0010000000000000009,
+        "annualized_volatility": 0.18796838457570467,
+        "zero_cash_rate_sharpe_style": 16.972641474795946
+      },
+      "25": {
+        "net": [0.01745, -0.0025, 0.02],
+        "annualized_active": -41.95295381752428,
+        "annualized_active_negative": true
+      }
+    },
+    "bridge": {
+      "turnovers": [2.0, 0.0],
+      "by_bps": {
+        "10": {
+          "net": [0.01796, 0.02],
+          "annualized_active": 113.20667460383194,
+          "annualized_active_positive": true
+        },
+        "25": {
+          "net": [0.0149, 0.02],
+          "annualized_active": 77.15404452370552,
+          "annualized_active_positive": true
+        }
+      }
+    },
+    "restart": {
+      "turnovers": [1.0, 0.0],
+      "by_bps": {
+        "10": {
+          "net": [-0.001, 0.02],
+          "annualized_active": 9.68742693007135,
+          "annualized_active_positive": true
+        },
+        "25": {
+          "net": [-0.0025, 0.02],
+          "annualized_active": 7.843976730056038,
+          "annualized_active_positive": true
+        }
+      }
+    },
+    "rel_tol": 0.0,
+    "abs_tol": 1e-12
+  },
+  "forbidden": {
+    "positive_diagnostic_from_deleted_tied_month": true,
+    "bridge_and_restart_costs_indistinguishable": false
+  }
+}

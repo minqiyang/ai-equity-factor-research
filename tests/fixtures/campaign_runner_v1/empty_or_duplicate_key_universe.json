@@ -1,0 +1,66 @@
+{
+  "inputs": {
+    "exchange": "XNYS",
+    "effective_from": "2014-01-01",
+    "effective_to": null,
+    "session_date": "2026-07-31",
+    "initial_equity": 1.0,
+    "transaction_cost_bps": 0,
+    "role": "factor_matched_primary",
+    "min_eligible_count": 1,
+    "min_distinct_values": 1,
+    "strategy": {
+      "initial_weights": {},
+      "held_returns": {},
+      "reset_weights": {}
+    },
+    "empty_universe": {
+      "key_spec": {
+        "exchange": "XNYS",
+        "ticker_prefix": "T",
+        "ticker_width": 3,
+        "effective_from": "2014-01-01",
+        "effective_to": null
+      },
+      "count": 0,
+      "value_mode": "index",
+      "duplicate_last": false
+    },
+    "duplicate_universe": {
+      "key_spec": {
+        "exchange": "XNYS",
+        "ticker_prefix": "T",
+        "ticker_width": 3,
+        "effective_from": "2014-01-01",
+        "effective_to": null
+      },
+      "count": 2,
+      "value_mode": "index",
+      "duplicate_last": true
+    }
+  },
+  "expected": {
+    "empty": {
+      "benchmark_formable": false,
+      "comparison_valid": false,
+      "hard_validity_failure": true,
+      "reason": "BENCHMARK_UNFORMABLE",
+      "holdings_is_none": true,
+      "active_return": null
+    },
+    "duplicate": {
+      "benchmark_formable": false,
+      "comparison_valid": false,
+      "hard_validity_failure": true,
+      "reason": "BENCHMARK_UNFORMABLE",
+      "holdings_is_none": true,
+      "active_return": null
+    },
+    "rel_tol": 0.0,
+    "abs_tol": 1e-15
+  },
+  "forbidden": {
+    "cash_substitute_active": 0.0,
+    "reuse_zero_target_as_benchmark": true
+  }
+}

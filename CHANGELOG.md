@@ -9,6 +9,12 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the Track A PR 3 EXEC-3 continuous path, cost, benchmark, and
+  metric surface: drifted-weight holdings, post-return-equity cost, the
+  factor-matched primary comparison, SPY secondary retention, and path
+  metrics. D-1 now binds those goldens to `campaign.paths` instead of the
+  generic backtester. Existing frozen campaign modules are unchanged.
+  This adds no private data, result access, or 14-trial run.
 - Added the Track A PR 3 EXEC-2 decision-time eligibility, baseline-target,
   and diagnostic surface: the five frozen-at-`t` objects, the three named
   zero-target triggers, equal-weight and random-rank targets, the static
