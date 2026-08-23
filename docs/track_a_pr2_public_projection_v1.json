@@ -1,0 +1,106 @@
+{
+  "schema_version": "public_redacted_projection_v1",
+  "public_projection_id": "efr-eodhd-track-a-pr2-projection-v1",
+  "canonicalization_id": "pit_canonical_json_v1",
+  "manifest_id": "eodhd-track-a-pr2-private-full-manifest-v1",
+  "dataset_roles": [
+    "active_symbols",
+    "benchmark_spy",
+    "delisted_symbols",
+    "dividends",
+    "fundamentals_reference",
+    "historical_membership",
+    "identity_evidence",
+    "member_eod",
+    "splits"
+  ],
+  "policy_states": [
+    {
+      "policy_id": "evidence-ceiling",
+      "state": "diagnostic_only"
+    },
+    {
+      "policy_id": "stage1-license-entitlement",
+      "state": "accepted"
+    }
+  ],
+  "redacted_evidence_refs": [
+    {
+      "evidence_ref_id": "d7-identity-fail-closed"
+    },
+    {
+      "evidence_ref_id": "historical-code-mapping"
+    },
+    {
+      "evidence_ref_id": "identity-acceptance-policy-v2"
+    },
+    {
+      "evidence_ref_id": "temporal-identity-exception-registry-v1"
+    },
+    {
+      "evidence_ref_id": "terminal-readjudication-v2"
+    }
+  ],
+  "published_hashes": [
+    {
+      "hash_id": "acquisition-manifest",
+      "sha256": "99dcfdbd9dad43d197e9bdbd21c706c93190f20ca71cbab78b03ae7843c485c9",
+      "publication_approval_ref_id": "stage1-d3-hashes-counts-metadata"
+    },
+    {
+      "hash_id": "contract-point-in-time-v1",
+      "sha256": "febb08c62d954f738503dcd215967370dbccfda3460481b755fb6607c0182574",
+      "publication_approval_ref_id": "stage1-d3-hashes-counts-metadata"
+    },
+    {
+      "hash_id": "d7-identity-fail-closed",
+      "sha256": "0343b7a3acdaedf90fc91e10b268f23cf5a8cc87d94c73d93e5f9e3f82a87fce",
+      "publication_approval_ref_id": "stage1-d3-hashes-counts-metadata"
+    },
+    {
+      "hash_id": "eod-dataset-readiness-decision-v1",
+      "sha256": "b1aec670b202288463d1fb9825ba6475b00d9b48a84db3bd3cfb76f0b24a7768",
+      "publication_approval_ref_id": "stage1-d3-hashes-counts-metadata"
+    },
+    {
+      "hash_id": "eod-request-ledger",
+      "sha256": "25c62155f06638119862dc4e1d1147c86681ca56ad756f41b15d4dafa89a36b9",
+      "publication_approval_ref_id": "stage1-d3-hashes-counts-metadata"
+    },
+    {
+      "hash_id": "historical-code-mapping",
+      "sha256": "0b2839bba470c1f8f276beffb393d3f346be46073b1cb9fd041a07f332976719",
+      "publication_approval_ref_id": "stage1-d3-hashes-counts-metadata"
+    },
+    {
+      "hash_id": "identity-acceptance-policy-v2",
+      "sha256": "8fbaf2f2327e02ea61d3ea7ae42c4661f14c8be8e123f538fc099e911da5f99e",
+      "publication_approval_ref_id": "stage1-d3-hashes-counts-metadata"
+    },
+    {
+      "hash_id": "membership-reconstruction-policy-v2",
+      "sha256": "5aeb5cc97b666757aaca1100815f9d70878afed45cc49ad3856c48aa67d0a776",
+      "publication_approval_ref_id": "stage1-d3-hashes-counts-metadata"
+    },
+    {
+      "hash_id": "stage1-acceptance-record-v1",
+      "sha256": "53c3180b454b59793efb579f4f396862f1236b82c133b5ea132d1423e8377c6e",
+      "publication_approval_ref_id": "stage1-d3-hashes-counts-metadata"
+    },
+    {
+      "hash_id": "temporal-identity-exception-registry-v1",
+      "sha256": "56d438157bb32090d3341905923d08603e39a5e0811dadc36f82869ebd96c9d7",
+      "publication_approval_ref_id": "stage1-d3-hashes-counts-metadata"
+    },
+    {
+      "hash_id": "terminal-readjudication-v2",
+      "sha256": "ac2b664ef650a99406cf378f1db9e2283dd592274bc5c1cb077d7f2ccc235bc3",
+      "publication_approval_ref_id": "stage1-d3-hashes-counts-metadata"
+    },
+    {
+      "hash_id": "track-a-pr2-plan-v2",
+      "sha256": "79ef61a26fe92b750c42a2af079db024a86d6c19fb0295fc10c98fc399bc2a81",
+      "publication_approval_ref_id": "stage1-d3-hashes-counts-metadata"
+    }
+  ]
+}

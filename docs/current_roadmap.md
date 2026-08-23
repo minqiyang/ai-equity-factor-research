@@ -1,6 +1,6 @@
 # Current Roadmap
 
-Updated: 2026-08-22 after owner acceptance of the Stage 1 entitlement, retention, and publication record.
+Updated: 2026-08-23 after public-safe Track A PR 2 progress publication.
 
 Canonical responsibility: program stage sequence, dependency order, gate and
 completion criteria, and coarse stage status.
@@ -16,7 +16,7 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 - Historical CCA1 start baseline:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
 - Last live-verified protected main:
-  `aacfa58cc6e0e9d7e50a50ef7bd99b3a73bbcf57`.
+  `6957473bdbc5d92c7227d74785d4fc4bc097d035`.
 - PR #180 and PR #181 are merged. No pull request was open at the verified
   start of this work.
 - Track A PR 1 is complete through PR #177: the EODHD diagnostic scope,
@@ -26,8 +26,9 @@ operational checkpoint is in the [current handoff](current_handoff.md).
   runtime, private data, or empirical conclusion.
 - Stage 1 (private entitlement, retention, and publication) is accepted.
   The public-safe record is `docs/stage1_accepted_public_record_v1.json`.
-- The evidence ceiling remains `DIAGNOSTIC_ONLY`. No dataset or formal
-  interpretation has been accepted.
+- The evidence ceiling remains `DIAGNOSTIC_ONLY`. A blinded dataset-review
+  decision of `diagnostic_only` exists locally and is bound here by hash.
+  Dataset acceptance is not granted. Formal interpretation is not accepted.
 - The 2025-05-01 through 2026-05-31 interval remains permanently
   `historical_evaluation`, never a pristine holdout.
 
@@ -46,8 +47,9 @@ operational checkpoint is in the [current handoff](current_handoff.md).
   contracts without duplicating their semantics here.
 - [Decision log](decision_log.md), [engineering log](engineering_log.md), and
   [troubleshooting log](troubleshooting_log.md): historical evidence, not queues.
-- [Stage 1 public-safe record](stage1_accepted_public_record_v1.json) and
-  [identity-evidence aggregates](identity_evidence_public_aggregate_v1.json):
+- [Stage 1 public-safe record](stage1_accepted_public_record_v1.json),
+  [identity-evidence aggregates](identity_evidence_public_aggregate_v1.json),
+  and [Track A PR 2 public status](track_a_pr2_public_status_v1.json):
   hashes and counts only.
 
 ## Active Dependency Chain
@@ -55,7 +57,7 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 | Order | Stage | Status | Dependency or completion criterion |
 | --- | --- | --- | --- |
 | 1 | Private entitlement, retention, and publication gate | Accepted 2026-08-22 | Accepted private capability and written-term record exists; public-safe hashes are in `docs/stage1_accepted_public_record_v1.json`. |
-| 2 | Track A PR 2: dataset manifest and validation | Eligible | Complete with an accepted provider-bound manifest, validator, safe projection, and blinded dataset-review decision. |
+| 2 | Track A PR 2: dataset manifest and validation | In progress; validator public; dataset acceptance not granted | Complete with an accepted provider-bound manifest, validator, safe projection, and owner-accepted blinded dataset-review decision. |
 | 3 | Track A PR 3: bounded diagnostic runner | Blocked by accepted PR 2 review | Complete only with an accepted bounded runner implementing the frozen protocol and deterministic validation surface. |
 | 4 | Detached pre-run binding | Blocked by protected PR 3 merge | Complete only when exact code, configuration, environment, protocol, inventory, and accepted dataset identities are bound outside the repository. |
 | 5 | Track A PR 4: frozen diagnostic evidence | Blocked by stages 3 and 4 | Complete only after all 14 trials run once, every outcome is retained externally, and an approved safe aggregate projection is produced. |

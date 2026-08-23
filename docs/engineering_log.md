@@ -1,5 +1,19 @@
 # Engineering Log
 
+## 2026-08-23 - Public-safe Track A PR 2 validator and status
+
+- Added `src/pit_manifest_validator_v1` with synthetic fixtures and 31
+  focused tests after Codex remediations on this PR. Local full suite on
+  this worktree is 3170 passed, 2 skipped.
+- Published hashes and counts only: manifest
+  `b9d0b1ba…3df32a`, projection `594ec932…fe1111`, decision
+  `7e77a557…de1488`, freeze `c160a3b2…4f0ccd`.
+- Dataset-review class is `diagnostic_only`. Identity remains 0 accepted
+  of 189. Terminal-event policy deferred. Materiality proposal awaits
+  exact-SHA approval. Dataset acceptance not granted.
+- Raw private rows, ticker lists, private paths, and performance values
+  were not published.
+
 ## 2026-08-22 - Stage 1 accepted; public-safe aggregates published
 
 - Owner certified local retention of private data and forbade upload of raw

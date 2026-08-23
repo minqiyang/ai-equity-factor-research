@@ -1,0 +1,46 @@
+{
+  "schema_version": "dataset_review_decision_v1",
+  "review_decision_id": "synthetic-decision-001",
+  "reviewed_at": "2026-08-22T12:00:00Z",
+  "reviewer_id": "synthetic-reviewer-001",
+  "reviewer_authority_reference": "synthetic-authority-001",
+  "contract_id": "point_in_time_data_methodology_contract_v1",
+  "contract_version": "1.0.0",
+  "contract_content_sha256": "febb08c62d954f738503dcd215967370dbccfda3460481b755fb6607c0182574",
+  "contract_protected_merge_sha": "dddddddddddddddddddddddddddddddddddddddd",
+  "manifest_id": "synthetic-private-full-manifest-001",
+  "canonical_manifest_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "canonicalization_id": "pit_canonical_json_v1",
+  "public_projection_id": "projection-001",
+  "public_projection_schema_version": "public_redacted_projection_v1",
+  "public_projection_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+  "declared_dataset_roles": [
+    "member-eod",
+    "historical-membership"
+  ],
+  "declared_use": "diagnostic-campaign",
+  "date_universe_scope": "synthetic-2018-2026",
+  "privacy_publication_scope": "public-hashes-and-counts-only",
+  "applicable_contract_version": "1.0.0",
+  "decision": "diagnostic_only",
+  "findings": [
+    {
+      "finding_id": "identity-terminal-fail-closed-d7a",
+      "severity": "high",
+      "evidence_refs": [
+        {
+          "evidence_ref_id": "evidence-identity-001"
+        },
+        {
+          "evidence_ref_id": "4444444444444444444444444444444444444444444444444444444444444444"
+        }
+      ],
+      "disposition": "diagnostic_only",
+      "unresolved_limitation": "counted-ineligibility-retained"
+    }
+  ],
+  "predecessor_decision_id": null,
+  "decision_canonicalization_id": "pit_canonical_json_v1",
+  "decision_record_sha256": "e3a1c4dad3a9bdf0b17992862048e1eb9b52f592c0e6ea4c7c992e189cf7f628",
+  "public_decision_reference": "decision-ref-001"
+}

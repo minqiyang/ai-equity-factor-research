@@ -1,0 +1,163 @@
+{
+  "schema_version": "private_full_manifest_v1",
+  "manifest_id": "synthetic-private-full-manifest-001",
+  "created_at_utc": "2026-08-22T00:00:00Z",
+  "dataset_role": "campaign-bundle",
+  "provider_label": "synthetic-provider",
+  "provider_product_release": "synthetic-release-001",
+  "retrieved_at_utc": "2026-08-21T21:00:00Z",
+  "as_of_cutoff": "2026-05-29T20:00:00Z",
+  "extraction_identity": {
+    "extraction_id": "synthetic-extraction-001",
+    "coverage_start_inclusive": "2018-01-01",
+    "coverage_end_inclusive": "2026-05-29",
+    "filter_ids": [
+      "filter-synthetic-001"
+    ],
+    "requested_field_ids": [
+      "adjusted-close"
+    ]
+  },
+  "privacy_classification": "private",
+  "code_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "config_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "environment_id": "synthetic-environment-001",
+  "environment_lock_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "canonicalization_id": "pit_canonical_json_v1",
+  "ordered_manifest_sha256": "e2ec594a7ddc7883408b3f8f5248369f646b87ff8371c98ede3c6bec9c0456ac",
+  "canonical_manifest_sha256": "23ff43f3615416c85f2986f961aa84336cc905d422b49d6cfbd91305c765a3a6",
+  "inputs": [
+    {
+      "input_id": "synthetic-prices",
+      "role": "member_eod",
+      "schema_name": "synthetic-eod-schema",
+      "schema_version": "v1",
+      "physical_components": [
+        {
+          "input_id": "synthetic-prices",
+          "component_ordinal": 0,
+          "raw_byte_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "byte_size": 11
+        }
+      ],
+      "row_count": 12,
+      "coverage_start_inclusive": "2018-01-01",
+      "coverage_end_inclusive": "2026-05-29",
+      "hash_publication_classification": "private",
+      "content_status": "raw",
+      "parent_input_ids": [],
+      "parent_input_hashes": [],
+      "transformation_id": null,
+      "code_sha": null,
+      "config_sha256": null,
+      "environment_id": "synthetic-environment-001",
+      "environment_lock_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "identifier_namespace": "synthetic-listing",
+      "currency": "USD",
+      "units": "price",
+      "calendar_id": "XNYS",
+      "timezone": "America/New_York",
+      "timestamp_semantics": "session-close-utc",
+      "adjustment_policy_id": "synthetic-adjustment-001",
+      "revision_policy_id": "synthetic-revision-001",
+      "missingness_policy_id": "synthetic-missingness-001",
+      "publication_policy_id": "synthetic-publication-001",
+      "manual_transformations": [],
+      "quality_exceptions": []
+    },
+    {
+      "input_id": "synthetic-membership",
+      "role": "historical_membership",
+      "schema_name": "synthetic-membership-schema",
+      "schema_version": "v1",
+      "physical_components": [
+        {
+          "input_id": "synthetic-membership",
+          "component_ordinal": 0,
+          "raw_byte_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "byte_size": 17
+        }
+      ],
+      "row_count": 8,
+      "coverage_start_inclusive": "2014-01-24",
+      "coverage_end_inclusive": "2026-05-29",
+      "hash_publication_classification": "private",
+      "content_status": "raw",
+      "parent_input_ids": [],
+      "parent_input_hashes": [],
+      "transformation_id": null,
+      "code_sha": null,
+      "config_sha256": null,
+      "environment_id": "synthetic-environment-001",
+      "environment_lock_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "identifier_namespace": "synthetic-listing",
+      "currency": "NA",
+      "units": "membership",
+      "calendar_id": "XNYS",
+      "timezone": "America/New_York",
+      "timestamp_semantics": "session-close-utc",
+      "adjustment_policy_id": "synthetic-adjustment-001",
+      "revision_policy_id": "synthetic-revision-001",
+      "missingness_policy_id": "synthetic-missingness-001",
+      "publication_policy_id": "synthetic-publication-001",
+      "manual_transformations": [],
+      "quality_exceptions": []
+    },
+    {
+      "input_id": "synthetic-derived",
+      "role": "security_master",
+      "schema_name": "synthetic-derived-schema",
+      "schema_version": "v1",
+      "physical_components": [
+        {
+          "input_id": "synthetic-derived",
+          "component_ordinal": 0,
+          "raw_byte_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "byte_size": 19
+        }
+      ],
+      "row_count": 8,
+      "coverage_start_inclusive": "2014-01-24",
+      "coverage_end_inclusive": "2026-05-29",
+      "hash_publication_classification": "publication_approved",
+      "content_status": "derived",
+      "parent_input_ids": [
+        "synthetic-membership",
+        "synthetic-prices"
+      ],
+      "parent_input_hashes": [
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "transformation_id": "synthetic-transform-001",
+      "code_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "config_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "environment_id": "synthetic-environment-001",
+      "environment_lock_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "identifier_namespace": "synthetic-listing",
+      "currency": "USD",
+      "units": "identity",
+      "calendar_id": "XNYS",
+      "timezone": "America/New_York",
+      "timestamp_semantics": "session-close-utc",
+      "adjustment_policy_id": "synthetic-adjustment-001",
+      "revision_policy_id": "synthetic-revision-001",
+      "missingness_policy_id": "synthetic-missingness-001",
+      "publication_policy_id": "synthetic-publication-001",
+      "manual_transformations": [
+        {
+          "transformation_id": "synthetic-manual-001",
+          "code_sha": "cccccccccccccccccccccccccccccccccccccccc",
+          "config_sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+        }
+      ],
+      "quality_exceptions": [
+        {
+          "exception_id": "synthetic-exception-001",
+          "disposition": "diagnostic_only",
+          "reviewer_id": "synthetic-reviewer-001"
+        }
+      ]
+    }
+  ]
+}

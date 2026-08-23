@@ -1,0 +1,161 @@
+{
+  "schema_version": "track_a_pr2_freeze_record_v1",
+  "freeze_record_id": "synthetic-freeze-001",
+  "canonicalization_id": "pit_canonical_json_v1",
+  "as_of_cutoff": "2026-05-29T20:00:00Z",
+  "role_coverage": [
+    {
+      "role": "historical_membership",
+      "coverage_start_inclusive": "2018-01-01",
+      "coverage_end_inclusive": "2026-05-29",
+      "row_count": 12,
+      "limitation_state": "none",
+      "limitation_id": null
+    },
+    {
+      "role": "member_eod",
+      "coverage_start_inclusive": "2018-01-01",
+      "coverage_end_inclusive": "2026-05-29",
+      "row_count": 12,
+      "limitation_state": "none",
+      "limitation_id": null
+    },
+    {
+      "role": "delisted_symbols",
+      "coverage_start_inclusive": "2018-01-01",
+      "coverage_end_inclusive": "2026-05-29",
+      "row_count": 12,
+      "limitation_state": "none",
+      "limitation_id": null
+    },
+    {
+      "role": "symbol_change_history",
+      "coverage_start_inclusive": "2022-07-22",
+      "coverage_end_inclusive": "2026-05-29",
+      "row_count": 4,
+      "limitation_state": "counted_evidence_limitation",
+      "limitation_id": "synthetic-symbol-change-gap"
+    },
+    {
+      "role": "splits",
+      "coverage_start_inclusive": "2018-01-01",
+      "coverage_end_inclusive": "2026-05-29",
+      "row_count": 12,
+      "limitation_state": "none",
+      "limitation_id": null
+    },
+    {
+      "role": "dividends",
+      "coverage_start_inclusive": "2018-01-01",
+      "coverage_end_inclusive": "2026-05-29",
+      "row_count": 12,
+      "limitation_state": "none",
+      "limitation_id": null
+    },
+    {
+      "role": "benchmark_spy",
+      "coverage_start_inclusive": "2018-01-01",
+      "coverage_end_inclusive": "2026-05-29",
+      "row_count": 12,
+      "limitation_state": "none",
+      "limitation_id": null
+    }
+  ],
+  "coverage_labels": [
+    "coverage_all_available",
+    "coverage_primary_quality_window",
+    "coverage_pre_2018_limited"
+  ],
+  "calendar": {
+    "calendar_id": "XNYS",
+    "calendar_version": "synthetic-calendar-v1",
+    "calendar_evidence_ref": "5555555555555555555555555555555555555555555555555555555555555555",
+    "source_timezone": "America/New_York",
+    "utc_conversion_rule": "session-close-to-utc",
+    "environment_id": "synthetic-environment-001",
+    "environment_lock_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "lineage_and_terminal": {
+    "membership_policy_id": "membership-reconstruction-policy-v2",
+    "membership_policy_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "snapshot_authority": "snapshot_primary",
+    "as_of_rule": "s_eq_max_snapshot_date_le_t",
+    "carry_forward": "event_driven_no_fixed_age_limit",
+    "baseline_date": "2014-01-24",
+    "pre_baseline_claims": "forbidden",
+    "invented_start_date": "forbidden",
+    "start_date_boundary": "inclusive",
+    "end_date_boundary": "exclusive",
+    "interval_notation": "[StartDate, EndDate)",
+    "factor_anchor_lineage_id": "factor_anchor_lineage_v1",
+    "terminal_event_policy_state": "candidate_not_accepted",
+    "terminal_event_policy_sha256": null
+  },
+  "exclusions": [
+    {
+      "exclusion_id": "conflicting-snapshot-interval",
+      "exclusion_class": "conflicting_snapshot_undefined_interval",
+      "count": 1,
+      "evidence_sha256": "7777777777777777777777777777777777777777777777777777777777777777"
+    },
+    {
+      "exclusion_id": "pre-baseline-dates",
+      "exclusion_class": "pre_baseline_date",
+      "count": 0,
+      "evidence_sha256": "8888888888888888888888888888888888888888888888888888888888888888"
+    },
+    {
+      "exclusion_id": "null-startdate-unobserved",
+      "exclusion_class": "null_startdate_never_in_valid_snapshot",
+      "count": 2,
+      "evidence_sha256": "9999999999999999999999999999999999999999999999999999999999999999"
+    },
+    {
+      "exclusion_id": "d7-identity-ineligible",
+      "exclusion_class": "d7_adjudicated_identity_ineligible",
+      "count": 2,
+      "evidence_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "exclusion_id": "quarantined-payloads",
+      "exclusion_class": "quarantined_payload",
+      "count": 0,
+      "evidence_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ],
+  "coverage_thresholds": {
+    "factor_month_eligible_listing_floor": 100,
+    "distinct_finite_factor_value_floor": 10,
+    "common_complete_case_month_floor": 60,
+    "zero_target_triggers": [
+      "ELIGIBLE_SECURITY_COUNT_BELOW_100_AT_T",
+      "DISTINCT_FINITE_FACTOR_VALUE_COUNT_BELOW_10_AT_T",
+      "DUPLICATE_CANONICAL_LISTING_KEY_BYTES_AT_T"
+    ]
+  },
+  "materiality_thresholds": {
+    "state": "proposed",
+    "performance_informed_selection": "FORBIDDEN",
+    "thresholds": [
+      {
+        "threshold_id": "synthetic-invalidation-001",
+        "value": "0.25",
+        "evidence_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    ]
+  },
+  "contract_binding": {
+    "contract_id": "point_in_time_data_methodology_contract_v1",
+    "contract_version": "1.0.0",
+    "contract_content_sha256": "febb08c62d954f738503dcd215967370dbccfda3460481b755fb6607c0182574",
+    "contract_protected_merge_sha": "dddddddddddddddddddddddddddddddddddddddd"
+  },
+  "identity_fail_closed": {
+    "identities_adjudicated": 2,
+    "accepted_identities": 0,
+    "disposition": "A_ACCEPT_TERMINAL_FAIL_CLOSED",
+    "effect": "UNRESOLVED_IDENTITIES_ROUTE_THROUGH_FROZEN_DECISION_TIME_ELIGIBILITY_AS_COUNTED_INELIGIBILITY",
+    "scope": "only_adjudicated_unresolved_identities_and_affected_episodes"
+  },
+  "freeze_record_sha256": "05565a24a1f5a4b1c7a726d4f42372b3d87dda509e0a0fe0881c13f1a2d7ef53"
+}
