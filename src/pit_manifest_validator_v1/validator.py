@@ -48,7 +48,11 @@ REQUIRED_DECISION_BINDING_KEYS = frozenset(
         "contract_content_sha256",
         "contract_protected_merge_sha",
         "created_at_utc",
+        "manifest_producer_id",
     }
+)
+PRODUCER_BINDING_KEYS = frozenset(
+    {"manifest_producer_id", "projection_producer_id", "code_author_id"}
 )
 PRIVATE_FULL_MANIFEST_SCHEMA = "private_full_manifest_v1"
 ORDERED_INVENTORY_SCHEMA = "ordered_component_inventory_v1"
@@ -1284,23 +1288,34 @@ def project_dataset_review_decision(
         ),
     }
     _reject_decision_more_permissive_than_findings(projection)
-    if expected_binding:
+    if expected_binding is not None:
         provided = set(expected_binding)
-        unknown = sorted(provided - REQUIRED_DECISION_BINDING_KEYS - EVIDENCE_TIME_BINDING_KEYS)
+        unknown = sorted(
+            provided
+            - REQUIRED_DECISION_BINDING_KEYS
+            - EVIDENCE_TIME_BINDING_KEYS
+            - PRODUCER_BINDING_KEYS
+        )
         if unknown:
             fail("UNEXPECTED_VALUE", unknown[0])
         missing = sorted(REQUIRED_DECISION_BINDING_KEYS - provided)
         if missing:
             fail("MISSING_KEY", missing[0])
         evidence_times: list[str] = []
+        producer_ids: set[str] = set()
         for field, expected in expected_binding.items():
             if field in EVIDENCE_TIME_BINDING_KEYS:
                 evidence_times.append(normalize_timestamp(expected, field))
+                continue
+            if field in PRODUCER_BINDING_KEYS:
+                producer_ids.add(require_nonempty_nfc(expected, field))
                 continue
             if field not in projection:
                 fail("UNEXPECTED_VALUE", field)
             if projection[field] != expected:
                 fail("BINDING_MISMATCH", field)
+        if str(projection["reviewer_id"]) in producer_ids:
+            fail("SELF_ISSUED_DECISION", "reviewer_id")
         reviewed_at = str(projection["reviewed_at"])
         if reviewed_at < max(evidence_times):
             fail("BACKDATED_DECISION", "reviewed_at")

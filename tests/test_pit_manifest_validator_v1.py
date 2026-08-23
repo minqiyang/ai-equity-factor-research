@@ -46,6 +46,23 @@ def _load_json(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _full_binding(decision: dict[str, object], **overrides: str) -> dict[str, str]:
+    binding = {
+        "manifest_id": str(decision["manifest_id"]),
+        "canonical_manifest_sha256": str(decision["canonical_manifest_sha256"]),
+        "public_projection_id": str(decision["public_projection_id"]),
+        "public_projection_sha256": str(decision["public_projection_sha256"]),
+        "contract_id": str(decision["contract_id"]),
+        "contract_version": str(decision["contract_version"]),
+        "contract_content_sha256": str(decision["contract_content_sha256"]),
+        "contract_protected_merge_sha": str(decision["contract_protected_merge_sha"]),
+        "created_at_utc": "2026-08-22T00:00:00Z",
+        "manifest_producer_id": "synthetic-manifest-producer-001",
+    }
+    binding.update(overrides)
+    return binding
+
+
 def _assert_error(operation, code: str) -> ValidationError:
     with pytest.raises(ValidationError) as captured:
         operation()
@@ -376,18 +393,7 @@ def test_valid_decision_record_and_binding_tuple() -> None:
     result = validate_document(
         decision,
         "dataset_review_decision",
-        expected_binding={
-            "manifest_id": decision["manifest_id"],
-            "canonical_manifest_sha256": decision["canonical_manifest_sha256"],
-            "public_projection_id": decision["public_projection_id"],
-            "public_projection_sha256": decision["public_projection_sha256"],
-            "contract_id": decision["contract_id"],
-            "contract_version": decision["contract_version"],
-            "contract_content_sha256": decision["contract_content_sha256"],
-            "contract_protected_merge_sha": decision["contract_protected_merge_sha"],
-            "created_at_utc": "2026-08-22T00:00:00Z",
-            "retrieved_at_utc": "2026-08-21T21:00:00Z",
-        },
+        expected_binding=_full_binding(decision, retrieved_at_utc="2026-08-21T21:00:00Z"),
     )
     assert result["projection"]["decision"] in DECISION_STATES
     assert result["sha256"] == decision["decision_record_sha256"]
@@ -396,17 +402,7 @@ def test_valid_decision_record_and_binding_tuple() -> None:
         lambda: validate_document(
             mismatched,
             "dataset_review_decision",
-            expected_binding={
-                "manifest_id": "other-manifest",
-                "canonical_manifest_sha256": decision["canonical_manifest_sha256"],
-                "public_projection_id": decision["public_projection_id"],
-                "public_projection_sha256": decision["public_projection_sha256"],
-                "contract_id": decision["contract_id"],
-                "contract_version": decision["contract_version"],
-                "contract_content_sha256": decision["contract_content_sha256"],
-                "contract_protected_merge_sha": decision["contract_protected_merge_sha"],
-                "created_at_utc": "2026-08-22T00:00:00Z",
-            },
+            expected_binding=_full_binding(decision, manifest_id="other-manifest"),
         ),
         "BINDING_MISMATCH",
     )
@@ -418,6 +414,14 @@ def test_valid_decision_record_and_binding_tuple() -> None:
                 "manifest_id": decision["manifest_id"],
                 "created_at_utc": "2026-08-22T00:00:00Z",
             },
+        ),
+        "MISSING_KEY",
+    )
+    _assert_error(
+        lambda: validate_document(
+            decision,
+            "dataset_review_decision",
+            expected_binding={},
         ),
         "MISSING_KEY",
     )
@@ -437,23 +441,27 @@ def test_finding_without_evidence_refs_fails_closed() -> None:
 
 def test_bound_decision_cannot_be_backdated_before_evidence() -> None:
     decision = deepcopy(_load_json(DECISION_PATH))
-    binding = {
-        "manifest_id": decision["manifest_id"],
-        "canonical_manifest_sha256": decision["canonical_manifest_sha256"],
-        "public_projection_id": decision["public_projection_id"],
-        "public_projection_sha256": decision["public_projection_sha256"],
-        "contract_id": decision["contract_id"],
-        "contract_version": decision["contract_version"],
-        "contract_content_sha256": decision["contract_content_sha256"],
-        "contract_protected_merge_sha": decision["contract_protected_merge_sha"],
-        "created_at_utc": "2026-08-22T00:00:00Z",
-    }
+    binding = _full_binding(decision)
     decision["reviewed_at"] = "0001-01-01T00:00:00Z"
     _assert_error(
         lambda: project_dataset_review_decision(
             decision, expected_binding=binding, verify_digest=False
         ),
         "BACKDATED_DECISION",
+    )
+
+
+def test_self_issued_accepted_decision_fails_closed() -> None:
+    decision = deepcopy(_load_json(DECISION_PATH))
+    decision["decision"] = "accepted"
+    decision["findings"][0]["disposition"] = "accepted"
+    decision["findings"][0]["unresolved_limitation"] = None
+    decision["reviewer_id"] = "synthetic-manifest-producer-001"
+    _assert_error(
+        lambda: project_dataset_review_decision(
+            decision, expected_binding=_full_binding(decision), verify_digest=False
+        ),
+        "SELF_ISSUED_DECISION",
     )
 
 
