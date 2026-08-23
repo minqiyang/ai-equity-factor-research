@@ -9,6 +9,13 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Closed remaining Track A PR 3 exact-head findings: `authorize` now
+  refuses unless `RunConfig.environment_id` and
+  `environment_lock_sha256` match the accepted record calendar, and a
+  grant must list `TRACK_A_PR3_PLANNING` in `now_eligible`. Empty or
+  unrelated eligibility still refuses, and planning-only grants still
+  cannot emit a result-bearing run. F-1 and F-2 were not authorized.
+  This adds no private data, result access, or 14-trial run.
 - Closed owner-authorized Track A PR 3 FIX-4 findings F-3, F-4, and F-5:
   Rank IC now invalidates a month when any pair member is missing, Boolean,
   or non-finite; evidence-bundle assembly fails when a frozen protocol or

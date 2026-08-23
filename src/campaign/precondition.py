@@ -50,6 +50,8 @@ _REASON_PROTOCOL_ABSENT = "PROTOCOL_FREEZE_ABSENT"
 _REASON_INVENTORY_ABSENT = "TRIAL_INVENTORY_ABSENT"
 _REASON_CALENDAR_ID = "CALENDAR_ID_MISMATCH"
 _REASON_CALENDAR_VERSION = "CALENDAR_VERSION_MISMATCH"
+_REASON_ENVIRONMENT_ID = "ENVIRONMENT_ID_MISMATCH"
+_REASON_ENVIRONMENT_LOCK = "ENVIRONMENT_LOCK_SHA256_MISMATCH"
 _REASON_ELIGIBLE_FORBIDDEN_STAGE = "GRANT_NOW_ELIGIBLE_AUTHORIZES_FORBIDDEN_STAGE"
 _REASON_INTENDED_STAGE_FORBIDDEN = "GRANT_DOES_NOT_AUTHORIZE_TRACK_A_PR3_PLANNING"
 _REASON_FOURTEEN_TRIAL_FORBIDDEN = "GRANT_DOES_NOT_AUTHORIZE_FOURTEEN_TRIAL_RUN"
@@ -436,6 +438,12 @@ def _authorize_record_fields(
         return _refuse(_REASON_CALENDAR_ID)
     if calendar["calendar_version"] != getattr(config, "calendar_version"):
         return _refuse(_REASON_CALENDAR_VERSION)
+    if calendar["environment_id"] != getattr(config, "environment_id"):
+        return _refuse(_REASON_ENVIRONMENT_ID)
+    if calendar["environment_lock_sha256"] != getattr(
+        config, "environment_lock_sha256"
+    ):
+        return _refuse(_REASON_ENVIRONMENT_LOCK)
     return None
 
 
@@ -498,6 +506,8 @@ def _authorize_grant_fields(
     if any(stage in eligible for stage in _RESULT_BEARING_STAGES):
         return _refuse(_REASON_ELIGIBLE_FORBIDDEN_STAGE)
     if _STAGE_PR3_PLANNING in forbidden:
+        return _refuse(_REASON_INTENDED_STAGE_FORBIDDEN)
+    if _STAGE_PR3_PLANNING not in eligible:
         return _refuse(_REASON_INTENDED_STAGE_FORBIDDEN)
     return None
 

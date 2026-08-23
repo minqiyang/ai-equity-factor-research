@@ -1,5 +1,28 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-5 environment bind and planning eligibility
+
+- Implemented exact-head Codex items from card `EFR-GRK-PR3-FIX-5` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `935140e3976b558e7c6be1d767d544bc56c27bc5`. F-1 and F-2 stayed out of
+  scope. Rank IC, frozen bundle digests, Boolean real-vector rejection,
+  calendar id/version binding, and return scalar/lineage price binding
+  were not reopened.
+- `authorize` now compares `RunConfig.environment_id` and
+  `environment_lock_sha256` with `record["calendar"]` before
+  `AUTHORIZED`. The detached binding already carries those fields and
+  still refuses a field mismatch. Changing both config and binding while
+  leaving the accepted record unchanged now refuses.
+- `authorize` now requires `TRACK_A_PR3_PLANNING` in `grant.now_eligible`.
+  Empty or unrelated eligibility returns
+  `GRANT_DOES_NOT_AUTHORIZE_TRACK_A_PR3_PLANNING`. `run_campaign` still
+  refuses a result-bearing bundle under the planning-only grant.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited. No private panel, performance value, or 14-trial run was
+  accessed.
+- Focused campaign tests passed 148. Full suite after repo-map refresh:
+  2388 passed, 2 existing platform-conditional skipped.
+
 ## 2026-08-23 - Track A PR 3 FIX-4 Rank IC, bundle digest fields, Boolean vectors
 
 - Implemented owner-authorized closed set F-3, F-4, and F-5 from card

@@ -367,6 +367,79 @@ def test_calendar_mutation_refuses_before_authorized(tmp_path: Path) -> None:
     assert fixture["forbidden"]["authorize_altered_calendar"]
 
 
+def test_environment_mutation_refuses_before_authorized(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("environment_binding_mutation.json")
+    expected = fixture["expected"]
+    inputs = fixture["inputs"]
+    environment_id = authorize(
+        _authorized_config(environment_id=inputs["wrong_environment_id"])
+    )
+    assert environment_id.status == expected["status"]
+    assert environment_id.reason == expected["environment_id_reason"]
+    environment_lock = authorize(
+        _authorized_config(
+            environment_lock_sha256=inputs["wrong_environment_lock_sha256"]
+        )
+    )
+    assert environment_lock.status == expected["status"]
+    assert environment_lock.reason == expected["environment_lock_reason"]
+    binding = json.loads(
+        fixture_file("precondition/binding_valid.json").read_text(encoding="utf-8")
+    )
+    binding["environment_id"] = inputs["wrong_environment_id"]
+    binding["environment_lock_sha256"] = inputs["wrong_environment_lock_sha256"]
+    joint_path = tmp_path / "binding_environment_joint.json"
+    _write_json(joint_path, binding)
+    joint = authorize(
+        _authorized_config(
+            environment_id=inputs["wrong_environment_id"],
+            environment_lock_sha256=inputs["wrong_environment_lock_sha256"],
+            detached_binding_file=str(joint_path),
+        )
+    )
+    assert joint.status == expected["status"]
+    assert joint.reason == expected["environment_id_reason"]
+    binding["environment_lock_sha256"] = _authorized_config().environment_lock_sha256
+    id_path = tmp_path / "binding_environment_id.json"
+    _write_json(id_path, binding)
+    binding_id = authorize(_authorized_config(detached_binding_file=str(id_path)))
+    assert binding_id.status == expected["status"]
+    assert binding_id.reason == expected["binding_field_reason"]
+    binding["environment_id"] = _authorized_config().environment_id
+    binding["environment_lock_sha256"] = inputs["wrong_environment_lock_sha256"]
+    lock_path = tmp_path / "binding_environment_lock.json"
+    _write_json(lock_path, binding)
+    binding_lock = authorize(_authorized_config(detached_binding_file=str(lock_path)))
+    assert binding_lock.status == expected["status"]
+    assert binding_lock.reason == expected["binding_field_reason"]
+    assert fixture["forbidden"]["authorize_altered_environment"]
+
+
+def test_planning_eligibility_required_before_authorized(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("planning_eligibility_mutation.json")
+    expected = fixture["expected"]
+    base_grant = json.loads(
+        fixture_file("precondition/grant_valid.json").read_text(encoding="utf-8")
+    )
+    for value in (
+        fixture["inputs"]["empty_now_eligible"],
+        fixture["inputs"]["unrelated_now_eligible"],
+    ):
+        grant = json.loads(json.dumps(base_grant))
+        grant["now_eligible"] = value
+        grant_path = tmp_path / "planning_grant.json"
+        grant_raw = _write_json(grant_path, grant)
+        result = authorize(
+            _authorized_config(
+                stage2_grant_file=str(grant_path),
+                stage2_grant_file_sha256=sha256_hex(grant_raw),
+            )
+        )
+        assert result.status == expected["status"]
+        assert result.reason == expected["reason"]
+    assert fixture["forbidden"]["authorize_without_planning_eligibility"]
+
+
 def test_missing_or_unreadable_authorization_inputs_refuse(
     tmp_path: Path,
 ) -> None:

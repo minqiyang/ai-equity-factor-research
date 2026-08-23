@@ -10,7 +10,7 @@
     "decile_count": 10,
     "embargo_rows": 0,
     "environment_id": "synthetic-environment",
-    "environment_lock_sha256": "1010101010101010101010101010101010101010101010101010101010101010",
+    "environment_lock_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
     "familywise_alpha": "0.05",
     "horizon_purge_signal_axis_rows": 22,
     "horizon_return_rows": 21,

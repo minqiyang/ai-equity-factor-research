@@ -5,7 +5,7 @@
   "calendar_id": "XNYS",
   "calendar_version": "synthetic-calendar-v1",
   "environment_id": "synthetic-environment",
-  "environment_lock_sha256": "1010101010101010101010101010101010101010101010101010101010101010",
+  "environment_lock_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
   "protocol_file_sha256": "04661db15bc753b12f357b86d5f54e4098aeb611362e117dcaea8d816bed1232",
   "runner_code_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "schema_version": "campaign_detached_binding_v1",
