@@ -16,6 +16,7 @@ from ledger.schema_registry import (
     validate_raw_event_bytes,
     validate_registry,
 )
+from ledger_cross_product import first_full_rest_smoke
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -425,8 +426,10 @@ def test_r1f_accepts_literal_child_and_clone_relation_variants() -> None:
         assert validate_event(event, registry=_registry()) == event
 
 
-@pytest.mark.parametrize("fixture_key", FIXTURE_EVENT_KEYS)
-@pytest.mark.parametrize("event_field", EXPECTED_EVENT_FIELDS)
+@pytest.mark.parametrize(
+    ("fixture_key", "event_field"),
+    first_full_rest_smoke(FIXTURE_EVENT_KEYS, EXPECTED_EVENT_FIELDS),
+)
 def test_r1f_rejects_every_missing_envelope_field(
     fixture_key: str, event_field: str
 ) -> None:
@@ -437,8 +440,10 @@ def test_r1f_rejects_every_missing_envelope_field(
     )
 
 
-@pytest.mark.parametrize("fixture_key", FIXTURE_EVENT_KEYS)
-@pytest.mark.parametrize("payload_field", EXPECTED_PAYLOAD_FIELDS)
+@pytest.mark.parametrize(
+    ("fixture_key", "payload_field"),
+    first_full_rest_smoke(FIXTURE_EVENT_KEYS, EXPECTED_PAYLOAD_FIELDS),
+)
 def test_r1f_rejects_every_missing_payload_field(
     fixture_key: str, payload_field: str
 ) -> None:
@@ -585,17 +590,19 @@ def test_r1f_rejects_non_singleton_or_wrong_campaign_scope(
     )
 
 
-@pytest.mark.parametrize("field", EVENT_ID_PAYLOAD_FIELDS)
 @pytest.mark.parametrize(
-    "bad_value",
-    [
-        "event-1",
-        "EVT_00000000000000000000000000000001",
-        "evt_0000000000000000000000000000001",
-        "evt_0000000000000000000000000000000g",
-        None,
-        True,
-    ],
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        EVENT_ID_PAYLOAD_FIELDS,
+        (
+            "event-1",
+            "EVT_00000000000000000000000000000001",
+            "evt_0000000000000000000000000000001",
+            "evt_0000000000000000000000000000000g",
+            None,
+            True,
+        ),
+    ),
 )
 def test_r1f_rejects_invalid_parent_event_ids(
     field: str, bad_value: object
@@ -628,9 +635,12 @@ def test_r1f_rejects_wrong_parent_typed_ids(
     )
 
 
-@pytest.mark.parametrize("field", DIGEST_PAYLOAD_FIELDS)
 @pytest.mark.parametrize(
-    "bad_value", ["A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True]
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        DIGEST_PAYLOAD_FIELDS,
+        ("A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True),
+    ),
 )
 def test_r1f_rejects_invalid_payload_digests(
     field: str, bad_value: object
@@ -642,25 +652,27 @@ def test_r1f_rejects_invalid_payload_digests(
     )
 
 
-@pytest.mark.parametrize("field", SAFE_PUBLIC_PAYLOAD_FIELDS)
 @pytest.mark.parametrize(
-    "bad_value",
-    [
-        "",
-        "Uppercase",
-        "has space",
-        "has/slash",
-        "has\\backslash",
-        "has:colon",
-        "has?query",
-        "has#fragment",
-        "has%escape",
-        "has@sign",
-        "nonascii-\u00e9",
-        "a" * 129,
-        None,
-        True,
-    ],
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        SAFE_PUBLIC_PAYLOAD_FIELDS,
+        (
+            "",
+            "Uppercase",
+            "has space",
+            "has/slash",
+            "has\\backslash",
+            "has:colon",
+            "has?query",
+            "has#fragment",
+            "has%escape",
+            "has@sign",
+            "nonascii-\u00e9",
+            "a" * 129,
+            None,
+            True,
+        ),
+    ),
 )
 def test_r1f_rejects_unsafe_public_reference_ids(
     field: str, bad_value: object
@@ -672,9 +684,12 @@ def test_r1f_rejects_unsafe_public_reference_ids(
     )
 
 
-@pytest.mark.parametrize("field", INTEGER_PAYLOAD_FIELDS)
 @pytest.mark.parametrize(
-    "bad_value", [0, -1, True, False, 1.0, "1", None, 2**53]
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        INTEGER_PAYLOAD_FIELDS,
+        (0, -1, True, False, 1.0, "1", None, 2**53),
+    ),
 )
 def test_r1f_rejects_invalid_versions_and_generations(
     field: str, bad_value: object

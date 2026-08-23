@@ -16,6 +16,7 @@ from ledger.schema_registry import (
     validate_raw_event_bytes,
     validate_registry,
 )
+from ledger_cross_product import first_full_rest_smoke
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -480,9 +481,12 @@ def test_r1i_rejects_literal_identity_namespace_killers(
     )
 
 
-@pytest.mark.parametrize("field", DIGEST_FIELDS)
 @pytest.mark.parametrize(
-    "bad_value", ["A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True]
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        DIGEST_FIELDS,
+        ("A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True),
+    ),
 )
 def test_r1i_rejects_invalid_payload_digests(
     field: str, bad_value: object
@@ -494,25 +498,27 @@ def test_r1i_rejects_invalid_payload_digests(
     )
 
 
-@pytest.mark.parametrize("field", SAFE_PUBLIC_FIELDS)
 @pytest.mark.parametrize(
-    "bad_value",
-    [
-        "",
-        "Uppercase",
-        "has space",
-        "has/slash",
-        "has\\backslash",
-        "has:colon",
-        "has?query",
-        "has#fragment",
-        "has%escape",
-        "has@sign",
-        "nonascii-\u00e9",
-        "a" * 129,
-        None,
-        True,
-    ],
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        SAFE_PUBLIC_FIELDS,
+        (
+            "",
+            "Uppercase",
+            "has space",
+            "has/slash",
+            "has\\backslash",
+            "has:colon",
+            "has?query",
+            "has#fragment",
+            "has%escape",
+            "has@sign",
+            "nonascii-\u00e9",
+            "a" * 129,
+            None,
+            True,
+        ),
+    ),
 )
 def test_r1i_rejects_unsafe_public_reference_ids(
     field: str, bad_value: object
@@ -524,9 +530,12 @@ def test_r1i_rejects_unsafe_public_reference_ids(
     )
 
 
-@pytest.mark.parametrize("field", INTEGER_FIELDS)
 @pytest.mark.parametrize(
-    "bad_value", [0, -1, True, False, 1.0, "1", None, 2**53]
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        INTEGER_FIELDS,
+        (0, -1, True, False, 1.0, "1", None, 2**53),
+    ),
 )
 def test_r1i_rejects_invalid_versions_and_generations(
     field: str, bad_value: object

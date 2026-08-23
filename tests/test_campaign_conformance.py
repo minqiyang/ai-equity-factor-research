@@ -251,7 +251,8 @@ def test_ci_runs_only_committed_synthetic_campaign_fixtures() -> None:
     workflow = CI_WORKFLOW.read_text(encoding="utf-8")
     lowered = workflow.lower()
     assert "python -m pytest -q" in workflow
-    assert "python_files=test_campaign_*.py" in workflow
+    assert workflow.count("python -m pytest -q") == 1
+    assert "python_files=test_campaign_*.py" not in workflow
     assert "committed synthetic fixtures" in lowered
     assert "not result-bearing" in lowered
     assert "private panel" in lowered

@@ -10,6 +10,7 @@ from ledger.schema_registry import (
     canonical_registry_bytes,
     load_default_registry,
     load_registry_bytes,
+    load_registry_release,
     parse_json_bytes,
     registry_digest,
     run_conformance_vectors,
@@ -120,6 +121,24 @@ def test_default_registry_is_incomplete_and_covers_vocabulary_once() -> None:
     assert "PAYLOAD_SCHEMA_REGISTRY_ACCEPTED" not in source
     assert "TODO" not in source
     assert "wildcard" not in source.lower()
+
+
+def test_registry_release_loads_are_isolated_from_caller_mutation() -> None:
+    first = load_registry_release("0.1.0")
+    second = load_registry_release("0.1.0")
+    assert first == second
+    assert first is not second
+    first["registry_status"] = "MUTATED"
+    third = load_registry_release("0.1.0")
+    assert third == second
+    assert first != third
+
+
+def test_unsupported_registry_release_still_fail_closed() -> None:
+    _assert_code(
+        "INVALID_REGISTRY",
+        lambda: load_registry_release("0.10.0"),
+    )
 
 
 def test_registry_digest_is_literal_reordered_and_mutation_sensitive() -> None:
