@@ -58,16 +58,12 @@ methodology-process evidence.
 
 ## Current program status
 
-Track A is a frozen three-factor, 14-trial diagnostic. The evidence ceiling is
-`DIAGNOSTIC_ONLY`.
+Track A is a frozen three-factor, 14-trial diagnostic design. The evidence ceiling remains `DIAGNOSTIC_ONLY`, and dataset acceptance is not granted.
 
-- Stage 1 (entitlement, retention, publication) is accepted. Public-safe
-  hashes and capability conclusions:
-  [stage1_accepted_public_record_v1.json](docs/stage1_accepted_public_record_v1.json).
-- Identity-evidence aggregates:
-  [identity_evidence_public_aggregate_v1.json](docs/identity_evidence_public_aggregate_v1.json).
-- Track A PR 2 (dataset manifest and blinded review) is eligible. See the
-  [current roadmap](docs/current_roadmap.md).
+- Stage 1 (entitlement, retention, publication) is accepted. Public-safe hashes and capability conclusions: [stage1_accepted_public_record_v1.json](docs/stage1_accepted_public_record_v1.json) and [identity_evidence_public_aggregate_v1.json](docs/identity_evidence_public_aggregate_v1.json).
+- Track A PR 2 (manifest validation and blinded review) public status: [track_a_pr2_public_status.md](docs/track_a_pr2_public_status.md) ([machine-readable JSON](docs/track_a_pr2_public_status_v1.json)). Includes the `src/pit_manifest_validator_v1/` package and blinded review decision `diagnostic_only` in [dataset_review_public_projection_v1.json](docs/dataset_review_public_projection_v1.json).
+- Track A PR 3 (diagnostic campaign runner) landed through PR #187 as shippable `src/campaign/` code (registry, eligibility, paths, benchmarks, precondition, runner, bundle, and synthetic fixtures). The 14-trial diagnostic run has not executed.
+- See the [current roadmap](docs/current_roadmap.md) for execution gates and milestone tracking.
 
 ## Quality gates
 
