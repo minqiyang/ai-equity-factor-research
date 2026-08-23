@@ -1,5 +1,21 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 EXEC-5 import-boundary, conformance, docs, CI
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-5` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `70120dc505349b45a8dc27b22b78f3e3847b149a`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- Added import-boundary, no-default, and T-7 owner-uniqueness conformance
+  tests, the public-safe runner design note, a repo-map refresh, and CI
+  wiring that runs committed synthetic campaign fixtures only. Existing
+  campaign modules, including `inference.py` at `be2e743c…50a130`, were
+  not edited.
+- Focused campaign tests passed 135. Full suite after repo-map refresh:
+  3257 passed, 2 existing platform-conditional skipped.
+- No private panel, performance value, or 14-trial run was accessed. This
+  card does not open a PR.
+
 ## 2026-08-23 - Track A PR 3 EXEC-4 precondition, reconciliation, runner, bundle
 
 - Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-4` on

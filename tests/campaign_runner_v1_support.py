@@ -179,6 +179,28 @@ def expand_decision_time_listings(spec: dict[str, Any]) -> tuple[Any, ...]:
     return tuple(listings)
 
 
+def collect_disallowed_factor_id_literals_from_source(
+    source: str,
+    module_name: str,
+    factor_ids: tuple[str, ...],
+) -> tuple[tuple[int, str], ...]:
+    """Collect disallowed factor-ID literals from one module's source."""
+
+    tree = ast.parse(source, filename=module_name)
+    docstring_nodes = _docstring_constant_ids(tree)
+    allowed_nodes = _allowed_owner_constant_ids(tree, module_name)
+    hits: list[tuple[int, str]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Constant):
+            continue
+        if not isinstance(node.value, str) or node.value not in factor_ids:
+            continue
+        if id(node) in docstring_nodes or id(node) in allowed_nodes:
+            continue
+        hits.append((node.lineno, node.value))
+    return tuple(hits)
+
+
 def collect_disallowed_factor_id_literals(
     factor_ids: tuple[str, ...],
 ) -> tuple[tuple[str, int, str], ...]:
@@ -186,20 +208,12 @@ def collect_disallowed_factor_id_literals(
 
     hits: list[tuple[str, int, str]] = []
     for module_path in sorted(CAMPAIGN_ROOT.glob("*.py")):
-        tree = ast.parse(
+        for lineno, value in collect_disallowed_factor_id_literals_from_source(
             module_path.read_text(encoding="utf-8"),
-            filename=str(module_path),
-        )
-        docstring_nodes = _docstring_constant_ids(tree)
-        allowed_nodes = _allowed_owner_constant_ids(tree, module_path.name)
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.Constant):
-                continue
-            if not isinstance(node.value, str) or node.value not in factor_ids:
-                continue
-            if id(node) in docstring_nodes or id(node) in allowed_nodes:
-                continue
-            hits.append((module_path.name, node.lineno, node.value))
+            module_path.name,
+            factor_ids,
+        ):
+            hits.append((module_path.name, lineno, value))
     return tuple(hits)
 
 

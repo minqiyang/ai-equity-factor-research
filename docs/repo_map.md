@@ -10,7 +10,7 @@ Scope: concise orientation for Codex handoffs. Cache/build directories, generate
 | --- | --- | --- |
 | `.agents/skills/` | Project-specific Codex Skills and workflow gates. | 2 mapped files |
 | `.github/` | Repository automation such as CI workflows. | 1 mapped file |
-| `docs/` | Project process notes, readiness gates, designs, logs, and maps. | 95 mapped files |
+| `docs/` | Project process notes, readiness gates, designs, logs, and maps. | 97 mapped files |
 | `scripts/` | Workflow tooling; scripts here must not fetch data or trade. | 2 mapped files |
 | `src/campaign/` | Frozen dataset-independent computations for bounded research campaigns. | 21 mapped files |
 | `src/features/` | Factor calculations, validation, normalization, combination, and diagnostics. | 11 mapped files |
@@ -19,7 +19,7 @@ Scope: concise orientation for Codex handoffs. Cache/build directories, generate
 | `src/ledger/` | Fail-closed Stage 4B schema-registry helpers; no append or storage runtime. | 20 mapped files |
 | `src/reporting/` | Experiment log and registry helpers; plotting helpers are placeholder-only future work. | 4 mapped files |
 | `research/` | Synthetic and committed-fixture demo workflows. | 14 mapped files |
-| `tests/` | Deterministic tests for research logic and guardrails. | 149 mapped files |
+| `tests/` | Deterministic tests for research logic and guardrails. | 150 mapped files |
 | `tests/fixtures/` | Tiny committed synthetic fixtures only. | 76 mapped files |
 | `lean/` | LEAN-adjacent planning/scaffold files under no-trading guardrails. | 3 mapped files |
 | `reports/` | Generated synthetic reports and logs; summarized but not traversed. | generated outputs summarized only |
@@ -43,6 +43,7 @@ Scope: concise orientation for Codex handoffs. Cache/build directories, generate
 - `docs/experiment_trial_ledger_attempt_allocation_schema_contract.md` (present): Accepted Stage 4B-R1H-A attempt-allocation authority.
 - `docs/experiment_trial_ledger_attempt_start_schema_contract.md` (present): Accepted Stage 4B-R1I-A attempt-start authority.
 - `docs/eodhd_sp500_diagnostic_campaign_contract.md` (present): Active Track A/Track B diagnostic campaign scope authority.
+- `docs/campaign_bounded_diagnostic_runner_v1.md` (present): Public-safe Track A PR 3 bounded diagnostic runner design note; not an authority source.
 - `docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml` (present): Frozen public Track A machine-readable protocol.
 - `docs/preregistrations/eodhd_sp500_three_factor_trial_inventory_v1.json` (present): Exact frozen 14-semantic-trial inventory.
 - `docs/current_roadmap.md` (present): Canonical program stages, dependency order, gate and completion criteria, and coarse status.

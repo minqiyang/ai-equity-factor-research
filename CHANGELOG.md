@@ -9,6 +9,12 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the Track A PR 3 EXEC-5 repo-integration surface: import-boundary,
+  no-default, and T-7 owner-uniqueness conformance tests, the public-safe
+  bounded-runner design note, a repo-map refresh, and CI wiring that runs
+  only committed synthetic campaign fixtures. Existing frozen campaign
+  modules are unchanged. This adds no private data, result access, or
+  14-trial run.
 - Added the Track A PR 3 EXEC-3 continuous path, cost, benchmark, and
   metric surface: drifted-weight holdings, post-return-equity cost, the
   factor-matched primary comparison, SPY secondary retention, and path

@@ -1,7 +1,9 @@
 {
   "inputs": {
     "inventory_file": "precondition/trial_inventory.json",
-    "prepared_file": "precondition/prepared_campaign.json"
+    "prepared_file": "precondition/prepared_campaign.json",
+    "invalid_primary_comparison_count": 1,
+    "primary_matched_benchmark_comparisons_valid": false
   },
   "expected": {
     "complete": true,

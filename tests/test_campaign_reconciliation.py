@@ -98,8 +98,12 @@ def test_invalid_primary_comparison_routes_hard_validity() -> None:
     fixture = load_runner_fixture("reconciliation_invalid_primary.json")
     prepared = _prepared(fixture["inputs"]["prepared_file"])
     payload = prepared["diagnostic_payload"]
-    payload["invalid_primary_comparison_count"] = 1
-    payload["primary_matched_benchmark_comparisons_valid"] = False
+    payload["invalid_primary_comparison_count"] = fixture["inputs"][
+        "invalid_primary_comparison_count"
+    ]
+    payload["primary_matched_benchmark_comparisons_valid"] = fixture["inputs"][
+        "primary_matched_benchmark_comparisons_valid"
+    ]
     result = reconcile_semantic_trials(
         _inventory(fixture["inputs"]["inventory_file"]),
         prepared["trial_outputs"],
