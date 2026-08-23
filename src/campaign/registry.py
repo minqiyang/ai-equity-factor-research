@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+import math
+from numbers import Real
 from types import MappingProxyType
 
 from campaign import factors
@@ -18,6 +20,7 @@ _REASON_ANCHOR_NON_FINITE = "ANCHOR_NON_FINITE"
 _REASON_ANCHOR_NON_POSITIVE = "ANCHOR_NON_POSITIVE"
 _REASON_ANCHOR_COUNT_INVALID = "ANCHOR_COUNT_INVALID"
 _REASON_ANCHOR_INVALID = "ANCHOR_INVALID"
+_REASON_FACTOR_VALUE_NON_FINITE = "FACTOR_VALUE_NON_FINITE"
 
 
 @dataclass(frozen=True)
@@ -147,7 +150,12 @@ def compute_registered_factor(
         value = spec.compute(anchors)
     if value is None:
         return ComputedFactor(None, False, _REASON_ANCHOR_INVALID)
-    return ComputedFactor(float(value), True, None)
+    if isinstance(value, bool) or not isinstance(value, Real):
+        return ComputedFactor(None, False, _REASON_FACTOR_VALUE_NON_FINITE)
+    numeric = float(value)
+    if not math.isfinite(numeric):
+        return ComputedFactor(None, False, _REASON_FACTOR_VALUE_NON_FINITE)
+    return ComputedFactor(numeric, True, None)
 
 
 def _anchor_invalid_reason(anchor: object) -> str | None:

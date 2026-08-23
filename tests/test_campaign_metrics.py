@@ -6,7 +6,7 @@ import inspect
 import math
 
 from campaign.benchmarks import factor_matched_cost_free_comparison
-from campaign.eligibility import freeze_decision_time
+from campaign.inference import FACTOR_ORDER
 from campaign.metrics import (
     aggregate_contributions,
     annualized_active_return,
@@ -18,11 +18,11 @@ from campaign.metrics import (
 )
 from campaign.paths import advance_holdings
 from campaign_runner_v1_support import (
-    listing_decisions_from_numeric_spec,
+    dated_uniform_returns,
+    freeze_numeric_universe,
     load_runner_fixture,
     runner_holding_interval,
     runner_weight_map,
-    uniform_return_map,
 )
 
 
@@ -30,12 +30,18 @@ def test_three_month_metrics_and_forbidden_alternatives() -> None:
     fixture = load_runner_fixture("valid_tied_valid_three_month.json")
     inputs = fixture["inputs"]
     expected = fixture["expected"]
-    frozen = freeze_decision_time(
-        listing_decisions_from_numeric_spec(inputs["benchmark_universe"]),
-        inputs["min_eligible_count"],
-        inputs["min_distinct_values"],
-    )
     spec = inputs["strategy"]
+    frozen_by_session = tuple(
+        freeze_numeric_universe(
+            inputs["benchmark_universe"],
+            inputs["min_eligible_count"],
+            inputs["min_distinct_values"],
+            FACTOR_ORDER[0],
+            session_date,
+        )
+        for session_date in spec["session_dates"]
+    )
+    frozen = frozen_by_session[0]
     bps = inputs["transaction_cost_bps"][0]
     wanted = expected["by_bps"][str(bps)]
     strategy = advance_holdings(
@@ -64,11 +70,19 @@ def test_three_month_metrics_and_forbidden_alternatives() -> None:
         inputs["initial_equity"],
     )
     comparison = factor_matched_cost_free_comparison(
-        (frozen, frozen, frozen),
+        frozen_by_session,
         strategy,
         tuple(
-            uniform_return_map(dict(frozen.matched_benchmark_target), value)
-            for value in inputs["benchmark_held_returns"]
+            dated_uniform_returns(
+                session_date,
+                dict(frozen.matched_benchmark_target),
+                value,
+            )
+            for session_date, value in zip(
+                spec["session_dates"],
+                inputs["benchmark_held_returns"],
+                strict=True,
+            )
         ),
         inputs["initial_equity"],
         inputs["role"],

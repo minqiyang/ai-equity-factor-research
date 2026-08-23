@@ -1,6 +1,7 @@
 {
   "inputs": {
     "owner_index": 0,
+    "signal_date": "2026-01-30",
     "min_eligible_count": 100,
     "min_distinct_values": 10,
     "exchange": "XNYS",

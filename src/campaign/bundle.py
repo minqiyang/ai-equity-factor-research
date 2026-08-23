@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 import hashlib
 import json
+from numbers import Integral
 import re
 from types import MappingProxyType
 
@@ -37,10 +38,25 @@ _SELF_HASH_FIELDS = frozenset(
 _REASON_MISSING = "BUNDLE_CHILD_MISSING"
 _REASON_SELF_HASH = "BUNDLE_MANIFEST_SELF_HASH_FORBIDDEN"
 _REASON_DIGEST_MISMATCH = "BUNDLE_CHILD_DIGEST_MISMATCH"
+_REASON_ROOT_BINDING = "BUNDLE_ROOT_BINDING_MISSING"
 _SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
+_GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _FROZEN_CHILD_DIGEST_FIELDS = (
     ("eodhd_sp500_three_factor_diagnostic_v1.yaml", "protocol_file_sha256"),
     ("trial_inventory.json", "trial_inventory_file_sha256"),
+)
+_REQUIRED_ROOT_BINDINGS = (
+    ("runner_code_sha", "git_sha"),
+    ("environment_id", "nonempty_str"),
+    ("environment_lock_sha256", "sha256"),
+    ("protocol_file_sha256", "sha256"),
+    ("trial_inventory_file_sha256", "sha256"),
+    ("acceptance_record_file_sha256", "sha256"),
+    ("acceptance_identity_sha256", "sha256"),
+    ("semantic_trial_count", "nonneg_int"),
+    ("attempt_count", "nonneg_int"),
+    ("per_trial_status", "sequence"),
+    ("final_state", "nonempty_str"),
 )
 
 
@@ -91,6 +107,17 @@ def assemble_evidence_bundle(
             None,
             None,
         )
+    binding_error = _root_binding_error(root_fields)
+    if binding_error is not None:
+        return BundleAssembly(
+            False,
+            binding_error,
+            MappingProxyType(digests),
+            MappingProxyType({}),
+            b"",
+            None,
+            None,
+        )
     digest_error = _frozen_child_digest_error(digests, root_fields)
     if digest_error is not None:
         return BundleAssembly(
@@ -127,19 +154,19 @@ def assemble_evidence_bundle(
     detached_root = {
         "schema_version": "campaign_detached_root_v1",
         "bundle_manifest_digest": manifest_digest,
-        "runner_code_sha": root_fields.get("runner_code_sha"),
-        "environment_id": root_fields.get("environment_id"),
-        "environment_lock_sha256": root_fields.get("environment_lock_sha256"),
-        "protocol_file_sha256": root_fields.get("protocol_file_sha256"),
-        "trial_inventory_file_sha256": root_fields.get("trial_inventory_file_sha256"),
-        "acceptance_record_file_sha256": root_fields.get(
+        "runner_code_sha": root_fields["runner_code_sha"],
+        "environment_id": root_fields["environment_id"],
+        "environment_lock_sha256": root_fields["environment_lock_sha256"],
+        "protocol_file_sha256": root_fields["protocol_file_sha256"],
+        "trial_inventory_file_sha256": root_fields["trial_inventory_file_sha256"],
+        "acceptance_record_file_sha256": root_fields[
             "acceptance_record_file_sha256"
-        ),
-        "acceptance_identity_sha256": root_fields.get("acceptance_identity_sha256"),
-        "semantic_trial_count": root_fields.get("semantic_trial_count"),
-        "attempt_count": root_fields.get("attempt_count"),
-        "per_trial_status": root_fields.get("per_trial_status"),
-        "final_state": root_fields.get("final_state"),
+        ],
+        "acceptance_identity_sha256": root_fields["acceptance_identity_sha256"],
+        "semantic_trial_count": root_fields["semantic_trial_count"],
+        "attempt_count": root_fields["attempt_count"],
+        "per_trial_status": root_fields["per_trial_status"],
+        "final_state": root_fields["final_state"],
     }
     return BundleAssembly(
         True,
@@ -152,13 +179,44 @@ def assemble_evidence_bundle(
     )
 
 
+def _root_binding_error(root_fields: Mapping[str, object]) -> str | None:
+    for field, kind in _REQUIRED_ROOT_BINDINGS:
+        if field not in root_fields or not _binding_value_valid(
+            kind,
+            root_fields[field],
+        ):
+            return _REASON_ROOT_BINDING
+    return None
+
+
+def _binding_value_valid(kind: str, value: object) -> bool:
+    if kind == "sha256":
+        return _is_sha256_digest(value)
+    if kind == "git_sha":
+        return isinstance(value, str) and _GIT_SHA.fullmatch(value) is not None
+    if kind == "nonempty_str":
+        return isinstance(value, str) and bool(value)
+    if kind == "nonneg_int":
+        return (
+            not isinstance(value, bool)
+            and isinstance(value, Integral)
+            and int(value) >= 0
+        )
+    if kind == "sequence":
+        return (
+            not isinstance(value, (str, bytes, bytearray))
+            and isinstance(value, Sequence)
+        )
+    return False
+
+
 def _frozen_child_digest_error(
     digests: Mapping[str, str],
     root_fields: Mapping[str, object],
 ) -> str | None:
     for child_name, field in _FROZEN_CHILD_DIGEST_FIELDS:
-        expected = root_fields[field] if field in root_fields else None
-        if not _is_sha256_digest(expected) or expected != digests[child_name]:
+        expected = root_fields[field]
+        if expected != digests[child_name]:
             return _REASON_DIGEST_MISMATCH
     return None
 

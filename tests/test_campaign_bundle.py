@@ -88,10 +88,41 @@ def test_omitted_or_malformed_frozen_digest_fields_are_invalid() -> None:
         root_fields = dict(fixture["inputs"]["root_fields"])
         root_fields[case["field"]] = case["value"]
         assembly = assemble_evidence_bundle(children, root_fields)
+        assert assembly.valid is mutation["expected"]["malformed_valid"], case
+        assert assembly.reason == mutation["expected"]["malformed_reason"], case
+        assert assembly.detached_root is None, case
+    assert mutation["forbidden"]["accept_bundle_when_frozen_digest_omitted"]
+
+
+def test_missing_or_malformed_root_bindings_are_invalid() -> None:
+    fixture = load_runner_fixture("bundle_assembly.json")
+    mutation = load_runner_fixture("bundle_root_binding_missing.json")
+    children = {
+        name: value.encode("utf-8")
+        for name, value in fixture["inputs"]["children"].items()
+    }
+    for field in mutation["inputs"]["required_fields"]:
+        root_fields = dict(fixture["inputs"]["root_fields"])
+        del root_fields[field]
+        assembly = assemble_evidence_bundle(children, root_fields)
+        assert assembly.valid is mutation["expected"]["valid"], field
+        assert assembly.reason == mutation["expected"]["reason"], field
+        assert assembly.detached_root is None, field
+    for field in mutation["inputs"]["null_fields"]:
+        root_fields = dict(fixture["inputs"]["root_fields"])
+        root_fields[field] = None
+        assembly = assemble_evidence_bundle(children, root_fields)
+        assert assembly.valid is mutation["expected"]["valid"], field
+        assert assembly.reason == mutation["expected"]["reason"], field
+        assert assembly.detached_root is None, field
+    for case in mutation["inputs"]["malformed_cases"]:
+        root_fields = dict(fixture["inputs"]["root_fields"])
+        root_fields[case["field"]] = case["value"]
+        assembly = assemble_evidence_bundle(children, root_fields)
         assert assembly.valid is mutation["expected"]["valid"], case
         assert assembly.reason == mutation["expected"]["reason"], case
         assert assembly.detached_root is None, case
-    assert mutation["forbidden"]["accept_bundle_when_frozen_digest_omitted"]
+    assert mutation["forbidden"]["accept_bundle_with_none_root_bindings"]
 
 
 def test_bundle_functions_have_no_defaults() -> None:

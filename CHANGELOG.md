@@ -9,6 +9,16 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Closed remaining Track A PR 3 exact-head findings: random-rank seeds
+  now hash only the frozen factor-month identity and refuse caller
+  overrides; factor-matched benchmark comparison requires the same
+  session on each decision, held-return interval, and strategy point;
+  evidence-bundle assembly fails unless every detached-root binding is
+  present and well-typed; lineage `adjusted_close` and referenced prices
+  that are Boolean or text invalidate eligibility and simple returns;
+  and computed factor values that are non-finite are invalid even when
+  the anchors were finite and positive. F-1 and F-2 remain deferred.
+  This adds no private data, result access, or 14-trial run.
 - Closed remaining Track A PR 3 exact-head findings: `authorize` now
   refuses unless `RunConfig.environment_id` and
   `environment_lock_sha256` match the accepted record calendar, and a

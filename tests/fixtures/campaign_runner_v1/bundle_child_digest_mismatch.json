@@ -55,7 +55,9 @@
     "valid": false,
     "reason": "BUNDLE_CHILD_DIGEST_MISMATCH",
     "omit_valid": false,
-    "omit_reason": "BUNDLE_CHILD_DIGEST_MISMATCH"
+    "omit_reason": "BUNDLE_ROOT_BINDING_MISSING",
+    "malformed_valid": false,
+    "malformed_reason": "BUNDLE_ROOT_BINDING_MISSING"
   },
   "forbidden": {
     "accept_substituted_child_with_frozen_digest": true,

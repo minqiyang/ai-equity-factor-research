@@ -10,6 +10,7 @@
     "count": 100,
     "value_mode": "index",
     "duplicate_last": false,
+    "signal_date": "2026-01-30",
     "min_eligible_count": 100,
     "min_distinct_values": 10
   },

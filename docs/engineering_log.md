@@ -1,5 +1,32 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-6 frozen identity, bindings, and finite values
+
+- Implemented remaining exact-head Codex items from card
+  `EFR-GRK-PR3-FIX-6` on `codex/track-a-pr3-fix4` at start HEAD
+  `1b9f603367e0d8d311957fbf775c19777fbd8233`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- `FrozenDecisionTime` now carries `factor_id` and `signal_date`.
+  `random_rank_target` hashes only those frozen fields and raises when a
+  caller override disagrees. Factor-matched benchmark comparison now
+  requires `DatedHeldReturns` and verifies one session identity across
+  each frozen decision, held-return interval, and strategy point.
+- `assemble_evidence_bundle` now invalidates a missing, null, or
+  malformed detached-root binding instead of succeeding with `None`
+  fields. Lineage `adjusted_close` and referenced prices that are
+  Boolean or text invalidate eligibility and the simple-return gate.
+  `compute_registered_factor` rejects a non-finite computed value even
+  when the anchors were finite and positive.
+- Already-closed calendar, grant-planning, environment, Rank IC,
+  frozen-child digest, and Boolean real-vector gates were re-checked and
+  left in place. The return-gate Boolean/text price hole was hardened
+  because it was the same coercion Codex already exercised.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited except the named owners above. No private panel,
+  performance value, or 14-trial run was accessed.
+- Focused campaign tests passed 153. Full suite after repo-map refresh:
+  2393 passed, 2 existing platform-conditional skipped.
+
 ## 2026-08-23 - Track A PR 3 FIX-5 environment bind and planning eligibility
 
 - Implemented exact-head Codex items from card `EFR-GRK-PR3-FIX-5` on

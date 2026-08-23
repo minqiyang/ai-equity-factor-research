@@ -1,0 +1,54 @@
+{
+  "inputs": {
+    "exchange": "XNYS",
+    "effective_from": "2014-01-01",
+    "effective_to": null,
+    "session_dates": ["2024-01-31", "2024-02-29"],
+    "initial_equity": 1.0,
+    "transaction_cost_bps": 0,
+    "role": "factor_matched_primary",
+    "min_eligible_count": 1,
+    "min_distinct_values": 1,
+    "first_universe": {
+      "key_spec": {
+        "exchange": "XNYS",
+        "ticker_prefix": "T",
+        "ticker_width": 3,
+        "effective_from": "2014-01-01",
+        "effective_to": null
+      },
+      "count": 1,
+      "value_mode": "constant",
+      "constant_value": 1.0,
+      "duplicate_last": false
+    },
+    "second_universe": {
+      "key_spec": {
+        "exchange": "XNYS",
+        "ticker_prefix": "U",
+        "ticker_width": 3,
+        "effective_from": "2014-01-01",
+        "effective_to": null
+      },
+      "count": 1,
+      "value_mode": "constant",
+      "constant_value": 2.0,
+      "duplicate_last": false
+    },
+    "strategy": {
+      "initial_weights": {"T000": 1.0},
+      "intervals": [
+        {"held_returns": {"T000": 0.0}, "reset_weights": {"T000": 1.0}},
+        {"held_returns": {"T000": 0.0}, "reset_weights": null}
+      ]
+    },
+    "benchmark_held_returns": [0.01, 0.05]
+  },
+  "expected": {
+    "aligned_valid": true,
+    "aligned_benchmark_gross": [0.01, 0.05]
+  },
+  "forbidden": {
+    "align_only_by_sequence_position": true
+  }
+}

@@ -131,6 +131,27 @@ def test_mismatched_anchor_prices_are_invalid() -> None:
     assert fixture["forbidden"]["compute_from_independent_scalars"]
 
 
+def test_boolean_and_textual_return_record_prices_are_invalid() -> None:
+    fixture = load_runner_fixture("return_price_coercion.json")
+    inputs = fixture["inputs"]
+    expected = fixture["expected"]
+    for case in inputs["cases"]:
+        anchors = [dict(record) for record in inputs["base_anchors"]]
+        anchors[case["index"]]["adjusted_close"] = case["adjusted_close"]
+        result = simple_adjusted_close_return(
+            inputs["start_anchor"],
+            inputs["end_anchor"],
+            anchors,
+            inputs["target_identity"],
+            inputs["alias_chain"],
+        )
+        assert result.valid is expected["valid"], case
+        assert result.value is expected["value"], case
+        assert result.reason == expected["reason"], case
+        assert result.value != fixture["forbidden"]["boolean_true_as_one_return"]
+    assert fixture["forbidden"]["coerce_boolean_or_text_record_prices"]
+
+
 def test_simple_return_gate_has_no_fill_parameter() -> None:
     names = inspect.signature(simple_adjusted_close_return).parameters
     assert "fill" not in names

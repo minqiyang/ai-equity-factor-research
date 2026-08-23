@@ -13,7 +13,7 @@ from campaign.inference import FACTOR_ORDER
 from campaign_runner_v1_support import (
     encode_runner_listing_key,
     expand_decision_time_listings,
-    listing_decisions_from_numeric_spec,
+    freeze_numeric_universe,
     load_runner_fixture,
 )
 
@@ -61,10 +61,12 @@ def test_zero_target_trigger_matrix() -> None:
             "constant_value": case.get("constant_value"),
             "duplicate_last": case["duplicate_last"],
         }
-        frozen = freeze_decision_time(
-            listing_decisions_from_numeric_spec(spec),
+        frozen = freeze_numeric_universe(
+            spec,
             inputs["min_eligible_count"],
             inputs["min_distinct_values"],
+            FACTOR_ORDER[0],
+            inputs["signal_date"],
         )
         expected = fixture["expected"]["cases"][case["name"]]
         assert frozen.zero_target_triggers == tuple(expected["triggers"])
@@ -81,10 +83,12 @@ def test_zero_target_trigger_matrix() -> None:
 def test_valid_top_decile_target_uses_remainder_first_high_chunk() -> None:
     fixture = load_runner_fixture("valid_top_decile_target.json")
     inputs = fixture["inputs"]
-    frozen = freeze_decision_time(
-        listing_decisions_from_numeric_spec(inputs),
+    frozen = freeze_numeric_universe(
+        inputs,
         inputs["min_eligible_count"],
         inputs["min_distinct_values"],
+        FACTOR_ORDER[0],
+        inputs["signal_date"],
     )
     expected = fixture["expected"]
     key_spec = inputs["key_spec"]
@@ -158,6 +162,33 @@ def test_mismatched_factor_prices_are_invalid() -> None:
     last = expected_cases["mismatched_last"]
     assert first["value"] != fixture["forbidden"]["unbound_first_value"]
     assert last["value"] != fixture["forbidden"]["unbound_last_value"]
+
+
+def test_boolean_and_textual_lineage_prices_are_invalid() -> None:
+    fixture = load_runner_fixture("lineage_price_coercion.json")
+    inputs = fixture["inputs"]
+    listings = expand_decision_time_listings(inputs)
+    decisions = evaluate_decision_time_listings(
+        listings,
+        FACTOR_ORDER[inputs["owner_index"]],
+    )
+    expected_cases = fixture["expected"]["cases"]
+    for row, decision in zip(inputs["rows"], decisions, strict=True):
+        expected = expected_cases[row["name"]]
+        assert decision.eligible is expected["eligible"]
+        assert decision.reason == expected["reason"]
+        if expected["value"] is None:
+            assert decision.factor_value is None
+        else:
+            assert decision.factor_value is not None
+            assert math.isclose(
+                decision.factor_value,
+                expected["value"],
+                rel_tol=fixture["expected"]["rel_tol"],
+                abs_tol=fixture["expected"]["abs_tol"],
+            )
+        assert decision.factor_value != fixture["forbidden"]["boolean_true_as_one"]
+    assert fixture["forbidden"]["coerce_boolean_or_text_prices"]
 
 
 def test_freeze_decision_time_has_no_semantic_defaults() -> None:

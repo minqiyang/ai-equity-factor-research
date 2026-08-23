@@ -1,0 +1,38 @@
+{
+  "inputs": {
+    "cases": [
+      {
+        "name": "momentum_overflow",
+        "owner_index": 0,
+        "anchors": [1e-308, 1e308]
+      },
+      {
+        "name": "reversal_overflow",
+        "owner_index": 1,
+        "anchors": [1e-308, 1e308]
+      },
+      {
+        "name": "low_vol_overflow",
+        "owner_index": 2,
+        "anchors": [
+          1e-308, 1e308, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+          1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+          1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+          1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+          1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+          1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+          1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+          1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "valid": false,
+    "value": null,
+    "reason": "FACTOR_VALUE_NON_FINITE"
+  },
+  "forbidden": {
+    "accept_non_finite_computed_factor": true
+  }
+}

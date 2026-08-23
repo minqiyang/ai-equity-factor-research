@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+import math
+from numbers import Real
 
 from campaign.factors import is_valid_price_anchor
 from campaign.lineage import evaluate_factor_anchor_lineage_v1
@@ -60,15 +62,23 @@ def _bound_record_price(
     scalar: object,
     record: Mapping[str, object],
 ) -> float | None:
-    price = record.get("adjusted_close")
     try:
-        scalar_value = float(scalar)  # type: ignore[arg-type]
-        record_value = float(price)  # type: ignore[arg-type]
-    except (OverflowError, TypeError, ValueError):
+        scalar_value = _finite_real(scalar, "start_or_end_anchor")
+        record_value = _finite_real(record.get("adjusted_close"), "adjusted_close")
+    except (TypeError, ValueError):
         return None
     if scalar_value != record_value:
         return None
     return record_value
+
+
+def _finite_real(value: object, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise TypeError(f"{name} must be a real non-Boolean scalar")
+    numeric = float(value)
+    if not math.isfinite(numeric):
+        raise ValueError(f"{name} must be finite")
+    return numeric
 
 
 def _anchor_invalid_reason(anchor: object) -> str | None:

@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import date
 from types import MappingProxyType
 
 from campaign.eligibility import FrozenDecisionTime
 from campaign.paths import (
     ContinuousHoldings,
+    IntervalPoint,
     advance_holdings,
     holding_interval,
 )
@@ -21,6 +23,14 @@ _REASON_SPY_BOOLEAN = "SPY_RETURN_BOOLEAN"
 _REASON_SPY_NON_FINITE = "SPY_RETURN_NON_FINITE"
 _ROLE_SPY = "spy_secondary"
 _COST_FREE_BPS = 0.0
+
+
+@dataclass(frozen=True)
+class DatedHeldReturns:
+    """One held-return map bound to a single schedule session."""
+
+    session_date: str
+    held_returns: MappingProxyType[bytes, object]
 
 
 @dataclass(frozen=True)
@@ -37,10 +47,24 @@ class BenchmarkComparison:
     reason_counts: MappingProxyType[str, int]
 
 
+def dated_held_returns(
+    session_date: str,
+    held_returns: Mapping[bytes, object],
+) -> DatedHeldReturns:
+    """Bind one held-return map to a strict schedule session."""
+
+    if not isinstance(held_returns, Mapping):
+        raise TypeError("held_returns must be a mapping")
+    return DatedHeldReturns(
+        session_date=_strict_date(session_date).isoformat(),
+        held_returns=MappingProxyType(dict(held_returns)),
+    )
+
+
 def factor_matched_cost_free_comparison(
     frozen_decisions: Sequence[FrozenDecisionTime],
     strategy: ContinuousHoldings,
-    held_returns_by_interval: Sequence[Mapping[bytes, object]],
+    held_returns_by_interval: Sequence[DatedHeldReturns],
     initial_equity: object,
     role: str,
 ) -> BenchmarkComparison:
@@ -74,6 +98,8 @@ def factor_matched_cost_free_comparison(
         raise ValueError("strategy interval count must match frozen_decisions")
     if any(not isinstance(item, FrozenDecisionTime) for item in frozen):
         raise TypeError("frozen_decisions must contain FrozenDecisionTime")
+    if any(not isinstance(item, DatedHeldReturns) for item in observed):
+        raise TypeError("held_returns_by_interval must contain DatedHeldReturns")
     if not frozen:
         return BenchmarkComparison(
             role=role,
@@ -101,6 +127,11 @@ def factor_matched_cost_free_comparison(
 
     intervals = []
     for index, item in enumerate(frozen):
+        session_date = _aligned_session(
+            item,
+            observed[index],
+            strategy.points[index],
+        )
         reset = (
             frozen[index + 1].matched_benchmark_target
             if index + 1 < len(frozen)
@@ -108,8 +139,8 @@ def factor_matched_cost_free_comparison(
         )
         intervals.append(
             holding_interval(
-                strategy.points[index].session_date,
-                observed[index],
+                session_date,
+                observed[index].held_returns,
                 reset,
             )
         )
@@ -189,6 +220,32 @@ def spy_secondary_comparison(
     )
 
 
+def _aligned_session(
+    frozen: FrozenDecisionTime,
+    observed: DatedHeldReturns,
+    strategy_point: IntervalPoint,
+) -> str:
+    session_date = strategy_point.session_date
+    if (
+        frozen.signal_date != session_date
+        or observed.session_date != session_date
+    ):
+        raise ValueError(
+            "frozen decision, held returns, and strategy point must share "
+            "one session identity"
+        )
+    return session_date
+
+
+def _strict_date(value: object) -> date:
+    if not isinstance(value, str):
+        raise ValueError("date must be strict YYYY-MM-DD")
+    parsed = date.fromisoformat(value)
+    if len(value) != 10 or parsed.isoformat() != value:
+        raise ValueError("date must be strict YYYY-MM-DD")
+    return parsed
+
+
 def _active_return(
     strategy_net: float | None,
     benchmark_gross: float | None,
@@ -222,6 +279,8 @@ def _coerce_spy_return(raw: object) -> SimpleReturn:
 
 __all__ = [
     "BenchmarkComparison",
+    "DatedHeldReturns",
+    "dated_held_returns",
     "factor_matched_cost_free_comparison",
     "spy_secondary_comparison",
 ]

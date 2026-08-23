@@ -4,17 +4,18 @@ from __future__ import annotations
 
 import math
 
+import pytest
+
 from campaign.baselines import (
     episode_gross_return,
     equal_weight_universe_target,
     random_rank_target,
 )
-from campaign.eligibility import freeze_decision_time
 from campaign.inference import FACTOR_ORDER
 from campaign.returns import simple_adjusted_close_return
 from campaign_runner_v1_support import (
     encode_runner_listing_key,
-    listing_decisions_from_numeric_spec,
+    freeze_numeric_universe,
     load_runner_fixture,
 )
 
@@ -23,14 +24,17 @@ def test_random_rank_non_divisible_permutation_and_no_rng_on_invalid() -> None:
     fixture = load_runner_fixture("random_rank_non_divisible.json")
     inputs = fixture["inputs"]
     expected = fixture["expected"]
-    frozen = freeze_decision_time(
-        listing_decisions_from_numeric_spec(inputs["valid_universe"]),
+    factor_id = FACTOR_ORDER[inputs["owner_index"]]
+    frozen = freeze_numeric_universe(
+        inputs["valid_universe"],
         inputs["min_eligible_count"],
         inputs["min_distinct_values"],
+        factor_id,
+        inputs["signal_date"],
     )
     result = random_rank_target(
         frozen,
-        FACTOR_ORDER[inputs["owner_index"]],
+        factor_id,
         inputs["signal_date"],
         inputs["scheme_id"],
         inputs["seed_version"],
@@ -67,23 +71,39 @@ def test_random_rank_non_divisible_permutation_and_no_rng_on_invalid() -> None:
     assert set(result.weights.values()) == {expected["weight"]}
     assert tuple(result.weights) == tuple(sorted(selected))
 
-    wrong_date = random_rank_target(
-        frozen,
-        FACTOR_ORDER[inputs["owner_index"]],
-        inputs["forbidden_execution_date"],
-        inputs["scheme_id"],
-        inputs["seed_version"],
-        inputs["generator_name"],
+    with pytest.raises(ValueError, match="signal_date"):
+        random_rank_target(
+            frozen,
+            factor_id,
+            inputs["forbidden_execution_date"],
+            inputs["scheme_id"],
+            inputs["seed_version"],
+            inputs["generator_name"],
+        )
+    with pytest.raises(ValueError, match="factor_id"):
+        random_rank_target(
+            frozen,
+            FACTOR_ORDER[1],
+            inputs["signal_date"],
+            inputs["scheme_id"],
+            inputs["seed_version"],
+            inputs["generator_name"],
+        )
+    assert result.preimage == (
+        f"{inputs['scheme_id']}|{inputs['seed_version']}|"
+        f"{frozen.factor_id}|{frozen.signal_date}"
     )
-    assert wrong_date.selected_keys != selected
+    assert inputs["forbidden_execution_date"] not in result.preimage
 
     invalid = random_rank_target(
-        freeze_decision_time(
-            listing_decisions_from_numeric_spec(inputs["invalid_universe"]),
+        freeze_numeric_universe(
+            inputs["invalid_universe"],
             inputs["min_eligible_count"],
             inputs["min_distinct_values"],
+            factor_id,
+            inputs["signal_date"],
         ),
-        FACTOR_ORDER[inputs["owner_index"]],
+        factor_id,
         inputs["signal_date"],
         inputs["scheme_id"],
         inputs["seed_version"],
@@ -99,10 +119,12 @@ def test_random_rank_non_divisible_permutation_and_no_rng_on_invalid() -> None:
 def test_equal_weight_reuses_frozen_benchmark_not_zero_target() -> None:
     fixture = load_runner_fixture("equal_weight_reuses_benchmark.json")
     inputs = fixture["inputs"]
-    tied = freeze_decision_time(
-        listing_decisions_from_numeric_spec(inputs["tied_universe"]),
+    tied = freeze_numeric_universe(
+        inputs["tied_universe"],
         inputs["min_eligible_count"],
         inputs["min_distinct_values"],
+        FACTOR_ORDER[0],
+        inputs["signal_date"],
     )
     equal_weight = equal_weight_universe_target(tied, inputs["role"])
     expected = fixture["expected"]["tied"]
@@ -115,10 +137,12 @@ def test_equal_weight_reuses_frozen_benchmark_not_zero_target() -> None:
     assert dict(equal_weight.weights) != dict(tied.long_only_target)
     assert fixture["forbidden"]["reuse_factor_zero_target_when_invested"]
 
-    empty = freeze_decision_time(
-        listing_decisions_from_numeric_spec(inputs["empty_universe"]),
+    empty = freeze_numeric_universe(
+        inputs["empty_universe"],
         inputs["min_eligible_count"],
         inputs["min_distinct_values"],
+        FACTOR_ORDER[0],
+        inputs["signal_date"],
     )
     empty_target = equal_weight_universe_target(empty, inputs["role"])
     assert empty_target.formable is fixture["expected"]["empty"]["formable"]

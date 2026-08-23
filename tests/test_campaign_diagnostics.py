@@ -14,10 +14,10 @@ from campaign.diagnostics import (
     spearman_rank_ic,
     yearly_rank_ic_contributions,
 )
-from campaign.eligibility import freeze_decision_time
+from campaign.inference import FACTOR_ORDER
 from campaign_runner_v1_support import (
     encode_runner_listing_key,
-    listing_decisions_from_numeric_spec,
+    freeze_numeric_universe,
     load_runner_fixture,
 )
 
@@ -179,10 +179,12 @@ def test_rank_ic_validity_gates_and_label_coverage() -> None:
 def test_decile_curve_spread_and_monotonicity() -> None:
     fixture = load_runner_fixture("decile_curve_monotonicity.json")
     inputs = fixture["inputs"]
-    frozen = freeze_decision_time(
-        listing_decisions_from_numeric_spec(inputs),
+    frozen = freeze_numeric_universe(
+        inputs,
         inputs["min_eligible_count"],
         inputs["min_distinct_values"],
+        FACTOR_ORDER[0],
+        inputs["signal_date"],
     )
     forward_returns = {
         decision.listing_key: decision.factor_value * inputs["return_scale"]

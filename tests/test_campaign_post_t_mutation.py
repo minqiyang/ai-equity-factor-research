@@ -30,6 +30,7 @@ class TestPostTMutationOracle:
         frozen_before = build_frozen_decision_time(
             listings,
             factor_id,
+            inputs["signal_date"],
             inputs["min_eligible_count"],
             inputs["min_distinct_values"],
         )
@@ -39,6 +40,7 @@ class TestPostTMutationOracle:
         frozen_after = build_frozen_decision_time(
             listings,
             factor_id,
+            inputs["signal_date"],
             inputs["min_eligible_count"],
             inputs["min_distinct_values"],
         )

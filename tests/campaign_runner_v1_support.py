@@ -339,6 +339,38 @@ def uniform_return_map(weights: dict[bytes, float], value: object) -> dict[bytes
     return {listing_key: value for listing_key in weights}
 
 
+def freeze_numeric_universe(
+    spec: dict[str, Any],
+    min_eligible_count: int,
+    min_distinct_values: int,
+    factor_id: str,
+    signal_date: str,
+) -> Any:
+    """Freeze a compact numeric universe under one factor-month identity."""
+
+    from campaign.eligibility import freeze_decision_time
+
+    return freeze_decision_time(
+        listing_decisions_from_numeric_spec(spec),
+        min_eligible_count,
+        min_distinct_values,
+        factor_id,
+        signal_date,
+    )
+
+
+def dated_uniform_returns(
+    session_date: str,
+    weights: dict[bytes, float],
+    value: object,
+) -> Any:
+    """Bind a uniform held-return map to one schedule session."""
+
+    from campaign.benchmarks import dated_held_returns
+
+    return dated_held_returns(session_date, uniform_return_map(weights, value))
+
+
 def fixture_file(name: str) -> Path:
     """Return one campaign_runner_v1 fixture path."""
 

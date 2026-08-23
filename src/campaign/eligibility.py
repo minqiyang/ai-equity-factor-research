@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import date
 import json
 import math
 from numbers import Integral, Real
@@ -67,6 +68,8 @@ class FrozenDecisionTime:
     invalid_factor_month: bool
     reason_counts: MappingProxyType[str, int]
     retained_decisions: tuple[ListingDecision, ...]
+    factor_id: str
+    signal_date: str
 
 
 def evaluate_decision_time_listings(
@@ -88,6 +91,8 @@ def freeze_decision_time(
     decisions: Sequence[ListingDecision],
     min_eligible_count: int,
     min_distinct_values: int,
+    factor_id: str,
+    signal_date: str,
 ) -> FrozenDecisionTime:
     """Freeze ranks, deciles, targets, and the three zero-target triggers."""
 
@@ -96,6 +101,8 @@ def freeze_decision_time(
         or not isinstance(decisions, Sequence)
     ):
         raise TypeError("decisions must be a sequence")
+    bound_factor_id = factor_spec(factor_id).factor_id
+    bound_signal_date = _strict_date(signal_date).isoformat()
     floor_count = _nonneg_int(min_eligible_count, "min_eligible_count")
     floor_distinct = _nonneg_int(min_distinct_values, "min_distinct_values")
 
@@ -180,12 +187,15 @@ def freeze_decision_time(
         invalid_factor_month=bool(triggers),
         reason_counts=MappingProxyType(reason_counts),
         retained_decisions=tuple(retained),
+        factor_id=bound_factor_id,
+        signal_date=bound_signal_date,
     )
 
 
 def build_frozen_decision_time(
     listings: Sequence[DecisionTimeListing],
     factor_id: str,
+    signal_date: str,
     min_eligible_count: int,
     min_distinct_values: int,
 ) -> FrozenDecisionTime:
@@ -195,6 +205,8 @@ def build_frozen_decision_time(
         evaluate_decision_time_listings(listings, factor_id),
         min_eligible_count,
         min_distinct_values,
+        factor_id,
+        signal_date,
     )
 
 
@@ -376,15 +388,23 @@ def _bound_record_price(
 ) -> float | None:
     if not isinstance(record, Mapping):
         return None
-    price = record.get("adjusted_close")
     try:
-        scalar_value = float(scalar)  # type: ignore[arg-type]
-        record_value = float(price)  # type: ignore[arg-type]
-    except (OverflowError, TypeError, ValueError):
+        scalar_value = _finite_real(scalar, "referenced_price")
+        record_value = _finite_real(record.get("adjusted_close"), "adjusted_close")
+    except (TypeError, ValueError):
         return None
     if scalar_value != record_value:
         return None
     return record_value
+
+
+def _strict_date(value: object) -> date:
+    if not isinstance(value, str):
+        raise ValueError("date must be strict YYYY-MM-DD")
+    parsed = date.fromisoformat(value)
+    if len(value) != 10 or parsed.isoformat() != value:
+        raise ValueError("date must be strict YYYY-MM-DD")
+    return parsed
 
 
 def _validate_listing_key(listing_key: object) -> bytes:

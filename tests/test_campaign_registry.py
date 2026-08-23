@@ -206,6 +206,19 @@ def test_interior_missing_momentum_remains_valid() -> None:
     assert fixture["forbidden"]["full_window_contiguity_rejection"]
 
 
+def test_non_finite_computed_factor_is_invalid() -> None:
+    fixture = load_runner_fixture("factor_value_non_finite.json")
+    for case in fixture["inputs"]["cases"]:
+        result = compute_registered_factor(
+            FACTOR_ORDER[case["owner_index"]],
+            case["anchors"],
+        )
+        assert result.valid is fixture["expected"]["valid"], case
+        assert result.value is fixture["expected"]["value"], case
+        assert result.reason == fixture["expected"]["reason"], case
+    assert fixture["forbidden"]["accept_non_finite_computed_factor"]
+
+
 def test_interior_missing_reversal_remains_valid() -> None:
     fixture = load_runner_fixture("interior_missing_reversal.json")
     result = compute_registered_factor(

@@ -86,8 +86,12 @@ def random_rank_target(
 
     if not isinstance(frozen, FrozenDecisionTime):
         raise TypeError("frozen must be FrozenDecisionTime")
-    factor_spec(factor_id)
-    _strict_date(signal_date)
+    factor_spec(frozen.factor_id)
+    _strict_date(frozen.signal_date)
+    if factor_id != frozen.factor_id:
+        raise ValueError("factor_id must match frozen.factor_id")
+    if signal_date != frozen.signal_date:
+        raise ValueError("signal_date must match frozen.signal_date")
     if not isinstance(scheme_id, str) or not scheme_id:
         raise ValueError("scheme_id must be a nonempty string")
     if not isinstance(seed_version, str) or not seed_version:
@@ -110,7 +114,9 @@ def random_rank_target(
         sorted(item.listing_key for item in frozen.ordered_eligible)
     )
     selected_count = top_decile_count(len(ordered_keys))
-    preimage = "|".join((scheme_id, seed_version, factor_id, signal_date))
+    preimage = "|".join(
+        (scheme_id, seed_version, frozen.factor_id, frozen.signal_date)
+    )
     digest = hashlib.sha256(preimage.encode("ascii")).hexdigest()
     seed = int(digest[:16], 16)
     try:
