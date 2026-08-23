@@ -16,7 +16,11 @@ from ledger.schema_registry import (
     validate_raw_event_bytes,
     validate_registry,
 )
-from ledger_cross_product import first_full_rest_smoke
+from ledger_cross_product import (
+    first_full_rest_smoke,
+    registry_field_constraint_kind,
+    registry_requiredness_kind,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -179,6 +183,30 @@ def _event_schema(
 
 def _inventory_schema(registry: dict[str, object]) -> dict[str, object]:
     return _event_schema(registry, "CAMPAIGN_INVENTORY_SEALED")
+
+
+def _envelope_requiredness_kind(fixture_key: str) -> object:
+    return registry_requiredness_kind(
+        _registry(),
+        _event(fixture_key),
+        tuple((field,) for field in EXPECTED_EVENT_FIELDS),
+    )
+
+
+def _payload_requiredness_kind(fixture_key: str) -> object:
+    return registry_requiredness_kind(
+        _registry(),
+        _event(fixture_key),
+        tuple(("payload", field) for field in EXPECTED_PAYLOAD_FIELDS),
+    )
+
+
+def _payload_constraint_kind(field: str) -> object:
+    return registry_field_constraint_kind(
+        _registry(),
+        "CAMPAIGN_INVENTORY_SEALED",
+        ("payload", field),
+    )
 
 
 def test_r1g_release_is_explicit_and_preserves_all_prior_releases() -> None:
@@ -387,7 +415,11 @@ def test_r1g_schema_has_exact_preseal_shape_and_local_constraints() -> None:
 
 @pytest.mark.parametrize(
     ("fixture_key", "field"),
-    first_full_rest_smoke(FIXTURE_EVENT_KEYS, EXPECTED_EVENT_FIELDS),
+    first_full_rest_smoke(
+        FIXTURE_EVENT_KEYS,
+        EXPECTED_EVENT_FIELDS,
+        constraint_kind=_envelope_requiredness_kind,
+    ),
 )
 def test_r1g_rejects_every_missing_envelope_field(
     fixture_key: str, field: str
@@ -401,7 +433,11 @@ def test_r1g_rejects_every_missing_envelope_field(
 
 @pytest.mark.parametrize(
     ("fixture_key", "field"),
-    first_full_rest_smoke(FIXTURE_EVENT_KEYS, EXPECTED_PAYLOAD_FIELDS),
+    first_full_rest_smoke(
+        FIXTURE_EVENT_KEYS,
+        EXPECTED_PAYLOAD_FIELDS,
+        constraint_kind=_payload_requiredness_kind,
+    ),
 )
 def test_r1g_rejects_every_missing_payload_field(
     fixture_key: str, field: str
@@ -553,6 +589,7 @@ def test_r1g_rejects_campaign_subject_namespace_killers(
     first_full_rest_smoke(
         DIGEST_FIELDS,
         ("A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True),
+        constraint_kind=_payload_constraint_kind,
     ),
 )
 def test_r1g_rejects_invalid_payload_digests(
@@ -585,6 +622,7 @@ def test_r1g_rejects_invalid_payload_digests(
             None,
             True,
         ),
+        constraint_kind=_payload_constraint_kind,
     ),
 )
 def test_r1g_rejects_unsafe_public_reference_ids(
@@ -602,6 +640,7 @@ def test_r1g_rejects_unsafe_public_reference_ids(
     first_full_rest_smoke(
         INTEGER_FIELDS,
         (0, -1, True, False, 1.0, "1", None, 2**53),
+        constraint_kind=_payload_constraint_kind,
     ),
 )
 def test_r1g_rejects_invalid_versions_and_generations(

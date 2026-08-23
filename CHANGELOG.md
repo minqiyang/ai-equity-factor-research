@@ -9,6 +9,12 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Closed remaining Track A PR 3 exact-head findings: ledger schema tests
+  still collapse independent fail-closed axes for speed, but only after an
+  equivalence check proves every representative delegates to the same
+  constraint kind. Mixed field kinds can no longer hide a later-field
+  schema regression behind `cases[0]`. F-1 and F-2 remain deferred. This
+  adds no private data, result access, or 14-trial run.
 - Closed remaining Track A PR 3 exact-head findings: a frozen signal set
   must contain every continuously included schedule row between its
   endpoints. Supplying January and March while February remains

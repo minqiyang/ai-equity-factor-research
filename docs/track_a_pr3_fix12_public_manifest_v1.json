@@ -1,0 +1,88 @@
+{
+  "schema_version": "track_a_pr3_fix12_public_manifest_v1",
+  "card_id": "EFR-GRK-PR3-FIX-12",
+  "branch": "codex/track-a-pr3-fix4",
+  "publication_branch": "codex/track-a-pr3-exec1",
+  "pr": 187,
+  "start_head": "be8ce63da6d96e0f364f805b0e154a4700034f18",
+  "plan": {
+    "md_sha256": "237194a9caf1f6c1486286438fabbb9d7b417c216de630d9425547e917cbc90d",
+    "json_sha256": "dc55651e31959d0dfd8db60735e86c80644fde5bfc050c95d024d3aed38ffca3",
+    "gate": "PASS_3_OF_3"
+  },
+  "f1_f2_disposition": {
+    "decision": "REFUTE_AND_DEFER",
+    "artifact_id": "owner_pr3_f1_f2_disposition_v1",
+    "deferred_to": ["G-2", "G-3"]
+  },
+  "exact_head_items": [
+    "preserve the full ledger validation cross-product"
+  ],
+  "not_authorized": ["F-1", "F-2"],
+  "scope": [
+    "tests/ledger_cross_product.py",
+    "constraint-kind equivalence before collapse",
+    "tests/test_ledger_cross_product.py",
+    "tests/test_ledger_schema_registry_r1.py",
+    "tests/test_ledger_schema_registry_r1c.py",
+    "tests/test_ledger_schema_registry_r1d.py",
+    "tests/test_ledger_schema_registry_r1e.py",
+    "tests/test_ledger_schema_registry_r1f.py",
+    "tests/test_ledger_schema_registry_r1g.py",
+    "tests/test_ledger_schema_registry_r1h.py",
+    "tests/test_ledger_schema_registry_r1i.py"
+  ],
+  "not_included": [
+    "F-1",
+    "F-2",
+    "14-trial run",
+    "private panel",
+    "performance access",
+    "result access",
+    "merge",
+    "inference.py edit"
+  ],
+  "unchanged_campaign_file_bytes": {
+    "src/campaign/inference.py": "be2e743c659c87791c99d0e27684cb48c730486719860773721423e08650a130",
+    "src/campaign/__init__.py": "5fd76e27290ac9b1a9360239e48cc8712a0fc41fd45bb3ec97b75158f8c70043",
+    "src/campaign/classifier.py": "316e5b5458aaba3c682b429b36216ccb568cbaed5f3bcdda0ad4b2a94dfd337c",
+    "src/campaign/deciles.py": "194aa4c521e09284cca386192dd78b037e302f7b4a4869f04e3bdc1e27da7841",
+    "src/campaign/factors.py": "95c95be3e5f05533c93c93a9f314b01f72a0a7088c417dae80fd207bec4667c9",
+    "src/campaign/listing_key.py": "18166cc25a5f8a990ba243af422cf874ffc18a87f4e6501840dc755b4c217b4a",
+    "src/campaign/turnover.py": "db51e116bf14f6908c6d2bb24701a3b405be699977f5a2853c0a00ad435bc51b",
+    "src/campaign/lineage.py": "a28744f3aef22b7997118192ac7ad66a06dc89b270f6961badb95ee61ac4ac66",
+    "src/campaign/schedule.py": "613b209a7d70b28353e4a039ecaf84efc1e4964b9320afb13a6f838d97fc356d",
+    "src/campaign/paths.py": "1429e252e5adfdda970f214b7cff345b12e685a8192c55d4dad0aeedd75f55a7",
+    "src/campaign/metrics.py": "7b791af56bf1941956dcd2cb98ec9c80efa1b49a75f4ee1e73aedcc5c1addf73",
+    "src/campaign/runner.py": "3f38f54a12f74aa159f09d57bd170ae42e4cbcf25cb83f2fc97b9b06f264ee88",
+    "src/campaign/precondition.py": "23d1ae0eb935d6b50d61bd9429d474759b686909c70849359d5b01f62380f4c9",
+    "src/campaign/diagnostics.py": "4b140c5421fd05790c37a0d7307bc65f1736cbf20b5332490fe559c8727d68da",
+    "src/campaign/reconciliation.py": "9714648c6020d41174f5774ada858bdfc21b53dbfd68a886bec9d7edb421f4a7",
+    "src/campaign/eligibility.py": "a6bcb0f92bb7e75710bf4365816cf10e296d54e45e24a00fafc42a2c2e729e1a",
+    "src/campaign/baselines.py": "7f262deec0fb2422ade97029f3e7cffc894fdf9048a585276e46737a27fafabc",
+    "src/campaign/returns.py": "4bd2b4266f451262ca143d368316b1cde3b0e7705142d2879885b9c2170eb4e5",
+    "src/campaign/registry.py": "6ff5ea6dc5b1c01db37437d32982a24c2c47b87af8485376026c310f9fc267f3",
+    "src/campaign/bundle.py": "fcf3f106cc499159e6be7408f31a67a31e10634986957c2184d68afa96f8c09c",
+    "src/campaign/benchmarks.py": "9d160af4c88a3119990dfc525ad17f9ac85be7616da53cb75fe4ee87a9f0a729"
+  },
+  "delivered_file_bytes": {
+    "tests/ledger_cross_product.py": "747df456f7aad02865cd5cf0764e8bc38820d782c415ccc260b976af564f6dc3",
+    "tests/test_ledger_cross_product.py": "a9647931708c8e5a16b26ecb5ce3b37e51e05aee656b1c926c0397627d15800e",
+    "tests/test_ledger_schema_registry_r1.py": "7ff5917937a4c837369621ea9f5ab5ec6b60854391f8214b727cda6218eebb0f",
+    "tests/test_ledger_schema_registry_r1c.py": "264b0c7ac87cfa631d107874264e031bf75ad44f4a0fe55d06119c79bd6ac18c",
+    "tests/test_ledger_schema_registry_r1d.py": "517e4e2711936adca7abb96aaf92c20dfa6db19d7ab53fa79c59cd2e4e67b412",
+    "tests/test_ledger_schema_registry_r1e.py": "9dfd7a9d04d65e6951bcf0de7de533446fe27041a787da19e891b7978b4cda97",
+    "tests/test_ledger_schema_registry_r1f.py": "b41c43f998fe867bd28ed5957599ac7aae2e62c2761b867f0eed23cf25a2392c",
+    "tests/test_ledger_schema_registry_r1g.py": "5502b9d79399a2b242a83df93d05528b4becdf46a7a047d8f9799f46d2658210",
+    "tests/test_ledger_schema_registry_r1h.py": "ae84825e43d68c4151dde141ea0e7fe66a188eab9ae41464991437cf084f3248",
+    "tests/test_ledger_schema_registry_r1i.py": "331c05429063ee24f6f1eb7f2ce2eb3f8842a503761bbc59f5f36dd44731cd1b",
+    "docs/engineering_log.md": "8953ee3d9e2a05db83d843413fd9caed51e7ff153bb88b9e437ec63133d68f3d",
+    "docs/repo_map.md": "29b74424e912678f3f3e25406bfcaa00cca83be44f9a6a99b5ecfebab4160e9b",
+    "CHANGELOG.md": "50f6a4ba694427af58e323baa44cb99fea2bedf7331d939188b56c7d6648852a"
+  },
+  "validation": {
+    "focused_ledger_tests_passed": 1267,
+    "full_pytest_passed": 2412,
+    "full_pytest_skipped": 2
+  }
+}

@@ -18,7 +18,10 @@ from ledger.schema_registry import (
     validate_raw_event_bytes,
     validate_registry,
 )
-from ledger_cross_product import first_full_rest_smoke
+from ledger_cross_product import (
+    first_full_rest_smoke,
+    registry_requiredness_kind,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -311,11 +314,27 @@ def test_r1_rejects_self_consistent_unpublished_promotion() -> None:
     )
 
 
+def _allocation_field_path(field: str) -> tuple[str, ...]:
+    if field.startswith("payload."):
+        return tuple(field.split("."))
+    return (field,)
+
+
+def _allocation_missing_kind(event_key: str) -> object:
+    fields = EXPECTED_ALLOCATION_FIELDS + ("payload.campaign_scope_ids",)
+    return registry_requiredness_kind(
+        _r1_registry(),
+        _allocation_fixture()[event_key],
+        tuple(_allocation_field_path(field) for field in fields),
+    )
+
+
 @pytest.mark.parametrize(
     ("event_key", "field"),
     first_full_rest_smoke(
         ("campaign_allocated", "experiment_allocated"),
         EXPECTED_ALLOCATION_FIELDS + ("payload.campaign_scope_ids",),
+        constraint_kind=_allocation_missing_kind,
     ),
 )
 def test_r1_allocations_reject_every_missing_required_field(

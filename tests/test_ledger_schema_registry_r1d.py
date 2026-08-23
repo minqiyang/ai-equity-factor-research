@@ -16,7 +16,10 @@ from ledger.schema_registry import (
     validate_raw_event_bytes,
     validate_registry,
 )
-from ledger_cross_product import first_full_rest_smoke
+from ledger_cross_product import (
+    first_full_rest_smoke,
+    registry_field_constraint_kind,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -128,6 +131,14 @@ def _sample_schema(registry: dict[str, object]) -> dict[str, object]:
         entry
         for entry in registry["event_schemas"]
         if entry["event_type"] == "SAMPLE_REGISTERED"
+    )
+
+
+def _payload_constraint_kind(field: str) -> object:
+    return registry_field_constraint_kind(
+        _registry(),
+        "SAMPLE_REGISTERED",
+        ("payload", field),
     )
 
 
@@ -431,6 +442,7 @@ def test_r1d_rejects_scope_order_uniqueness_namespace_and_type(
             None,
             True,
         ),
+        constraint_kind=_payload_constraint_kind,
     ),
 )
 def test_r1d_rejects_unsafe_public_reference_ids(
@@ -453,6 +465,7 @@ def test_r1d_rejects_unsafe_public_reference_ids(
             "sample_record_version",
         ),
         (0, -1, True, False, 1.0, "1", None, 2**53),
+        constraint_kind=_payload_constraint_kind,
     ),
 )
 def test_r1d_rejects_invalid_versions_and_generations(
@@ -491,6 +504,7 @@ def test_r1d_accepts_safe_integer_maximum(field: str) -> None:
             "sample_record_sha256",
         ),
         ("A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True),
+        constraint_kind=_payload_constraint_kind,
     ),
 )
 def test_r1d_rejects_invalid_digests(

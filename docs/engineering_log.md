@@ -1,5 +1,25 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-12 ledger cross-product equivalence
+
+- Implemented exact-head Codex item from card `EFR-GRK-PR3-FIX-12` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `be8ce63da6d96e0f364f805b0e154a4700034f18`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- `first_full_rest_smoke` still collapses later representatives to one
+  smoke case, but only after every representative is proven to delegate
+  to the same non-null constraint kind. Mixed kinds, unknown kinds, and
+  empty axes fail closed before any collapsed pairs are returned.
+- Ledger registry tests now prove field groups against the packaged
+  schema path before collapsing Boolean, null, length, and case cases.
+  Missing-field fixture groups prove shared requiredness. Fail-closed
+  `INVALID_EVENT` behavior is unchanged.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited. No private panel, performance value, or 14-trial run
+  was accessed.
+- Focused ledger tests passed 1267. Full suite after repo-map refresh:
+  2412 passed, 2 existing platform-conditional skipped.
+
 ## 2026-08-23 - Track A PR 3 FIX-11 interior included decisions
 
 - Implemented exact-head Codex item from card `EFR-GRK-PR3-FIX-11` on

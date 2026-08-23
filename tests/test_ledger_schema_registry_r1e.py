@@ -16,7 +16,11 @@ from ledger.schema_registry import (
     validate_raw_event_bytes,
     validate_registry,
 )
-from ledger_cross_product import first_full_rest_smoke
+from ledger_cross_product import (
+    first_full_rest_smoke,
+    registry_field_constraint_kind,
+    registry_requiredness_kind,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -163,6 +167,39 @@ def _binding_schema(registry: dict[str, object]) -> dict[str, object]:
 
 def _stage3_schema(registry: dict[str, object]) -> dict[str, object]:
     return _event_schema(registry, "STAGE3_SAMPLE_REFERENCE_BOUND")
+
+
+def _envelope_requiredness_kind(fixture_key: str) -> object:
+    return registry_requiredness_kind(
+        _registry(),
+        _event(fixture_key),
+        tuple((field,) for field in EXPECTED_EVENT_FIELDS),
+    )
+
+
+def _scope_constraint_kind(fixture_key: str) -> object:
+    return registry_field_constraint_kind(
+        _registry(),
+        _event(fixture_key),
+        ("payload", "campaign_scope_ids"),
+    )
+
+
+def _source_field_constraint_kind(pair: tuple[str, str]) -> object:
+    fixture_key, field = pair
+    return registry_field_constraint_kind(
+        _registry(),
+        _event(fixture_key),
+        ("payload", field),
+    )
+
+
+def _stage3_payload_constraint_kind(field: str) -> object:
+    return registry_field_constraint_kind(
+        _registry(),
+        "STAGE3_SAMPLE_REFERENCE_BOUND",
+        ("payload", field),
+    )
 
 
 def test_r1e_release_is_explicit_and_preserves_all_prior_releases() -> None:
@@ -447,7 +484,11 @@ def test_r1e_binding_envelopes_and_stage3_tuple_are_exact_r1d_successors() -> No
 
 @pytest.mark.parametrize(
     ("fixture_key", "event_field"),
-    first_full_rest_smoke(FIXTURE_EVENT_KEYS, EXPECTED_EVENT_FIELDS),
+    first_full_rest_smoke(
+        FIXTURE_EVENT_KEYS,
+        EXPECTED_EVENT_FIELDS,
+        constraint_kind=_envelope_requiredness_kind,
+    ),
 )
 def test_r1e_rejects_every_missing_envelope_field(
     fixture_key: str, event_field: str
@@ -678,6 +719,7 @@ def test_r1e_rejects_subject_namespace_killers(
             "cmp_00000000000000000000000000000001",
             {},
         ),
+        constraint_kind=_scope_constraint_kind,
     ),
 )
 def test_r1e_rejects_non_singleton_wrong_namespace_and_wrong_type_scope(
@@ -708,6 +750,7 @@ def test_r1e_rejects_non_singleton_wrong_namespace_and_wrong_type_scope(
                 None,
                 True,
             ),
+            constraint_kind=_source_field_constraint_kind,
         )
     ),
 )
@@ -741,6 +784,7 @@ def test_r1e_rejects_invalid_source_event_ids(
                 ),
             ),
             ("A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True),
+            constraint_kind=_source_field_constraint_kind,
         )
     ),
 )
@@ -825,6 +869,7 @@ def test_r1e_rejects_outer_and_nested_branch_field_bleed(
             None,
             True,
         ),
+        constraint_kind=_stage3_payload_constraint_kind,
     ),
 )
 def test_r1e_rejects_unsafe_stage3_public_reference_ids(
@@ -847,6 +892,7 @@ def test_r1e_rejects_unsafe_stage3_public_reference_ids(
             "sample_record_version",
         ),
         (0, -1, True, False, 1.0, "1", None, 2**53),
+        constraint_kind=_stage3_payload_constraint_kind,
     ),
 )
 def test_r1e_rejects_invalid_stage3_versions_and_generations(
@@ -870,6 +916,7 @@ def test_r1e_rejects_invalid_stage3_versions_and_generations(
             "sample_record_sha256",
         ),
         ("A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True),
+        constraint_kind=_stage3_payload_constraint_kind,
     ),
 )
 def test_r1e_rejects_invalid_stage3_digests(

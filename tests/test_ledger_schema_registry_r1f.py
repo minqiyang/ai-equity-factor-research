@@ -16,7 +16,11 @@ from ledger.schema_registry import (
     validate_raw_event_bytes,
     validate_registry,
 )
-from ledger_cross_product import first_full_rest_smoke
+from ledger_cross_product import (
+    first_full_rest_smoke,
+    registry_field_constraint_kind,
+    registry_requiredness_kind,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -186,6 +190,30 @@ def _event_schema(
         entry
         for entry in registry["event_schemas"]
         if entry["event_type"] == event_type
+    )
+
+
+def _envelope_requiredness_kind(fixture_key: str) -> object:
+    return registry_requiredness_kind(
+        _registry(),
+        _event(fixture_key),
+        tuple((field,) for field in EXPECTED_EVENT_FIELDS),
+    )
+
+
+def _payload_requiredness_kind(fixture_key: str) -> object:
+    return registry_requiredness_kind(
+        _registry(),
+        _event(fixture_key),
+        tuple(("payload", field) for field in EXPECTED_PAYLOAD_FIELDS),
+    )
+
+
+def _payload_constraint_kind(field: str) -> object:
+    return registry_field_constraint_kind(
+        _registry(),
+        "TRIAL_ALLOCATED",
+        ("payload", field),
     )
 
 
@@ -428,7 +456,11 @@ def test_r1f_accepts_literal_child_and_clone_relation_variants() -> None:
 
 @pytest.mark.parametrize(
     ("fixture_key", "event_field"),
-    first_full_rest_smoke(FIXTURE_EVENT_KEYS, EXPECTED_EVENT_FIELDS),
+    first_full_rest_smoke(
+        FIXTURE_EVENT_KEYS,
+        EXPECTED_EVENT_FIELDS,
+        constraint_kind=_envelope_requiredness_kind,
+    ),
 )
 def test_r1f_rejects_every_missing_envelope_field(
     fixture_key: str, event_field: str
@@ -442,7 +474,11 @@ def test_r1f_rejects_every_missing_envelope_field(
 
 @pytest.mark.parametrize(
     ("fixture_key", "payload_field"),
-    first_full_rest_smoke(FIXTURE_EVENT_KEYS, EXPECTED_PAYLOAD_FIELDS),
+    first_full_rest_smoke(
+        FIXTURE_EVENT_KEYS,
+        EXPECTED_PAYLOAD_FIELDS,
+        constraint_kind=_payload_requiredness_kind,
+    ),
 )
 def test_r1f_rejects_every_missing_payload_field(
     fixture_key: str, payload_field: str
@@ -602,6 +638,7 @@ def test_r1f_rejects_non_singleton_or_wrong_campaign_scope(
             None,
             True,
         ),
+        constraint_kind=_payload_constraint_kind,
     ),
 )
 def test_r1f_rejects_invalid_parent_event_ids(
@@ -640,6 +677,7 @@ def test_r1f_rejects_wrong_parent_typed_ids(
     first_full_rest_smoke(
         DIGEST_PAYLOAD_FIELDS,
         ("A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True),
+        constraint_kind=_payload_constraint_kind,
     ),
 )
 def test_r1f_rejects_invalid_payload_digests(
@@ -672,6 +710,7 @@ def test_r1f_rejects_invalid_payload_digests(
             None,
             True,
         ),
+        constraint_kind=_payload_constraint_kind,
     ),
 )
 def test_r1f_rejects_unsafe_public_reference_ids(
@@ -689,6 +728,7 @@ def test_r1f_rejects_unsafe_public_reference_ids(
     first_full_rest_smoke(
         INTEGER_PAYLOAD_FIELDS,
         (0, -1, True, False, 1.0, "1", None, 2**53),
+        constraint_kind=_payload_constraint_kind,
     ),
 )
 def test_r1f_rejects_invalid_versions_and_generations(
