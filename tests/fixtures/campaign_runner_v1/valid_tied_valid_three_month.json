@@ -7,6 +7,20 @@
     "periods_per_year": 252,
     "sample_std_ddof": 1,
     "role": "factor_matched_primary",
+    "signal_dates": ["2023-12-29", "2024-01-31"],
+    "campaign_schedule": {
+      "session_dates": [
+        "2023-12-29",
+        "2024-01-31",
+        "2024-02-29",
+        "2024-03-28"
+      ],
+      "accepted_cutoff": "2024-03-28",
+      "horizon_return_rows": 1,
+      "horizon_purge_signal_axis_rows": 2,
+      "embargo_rows": 0,
+      "first_fold_year": 2018
+    },
     "min_eligible_count": 1,
     "min_distinct_values": 1,
     "benchmark_universe": {

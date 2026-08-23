@@ -77,9 +77,13 @@ def factor_matched_cost_free_comparison(
     from later returns. Daily strategy points must be the accepted
     CampaignSchedule's exact execution-bounded span, from the first included
     execution through the execution following the last target, and map onto
-    the governing monthly frozen decision. Old holdings earn the return into
-    execution close; the new equal-weight target resets at execution close.
-    The comparison is structurally cost-free.
+    the governing monthly frozen decision. Every nonempty frozen set uses
+    that span; a one-point path dated at signal close is not a substitute.
+    Each frozen decision must belong to a continuously included schedule
+    row, and the bounded endpoint must not exceed accepted_cutoff. Old
+    holdings earn the return into execution close; the new equal-weight
+    target resets at execution close. The comparison is structurally
+    cost-free.
     """
 
     if not isinstance(role, str) or not role:
@@ -319,10 +323,15 @@ def _require_bound_calendar(
     sessions = _accepted_schedule_sessions(schedule)
     path = _ordered_unique_dates(session_dates, "session dates")
     _require_contiguous_slice(path, sessions)
-    if not frozen or len(path) == len(frozen):
+    if not frozen:
         return
     for item in frozen:
-        _validated_signal_row(schedule, item.signal_date)
+        row = _validated_signal_row(schedule, item.signal_date)
+        if not row.continuous_included:
+            raise ValueError(
+                "frozen decision must belong to a continuously included "
+                "schedule row"
+            )
     required = _execution_bounded_span(frozen, schedule)
     if path != required:
         raise ValueError(
@@ -409,6 +418,10 @@ def _execution_bounded_span(
             "campaign schedule is missing the first included execution"
         )
     end = _following_execution(schedule, last.signal_date)
+    if _strict_date(end) > _strict_date(schedule.accepted_cutoff):
+        raise ValueError(
+            "execution-bounded session span must not exceed accepted_cutoff"
+        )
     sessions = _accepted_schedule_sessions(schedule)
     try:
         start_index = sessions.index(start)

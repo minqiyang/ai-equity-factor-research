@@ -18,12 +18,27 @@
     "exchange": "XNYS",
     "effective_from": "2014-01-01",
     "effective_to": null,
-    "session_date": "2026-03-31",
+    "signal_date": "2026-03-31",
+    "session_dates": ["2026-04-01", "2026-04-30", "2026-05-01"],
+    "campaign_schedule": {
+      "session_dates": [
+        "2026-03-31",
+        "2026-04-01",
+        "2026-04-30",
+        "2026-05-01"
+      ],
+      "accepted_cutoff": "2026-05-01",
+      "horizon_return_rows": 1,
+      "horizon_purge_signal_axis_rows": 2,
+      "embargo_rows": 0,
+      "first_fold_year": 2018
+    },
     "initial_equity": 1.0,
     "prior_factor_ticker": "T000",
     "prior_factor_weight": 1.0,
-    "factor_held_return": 0.0,
-    "benchmark_held_return": 0.01,
+    "strategy_held_returns": [0.0, 0.0, 0.0],
+    "strategy_reset_weights": [{}, {}, {}],
+    "benchmark_held_returns": [0.01, 0.0, 0.0],
     "transaction_cost_bps": [10, 25],
     "role": "factor_matched_primary"
   },

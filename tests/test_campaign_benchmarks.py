@@ -35,7 +35,7 @@ def test_integrated_tied_month_keeps_invested_benchmark() -> None:
         inputs["min_eligible_count"],
         inputs["min_distinct_values"],
         FACTOR_ORDER[0],
-        inputs["session_date"],
+        inputs["signal_date"],
     )
     assert frozen.invalid_factor_month is expected["invalid_factor_month"]
     assert frozen.benchmark_formable is expected["benchmark_formable"]
@@ -50,18 +50,25 @@ def test_integrated_tied_month_keeps_invested_benchmark() -> None:
         inputs["effective_to"],
         {inputs["prior_factor_ticker"]: inputs["prior_factor_weight"]},
     )
+    schedule = fixture_campaign_schedule(inputs["campaign_schedule"])
     for bps, wanted in expected["by_bps"].items():
         strategy = advance_holdings(
             prior,
-            (
+            tuple(
                 runner_holding_interval(
-                    inputs["session_date"],
+                    session_date,
                     inputs["exchange"],
                     inputs["effective_from"],
                     inputs["effective_to"],
-                    {inputs["prior_factor_ticker"]: inputs["factor_held_return"]},
-                    {},
-                ),
+                    {inputs["prior_factor_ticker"]: held_return},
+                    reset_weights,
+                )
+                for session_date, held_return, reset_weights in zip(
+                    inputs["session_dates"],
+                    inputs["strategy_held_returns"],
+                    inputs["strategy_reset_weights"],
+                    strict=True,
+                )
             ),
             int(bps),
             inputs["initial_equity"],
@@ -69,16 +76,21 @@ def test_integrated_tied_month_keeps_invested_benchmark() -> None:
         comparison = factor_matched_cost_free_comparison(
             (frozen,),
             strategy,
-            (
+            tuple(
                 dated_uniform_returns(
-                    inputs["session_date"],
+                    session_date,
                     dict(frozen.matched_benchmark_target),
-                    inputs["benchmark_held_return"],
-                ),
+                    value,
+                )
+                for session_date, value in zip(
+                    inputs["session_dates"],
+                    inputs["benchmark_held_returns"],
+                    strict=True,
+                )
             ),
             inputs["initial_equity"],
             inputs["role"],
-            strategy_campaign_schedule(strategy),
+            schedule,
         )
         point = strategy.points[0]
         assert strategy.valid
@@ -137,9 +149,9 @@ def test_valid_tied_valid_three_month_stays_connected() -> None:
             inputs["min_eligible_count"],
             inputs["min_distinct_values"],
             FACTOR_ORDER[0],
-            session_date,
+            signal_date,
         )
-        for session_date in spec["session_dates"]
+        for signal_date in inputs["signal_dates"]
     )
     frozen = frozen_by_session[0]
     for bps, wanted in expected["by_bps"].items():
@@ -185,7 +197,7 @@ def test_valid_tied_valid_three_month_stays_connected() -> None:
             ),
             inputs["initial_equity"],
             inputs["role"],
-            strategy_campaign_schedule(strategy),
+            fixture_campaign_schedule(inputs["campaign_schedule"]),
         )
         assert strategy.valid
         assert comparison.valid
@@ -221,7 +233,7 @@ def test_benchmark_comparison_gap_is_hard_validity() -> None:
         inputs["min_eligible_count"],
         inputs["min_distinct_values"],
         FACTOR_ORDER[0],
-        inputs["session_date"],
+        inputs["signal_date"],
     )
     assert frozen.benchmark_formable is expected["benchmark_formable"]
     assert len(frozen.matched_benchmark_target) == expected["benchmark_count"]
@@ -232,15 +244,16 @@ def test_benchmark_comparison_gap_is_hard_validity() -> None:
             inputs["effective_to"],
             inputs["strategy"]["initial_weights"],
         ),
-        (
+        tuple(
             runner_holding_interval(
-                inputs["session_date"],
+                session_date,
                 inputs["exchange"],
                 inputs["effective_from"],
                 inputs["effective_to"],
                 inputs["strategy"]["held_returns"],
                 inputs["strategy"]["reset_weights"],
-            ),
+            )
+            for session_date in inputs["session_dates"]
         ),
         inputs["transaction_cost_bps"],
         inputs["initial_equity"],
@@ -257,15 +270,19 @@ def test_benchmark_comparison_gap_is_hard_validity() -> None:
     comparison = factor_matched_cost_free_comparison(
         (frozen,),
         strategy,
-        (dated_held_returns(inputs["session_date"], observed),),
+        tuple(
+            dated_held_returns(session_date, observed)
+            for session_date in inputs["session_dates"]
+        ),
         inputs["initial_equity"],
         inputs["role"],
-        strategy_campaign_schedule(strategy),
+        fixture_campaign_schedule(inputs["campaign_schedule"]),
     )
     assert comparison.valid is expected["comparison_valid"]
     assert comparison.hard_validity_failure is expected["hard_validity_failure"]
     assert comparison.reason == expected["reason"]
-    assert comparison.active_returns == (expected["active_return"],)
+    assert all(value is None for value in comparison.active_returns)
+    assert expected["active_return"] is None
     assert (
         comparison.benchmark_gross_returns[0]
         != fixture["forbidden"]["survivor_renormalized_return"]
@@ -289,7 +306,7 @@ def test_spy_secondary_gap_does_not_change_primary() -> None:
             FACTOR_ORDER[0],
             session_date,
         )
-        for session_date in inputs["session_dates"]
+        for session_date in inputs["signal_dates"]
     )
     frozen = frozen_by_session[0]
     strategy = advance_holdings(
@@ -334,7 +351,7 @@ def test_spy_secondary_gap_does_not_change_primary() -> None:
         ),
         inputs["initial_equity"],
         inputs["primary_role"],
-        strategy_campaign_schedule(strategy),
+        fixture_campaign_schedule(inputs["campaign_schedule"]),
     )
     secondary = spy_secondary_comparison(inputs["spy_returns"], strategy)
     assert primary.valid is expected["primary_valid"]
@@ -369,15 +386,16 @@ def test_empty_or_duplicate_universe_is_unformable_not_cash() -> None:
             inputs["effective_to"],
             inputs["strategy"]["initial_weights"],
         ),
-        (
+        tuple(
             runner_holding_interval(
-                inputs["session_date"],
+                session_date,
                 inputs["exchange"],
                 inputs["effective_from"],
                 inputs["effective_to"],
                 inputs["strategy"]["held_returns"],
                 inputs["strategy"]["reset_weights"],
-            ),
+            )
+            for session_date in inputs["session_dates"]
         ),
         inputs["transaction_cost_bps"],
         inputs["initial_equity"],
@@ -388,23 +406,27 @@ def test_empty_or_duplicate_universe_is_unformable_not_cash() -> None:
             inputs["min_eligible_count"],
             inputs["min_distinct_values"],
             FACTOR_ORDER[0],
-            inputs["session_date"],
+            inputs["signal_date"],
         )
         wanted = fixture["expected"][name]
         assert frozen.benchmark_formable is wanted["benchmark_formable"]
         comparison = factor_matched_cost_free_comparison(
             (frozen,),
             strategy,
-            (dated_held_returns(inputs["session_date"], {}),),
+            tuple(
+                dated_held_returns(session_date, {})
+                for session_date in inputs["session_dates"]
+            ),
             inputs["initial_equity"],
             inputs["role"],
-            strategy_campaign_schedule(strategy),
+            fixture_campaign_schedule(inputs["campaign_schedule"]),
         )
         assert comparison.valid is wanted["comparison_valid"]
         assert comparison.hard_validity_failure is wanted["hard_validity_failure"]
         assert comparison.reason == wanted["reason"]
         assert (comparison.holdings is None) is wanted["holdings_is_none"]
-        assert comparison.active_returns == (wanted["active_return"],)
+        assert all(value is None for value in comparison.active_returns)
+        assert wanted["active_return"] is None
         assert (
             comparison.active_returns[0]
             != fixture["forbidden"]["cash_substitute_active"]
@@ -414,19 +436,12 @@ def test_empty_or_duplicate_universe_is_unformable_not_cash() -> None:
 def test_permuted_decision_return_pairs_cannot_reuse_strategy_order() -> None:
     fixture = load_runner_fixture("benchmark_schedule_permutation.json")
     inputs = fixture["inputs"]
-    first = freeze_numeric_universe(
-        inputs["first_universe"],
+    frozen = freeze_numeric_universe(
+        inputs["universe"],
         inputs["min_eligible_count"],
         inputs["min_distinct_values"],
         FACTOR_ORDER[0],
-        inputs["session_dates"][0],
-    )
-    second = freeze_numeric_universe(
-        inputs["second_universe"],
-        inputs["min_eligible_count"],
-        inputs["min_distinct_values"],
-        FACTOR_ORDER[0],
-        inputs["session_dates"][1],
+        inputs["signal_dates"][0],
     )
     spec = inputs["strategy"]
     strategy = advance_holdings(
@@ -460,20 +475,20 @@ def test_permuted_decision_return_pairs_cannot_reuse_strategy_order() -> None:
             dict(frozen.matched_benchmark_target),
             value,
         )
-        for frozen, session_date, value in zip(
-            (first, second),
+        for session_date, value in zip(
             inputs["session_dates"],
             inputs["benchmark_held_returns"],
             strict=True,
         )
     )
+    schedule = fixture_campaign_schedule(inputs["campaign_schedule"])
     aligned = factor_matched_cost_free_comparison(
-        (first, second),
+        (frozen,),
         strategy,
         aligned_returns,
         inputs["initial_equity"],
         inputs["role"],
-        strategy_campaign_schedule(strategy),
+        schedule,
     )
     assert aligned.valid is fixture["expected"]["aligned_valid"]
     assert aligned.benchmark_gross_returns == tuple(
@@ -481,12 +496,12 @@ def test_permuted_decision_return_pairs_cannot_reuse_strategy_order() -> None:
     )
     with pytest.raises(ValueError, match="session identity"):
         factor_matched_cost_free_comparison(
-            (second, first),
+            (frozen,),
             strategy,
             (aligned_returns[1], aligned_returns[0]),
             inputs["initial_equity"],
             inputs["role"],
-            strategy_campaign_schedule(strategy),
+            schedule,
         )
     assert fixture["forbidden"]["align_only_by_sequence_position"]
 
@@ -717,6 +732,85 @@ def test_prefix_and_suffix_truncation_are_refused() -> None:
                 schedule,
             )
     assert fixture["forbidden"]["accept_contiguous_sub_slice"]
+
+
+def test_single_decision_signal_only_path_is_refused() -> None:
+    fixture = load_runner_fixture("benchmark_signal_only_refusal.json")
+    inputs = fixture["inputs"]
+    frozen = tuple(
+        freeze_numeric_universe(
+            inputs["benchmark_universe"],
+            inputs["min_eligible_count"],
+            inputs["min_distinct_values"],
+            FACTOR_ORDER[0],
+            signal_date,
+        )
+        for signal_date in inputs["signal_dates"]
+    )
+    strategy = _uniform_strategy(inputs, inputs["session_dates"])
+    observed = tuple(
+        dated_held_returns(session_date, {})
+        for session_date in inputs["session_dates"]
+    )
+    assert len(frozen) == fixture["expected"]["frozen_count"]
+    assert inputs["session_dates"] == inputs["signal_dates"]
+    assert fixture["expected"]["path_is_signal_close"]
+    with pytest.raises(ValueError, match=fixture["expected"]["match"]):
+        factor_matched_cost_free_comparison(
+            frozen,
+            strategy,
+            observed,
+            inputs["initial_equity"],
+            inputs["role"],
+            fixture_campaign_schedule(inputs["campaign_schedule"]),
+        )
+    assert fixture["forbidden"]["accept_signal_close_as_execution_span"]
+
+
+def test_excluded_continuous_row_is_refused() -> None:
+    fixture = load_runner_fixture("benchmark_excluded_continuous_row.json")
+    inputs = fixture["inputs"]
+    schedule_fixture = load_runner_fixture(inputs["schedule_fixture"])
+    schedule = fixture_campaign_schedule(schedule_fixture["inputs"])
+    path = tuple(
+        session
+        for session in schedule.session_dates
+        if inputs["path_start"] <= session <= inputs["path_end"]
+    )
+    june = next(
+        row
+        for row in schedule.signals
+        if row.signal_date == inputs["signal_date"]
+    )
+    assert june.continuous_included is fixture["expected"][
+        "june_continuous_included"
+    ]
+    assert schedule.accepted_cutoff == fixture["expected"]["accepted_cutoff"]
+    assert path[0] == inputs["path_start"]
+    assert path[-1] == inputs["path_end"]
+    assert path[-1] > schedule.accepted_cutoff
+    frozen = freeze_numeric_universe(
+        inputs["benchmark_universe"],
+        inputs["min_eligible_count"],
+        inputs["min_distinct_values"],
+        FACTOR_ORDER[0],
+        inputs["signal_date"],
+    )
+    strategy = _uniform_strategy(inputs, list(path))
+    observed = tuple(
+        dated_held_returns(session_date, {}) for session_date in path
+    )
+    with pytest.raises(ValueError, match=fixture["expected"]["match"]):
+        factor_matched_cost_free_comparison(
+            (frozen,),
+            strategy,
+            observed,
+            inputs["initial_equity"],
+            inputs["role"],
+            schedule,
+        )
+    assert fixture["forbidden"]["valid_excluded_continuous_path"]
+    assert fixture["forbidden"]["valid_post_cutoff_endpoint"]
 
 
 def test_raw_session_list_is_not_an_accepted_schedule() -> None:

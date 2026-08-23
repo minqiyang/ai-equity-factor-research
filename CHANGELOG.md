@@ -10,6 +10,14 @@ profitability, or trading readiness.
 ### Fixed
 
 - Closed remaining Track A PR 3 exact-head findings: factor-matched
+  benchmark comparison now requires the exact execution-bounded span for
+  every nonempty frozen set, including a one-point path dated at signal
+  close. A frozen decision on a `continuous_included=False` schedule row
+  is refused, and the bounded endpoint may not exceed `accepted_cutoff`.
+  The committed June-excluded July 1 through August 1 path is invalid.
+  F-1 and F-2 remain deferred. This adds no private data, result access,
+  or 14-trial run.
+- Closed remaining Track A PR 3 exact-head findings: factor-matched
   benchmark comparison now binds to the accepted `CampaignSchedule` and
   requires the exact execution-bounded daily span from the first included
   execution through the execution following the last target. A contiguous

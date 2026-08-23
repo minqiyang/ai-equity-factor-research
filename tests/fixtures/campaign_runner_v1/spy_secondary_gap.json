@@ -3,14 +3,29 @@
     "exchange": "XNYS",
     "effective_from": "2014-01-01",
     "effective_to": null,
-    "session_dates": ["2026-06-01", "2026-06-02"],
+    "signal_dates": ["2026-05-29"],
+    "session_dates": ["2026-06-01", "2026-06-02", "2026-07-01"],
+    "campaign_schedule": {
+      "session_dates": [
+        "2026-05-29",
+        "2026-06-01",
+        "2026-06-02",
+        "2026-07-01"
+      ],
+      "accepted_cutoff": "2026-07-01",
+      "horizon_return_rows": 1,
+      "horizon_purge_signal_axis_rows": 2,
+      "embargo_rows": 0,
+      "first_fold_year": 2018
+    },
     "initial_equity": 1.0,
     "transaction_cost_bps": 0,
     "strategy": {
       "initial_weights": {"T000": 1.0},
       "intervals": [
         {"held_returns": {"T000": 0.01}, "reset_weights": {"T000": 1.0}},
-        {"held_returns": {"T000": 0.02}, "reset_weights": null}
+        {"held_returns": {"T000": 0.02}, "reset_weights": {"T000": 1.0}},
+        {"held_returns": {"T000": 0.0}, "reset_weights": null}
       ]
     },
     "primary_role": "factor_matched_primary",
@@ -29,8 +44,8 @@
       "constant_value": 1.0,
       "duplicate_last": false
     },
-    "primary_held_returns": [0.0, 0.0],
-    "spy_returns": [0.01, null]
+    "primary_held_returns": [0.0, 0.0, 0.0],
+    "spy_returns": [0.01, null, 0.02]
   },
   "expected": {
     "primary_valid": true,

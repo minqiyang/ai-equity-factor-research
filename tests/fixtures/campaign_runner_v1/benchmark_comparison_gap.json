@@ -3,7 +3,21 @@
     "exchange": "XNYS",
     "effective_from": "2014-01-01",
     "effective_to": null,
-    "session_date": "2026-05-29",
+    "signal_date": "2026-05-29",
+    "session_dates": ["2026-06-01", "2026-06-30", "2026-07-01"],
+    "campaign_schedule": {
+      "session_dates": [
+        "2026-05-29",
+        "2026-06-01",
+        "2026-06-30",
+        "2026-07-01"
+      ],
+      "accepted_cutoff": "2026-07-01",
+      "horizon_return_rows": 1,
+      "horizon_purge_signal_axis_rows": 2,
+      "embargo_rows": 0,
+      "first_fold_year": 2018
+    },
     "initial_equity": 1.0,
     "transaction_cost_bps": 0,
     "periods_per_year": 252,

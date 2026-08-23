@@ -4,14 +4,18 @@
     "effective_from": "2014-01-01",
     "effective_to": null,
     "signal_dates": ["2024-01-31"],
-    "session_dates": ["2024-02-29", "2024-03-28"],
+    "session_dates": ["2024-01-31"],
     "campaign_schedule": {
       "session_dates": [
         "2024-01-31",
+        "2024-02-01",
+        "2024-02-28",
         "2024-02-29",
-        "2024-03-28"
+        "2024-03-01",
+        "2024-03-28",
+        "2024-04-01"
       ],
-      "accepted_cutoff": "2024-03-28",
+      "accepted_cutoff": "2024-04-01",
       "horizon_return_rows": 1,
       "horizon_purge_signal_axis_rows": 2,
       "embargo_rows": 0,
@@ -22,33 +26,31 @@
     "role": "factor_matched_primary",
     "min_eligible_count": 1,
     "min_distinct_values": 1,
-    "universe": {
+    "benchmark_universe": {
       "key_spec": {
         "exchange": "XNYS",
-        "ticker_prefix": "T",
+        "ticker_prefix": "U",
         "ticker_width": 3,
         "effective_from": "2014-01-01",
         "effective_to": null
       },
-      "count": 1,
-      "value_mode": "constant",
-      "constant_value": 1.0,
+      "count": 2,
+      "value_mode": "index",
       "duplicate_last": false
     },
     "strategy": {
       "initial_weights": {"T000": 1.0},
-      "intervals": [
-        {"held_returns": {"T000": 0.0}, "reset_weights": {"T000": 1.0}},
-        {"held_returns": {"T000": 0.0}, "reset_weights": null}
-      ]
-    },
-    "benchmark_held_returns": [0.01, 0.05]
+      "held_returns": {"T000": 0.0},
+      "reset_weights": null
+    }
   },
   "expected": {
-    "aligned_valid": true,
-    "aligned_benchmark_gross": [0.01, 0.05]
+    "refused": true,
+    "match": "execution-bounded session span",
+    "frozen_count": 1,
+    "path_is_signal_close": true
   },
   "forbidden": {
-    "align_only_by_sequence_position": true
+    "accept_signal_close_as_execution_span": true
   }
 }

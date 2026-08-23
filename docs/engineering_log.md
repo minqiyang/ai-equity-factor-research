@@ -1,5 +1,31 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-10 equal-length bypass and excluded rows
+
+- Implemented exact-head Codex items from card `EFR-GRK-PR3-FIX-10` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `993e66d50bad2b177c0223aff70c3d52c72f28e1`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- `factor_matched_cost_free_comparison` no longer treats an equal-length
+  path as a calendar exemption. A one-point strategy dated at signal
+  close must match the exact execution-bounded span and therefore is
+  refused. Every nonempty frozen set is checked through
+  `_validated_signal_row` and `_execution_bounded_span`.
+- A frozen decision on a `continuous_included=False` schedule row is
+  refused. The bounded endpoint may not exceed `accepted_cutoff`. The
+  committed `session_month_cutoff.json` June-excluded July 1 through
+  August 1 path cannot produce a valid comparison.
+- Already-closed complete-span, prefix/suffix, execution-close reset,
+  sparse/duplicate/reversed calendar, mixed-factor, grant-planning,
+  environment, Rank IC, frozen-child digest, Boolean real-vector,
+  session-identity, complete-root, and per-trial status gates were left
+  in place.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited except `benchmarks.py`. No private panel, performance
+  value, or 14-trial run was accessed.
+- Focused campaign tests passed 163. Full suite after repo-map refresh:
+  2403 passed, 2 existing platform-conditional skipped.
+
 ## 2026-08-23 - Track A PR 3 FIX-9 complete execution-bounded span
 
 - Implemented exact-head Codex item from card `EFR-GRK-PR3-FIX-9` on

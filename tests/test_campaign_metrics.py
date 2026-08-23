@@ -19,11 +19,11 @@ from campaign.metrics import (
 from campaign.paths import advance_holdings
 from campaign_runner_v1_support import (
     dated_uniform_returns,
+    fixture_campaign_schedule,
     freeze_numeric_universe,
     load_runner_fixture,
     runner_holding_interval,
     runner_weight_map,
-    strategy_campaign_schedule,
 )
 
 
@@ -38,9 +38,9 @@ def test_three_month_metrics_and_forbidden_alternatives() -> None:
             inputs["min_eligible_count"],
             inputs["min_distinct_values"],
             FACTOR_ORDER[0],
-            session_date,
+            signal_date,
         )
-        for session_date in spec["session_dates"]
+        for signal_date in inputs["signal_dates"]
     )
     frozen = frozen_by_session[0]
     bps = inputs["transaction_cost_bps"][0]
@@ -87,7 +87,7 @@ def test_three_month_metrics_and_forbidden_alternatives() -> None:
         ),
         inputs["initial_equity"],
         inputs["role"],
-        strategy_campaign_schedule(strategy),
+        fixture_campaign_schedule(inputs["campaign_schedule"]),
     )
     net = tuple(point.net_return for point in strategy.points)
     gross = tuple(point.gross_return for point in strategy.points)
