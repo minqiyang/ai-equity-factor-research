@@ -377,6 +377,38 @@ def strategy_schedule_sessions(strategy: Any) -> tuple[str, ...]:
     return tuple(point.session_date for point in strategy.points)
 
 
+def runner_campaign_schedule(session_dates: Any, **overrides: Any) -> Any:
+    """Build a CampaignSchedule from supplied session dates."""
+
+    from campaign.schedule import build_campaign_schedule
+
+    dates = tuple(session_dates)
+    payload = {
+        "session_dates": dates,
+        "accepted_cutoff": dates[-1],
+        "horizon_return_rows": 1,
+        "horizon_purge_signal_axis_rows": 2,
+        "embargo_rows": 0,
+        "first_fold_year": 2018,
+    }
+    payload.update(overrides)
+    return build_campaign_schedule(**payload)
+
+
+def fixture_campaign_schedule(spec: dict[str, Any]) -> Any:
+    """Build a CampaignSchedule from a fixture schedule object."""
+
+    from campaign.schedule import build_campaign_schedule
+
+    return build_campaign_schedule(**spec)
+
+
+def strategy_campaign_schedule(strategy: Any) -> Any:
+    """Bind a strategy path to a CampaignSchedule of those sessions."""
+
+    return runner_campaign_schedule(strategy_schedule_sessions(strategy))
+
+
 def fixture_file(name: str) -> Path:
     """Return one campaign_runner_v1 fixture path."""
 

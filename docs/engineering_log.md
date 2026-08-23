@@ -1,5 +1,28 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-9 complete execution-bounded span
+
+- Implemented exact-head Codex item from card `EFR-GRK-PR3-FIX-9` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `40469ce08b1737d20a1bd518ab250b44e75f55a6`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- `factor_matched_cost_free_comparison` now requires an accepted
+  `CampaignSchedule` rather than a caller-controlled session list. A
+  daily path must equal the exact span from the first included execution
+  through the execution following the last target. The committed
+  `benchmark_membership_boundary.json` start on `2024-02-28` after a
+  `2024-01-31` frozen decision is refused, as are prefix and suffix
+  truncations of that span.
+- Already-closed execution-close reset, sparse/duplicate/reversed
+  calendar, mixed-factor, grant-planning, environment, Rank IC, frozen-
+  child digest, Boolean real-vector, session-identity, complete-root, and
+  per-trial status gates were left in place.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited except `benchmarks.py`. No private panel, performance
+  value, or 14-trial run was accessed.
+- Focused campaign tests passed 161. Full suite after repo-map refresh:
+  2401 passed, 2 existing platform-conditional skipped.
+
 ## 2026-08-23 - Track A PR 3 FIX-8 execution-close reset and calendar bind
 
 - Implemented exact-head Codex items from card `EFR-GRK-PR3-FIX-8` on

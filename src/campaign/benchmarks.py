@@ -16,6 +16,7 @@ from campaign.paths import (
     holding_interval,
 )
 from campaign.returns import SimpleReturn
+from campaign.schedule import CampaignSchedule, SignalRow
 
 
 _REASON_UNFORMABLE = "BENCHMARK_UNFORMABLE"
@@ -68,14 +69,15 @@ def factor_matched_cost_free_comparison(
     held_returns_by_interval: Sequence[DatedHeldReturns],
     initial_equity: object,
     role: str,
-    schedule_sessions: Sequence[str],
+    schedule: CampaignSchedule,
 ) -> BenchmarkComparison:
     """Compare strategy net to the frozen equal-weight membership path.
 
     Membership is read from each FrozenDecisionTime and is never recomputed
-    from later returns. Daily strategy points must be an exact ordered
-    contiguous slice of the campaign schedule sessions and map onto the
-    governing monthly frozen decision. Old holdings earn the return into
+    from later returns. Daily strategy points must be the accepted
+    CampaignSchedule's exact execution-bounded span, from the first included
+    execution through the execution following the last target, and map onto
+    the governing monthly frozen decision. Old holdings earn the return into
     execution close; the new equal-weight target resets at execution close.
     The comparison is structurally cost-free.
     """
@@ -105,10 +107,13 @@ def factor_matched_cost_free_comparison(
     if any(not isinstance(item, DatedHeldReturns) for item in observed):
         raise TypeError("held_returns_by_interval must contain DatedHeldReturns")
     _require_one_factor_identity(frozen)
+    if not isinstance(schedule, CampaignSchedule):
+        raise TypeError("schedule must be CampaignSchedule")
     if strategy.points:
-        _require_schedule_slice(
+        _require_bound_calendar(
             tuple(point.session_date for point in strategy.points),
-            schedule_sessions,
+            frozen,
+            schedule,
         )
     if not frozen:
         if strategy.points:
@@ -306,38 +311,136 @@ def _require_one_factor_identity(frozen: tuple[FrozenDecisionTime, ...]) -> None
         raise ValueError("frozen decisions must share one factor identity")
 
 
-def _require_schedule_slice(
+def _require_bound_calendar(
     session_dates: tuple[str, ...],
-    schedule_sessions: Sequence[str],
+    frozen: tuple[FrozenDecisionTime, ...],
+    schedule: CampaignSchedule,
 ) -> None:
-    if (
-        isinstance(schedule_sessions, (str, bytes, bytearray))
-        or not isinstance(schedule_sessions, Sequence)
-        or not schedule_sessions
-    ):
-        raise ValueError("schedule_sessions must be a nonempty sequence")
-    schedule = tuple(
-        _strict_date(item).isoformat() for item in schedule_sessions
+    sessions = _accepted_schedule_sessions(schedule)
+    path = _ordered_unique_dates(session_dates, "session dates")
+    _require_contiguous_slice(path, sessions)
+    if not frozen or len(path) == len(frozen):
+        return
+    for item in frozen:
+        _validated_signal_row(schedule, item.signal_date)
+    required = _execution_bounded_span(frozen, schedule)
+    if path != required:
+        raise ValueError(
+            "session dates must match the campaign schedule's exact "
+            "execution-bounded session span"
+        )
+
+
+def _accepted_schedule_sessions(schedule: CampaignSchedule) -> tuple[str, ...]:
+    if not schedule.session_dates:
+        raise ValueError("schedule session dates must be a nonempty sequence")
+    return _ordered_unique_dates(
+        tuple(schedule.session_dates),
+        "schedule session dates",
     )
-    if len(set(schedule)) != len(schedule):
-        raise ValueError("schedule_sessions must be unique")
-    if schedule != tuple(sorted(schedule)):
-        raise ValueError("schedule_sessions must be strictly increasing")
-    path = tuple(_strict_date(item).isoformat() for item in session_dates)
-    if len(set(path)) != len(path):
-        raise ValueError("session dates must be unique")
-    if path != tuple(sorted(path)):
-        raise ValueError("session dates must be strictly increasing")
+
+
+def _ordered_unique_dates(
+    values: tuple[str, ...],
+    label: str,
+) -> tuple[str, ...]:
+    parsed = tuple(_strict_date(item).isoformat() for item in values)
+    if len(set(parsed)) != len(parsed):
+        raise ValueError(f"{label} must be unique")
+    if parsed != tuple(sorted(parsed)):
+        raise ValueError(f"{label} must be strictly increasing")
+    return parsed
+
+
+def _require_contiguous_slice(
+    path: tuple[str, ...],
+    sessions: tuple[str, ...],
+) -> None:
     start = None
-    for index, session in enumerate(schedule):
+    for index, session in enumerate(sessions):
         if session == path[0]:
             start = index
             break
-    if start is None or schedule[start : start + len(path)] != path:
+    if start is None or sessions[start : start + len(path)] != path:
         raise ValueError(
             "session dates must match the campaign schedule's exact ordered "
             "session slice"
         )
+
+
+def _validated_signal_row(
+    schedule: CampaignSchedule,
+    signal_date: str,
+) -> SignalRow:
+    wanted = _strict_date(signal_date).isoformat()
+    matches = [row for row in schedule.signals if row.signal_date == wanted]
+    if len(matches) != 1:
+        raise ValueError(
+            "frozen decision signal must exist on the campaign schedule"
+        )
+    row = matches[0]
+    sessions = _accepted_schedule_sessions(schedule)
+    if row.signal_date not in sessions:
+        raise ValueError(
+            "frozen decision signal must exist on the campaign schedule"
+        )
+    signal_index = sessions.index(row.signal_date)
+    expected_execution = (
+        sessions[signal_index + 1]
+        if signal_index + 1 < len(sessions)
+        else None
+    )
+    if row.execution_date != expected_execution:
+        raise ValueError(
+            "campaign schedule execution must be the session after its signal"
+        )
+    return row
+
+
+def _execution_bounded_span(
+    frozen: tuple[FrozenDecisionTime, ...],
+    schedule: CampaignSchedule,
+) -> tuple[str, ...]:
+    first = min(frozen, key=lambda item: item.signal_date)
+    last = max(frozen, key=lambda item: item.signal_date)
+    start = _validated_signal_row(schedule, first.signal_date).execution_date
+    if start is None:
+        raise ValueError(
+            "campaign schedule is missing the first included execution"
+        )
+    end = _following_execution(schedule, last.signal_date)
+    sessions = _accepted_schedule_sessions(schedule)
+    try:
+        start_index = sessions.index(start)
+        end_index = sessions.index(end)
+    except ValueError as exc:
+        raise ValueError(
+            "campaign schedule is missing the execution-bounded session span"
+        ) from exc
+    if end_index < start_index:
+        raise ValueError(
+            "campaign schedule is missing the execution-bounded session span"
+        )
+    return sessions[start_index : end_index + 1]
+
+
+def _following_execution(schedule: CampaignSchedule, signal_date: str) -> str:
+    wanted = _strict_date(signal_date).isoformat()
+    found = False
+    for row in schedule.signals:
+        if found:
+            if row.execution_date is None:
+                raise ValueError(
+                    "campaign schedule is missing the execution following "
+                    "the last target"
+                )
+            _validated_signal_row(schedule, row.signal_date)
+            return row.execution_date
+        if row.signal_date == wanted:
+            found = True
+    raise ValueError(
+        "campaign schedule is missing the execution following the last target"
+    )
 
 
 def _aligned_session(

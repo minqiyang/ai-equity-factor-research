@@ -9,6 +9,14 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Closed remaining Track A PR 3 exact-head findings: factor-matched
+  benchmark comparison now binds to the accepted `CampaignSchedule` and
+  requires the exact execution-bounded daily span from the first included
+  execution through the execution following the last target. A contiguous
+  sub-slice is invalid, including a February 28 start after a January 31
+  frozen decision that omits the February 1 execution. Prefix and suffix
+  truncation are refused. F-1 and F-2 remain deferred. This adds no
+  private data, result access, or 14-trial run.
 - Closed remaining Track A PR 3 exact-head findings: the factor-matched
   benchmark now applies a new monthly target at execution close so old
   holdings earn the incoming return, binds a daily path to the campaign
