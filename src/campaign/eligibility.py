@@ -22,6 +22,7 @@ from campaign.registry import compute_registered_factor, factor_spec
 _REASON_MEMBERSHIP_NOT_KNOWN_AT_T = "MEMBERSHIP_NOT_KNOWN_AT_T"
 _REASON_TERMINAL_EVENT_BLOCKED_AT_T = "TERMINAL_EVENT_BLOCKED_AT_T"
 _REASON_LOOKBACK_NOT_ADDRESSABLE_AT_T = "LOOKBACK_NOT_ADDRESSABLE_AT_T"
+_REASON_ANCHOR_PRICE_MISMATCH = "ANCHOR_PRICE_MISMATCH"
 _TRIGGER_DUPLICATE = "DUPLICATE_CANONICAL_LISTING_KEY_BYTES_AT_T"
 _TRIGGER_COUNT = "ELIGIBLE_SECURITY_COUNT_BELOW_100_AT_T"
 _TRIGGER_DISTINCT = "DISTINCT_FINITE_FACTOR_VALUE_COUNT_BELOW_10_AT_T"
@@ -289,7 +290,18 @@ def _evaluate_one(
             lineage.reason,
             None,
         )
-    computed = compute_registered_factor(factor_id, listing.referenced_anchors)
+    bound_prices = _bound_referenced_prices(
+        listing.referenced_anchors,
+        listing.lineage_anchors,
+    )
+    if bound_prices is None:
+        return ListingDecision(
+            listing.listing_key,
+            False,
+            _REASON_ANCHOR_PRICE_MISMATCH,
+            None,
+        )
+    computed = compute_registered_factor(factor_id, bound_prices)
     if not computed.valid:
         return ListingDecision(
             listing.listing_key,
@@ -331,6 +343,48 @@ def _high_decile(deciles: tuple[DecileBucket, ...]) -> DecileBucket:
 
 def _listing_key_of(item: RankedListing) -> bytes:
     return item.listing_key
+
+
+def _bound_referenced_prices(
+    referenced: Sequence[object],
+    lineage_anchors: Sequence[Mapping[str, object]],
+) -> tuple[float, ...] | None:
+    if (
+        isinstance(referenced, (str, bytes, bytearray))
+        or not isinstance(referenced, Sequence)
+    ):
+        return None
+    if (
+        isinstance(lineage_anchors, (str, bytes, bytearray))
+        or not isinstance(lineage_anchors, Sequence)
+    ):
+        return None
+    if len(referenced) != len(lineage_anchors):
+        return None
+    bound: list[float] = []
+    for scalar, record in zip(referenced, lineage_anchors, strict=True):
+        price = _bound_record_price(scalar, record)
+        if price is None:
+            return None
+        bound.append(price)
+    return tuple(bound)
+
+
+def _bound_record_price(
+    scalar: object,
+    record: object,
+) -> float | None:
+    if not isinstance(record, Mapping):
+        return None
+    price = record.get("adjusted_close")
+    try:
+        scalar_value = float(scalar)  # type: ignore[arg-type]
+        record_value = float(price)  # type: ignore[arg-type]
+    except (OverflowError, TypeError, ValueError):
+        return None
+    if scalar_value != record_value:
+        return None
+    return record_value
 
 
 def _validate_listing_key(listing_key: object) -> bytes:

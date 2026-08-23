@@ -45,6 +45,9 @@ def test_decision_time_listing_reasons_are_counted_and_retained() -> None:
     assert reused["value"] != fixture["forbidden"]["reused_ticker_ticker_only_join_value"]
     assert expected_cases["interior_missing_still_eligible"]["eligible"]
     assert fixture["forbidden"]["interior_missing_full_window_rejection"]
+    mismatched = expected_cases["mismatched_referenced_prices"]
+    assert mismatched["eligible"] is False
+    assert mismatched["value"] != fixture["forbidden"]["unbound_referenced_price_value"]
 
 
 def test_zero_target_trigger_matrix() -> None:
@@ -125,6 +128,36 @@ def test_valid_top_decile_target_uses_remainder_first_high_chunk() -> None:
     assert set(frozen.matched_benchmark_target.values()) == {
         expected["benchmark_weight"]
     }
+
+
+def test_mismatched_factor_prices_are_invalid() -> None:
+    fixture = load_runner_fixture("factor_anchor_price_mismatch.json")
+    inputs = fixture["inputs"]
+    listings = expand_decision_time_listings(inputs)
+    decisions = evaluate_decision_time_listings(
+        listings,
+        FACTOR_ORDER[inputs["owner_index"]],
+    )
+    expected_cases = fixture["expected"]["cases"]
+    for row, decision in zip(inputs["rows"], decisions, strict=True):
+        expected = expected_cases[row["name"]]
+        assert decision.eligible is expected["eligible"]
+        assert decision.reason == expected["reason"]
+        if expected["value"] is None:
+            assert decision.factor_value is None
+        else:
+            assert decision.factor_value is not None
+            assert math.isclose(
+                decision.factor_value,
+                expected["value"],
+                rel_tol=fixture["expected"]["rel_tol"],
+                abs_tol=fixture["expected"]["abs_tol"],
+            )
+    assert fixture["forbidden"]["compute_from_unbound_referenced_prices"]
+    first = expected_cases["mismatched_first"]
+    last = expected_cases["mismatched_last"]
+    assert first["value"] != fixture["forbidden"]["unbound_first_value"]
+    assert last["value"] != fixture["forbidden"]["unbound_last_value"]
 
 
 def test_freeze_decision_time_has_no_semantic_defaults() -> None:

@@ -47,6 +47,44 @@ def test_missing_child_is_retained_as_invalid() -> None:
     assert assembly.detached_root is None
 
 
+def test_substituted_child_bytes_with_frozen_digests_are_invalid() -> None:
+    fixture = load_runner_fixture("bundle_assembly.json")
+    mutation = load_runner_fixture("bundle_child_digest_mismatch.json")
+    children = {
+        name: value.encode("utf-8")
+        for name, value in fixture["inputs"]["children"].items()
+    }
+    matched = assemble_evidence_bundle(children, fixture["inputs"]["root_fields"])
+    assert matched.valid is True
+    for case in mutation["inputs"]["mutations"]:
+        mutated = dict(children)
+        mutated[case["child"]] = case["bytes"].encode("utf-8")
+        assembly = assemble_evidence_bundle(
+            mutated,
+            fixture["inputs"]["root_fields"],
+        )
+        assert assembly.valid is mutation["expected"]["valid"], case
+        assert assembly.reason == mutation["expected"]["reason"], case
+        assert assembly.detached_root is None, case
+    assert mutation["forbidden"]["accept_substituted_child_with_frozen_digest"]
+
+
+def test_bundle_without_carried_child_digests_still_assembles() -> None:
+    fixture = load_runner_fixture("bundle_assembly.json")
+    mutation = load_runner_fixture("bundle_child_digest_mismatch.json")
+    children = {
+        name: value.encode("utf-8")
+        for name, value in fixture["inputs"]["children"].items()
+    }
+    root_fields = dict(fixture["inputs"]["root_fields"])
+    for field in mutation["inputs"]["omit_fields"]:
+        del root_fields[field]
+    assembly = assemble_evidence_bundle(children, root_fields)
+    assert assembly.valid is mutation["expected"]["omit_valid"]
+    assert assembly.reason is None
+    assert assembly.detached_root is not None
+
+
 def test_bundle_functions_have_no_defaults() -> None:
     for function in (
         assemble_evidence_bundle,

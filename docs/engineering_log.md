@@ -1,5 +1,30 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-3 eligibility prices and bundle child digests
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-FIX-3` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `9705aace515e092ede229ad3f5b25096fd066f50`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- After a valid lineage check, `evaluate_decision_time_listings` now requires
+  each referenced factor price to match the corresponding lineage
+  `adjusted_close`. Unbound or count-mismatched prices invalidate the listing
+  with `ANCHOR_PRICE_MISMATCH` instead of computing a rank from independent
+  scalars.
+- `assemble_evidence_bundle` now compares protocol YAML and trial-inventory
+  child sha256 values with carried `protocol_file_sha256` and
+  `trial_inventory_file_sha256` fields. Substituted child bytes keep the
+  bundle invalid while those frozen digests remain.
+- Calendar mismatch still refuses before `AUTHORIZED`. The planning-only
+  grant surface still documents intended stage `TRACK_A_PR3_PLANNING` and
+  still refuses result-bearing fourteen-trial assembly. Return anchors remain
+  lineage-bound.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited. No private panel, performance value, or 14-trial run was
+  accessed.
+- Focused campaign tests passed 144. Full suite after repo-map refresh:
+  3266 passed, 2 existing platform-conditional skipped.
+
 ## 2026-08-23 - Track A PR 3 FIX-2 grant, anchors, prepared file, missing outputs
 
 - Implemented frozen binding plan v3 card `EFR-GRK-PR3-FIX-2` on

@@ -24,10 +24,10 @@
       "environment_lock_sha256": "1010101010101010101010101010101010101010101010101010101010101010",
       "final_state": "NEGATIVE_DIAGNOSTIC",
       "per_trial_status": [],
-      "protocol_file_sha256": "04661db15bc753b12f357b86d5f54e4098aeb611362e117dcaea8d816bed1232",
+      "protocol_file_sha256": "9831daaaa0a94144fc3378fde30109ecfc1639ae1d738f35bedbb6ac80210f85",
       "runner_code_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "semantic_trial_count": 14,
-      "trial_inventory_file_sha256": "da588e2abe3678ad4e2249fe82f84c0febc686241550060dc66e3a739fe9c1dc"
+      "trial_inventory_file_sha256": "89270a50341bb8e83734ee062603c63c219320ed4a40fb9fb8c2792358548e8a"
     }
   },
   "expected": {

@@ -323,6 +323,11 @@ def test_planning_grant_authorizes_code_path_not_result_bearing() -> None:
     assert result.status == expected["authorization_status"]
     assert result.grant is not None
     assert result.grant["now_eligible"] == expected["now_eligible"]
+    assert result.grant["now_eligible"] == [expected["intended_stage"]]
+    assert expected["intended_stage"].startswith("TRACK_A_PR3_")
+    assert result.grant["does_not_authorize"] == expected["does_not_authorize"]
+    assert "FOURTEEN_TRIAL_RUN" in result.grant["does_not_authorize"]
+    assert expected["intended_stage"] not in result.grant["does_not_authorize"]
     assert expected["reason"] == result_bearing_refusal_reason(result.grant)
     assert fixture["forbidden"]["authorize_result_bearing_run"]
 

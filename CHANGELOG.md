@@ -9,6 +9,14 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Closed remaining Track A PR 3 exact-head findings: eligibility now refuses
+  listings whose referenced factor prices do not match the paired lineage
+  `adjusted_close` values, and evidence-bundle assembly rejects protocol or
+  trial-inventory children that violate carried frozen digests. Calendar
+  mismatch still refuses before `AUTHORIZED`, planning-only grants still
+  authorize the `TRACK_A_PR3_PLANNING` code path without opening a
+  fourteen-trial run, and return anchors remain lineage-bound. This adds no
+  private data, result access, or 14-trial run.
 - Closed remaining Track A PR 3 exact-head findings: planning-only grants
   still authorize the code-and-fixture path but refuse a result-bearing run,
   return anchors must match the paired lineage `adjusted_close` values, the

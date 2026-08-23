@@ -1,0 +1,72 @@
+{
+  "schema_version": "track_a_pr3_fix3_public_manifest_v1",
+  "card_id": "EFR-GRK-PR3-FIX-3",
+  "branch": "codex/track-a-pr3-exec1",
+  "start_head": "9705aace515e092ede229ad3f5b25096fd066f50",
+  "plan": {
+    "md_sha256": "237194a9caf1f6c1486286438fabbb9d7b417c216de630d9425547e917cbc90d",
+    "json_sha256": "dc55651e31959d0dfd8db60735e86c80644fde5bfc050c95d024d3aed38ffca3",
+    "gate": "PASS_3_OF_3"
+  },
+  "scope": [
+    "src/campaign/eligibility.py",
+    "lineage-bound factor prices",
+    "src/campaign/bundle.py",
+    "frozen child digest refusal",
+    "planning-grant surface TRACK_A_PR3_PLANNING",
+    "calendar and return re-verification",
+    "tests/test_campaign_eligibility.py",
+    "tests/test_campaign_bundle.py",
+    "tests/test_campaign_precondition.py",
+    "tests/fixtures/campaign_runner_v1"
+  ],
+  "not_included": [
+    "14-trial run",
+    "private panel",
+    "performance access",
+    "result access",
+    "merge",
+    "inference.py edit"
+  ],
+  "unchanged_campaign_file_bytes": {
+    "src/campaign/inference.py": "be2e743c659c87791c99d0e27684cb48c730486719860773721423e08650a130",
+    "src/campaign/__init__.py": "5fd76e27290ac9b1a9360239e48cc8712a0fc41fd45bb3ec97b75158f8c70043",
+    "src/campaign/classifier.py": "316e5b5458aaba3c682b429b36216ccb568cbaed5f3bcdda0ad4b2a94dfd337c",
+    "src/campaign/deciles.py": "194aa4c521e09284cca386192dd78b037e302f7b4a4869f04e3bdc1e27da7841",
+    "src/campaign/factors.py": "95c95be3e5f05533c93c93a9f314b01f72a0a7088c417dae80fd207bec4667c9",
+    "src/campaign/listing_key.py": "18166cc25a5f8a990ba243af422cf874ffc18a87f4e6501840dc755b4c217b4a",
+    "src/campaign/turnover.py": "db51e116bf14f6908c6d2bb24701a3b405be699977f5a2853c0a00ad435bc51b",
+    "src/campaign/registry.py": "e72921fb1a5745061a7ad64b518a16c8dd57aa8761fefa1a83d2dca9767a5d78",
+    "src/campaign/lineage.py": "a28744f3aef22b7997118192ac7ad66a06dc89b270f6961badb95ee61ac4ac66",
+    "src/campaign/schedule.py": "613b209a7d70b28353e4a039ecaf84efc1e4964b9320afb13a6f838d97fc356d",
+    "src/campaign/returns.py": "5937840a7ed75d09b0d52b46f1d485640e87a201a929a1ba88aff76c9683b49c",
+    "src/campaign/baselines.py": "7de9f44358c7d856e0218dfdb89d67516befe64a1965aa3c020257c6d97cd788",
+    "src/campaign/diagnostics.py": "6a98917e68c9b9eb503660d4c10ce9a91d6456a4163b752ec37fc2e2cc9e61ff",
+    "src/campaign/paths.py": "1429e252e5adfdda970f214b7cff345b12e685a8192c55d4dad0aeedd75f55a7",
+    "src/campaign/benchmarks.py": "549ca24b6aeedc5734a47a2c8818943fe853d7c164b6a2c16694d1500a5f5a65",
+    "src/campaign/metrics.py": "7b791af56bf1941956dcd2cb98ec9c80efa1b49a75f4ee1e73aedcc5c1addf73",
+    "src/campaign/reconciliation.py": "0a1bf2f9c452345f0f86a613cdfdacbded9976b5d1184b9a0efebe4fc6855c2a",
+    "src/campaign/runner.py": "3f38f54a12f74aa159f09d57bd170ae42e4cbcf25cb83f2fc97b9b06f264ee88",
+    "src/campaign/precondition.py": "1789005b17912575b558cd0f88abc7e9cecd17c50b4f39401fc088038c9b3221"
+  },
+  "delivered_file_bytes": {
+    "src/campaign/eligibility.py": "d5562e764ea01e21e9c31123345e9d5e010e90a677ff1f605c1ff981058939c2",
+    "src/campaign/bundle.py": "bb85e886ed9cacb338ff020a419fd9ff9efed8334c0f6c41830f7b8aac316fca",
+    "tests/test_campaign_eligibility.py": "07f67968831a472b5564f1c920afeae239eff8bd3996656e2eb7fa6773208c2a",
+    "tests/test_campaign_bundle.py": "f1c8a1f0882d471376a594f19f44159a3724a64df3a3cee21325591b581e7f91",
+    "tests/test_campaign_precondition.py": "354697e335a956dff1954ab83f9659152af067da53729db135f80372669eebd1",
+    "tests/fixtures/campaign_runner_v1/bundle_assembly.json": "09459196c196d263b87466f57b3dfb20b4e9dcc6d3a010fd252a6980f8ae6539",
+    "tests/fixtures/campaign_runner_v1/decision_time_listing_reasons.json": "e36683305d89b8b3b8d6ba83136e79b0c86951ebc99bd8256eed49e81f7aa1dd",
+    "tests/fixtures/campaign_runner_v1/grant_result_bearing_refusal.json": "75d6c7a26ba79ab780e757298a8f57bf6719971a9cc5f3e763357a8daceb1f62",
+    "tests/fixtures/campaign_runner_v1/factor_anchor_price_mismatch.json": "fd2cdfe505945b3dcab56c32ad56da921ca915575ce8d5e8a352c1764b22b500",
+    "tests/fixtures/campaign_runner_v1/bundle_child_digest_mismatch.json": "d6a58024e81bee72c5f5666562a15c6024cdea7e64f201e7a53b1e27cd79f20b",
+    "docs/engineering_log.md": "60e63db385569dedc2c9df3c5af74abd5502474ecd4d209d30aa2d7b8d3042fe",
+    "docs/repo_map.md": "4b5043b6234578516a7bdce49d2a8b12536841df303aff8945e7336be2c7b626",
+    "CHANGELOG.md": "f2f63cea847c8091ae7078aa3fe3bccb20bf11cd9e457de5237d3e47e8d5a682"
+  },
+  "validation": {
+    "focused_campaign_tests_passed": 144,
+    "full_pytest_passed": 3266,
+    "full_pytest_skipped": 2
+  }
+}

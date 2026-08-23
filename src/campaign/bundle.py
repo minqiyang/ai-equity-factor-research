@@ -35,6 +35,11 @@ _SELF_HASH_FIELDS = frozenset(
 )
 _REASON_MISSING = "BUNDLE_CHILD_MISSING"
 _REASON_SELF_HASH = "BUNDLE_MANIFEST_SELF_HASH_FORBIDDEN"
+_REASON_DIGEST_MISMATCH = "BUNDLE_CHILD_DIGEST_MISMATCH"
+_FROZEN_CHILD_DIGEST_FIELDS = (
+    ("eodhd_sp500_three_factor_diagnostic_v1.yaml", "protocol_file_sha256"),
+    ("trial_inventory.json", "trial_inventory_file_sha256"),
+)
 
 
 @dataclass(frozen=True)
@@ -78,6 +83,17 @@ def assemble_evidence_bundle(
         return BundleAssembly(
             False,
             _REASON_MISSING,
+            MappingProxyType(digests),
+            MappingProxyType({}),
+            b"",
+            None,
+            None,
+        )
+    digest_error = _frozen_child_digest_error(digests, root_fields)
+    if digest_error is not None:
+        return BundleAssembly(
+            False,
+            digest_error,
             MappingProxyType(digests),
             MappingProxyType({}),
             b"",
@@ -132,6 +148,18 @@ def assemble_evidence_bundle(
         manifest_digest,
         MappingProxyType(detached_root),
     )
+
+
+def _frozen_child_digest_error(
+    digests: Mapping[str, str],
+    root_fields: Mapping[str, object],
+) -> str | None:
+    for child_name, field in _FROZEN_CHILD_DIGEST_FIELDS:
+        if field not in root_fields:
+            continue
+        if root_fields[field] != digests[child_name]:
+            return _REASON_DIGEST_MISMATCH
+    return None
 
 
 def invalid_and_missing_bytes(result: ReconciliationResult) -> bytes:

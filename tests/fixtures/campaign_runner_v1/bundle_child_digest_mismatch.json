@@ -1,0 +1,28 @@
+{
+  "inputs": {
+    "mutations": [
+      {
+        "name": "protocol_yaml",
+        "child": "eodhd_sp500_three_factor_diagnostic_v1.yaml",
+        "bytes": "yaml-substituted"
+      },
+      {
+        "name": "trial_inventory",
+        "child": "trial_inventory.json",
+        "bytes": "inv-substituted"
+      }
+    ],
+    "omit_fields": [
+      "protocol_file_sha256",
+      "trial_inventory_file_sha256"
+    ]
+  },
+  "expected": {
+    "valid": false,
+    "reason": "BUNDLE_CHILD_DIGEST_MISMATCH",
+    "omit_valid": true
+  },
+  "forbidden": {
+    "accept_substituted_child_with_frozen_digest": true
+  }
+}
