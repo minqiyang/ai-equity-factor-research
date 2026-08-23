@@ -1,0 +1,41 @@
+{
+  "inputs": {
+    "children": {
+      "baseline_comparison.json": "base",
+      "cost_sensitivity.json": "cost",
+      "dataset_full_manifest.json": "full",
+      "dataset_public_projection.json": "proj",
+      "decile_returns.parquet": "dr",
+      "eodhd_sp500_three_factor_diagnostic_v1.yaml": "yaml",
+      "factor_diagnostics.parquet": "fd",
+      "invalid_and_missing_summary.json": "invmiss",
+      "review_record.json": "rev",
+      "run_manifest.json": "run",
+      "strategy_returns.parquet": "sr",
+      "trial_inventory.json": "inv",
+      "yearly_robustness.json": "year"
+    },
+    "omit_child": "review_record.json",
+    "root_fields": {
+      "acceptance_identity_sha256": "3617bbdb65ea5328152887348b8c399de1c3e7876041537c4c2fb877f955f422",
+      "acceptance_record_file_sha256": "94cd0d95aa3fdf396c12a770392afb305fbca66b8e88c35e53e9ba734b6e1db9",
+      "attempt_count": 1,
+      "environment_id": "synthetic-environment",
+      "environment_lock_sha256": "1010101010101010101010101010101010101010101010101010101010101010",
+      "final_state": "NEGATIVE_DIAGNOSTIC",
+      "per_trial_status": [],
+      "protocol_file_sha256": "04661db15bc753b12f357b86d5f54e4098aeb611362e117dcaea8d816bed1232",
+      "runner_code_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "semantic_trial_count": 14,
+      "trial_inventory_file_sha256": "da588e2abe3678ad4e2249fe82f84c0febc686241550060dc66e3a739fe9c1dc"
+    }
+  },
+  "expected": {
+    "child_count": 13,
+    "missing_reason": "BUNDLE_CHILD_MISSING",
+    "valid": true
+  },
+  "forbidden": {
+    "bundle_manifest_self_hash": true
+  }
+}

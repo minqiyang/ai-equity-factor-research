@@ -1,0 +1,16 @@
+{
+  "inputs": {
+    "missing_binding_file": "",
+    "wrong_binding_field": "environment_id",
+    "wrong_binding_value": "other-environment",
+    "wrong_inventory_bytes": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "wrong_protocol_bytes": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  },
+  "expected": {
+    "absent_reason": "DETACHED_BINDING_ABSENT",
+    "field_reason": "DETACHED_BINDING_FIELD_MISMATCH",
+    "inventory_reason": "TRIAL_INVENTORY_BYTES_MISMATCH",
+    "protocol_reason": "PROTOCOL_FREEZE_BYTES_MISMATCH"
+  },
+  "forbidden": {}
+}

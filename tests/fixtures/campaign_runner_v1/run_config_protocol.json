@@ -1,0 +1,31 @@
+{
+  "inputs": {
+    "bit_generator": "PCG64DXSM",
+    "bootstrap_replicates": 20000,
+    "bootstrap_seed": 20260730,
+    "calendar_id": "XNYS",
+    "calendar_version": "synthetic-calendar-v1",
+    "common_complete_case_month_floor": 60,
+    "cost_bps": [0, 10, 25],
+    "decile_count": 10,
+    "embargo_rows": 0,
+    "environment_id": "synthetic-environment",
+    "environment_lock_sha256": "1010101010101010101010101010101010101010101010101010101010101010",
+    "familywise_alpha": "0.05",
+    "horizon_purge_signal_axis_rows": 22,
+    "horizon_return_rows": 21,
+    "long_segment_block_length": 6,
+    "min_distinct_values": 10,
+    "min_eligible_count": 100,
+    "quantile_method": "linear",
+    "random_rank_seed": 20260729,
+    "runner_code_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "expected": {
+    "constructs": true,
+    "wrong_horizon_return_rows": 20
+  },
+  "forbidden": {
+    "cross_role_construction_guard": true
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "inputs": {
+    "aware_values": [
+      "2019-06-15T20:00:00Z",
+      "2019-06-15T16:00:00-04:00"
+    ],
+    "date_only_values": [
+      "2019-06-15"
+    ],
+    "naive_values": [
+      "2019-06-15T20:00:00"
+    ],
+    "timestamp_field": "accepted_at_utc"
+  },
+  "expected": {
+    "reason": "TIMESTAMP_NOT_TZ_AWARE",
+    "utc": "2019-06-15T20:00:00Z"
+  },
+  "forbidden": {
+    "local_time_assumption": true
+  }
+}

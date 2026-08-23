@@ -1,0 +1,31 @@
+{
+  "inputs": {
+    "grant_file": "precondition/grant_valid.json",
+    "record_file": "precondition/acceptance_valid.json"
+  },
+  "expected": {
+    "cases": [
+      {"field": "schema_version", "reason": "SCHEMA_VERSION_NOT_BOUND", "target": "record", "value": "other_schema_v1"},
+      {"field": "canonicalization_id", "reason": "CANONICALIZATION_ID_NOT_BOUND", "target": "record", "value": "other_canonical_v1"},
+      {"field": "dataset_acceptance", "reason": "DATASET_ACCEPTANCE_NOT_DIAGNOSTIC_READY", "target": "record", "value": "blocked"},
+      {"field": "declared_use", "reason": "DECLARED_USE_NOT_DIAGNOSTIC_CAMPAIGN", "target": "record", "value": "formal-promotion"},
+      {"field": "evidence_ceiling", "reason": "EVIDENCE_CEILING_NOT_DIAGNOSTIC_ONLY", "target": "record", "value": "FORMAL"},
+      {"field": "review_decision", "reason": "REVIEW_DECISION_NOT_DIAGNOSTIC_ONLY", "target": "record", "value": "accepted"},
+      {"field": "reviewer_id", "reason": "REVIEWER_SELF_ISSUING", "target": "record", "value": "synthetic-acceptance-record-v1"},
+      {"field": "decision_file_sha256", "reason": "DECISION_FILE_BYTES_MISMATCH", "target": "record", "value": "abababababababababababababababababababababababababababababababab"},
+      {"field": "decision_record_sha256", "reason": "DECISION_IDENTITY_NOT_THE_BOUND_IDENTITY", "target": "record", "value": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"},
+      {"field": "performance_access", "reason": "PERFORMANCE_ACCESS_NOT_FORBIDDEN", "target": "record", "value": "ALLOWED"},
+      {"field": "result_access", "reason": "RESULT_ACCESS_NOT_FORBIDDEN", "target": "record", "value": "ALLOWED"},
+      {"field": "materialization", "reason": "MATERIALIZATION_NOT_THE_BOUND_VALUE", "target": "record", "value": "ENTERED"},
+      {"field": "status", "reason": "GRANT_STATUS_NOT_ANSWERED_BOUND", "target": "grant", "value": "DRAFT"},
+      {"field": "choice", "reason": "GRANT_CHOICE_NOT_GRANT_STAGE2_DIAGNOSTIC_READY", "target": "grant", "value": "DENY_STAGE2"},
+      {"field": "roadmap_stage2", "reason": "GRANT_ROADMAP_STAGE2_NOT_COMPLETE", "target": "grant", "value": "INCOMPLETE"},
+      {"field": "result", "reason": "GRANT_GATE_RESULT_NOT_UNANIMOUS", "target": "grant_gate", "value": "SPLIT"},
+      {"field": "dataset_acceptance", "reason": "GRANT_DATASET_ACCEPTANCE_MISMATCH", "target": "grant", "value": "blocked"},
+      {"field": "review_decision", "reason": "GRANT_REVIEW_DECISION_MISMATCH", "target": "grant", "value": "accepted"}
+    ]
+  },
+  "forbidden": {
+    "single_field_authorizes": true
+  }
+}

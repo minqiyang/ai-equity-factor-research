@@ -323,3 +323,62 @@ def uniform_return_map(weights: dict[bytes, float], value: object) -> dict[bytes
     """Apply one return observation to every supplied listing key."""
 
     return {listing_key: value for listing_key in weights}
+
+
+def fixture_file(name: str) -> Path:
+    """Return one campaign_runner_v1 fixture path."""
+
+    return FIXTURE_ROOT / name
+
+
+def make_run_config(
+    locators: dict[str, str],
+    digests: dict[str, str],
+    protocol: dict[str, Any],
+    **overrides: Any,
+) -> Any:
+    """Construct RunConfig from fixture locators, digests, and protocol."""
+
+    from campaign.runner import RunConfig
+
+    payload = {
+        "acceptance_record_file": locators["acceptance_record_file"],
+        "acceptance_record_file_sha256": digests["acceptance_record_file_sha256"],
+        "acceptance_identity_sha256": digests["acceptance_identity_sha256"],
+        "decision_file_sha256": digests["decision_file_sha256"],
+        "decision_identity_sha256": digests["decision_identity_sha256"],
+        "stage2_grant_file": locators["stage2_grant_file"],
+        "stage2_grant_file_sha256": digests["stage2_grant_file_sha256"],
+        "protocol_file": locators["protocol_file"],
+        "protocol_file_sha256": digests["protocol_file_sha256"],
+        "trial_inventory_file": locators["trial_inventory_file"],
+        "trial_inventory_file_sha256": digests["trial_inventory_file_sha256"],
+        "detached_binding_file": locators["detached_binding_file"],
+        "runner_code_sha": protocol["runner_code_sha"],
+        "environment_id": protocol["environment_id"],
+        "environment_lock_sha256": protocol["environment_lock_sha256"],
+        "calendar_id": protocol["calendar_id"],
+        "calendar_version": protocol["calendar_version"],
+        "prepared_campaign_file": locators["prepared_campaign_file"],
+        "horizon_return_rows": protocol["horizon_return_rows"],
+        "horizon_purge_signal_axis_rows": protocol[
+            "horizon_purge_signal_axis_rows"
+        ],
+        "embargo_rows": protocol["embargo_rows"],
+        "decile_count": protocol["decile_count"],
+        "min_eligible_count": protocol["min_eligible_count"],
+        "min_distinct_values": protocol["min_distinct_values"],
+        "common_complete_case_month_floor": protocol[
+            "common_complete_case_month_floor"
+        ],
+        "long_segment_block_length": protocol["long_segment_block_length"],
+        "bootstrap_replicates": protocol["bootstrap_replicates"],
+        "random_rank_seed": protocol["random_rank_seed"],
+        "bootstrap_seed": protocol["bootstrap_seed"],
+        "familywise_alpha": protocol["familywise_alpha"],
+        "cost_bps": tuple(protocol["cost_bps"]),
+        "bit_generator": protocol["bit_generator"],
+        "quantile_method": protocol["quantile_method"],
+    }
+    payload.update(overrides)
+    return RunConfig(**payload)

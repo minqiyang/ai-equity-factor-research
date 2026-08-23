@@ -1,5 +1,23 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 EXEC-4 precondition, reconciliation, runner, bundle
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-4` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `576274055b0345e0226f68251a00b981aedfc2af`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- Added shippable `campaign.precondition`, `campaign.reconciliation`,
+  `campaign.runner`, and `campaign.bundle`. Existing campaign modules,
+  including `inference.py` at `be2e743c…50a130`, were not edited.
+- Bound P-1 through P-5, 14-trial required-output reconciliation, bundle
+  assembly without a self-hash, and the two-run determinism golden to
+  committed synthetic fixtures. No private panel, performance value, or
+  14-trial run was accessed.
+- Focused campaign tests passed 125. Full suite after repo-map refresh:
+  3247 passed, 2 existing platform-conditional skipped.
+- Next card remains PR3-EXEC-5: import-boundary, no-default, and T-7
+  conformance, docs, repo map, and CI wiring. This card does not open a PR.
+
 ## 2026-08-23 - Track A PR 3 EXEC-3 paths, costs, benchmarks
 
 - Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-3` on

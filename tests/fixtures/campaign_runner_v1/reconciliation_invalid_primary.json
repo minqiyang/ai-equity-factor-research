@@ -1,0 +1,14 @@
+{
+  "inputs": {
+    "inventory_file": "precondition/trial_inventory.json",
+    "prepared_file": "precondition/prepared_campaign.json"
+  },
+  "expected": {
+    "complete": true,
+    "final_state": "INVALID_DIAGNOSTIC",
+    "hard_valid": false
+  },
+  "forbidden": {
+    "route_as_coverage_failure": true
+  }
+}

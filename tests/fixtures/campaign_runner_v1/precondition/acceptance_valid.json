@@ -1,0 +1,109 @@
+{
+  "acceptance_record_id": "synthetic-acceptance-record-v1",
+  "acceptance_record_sha256": "3617bbdb65ea5328152887348b8c399de1c3e7876041537c4c2fb877f955f422",
+  "accepted_at_utc": "2019-06-15T20:00:00Z",
+  "as_of_cutoff": "2019-12-31T21:00:00Z",
+  "calendar": {
+    "calendar_evidence_ref": "synthetic-calendar-evidence",
+    "calendar_id": "XNYS",
+    "calendar_version": "synthetic-calendar-v1",
+    "environment_id": "synthetic-environment",
+    "environment_lock_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "source_timezone": "America/New_York",
+    "utc_conversion_rule": "session-close-to-utc"
+  },
+  "canonical_manifest_sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+  "canonicalization_id": "pit_canonical_json_v1",
+  "contract_binding": {
+    "contract_content_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+    "contract_id": "point_in_time_data_methodology_contract_v1",
+    "contract_protected_merge_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "contract_version": "1.0.0"
+  },
+  "coverage_thresholds": {
+    "common_complete_case_month_floor": 60,
+    "distinct_finite_factor_value_floor": 10,
+    "factor_month_eligible_listing_floor": 100,
+    "zero_target_triggers": [
+      "ELIGIBLE_SECURITY_COUNT_BELOW_100_AT_T",
+      "DISTINCT_FINITE_FACTOR_VALUE_COUNT_BELOW_10_AT_T",
+      "DUPLICATE_CANONICAL_LISTING_KEY_BYTES_AT_T"
+    ]
+  },
+  "dataset_acceptance": "DIAGNOSTIC_READY",
+  "decision_file_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+  "decision_record_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+  "declared_use": "diagnostic-campaign",
+  "does_not_authorize": [
+    "PERFORMANCE_ACCESS",
+    "RESULT_ACCESS",
+    "FOURTEEN_TRIAL_RUN"
+  ],
+  "evidence_ceiling": "DIAGNOSTIC_ONLY",
+  "exclusions": [
+    {
+      "count": 1,
+      "evidence_sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "exclusion_class": "quarantined_payload",
+      "exclusion_id": "synthetic-exclusion-1"
+    }
+  ],
+  "freeze_record_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+  "identity_fail_closed": {
+    "accepted_identities": 0,
+    "disposition": "A_ACCEPT_TERMINAL_FAIL_CLOSED",
+    "effect": "UNRESOLVED_IDENTITIES_ROUTE_THROUGH_FROZEN_DECISION_TIME_ELIGIBILITY_AS_COUNTED_INELIGIBILITY",
+    "identities_adjudicated": 0,
+    "scope": "only_adjudicated_unresolved_identities_and_affected_episodes"
+  },
+  "lineage_and_terminal": {
+    "as_of_rule": "decision-time-only",
+    "baseline_date": "2014-01-01",
+    "carry_forward": "forbidden",
+    "end_date_boundary": "exclusive",
+    "factor_anchor_lineage_id": "factor_anchor_lineage_v1",
+    "interval_notation": "half-open",
+    "invented_start_date": "forbidden",
+    "membership_policy_id": "synthetic-membership-policy",
+    "membership_policy_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+    "pre_baseline_claims": "forbidden",
+    "snapshot_authority": "provider-snapshot",
+    "start_date_boundary": "inclusive",
+    "terminal_event_policy_sha256": null,
+    "terminal_event_policy_state": "candidate_not_accepted"
+  },
+  "materiality_thresholds": {
+    "approval_sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+    "performance_informed_selection": "FORBIDDEN",
+    "proposal_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "state": "owner_approved",
+    "thresholds": [
+      {
+        "class": "coverage",
+        "comparator": "ge",
+        "metric": "eligible_listing_floor",
+        "reviewed_value": 100,
+        "threshold_id": "synthetic-threshold-1",
+        "value": 100
+      }
+    ]
+  },
+  "materialization": "NOT_ENTERED",
+  "performance_access": "FORBIDDEN",
+  "public_projection_id": "synthetic-public-projection-v1",
+  "public_projection_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "result_access": "FORBIDDEN",
+  "review_decision": "diagnostic_only",
+  "review_decision_id": "synthetic-review-decision-v1",
+  "reviewer_appointment_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "reviewer_authority_reference": "synthetic-reviewer-appointment-v1",
+  "reviewer_id": "synthetic-reviewer",
+  "schema_version": "blinded_dataset_acceptance_record_v1",
+  "stage2_decision_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "stage2_status": "ACCEPTANCE_RECORD_ISSUED_PROMOTION_GATE_NOT_YET_GRANTED",
+  "terminal_event_policy": {
+    "owner_defer_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "policy_sha256": null,
+    "state": "candidate_not_accepted"
+  }
+}

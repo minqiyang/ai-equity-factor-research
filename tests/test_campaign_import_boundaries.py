@@ -17,6 +17,15 @@ def test_campaign_imports_only_stdlib_numpy_and_local_campaign_modules() -> None
         "campaign",
         "numpy",
     }
+    allowed_canonical = {
+        "parse_json_bytes",
+        "canonical_utf8",
+        "canonical_sha256",
+        "sha256_hex",
+        "normalize_timestamp",
+        "CANONICALIZATION_ID",
+        "ValidationError",
+    }
     observed_modules = tuple(sorted(CAMPAIGN_ROOT.glob("*.py")))
     assert observed_modules
 
@@ -27,19 +36,39 @@ def test_campaign_imports_only_stdlib_numpy_and_local_campaign_modules() -> None
         )
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
-                roots = {alias.name.split(".", 1)[0] for alias in node.names}
+                imported_modules = tuple(alias.name for alias in node.names)
+                imported_names: set[str] = set()
             elif isinstance(node, ast.ImportFrom):
                 if node.level:
                     continue
-                roots = {
-                    "" if node.module is None else node.module.split(".", 1)[0]
-                }
+                imported_modules = (
+                    "" if node.module is None else node.module,
+                )
+                imported_names = {alias.name for alias in node.names}
             else:
                 continue
-            assert roots <= allowed_roots, (
-                f"{module_path.relative_to(PROJECT_ROOT)} imports forbidden "
-                f"roots {sorted(roots - allowed_roots)}"
-            )
+            for module in imported_modules:
+                root = module.split(".", 1)[0]
+                if module == "pit_manifest_validator_v1.canonical":
+                    assert isinstance(node, ast.ImportFrom), (
+                        f"{module_path.name} must import canonical names"
+                    )
+                    assert module_path.name == "precondition.py", (
+                        f"{module_path.name} may not import {module}"
+                    )
+                    assert imported_names <= allowed_canonical, (
+                        f"{module_path.name} widens the canonical allowance "
+                        f"{sorted(imported_names - allowed_canonical)}"
+                    )
+                    continue
+                assert root != "pit_manifest_validator_v1", (
+                    f"{module_path.relative_to(PROJECT_ROOT)} imports "
+                    f"forbidden module {module}"
+                )
+                assert root in allowed_roots, (
+                    f"{module_path.relative_to(PROJECT_ROOT)} imports forbidden "
+                    f"root {root}"
+                )
 
 
 def test_campaign_public_function_parameters_are_dataset_independent() -> None:

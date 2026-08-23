@@ -1,0 +1,17 @@
+{
+  "inputs": {
+    "inventory_file": "precondition/trial_inventory.json",
+    "missing_name": "MOM_12_1:episode_21_row_return",
+    "missing_trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE",
+    "prepared_file": "precondition/prepared_campaign.json"
+  },
+  "expected": {
+    "complete": false,
+    "final_state": null,
+    "missing_required_outputs": 1,
+    "reason": "REQUIRED_OUTPUT_MISSING"
+  },
+  "forbidden": {
+    "treat_missing_as_invalid_present": true
+  }
+}
