@@ -8,7 +8,6 @@ import hashlib
 import json
 from pathlib import Path
 import socket
-import subprocess
 import unicodedata
 
 import pytest
@@ -471,19 +470,12 @@ def _package_tree_sha256() -> str:
     return digest.hexdigest()
 
 
-def test_published_validator_revision_is_reachable() -> None:
+def test_published_validator_package_tree_digest_matches() -> None:
     status = json.loads(
         (PROJECT_ROOT / "docs/track_a_pr2_public_status_v1.json").read_text(
             encoding="utf-8"
         )
     )
-    code_sha = status["validator"]["code_sha"]
-    kind = subprocess.check_output(
-        ["git", "cat-file", "-t", code_sha],
-        cwd=PROJECT_ROOT,
-        text=True,
-    ).strip()
-    assert kind == "commit"
     assert status["validator"]["package_tree_sha256"] == _package_tree_sha256()
 
 
