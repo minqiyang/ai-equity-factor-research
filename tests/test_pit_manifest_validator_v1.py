@@ -449,6 +449,26 @@ def test_bound_decision_cannot_be_backdated_before_evidence() -> None:
         ),
         "BACKDATED_DECISION",
     )
+    earlier = deepcopy(_load_json(DECISION_PATH))
+    earlier["reviewed_at"] = "2026-08-22T23:25:00Z"
+    _assert_error(
+        lambda: project_dataset_review_decision(
+            earlier,
+            expected_binding=_full_binding(
+                earlier, created_at_utc="2026-08-22T23:25:00.1Z"
+            ),
+            verify_digest=False,
+        ),
+        "BACKDATED_DECISION",
+    )
+    later = deepcopy(_load_json(DECISION_PATH))
+    later["reviewed_at"] = "2026-08-22T23:25:00.1Z"
+    projected = project_dataset_review_decision(
+        later,
+        expected_binding=_full_binding(later, created_at_utc="2026-08-22T23:25:00Z"),
+        verify_digest=False,
+    )
+    assert projected["reviewed_at"] == "2026-08-22T23:25:00.1Z"
 
 
 def test_self_issued_accepted_decision_fails_closed() -> None:

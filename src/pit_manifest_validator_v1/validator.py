@@ -28,6 +28,7 @@ from pit_manifest_validator_v1.canonical import (
     require_safe_public_id,
     require_sha256,
     require_string,
+    utc_instant,
     utf16_sort_key,
 )
 
@@ -1316,8 +1317,9 @@ def project_dataset_review_decision(
                 fail("BINDING_MISMATCH", field)
         if str(projection["reviewer_id"]) in producer_ids:
             fail("SELF_ISSUED_DECISION", "reviewer_id")
-        reviewed_at = str(projection["reviewed_at"])
-        if reviewed_at < max(evidence_times):
+        reviewed_at = utc_instant(str(projection["reviewed_at"]))
+        latest_evidence = max(utc_instant(item) for item in evidence_times)
+        if reviewed_at < latest_evidence:
             fail("BACKDATED_DECISION", "reviewed_at")
     computed = canonical_sha256(projection)
     if verify_digest:

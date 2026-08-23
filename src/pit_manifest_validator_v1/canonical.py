@@ -504,6 +504,12 @@ def normalize_timestamp(
     )
 
 
+def utc_instant(value: str) -> datetime:
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    return datetime.fromisoformat(value)
+
+
 def require_nullable_timestamp(
     value: object,
     field: str,
