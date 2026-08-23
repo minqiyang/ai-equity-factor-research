@@ -1,5 +1,26 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-2 grant, anchors, prepared file, missing outputs
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-FIX-2` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `b785ad9b95fd93d72d90a0dde6ce8858f40609ea`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- `authorize` still returns `AUTHORIZED` for the planning-only Stage 2 grant
+  and still refuses a calendar mismatch. It now examines `now_eligible` and
+  `does_not_authorize` so a result-bearing stage cannot authorize PR 3 and
+  `TRACK_A_PR3_PLANNING` cannot be forbidden. `run_campaign` refuses a
+  result-bearing bundle under that grant and does not load an unbound
+  prepared campaign file.
+- `simple_adjusted_close_return` now binds `start_anchor`/`end_anchor` to the
+  paired `anchors[*].adjusted_close` values. Missing required trial outputs
+  classify as `INVALID_DIAGNOSTIC` instead of a null final state.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited. No private panel, performance value, or 14-trial run was
+  accessed.
+- Focused campaign tests passed 141. Full suite after repo-map refresh:
+  3263 passed, 2 existing platform-conditional skipped.
+
 ## 2026-08-23 - Track A PR 3 FIX-1 calendar binding and unreadable refusals
 
 - Implemented frozen binding plan v3 card `EFR-GRK-PR3-FIX-1` on

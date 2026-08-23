@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
+import json
+from pathlib import Path
 
 from campaign.runner import (
     CampaignRun,
@@ -58,29 +60,76 @@ def test_run_campaign_refuses_without_bundle_when_unauthorized() -> None:
     assert result.run_record is None
 
 
-def test_run_campaign_authorized_assembles_bundle() -> None:
-    fixture = load_runner_fixture("acceptance_record_identity_golden.json")
+def test_run_campaign_planning_grant_refuses_result_bearing() -> None:
+    fixture = load_runner_fixture("grant_result_bearing_refusal.json")
+    expected = fixture["expected"]
     result = run_campaign(_authorized_config())
-    assert result.status == fixture["expected"]["status"]
-    assert result.reconciliation is not None
-    assert result.reconciliation.final_state == fixture["expected"]["final_state"]
-    assert result.bundle is not None
-    assert result.bundle.valid
-    assert result.run_record is not None
-    assert (
-        result.reconciliation.trial_count == fixture["expected"]["semantic_trial_count"]
-    )
+    assert isinstance(result, CampaignRun)
+    assert result.status == expected["status"]
+    assert result.reason == expected["reason"]
+    assert result.authorization.status == expected["authorization_status"]
+    assert result.bundle is None
+    assert result.reconciliation is None
+    assert result.run_record is None
+    assert fixture["forbidden"]["emit_result_bearing_bundle"]
 
 
-def test_two_authorized_runs_are_byte_identical() -> None:
+def test_two_runs_over_same_inputs_are_identical() -> None:
+    fixture = load_runner_fixture("grant_result_bearing_refusal.json")
     first = run_campaign(_authorized_config())
     second = run_campaign(_authorized_config())
-    assert first.bundle is not None
-    assert second.bundle is not None
-    assert first.bundle.bundle_manifest_bytes == second.bundle.bundle_manifest_bytes
-    assert first.bundle.child_digests == second.bundle.child_digests
-    assert first.bundle.bundle_manifest_digest == second.bundle.bundle_manifest_digest
+    assert first.status == fixture["expected"]["status"]
+    assert second.status == fixture["expected"]["status"]
+    assert first.reason == second.reason
+    assert first.bundle is None
+    assert second.bundle is None
+    assert first.authorization.status == second.authorization.status
     assert first.run_record == second.run_record
+
+
+def test_run_campaign_ignores_unbound_prepared_file(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("prepared_file_unbound_mutation.json")
+    prepared = json.loads(
+        fixture_file(fixture["inputs"]["prepared_file"]).read_text(encoding="utf-8")
+    )
+    cursor = prepared
+    path = fixture["inputs"]["mutation"]["path"]
+    for key in path[:-1]:
+        cursor = cursor[key]
+    cursor[path[-1]] = fixture["inputs"]["mutation"]["value"]
+    target = tmp_path / "mutated_prepared.json"
+    target.write_text(json.dumps(prepared), encoding="utf-8")
+    original = run_campaign(_authorized_config())
+    mutated = run_campaign(_authorized_config(prepared_campaign_file=str(target)))
+    expected = fixture["expected"]
+    assert original.status == expected["status"]
+    assert mutated.status == expected["status"]
+    assert original.reason == expected["reason"]
+    assert mutated.reason == expected["reason"]
+    assert original.bundle is None
+    assert mutated.bundle is None
+    assert fixture["forbidden"]["trust_unbound_prepared_file"]
+
+
+def test_run_campaign_missing_output_does_not_emit_valid_null_bundle(
+    tmp_path: Path,
+) -> None:
+    fixture = load_runner_fixture("reconciliation_missing_output.json")
+    prepared = json.loads(
+        fixture_file(fixture["inputs"]["prepared_file"]).read_text(encoding="utf-8")
+    )
+    del prepared["trial_outputs"][fixture["inputs"]["missing_trial_id"]][
+        fixture["inputs"]["missing_name"]
+    ]
+    target = tmp_path / "missing_output.json"
+    target.write_text(json.dumps(prepared), encoding="utf-8")
+    result = run_campaign(_authorized_config(prepared_campaign_file=str(target)))
+    expected = fixture["expected"]
+    assert result.status == expected["run_campaign_status"]
+    assert result.reason == expected["run_campaign_reason"]
+    assert result.bundle is None
+    assert result.run_record is None
+    assert result.reconciliation is None
 
 
 def test_configuration_projection_labels_digest_roles() -> None:

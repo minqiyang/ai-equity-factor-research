@@ -7,6 +7,16 @@ profitability, or trading readiness.
 
 ## Unreleased
 
+### Fixed
+
+- Closed remaining Track A PR 3 exact-head findings: planning-only grants
+  still authorize the code-and-fixture path but refuse a result-bearing run,
+  return anchors must match the paired lineage `adjusted_close` values, the
+  runner no longer loads an unbound prepared campaign file, and missing
+  required trial outputs classify as `INVALID_DIAGNOSTIC`. Calendar binding
+  from FIX-1 remains in force. This adds no private data, result access, or
+  14-trial run.
+
 ### Added
 
 - Added the Track A PR 3 EXEC-5 repo-integration surface: import-boundary,

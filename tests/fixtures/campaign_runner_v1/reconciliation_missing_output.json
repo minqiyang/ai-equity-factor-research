@@ -7,9 +7,12 @@
   },
   "expected": {
     "complete": false,
-    "final_state": null,
+    "final_state": "INVALID_DIAGNOSTIC",
+    "hard_valid": false,
     "missing_required_outputs": 1,
-    "reason": "REQUIRED_OUTPUT_MISSING"
+    "reason": "REQUIRED_OUTPUT_MISSING",
+    "run_campaign_status": "REFUSED",
+    "run_campaign_reason": "GRANT_DOES_NOT_AUTHORIZE_FOURTEEN_TRIAL_RUN"
   },
   "forbidden": {
     "treat_missing_as_invalid_present": true

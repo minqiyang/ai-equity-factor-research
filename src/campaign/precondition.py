@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 import re
@@ -49,6 +50,25 @@ _REASON_PROTOCOL_ABSENT = "PROTOCOL_FREEZE_ABSENT"
 _REASON_INVENTORY_ABSENT = "TRIAL_INVENTORY_ABSENT"
 _REASON_CALENDAR_ID = "CALENDAR_ID_MISMATCH"
 _REASON_CALENDAR_VERSION = "CALENDAR_VERSION_MISMATCH"
+_REASON_ELIGIBLE_FORBIDDEN_STAGE = "GRANT_NOW_ELIGIBLE_AUTHORIZES_FORBIDDEN_STAGE"
+_REASON_INTENDED_STAGE_FORBIDDEN = "GRANT_DOES_NOT_AUTHORIZE_TRACK_A_PR3_PLANNING"
+_REASON_FOURTEEN_TRIAL_FORBIDDEN = "GRANT_DOES_NOT_AUTHORIZE_FOURTEEN_TRIAL_RUN"
+_REASON_RESULT_ACCESS_FORBIDDEN = "GRANT_DOES_NOT_AUTHORIZE_RESULT_ACCESS"
+_REASON_PERFORMANCE_ACCESS_FORBIDDEN = "GRANT_DOES_NOT_AUTHORIZE_PERFORMANCE_ACCESS"
+_REASON_ELIGIBLE_NOT_CAMPAIGN_RUN = (
+    "GRANT_NOW_ELIGIBLE_DOES_NOT_AUTHORIZE_CAMPAIGN_RUN"
+)
+_STAGE_PR3_PLANNING = "TRACK_A_PR3_PLANNING"
+_STAGE_FOURTEEN_TRIAL = "FOURTEEN_TRIAL_RUN"
+_STAGE_RESULT_ACCESS = "RESULT_ACCESS"
+_STAGE_PERFORMANCE_ACCESS = "PERFORMANCE_ACCESS"
+_RESULT_BEARING_STAGES = frozenset(
+    {
+        _STAGE_FOURTEEN_TRIAL,
+        _STAGE_RESULT_ACCESS,
+        _STAGE_PERFORMANCE_ACCESS,
+    }
+)
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -352,6 +372,28 @@ def authorize(config: object) -> Authorization:
     )
 
 
+def result_bearing_refusal_reason(grant: object) -> str | None:
+    """Return the named refusal if the grant does not authorize a campaign run."""
+
+    if not isinstance(grant, Mapping):
+        raise TypeError("grant must be a mapping")
+    eligible = grant.get("now_eligible")
+    forbidden = grant.get("does_not_authorize")
+    if not _string_list(eligible) or not _string_list(forbidden):
+        raise TypeError("grant eligibility lists must be string lists")
+    assert isinstance(eligible, list)
+    assert isinstance(forbidden, list)
+    if _STAGE_FOURTEEN_TRIAL in forbidden:
+        return _REASON_FOURTEEN_TRIAL_FORBIDDEN
+    if _STAGE_RESULT_ACCESS in forbidden:
+        return _REASON_RESULT_ACCESS_FORBIDDEN
+    if _STAGE_PERFORMANCE_ACCESS in forbidden:
+        return _REASON_PERFORMANCE_ACCESS_FORBIDDEN
+    if _STAGE_FOURTEEN_TRIAL not in eligible:
+        return _REASON_ELIGIBLE_NOT_CAMPAIGN_RUN
+    return None
+
+
 def project_acceptance_identity(record: object) -> str:
     """Return the CANONICAL_IDENTITY digest of one acceptance record."""
 
@@ -449,6 +491,14 @@ def _authorize_grant_fields(
         "acceptance_identity_sha256",
     ):
         return _refuse("GRANT_ACCEPTANCE_IDENTITY_MISMATCH")
+    eligible = grant["now_eligible"]
+    forbidden = grant["does_not_authorize"]
+    assert isinstance(eligible, list)
+    assert isinstance(forbidden, list)
+    if any(stage in eligible for stage in _RESULT_BEARING_STAGES):
+        return _refuse(_REASON_ELIGIBLE_FORBIDDEN_STAGE)
+    if _STAGE_PR3_PLANNING in forbidden:
+        return _refuse(_REASON_INTENDED_STAGE_FORBIDDEN)
     return None
 
 
@@ -851,4 +901,5 @@ __all__ = [
     "Authorization",
     "authorize",
     "project_acceptance_identity",
+    "result_bearing_refusal_reason",
 ]

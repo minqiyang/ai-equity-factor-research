@@ -10,6 +10,7 @@ from campaign.precondition import (
     IDENTITY_EXCLUDE,
     authorize,
     project_acceptance_identity,
+    result_bearing_refusal_reason,
 )
 from campaign.runner import RunConfig
 from pit_manifest_validator_v1.canonical import sha256_hex
@@ -309,9 +310,21 @@ def test_run_config_rejects_unfrozen_protocol_value() -> None:
 
 
 def test_authorize_has_no_defaults() -> None:
-    for parameter in inspect.signature(authorize).parameters.values():
-        assert parameter.default is inspect.Parameter.empty
+    for function in (authorize, result_bearing_refusal_reason):
+        for parameter in inspect.signature(function).parameters.values():
+            assert parameter.default is inspect.Parameter.empty
     assert "acceptance_record_sha256" in IDENTITY_EXCLUDE
+
+
+def test_planning_grant_authorizes_code_path_not_result_bearing() -> None:
+    fixture = load_runner_fixture("grant_result_bearing_refusal.json")
+    expected = fixture["expected"]
+    result = authorize(_authorized_config())
+    assert result.status == expected["authorization_status"]
+    assert result.grant is not None
+    assert result.grant["now_eligible"] == expected["now_eligible"]
+    assert expected["reason"] == result_bearing_refusal_reason(result.grant)
+    assert fixture["forbidden"]["authorize_result_bearing_run"]
 
 
 def test_calendar_mutation_refuses_before_authorized(tmp_path: Path) -> None:

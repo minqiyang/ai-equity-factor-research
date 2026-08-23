@@ -58,7 +58,9 @@ def test_missing_required_output_is_incomplete() -> None:
     assert result.invalid_and_missing["missing_required_outputs"] == expected[
         "missing_required_outputs"
     ]
-    assert result.final_state is expected["final_state"]
+    assert result.final_state == expected["final_state"]
+    assert result.diagnostic_inputs is not None
+    assert result.diagnostic_inputs.hard_valid is expected["hard_valid"]
 
 
 def test_invalid_required_output_is_retained_not_missing() -> None:

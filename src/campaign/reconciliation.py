@@ -180,11 +180,8 @@ def reconcile_semantic_trials(
             ),
         }
     )
-    inputs = None
-    state = None
-    if complete:
-        inputs = assemble_diagnostic_inputs(diagnostic_payload, complete)
-        state = classify_diagnostic(inputs)
+    inputs = assemble_diagnostic_inputs(diagnostic_payload, complete)
+    state = classify_diagnostic(inputs)
     return ReconciliationResult(
         complete=complete,
         reason=reason,
@@ -316,7 +313,7 @@ def _incomplete(
             }
         ),
         diagnostic_inputs=None,
-        final_state=None,
+        final_state="INVALID_DIAGNOSTIC",
     )
 
 

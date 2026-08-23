@@ -2,26 +2,18 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-import json
-from pathlib import Path
 import re
 from types import MappingProxyType
 
-from campaign.bundle import (
-    BundleAssembly,
-    assemble_evidence_bundle,
-    invalid_and_missing_bytes,
-    required_bundle_children,
-)
+from campaign.bundle import BundleAssembly
 from campaign.inference import HOLM_ALPHA, LONG_SEGMENT_BLOCK_LENGTH
-from campaign.precondition import Authorization, authorize
-from campaign.reconciliation import (
-    ReconciliationResult,
-    parse_trial_inventory,
-    reconcile_semantic_trials,
+from campaign.precondition import (
+    Authorization,
+    authorize,
+    result_bearing_refusal_reason,
 )
+from campaign.reconciliation import ReconciliationResult
 
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -215,7 +207,7 @@ def configuration_projection(config: RunConfig) -> dict[str, object]:
 
 
 def run_campaign(config: RunConfig) -> CampaignRun:
-    """Refuse unless authorize returns AUTHORIZED, then assemble the bundle."""
+    """Authorize the code path, then refuse any result-bearing assembly."""
 
     if not isinstance(config, RunConfig):
         raise TypeError("config must be RunConfig")
@@ -229,102 +221,27 @@ def run_campaign(config: RunConfig) -> CampaignRun:
             None,
             None,
         )
-    prepared = _load_prepared(config.prepared_campaign_file)
-    inventory = parse_trial_inventory(Path(config.trial_inventory_file).read_bytes())
-    trial_outputs = prepared["trial_outputs"]
-    if not isinstance(trial_outputs, Mapping):
-        raise TypeError("trial_outputs must be a mapping")
-    diagnostic_payload = prepared["diagnostic_payload"]
-    if not isinstance(diagnostic_payload, Mapping):
-        raise TypeError("diagnostic_payload must be a mapping")
-    reconciliation = reconcile_semantic_trials(
-        inventory,
-        trial_outputs,
-        diagnostic_payload,
-    )
-    run_record = {
-        "schema_version": "campaign_run_manifest_v1",
-        "authorization_status": authorization.status,
-        "configuration": configuration_projection(config),
-        "semantic_trial_count": reconciliation.trial_count,
-        "reconciliation_complete": reconciliation.complete,
-        "final_state": reconciliation.final_state,
-        "invalid_and_missing": dict(reconciliation.invalid_and_missing),
-    }
-    child_payloads = prepared.get("bundle_children", {})
-    if not isinstance(child_payloads, Mapping):
-        raise TypeError("bundle_children must be a mapping")
-    children = {
-        name: _child_bytes(child_payloads.get(name))
-        for name in required_bundle_children()
-        if name != "invalid_and_missing_summary.json"
-        and name != "run_manifest.json"
-        and name != "trial_inventory.json"
-        and name
-        != "eodhd_sp500_three_factor_diagnostic_v1.yaml"
-    }
-    children["trial_inventory.json"] = Path(config.trial_inventory_file).read_bytes()
-    children["eodhd_sp500_three_factor_diagnostic_v1.yaml"] = Path(
-        config.protocol_file
-    ).read_bytes()
-    children["run_manifest.json"] = json.dumps(
-        run_record,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    children["invalid_and_missing_summary.json"] = invalid_and_missing_bytes(
-        reconciliation
-    )
-    bundle = assemble_evidence_bundle(
-        children,
-        {
-            "semantic_trial_count": reconciliation.trial_count,
-            "attempt_count": prepared.get("attempt_count"),
-            "final_state": reconciliation.final_state,
-            "runner_code_sha": config.runner_code_sha,
-            "environment_id": config.environment_id,
-            "environment_lock_sha256": config.environment_lock_sha256,
-            "protocol_file_sha256": config.protocol_file_sha256,
-            "trial_inventory_file_sha256": config.trial_inventory_file_sha256,
-            "acceptance_record_file_sha256": config.acceptance_record_file_sha256,
-            "acceptance_identity_sha256": config.acceptance_identity_sha256,
-            "per_trial_status": [
-                {
-                    "trial_id": trial.trial_id,
-                    "complete": trial.complete,
-                    "invalid": list(trial.invalid_names),
-                }
-                for trial in reconciliation.trials
-            ],
-        },
-    )
-    return CampaignRun(
-        _STATUS_AUTHORIZED,
-        None,
-        authorization,
-        reconciliation,
-        bundle,
-        MappingProxyType(run_record),
-    )
-
-
-def _load_prepared(locator: str) -> dict[str, object]:
-    payload = json.loads(Path(locator).read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError("prepared campaign file must be an object")
-    return payload
-
-
-def _child_bytes(value: object) -> bytes:
-    if isinstance(value, str):
-        return value.encode("utf-8")
-    if isinstance(value, Mapping):
-        return json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
-        return json.dumps(list(value), sort_keys=True, separators=(",", ":")).encode(
-            "utf-8"
+    grant = authorization.grant
+    if grant is None:
+        return CampaignRun(
+            _STATUS_REFUSED,
+            "STAGE2_GRANT_ABSENT",
+            authorization,
+            None,
+            None,
+            None,
         )
-    raise TypeError("bundle child must be text or a JSON value")
+    reason = result_bearing_refusal_reason(grant)
+    if reason is None:
+        reason = "RESULT_BEARING_RUN_NOT_AUTHORIZED"
+    return CampaignRun(
+        _STATUS_REFUSED,
+        reason,
+        authorization,
+        None,
+        None,
+        None,
+    )
 
 
 def _require_int(value: object, name: str, expected: int) -> None:

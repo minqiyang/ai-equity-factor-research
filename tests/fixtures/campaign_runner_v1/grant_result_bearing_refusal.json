@@ -1,0 +1,15 @@
+{
+  "inputs": {
+    "grant_file": "precondition/grant_valid.json"
+  },
+  "expected": {
+    "authorization_status": "AUTHORIZED",
+    "now_eligible": ["TRACK_A_PR3_PLANNING"],
+    "status": "REFUSED",
+    "reason": "GRANT_DOES_NOT_AUTHORIZE_FOURTEEN_TRIAL_RUN"
+  },
+  "forbidden": {
+    "authorize_result_bearing_run": true,
+    "emit_result_bearing_bundle": true
+  }
+}

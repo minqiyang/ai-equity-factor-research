@@ -13,6 +13,7 @@ _REASON_ANCHOR_MISSING = "ANCHOR_MISSING"
 _REASON_ANCHOR_BOOLEAN = "ANCHOR_BOOLEAN"
 _REASON_ANCHOR_NON_FINITE = "ANCHOR_NON_FINITE"
 _REASON_ANCHOR_NON_POSITIVE = "ANCHOR_NON_POSITIVE"
+_REASON_ANCHOR_PRICE_MISMATCH = "ANCHOR_PRICE_MISMATCH"
 
 
 @dataclass(frozen=True)
@@ -48,11 +49,26 @@ def simple_adjusted_close_return(
         reason = _anchor_invalid_reason(anchor)
         if reason is not None:
             return SimpleReturn(None, False, reason)
-    return SimpleReturn(
-        float(end_anchor) / float(start_anchor) - 1.0,
-        True,
-        None,
-    )
+    start_price = _bound_record_price(start_anchor, anchors[0])
+    end_price = _bound_record_price(end_anchor, anchors[-1])
+    if start_price is None or end_price is None:
+        return SimpleReturn(None, False, _REASON_ANCHOR_PRICE_MISMATCH)
+    return SimpleReturn(end_price / start_price - 1.0, True, None)
+
+
+def _bound_record_price(
+    scalar: object,
+    record: Mapping[str, object],
+) -> float | None:
+    price = record.get("adjusted_close")
+    try:
+        scalar_value = float(scalar)  # type: ignore[arg-type]
+        record_value = float(price)  # type: ignore[arg-type]
+    except (OverflowError, TypeError, ValueError):
+        return None
+    if scalar_value != record_value:
+        return None
+    return record_value
 
 
 def _anchor_invalid_reason(anchor: object) -> str | None:
