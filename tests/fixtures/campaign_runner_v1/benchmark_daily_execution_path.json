@@ -4,6 +4,33 @@
     "effective_from": "2014-01-01",
     "effective_to": null,
     "signal_dates": ["2024-01-31", "2024-02-29"],
+    "schedule_session_dates": [
+      "2024-02-01",
+      "2024-02-02",
+      "2024-02-05",
+      "2024-02-06",
+      "2024-02-07",
+      "2024-02-08",
+      "2024-02-09",
+      "2024-02-12",
+      "2024-02-13",
+      "2024-02-14",
+      "2024-02-15",
+      "2024-02-16",
+      "2024-02-20",
+      "2024-02-21",
+      "2024-02-22",
+      "2024-02-23",
+      "2024-02-26",
+      "2024-02-27",
+      "2024-02-28",
+      "2024-02-29",
+      "2024-03-01",
+      "2024-03-04",
+      "2024-03-05",
+      "2024-03-06",
+      "2024-03-07"
+    ],
     "session_dates": [
       "2024-02-01",
       "2024-02-02",
@@ -52,28 +79,11 @@
     ]
   },
   "expected": {
-    "valid": true,
-    "points_per_frozen_decision": 5,
-    "frozen_count": 2,
-    "daily_count": 10,
-    "benchmark_gross": [
-      0.05,
-      0.05238095238095238,
-      0.0,
-      0.0,
-      0.0,
-      0.1,
-      0.0,
-      0.0,
-      0.0,
-      0.0
-    ],
-    "rel_tol": 1e-12,
-    "abs_tol": 1e-12
+    "refused": true,
+    "match": "session slice"
   },
   "forbidden": {
-    "daily_rebalanced_second_interval": 0.05,
-    "no_monthly_reset_first_next_month": 0.10950226244343891,
-    "one_strategy_interval_per_frozen_decision": true
+    "valid_continuous_daily_path": true,
+    "jump_2024_02_07_to_2024_03_01": true
   }
 }

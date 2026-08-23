@@ -371,6 +371,12 @@ def dated_uniform_returns(
     return dated_held_returns(session_date, uniform_return_map(weights, value))
 
 
+def strategy_schedule_sessions(strategy: Any) -> tuple[str, ...]:
+    """Return the strategy path's ordered session dates."""
+
+    return tuple(point.session_date for point in strategy.points)
+
+
 def fixture_file(name: str) -> Path:
     """Return one campaign_runner_v1 fixture path."""
 

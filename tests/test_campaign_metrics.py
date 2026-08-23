@@ -23,6 +23,7 @@ from campaign_runner_v1_support import (
     load_runner_fixture,
     runner_holding_interval,
     runner_weight_map,
+    strategy_schedule_sessions,
 )
 
 
@@ -86,6 +87,7 @@ def test_three_month_metrics_and_forbidden_alternatives() -> None:
         ),
         inputs["initial_equity"],
         inputs["role"],
+        strategy_schedule_sessions(strategy),
     )
     net = tuple(point.net_return for point in strategy.points)
     gross = tuple(point.gross_return for point in strategy.points)

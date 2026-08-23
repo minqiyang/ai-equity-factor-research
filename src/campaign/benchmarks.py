@@ -68,14 +68,16 @@ def factor_matched_cost_free_comparison(
     held_returns_by_interval: Sequence[DatedHeldReturns],
     initial_equity: object,
     role: str,
+    schedule_sessions: Sequence[str],
 ) -> BenchmarkComparison:
     """Compare strategy net to the frozen equal-weight membership path.
 
     Membership is read from each FrozenDecisionTime and is never recomputed
-    from later returns. Daily strategy points map onto the governing monthly
-    frozen decision. The benchmark target resets only when the execution
-    calendar enters the next frozen factor-month. The comparison is
-    structurally cost-free.
+    from later returns. Daily strategy points must be an exact ordered
+    contiguous slice of the campaign schedule sessions and map onto the
+    governing monthly frozen decision. Old holdings earn the return into
+    execution close; the new equal-weight target resets at execution close.
+    The comparison is structurally cost-free.
     """
 
     if not isinstance(role, str) or not role:
@@ -102,6 +104,12 @@ def factor_matched_cost_free_comparison(
         raise TypeError("frozen_decisions must contain FrozenDecisionTime")
     if any(not isinstance(item, DatedHeldReturns) for item in observed):
         raise TypeError("held_returns_by_interval must contain DatedHeldReturns")
+    _require_one_factor_identity(frozen)
+    if strategy.points:
+        _require_schedule_slice(
+            tuple(point.session_date for point in strategy.points),
+            schedule_sessions,
+        )
     if not frozen:
         if strategy.points:
             raise ValueError(
@@ -245,12 +253,10 @@ def _benchmark_intervals(
     )
     intervals = []
     for index, point in enumerate(strategy_points):
-        next_governor = (
-            governors[index + 1] if index + 1 < len(governors) else None
-        )
+        previous = governors[index - 1] if index > 0 else None
         reset = (
-            frozen[next_governor].matched_benchmark_target
-            if next_governor is not None and next_governor != governors[index]
+            frozen[governors[index]].matched_benchmark_target
+            if previous is not None and previous != governors[index]
             else None
         )
         intervals.append(
@@ -290,6 +296,48 @@ def _governing_indices(
     if set(governors) != set(range(len(frozen))):
         raise ValueError("strategy interval count must match frozen_decisions")
     return tuple(governors)
+
+
+def _require_one_factor_identity(frozen: tuple[FrozenDecisionTime, ...]) -> None:
+    if not frozen:
+        return
+    factor_id = frozen[0].factor_id
+    if any(item.factor_id != factor_id for item in frozen):
+        raise ValueError("frozen decisions must share one factor identity")
+
+
+def _require_schedule_slice(
+    session_dates: tuple[str, ...],
+    schedule_sessions: Sequence[str],
+) -> None:
+    if (
+        isinstance(schedule_sessions, (str, bytes, bytearray))
+        or not isinstance(schedule_sessions, Sequence)
+        or not schedule_sessions
+    ):
+        raise ValueError("schedule_sessions must be a nonempty sequence")
+    schedule = tuple(
+        _strict_date(item).isoformat() for item in schedule_sessions
+    )
+    if len(set(schedule)) != len(schedule):
+        raise ValueError("schedule_sessions must be unique")
+    if schedule != tuple(sorted(schedule)):
+        raise ValueError("schedule_sessions must be strictly increasing")
+    path = tuple(_strict_date(item).isoformat() for item in session_dates)
+    if len(set(path)) != len(path):
+        raise ValueError("session dates must be unique")
+    if path != tuple(sorted(path)):
+        raise ValueError("session dates must be strictly increasing")
+    start = None
+    for index, session in enumerate(schedule):
+        if session == path[0]:
+            start = index
+            break
+    if start is None or schedule[start : start + len(path)] != path:
+        raise ValueError(
+            "session dates must match the campaign schedule's exact ordered "
+            "session slice"
+        )
 
 
 def _aligned_session(

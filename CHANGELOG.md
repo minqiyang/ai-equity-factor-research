@@ -9,6 +9,13 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Closed remaining Track A PR 3 exact-head findings: the factor-matched
+  benchmark now applies a new monthly target at execution close so old
+  holdings earn the incoming return, binds a daily path to the campaign
+  schedule's exact ordered session slice and refuses sparse, duplicate,
+  or reversed dates, and rejects a mixed-factor frozen-decision sequence.
+  F-1 and F-2 remain deferred. This adds no private data, result access,
+  or 14-trial run.
 - Closed remaining Track A PR 3 exact-head findings: factor-matched
   benchmark comparison now maps daily execution-calendar points onto
   monthly frozen decisions and resets membership only at the next

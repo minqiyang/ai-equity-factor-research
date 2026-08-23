@@ -1,5 +1,27 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-8 execution-close reset and calendar bind
+
+- Implemented exact-head Codex items from card `EFR-GRK-PR3-FIX-8` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `bbcb5e1fe63df2b93ef69f6259f2d34cc7f357a7`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- Daily factor-matched comparison now attaches a changed membership target
+  to the execution-close interval. Old holdings earn the incoming return;
+  the new equal-weight target resets after that close.
+- Daily mapping now requires the strategy sessions to be an exact ordered
+  contiguous slice of the supplied campaign schedule. The committed
+  `2024-02-07` to `2024-03-01` jump, plus duplicate and reversed dates,
+  are refused. Every frozen decision must keep the first factor identity.
+- Already-closed calendar, grant-planning, environment, Rank IC, frozen-
+  child digest, Boolean real-vector, session-identity, complete-root, and
+  per-trial status gates were left in place.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited except `benchmarks.py`. No private panel, performance
+  value, or 14-trial run was accessed.
+- Focused campaign tests passed 158. Full suite after repo-map refresh:
+  2398 passed, 2 existing platform-conditional skipped.
+
 ## 2026-08-23 - Track A PR 3 FIX-7 daily benchmark map and per-trial status
 
 - Implemented exact-head Codex items from card `EFR-GRK-PR3-FIX-7` on
