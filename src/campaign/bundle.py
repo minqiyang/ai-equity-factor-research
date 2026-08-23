@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 import hashlib
 import json
+import re
 from types import MappingProxyType
 
 from campaign.reconciliation import ReconciliationResult
@@ -36,6 +37,7 @@ _SELF_HASH_FIELDS = frozenset(
 _REASON_MISSING = "BUNDLE_CHILD_MISSING"
 _REASON_SELF_HASH = "BUNDLE_MANIFEST_SELF_HASH_FORBIDDEN"
 _REASON_DIGEST_MISMATCH = "BUNDLE_CHILD_DIGEST_MISMATCH"
+_SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
 _FROZEN_CHILD_DIGEST_FIELDS = (
     ("eodhd_sp500_three_factor_diagnostic_v1.yaml", "protocol_file_sha256"),
     ("trial_inventory.json", "trial_inventory_file_sha256"),
@@ -155,11 +157,14 @@ def _frozen_child_digest_error(
     root_fields: Mapping[str, object],
 ) -> str | None:
     for child_name, field in _FROZEN_CHILD_DIGEST_FIELDS:
-        if field not in root_fields:
-            continue
-        if root_fields[field] != digests[child_name]:
+        expected = root_fields[field] if field in root_fields else None
+        if not _is_sha256_digest(expected) or expected != digests[child_name]:
             return _REASON_DIGEST_MISMATCH
     return None
+
+
+def _is_sha256_digest(value: object) -> bool:
+    return isinstance(value, str) and _SHA256_HEX.fullmatch(value) is not None
 
 
 def invalid_and_missing_bytes(result: ReconciliationResult) -> bytes:

@@ -1,0 +1,77 @@
+{
+  "schema_version": "track_a_pr3_fix4_public_manifest_v1",
+  "card_id": "EFR-GRK-PR3-FIX-4",
+  "branch": "codex/track-a-pr3-fix4",
+  "publication_branch": "codex/track-a-pr3-exec1",
+  "pr": 187,
+  "start_head": "242c75e88d3d4ee92889c8cd7b099d5bd477bb25",
+  "plan": {
+    "md_sha256": "237194a9caf1f6c1486286438fabbb9d7b417c216de630d9425547e917cbc90d",
+    "json_sha256": "dc55651e31959d0dfd8db60735e86c80644fde5bfc050c95d024d3aed38ffca3",
+    "gate": "PASS_3_OF_3"
+  },
+  "escalation_analysis_sha256": "5729fb160c8d750a9e0059e5f06b506ab505ed5544ac2b43e4580e1d16674782",
+  "authorized_closed_set": ["F-3", "F-4", "F-5"],
+  "not_authorized": ["F-1", "F-2"],
+  "scope": [
+    "src/campaign/diagnostics.py",
+    "spearman_rank_ic fail-closed pair members",
+    "src/campaign/bundle.py",
+    "required frozen digest fields",
+    "src/campaign/reconciliation.py",
+    "finite non-Boolean diagnostic vectors",
+    "tests/test_campaign_diagnostics.py",
+    "tests/test_campaign_bundle.py",
+    "tests/test_campaign_reconciliation.py",
+    "tests/fixtures/campaign_runner_v1"
+  ],
+  "not_included": [
+    "F-1",
+    "F-2",
+    "14-trial run",
+    "private panel",
+    "performance access",
+    "result access",
+    "merge",
+    "inference.py edit"
+  ],
+  "unchanged_campaign_file_bytes": {
+    "src/campaign/inference.py": "be2e743c659c87791c99d0e27684cb48c730486719860773721423e08650a130",
+    "src/campaign/__init__.py": "5fd76e27290ac9b1a9360239e48cc8712a0fc41fd45bb3ec97b75158f8c70043",
+    "src/campaign/classifier.py": "316e5b5458aaba3c682b429b36216ccb568cbaed5f3bcdda0ad4b2a94dfd337c",
+    "src/campaign/deciles.py": "194aa4c521e09284cca386192dd78b037e302f7b4a4869f04e3bdc1e27da7841",
+    "src/campaign/factors.py": "95c95be3e5f05533c93c93a9f314b01f72a0a7088c417dae80fd207bec4667c9",
+    "src/campaign/listing_key.py": "18166cc25a5f8a990ba243af422cf874ffc18a87f4e6501840dc755b4c217b4a",
+    "src/campaign/turnover.py": "db51e116bf14f6908c6d2bb24701a3b405be699977f5a2853c0a00ad435bc51b",
+    "src/campaign/registry.py": "e72921fb1a5745061a7ad64b518a16c8dd57aa8761fefa1a83d2dca9767a5d78",
+    "src/campaign/lineage.py": "a28744f3aef22b7997118192ac7ad66a06dc89b270f6961badb95ee61ac4ac66",
+    "src/campaign/schedule.py": "613b209a7d70b28353e4a039ecaf84efc1e4964b9320afb13a6f838d97fc356d",
+    "src/campaign/returns.py": "5937840a7ed75d09b0d52b46f1d485640e87a201a929a1ba88aff76c9683b49c",
+    "src/campaign/baselines.py": "7de9f44358c7d856e0218dfdb89d67516befe64a1965aa3c020257c6d97cd788",
+    "src/campaign/paths.py": "1429e252e5adfdda970f214b7cff345b12e685a8192c55d4dad0aeedd75f55a7",
+    "src/campaign/benchmarks.py": "549ca24b6aeedc5734a47a2c8818943fe853d7c164b6a2c16694d1500a5f5a65",
+    "src/campaign/metrics.py": "7b791af56bf1941956dcd2cb98ec9c80efa1b49a75f4ee1e73aedcc5c1addf73",
+    "src/campaign/runner.py": "3f38f54a12f74aa159f09d57bd170ae42e4cbcf25cb83f2fc97b9b06f264ee88",
+    "src/campaign/precondition.py": "1789005b17912575b558cd0f88abc7e9cecd17c50b4f39401fc088038c9b3221",
+    "src/campaign/eligibility.py": "d5562e764ea01e21e9c31123345e9d5e010e90a677ff1f605c1ff981058939c2"
+  },
+  "delivered_file_bytes": {
+    "src/campaign/diagnostics.py": "4b140c5421fd05790c37a0d7307bc65f1736cbf20b5332490fe559c8727d68da",
+    "src/campaign/bundle.py": "e50847146018dfef56bd0c0d3c8f353f8b9c72a2b16d22c97e8bcb7736ac66d5",
+    "src/campaign/reconciliation.py": "9714648c6020d41174f5774ada858bdfc21b53dbfd68a886bec9d7edb421f4a7",
+    "tests/test_campaign_diagnostics.py": "380373838842ccae4f39f0793c3aeeeae552d52d8f410336ddc7e8a1951bf2b4",
+    "tests/test_campaign_bundle.py": "426eb529dd1159eb92cfedb205670984ae0205fcfe7fe99d0c8a85772cd91d7b",
+    "tests/test_campaign_reconciliation.py": "060e6c987d618ac1c468a09681057fdfe283265fa228d6c9e1f6caf6abc29119",
+    "tests/fixtures/campaign_runner_v1/rank_ic_missing_label.json": "a2fc002d0375d8137284b59a6e32a731592d6c716f22676e4e869bfd7b1a390c",
+    "tests/fixtures/campaign_runner_v1/bundle_child_digest_mismatch.json": "bb983a75ecdf8560b23173507b6116c1577c497bb4ad65c7037f397458e198d3",
+    "tests/fixtures/campaign_runner_v1/reconciliation_boolean_vectors.json": "9974c467655920d6e72bbba4005ad108494e0c396156362be0a67fc547c51de3",
+    "docs/engineering_log.md": "6d6e11bfec2fd89982bad86cc0c225a9d909e749b0c863efc6da6e6d3390a6dc",
+    "docs/repo_map.md": "17ff4cbeb51fb589d7e209ff74af27a2921dfabd787c32270c4f6a36f099620c",
+    "CHANGELOG.md": "577805d5fac239ed558143c4806140bd4e3c8e2652908976d054f8bcf419a7b5"
+  },
+  "validation": {
+    "focused_campaign_tests_passed": 146,
+    "full_pytest_passed": 3268,
+    "full_pytest_skipped": 2
+  }
+}

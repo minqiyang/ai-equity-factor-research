@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 import json
+import math
+from numbers import Real
 from types import MappingProxyType
 
 from campaign.classifier import DiagnosticInputs, DiagnosticState, classify_diagnostic
@@ -317,6 +319,15 @@ def _incomplete(
     )
 
 
+def _finite_real(value: object, name: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, Real):
+        raise TypeError(f"{name} must be a finite real non-Boolean scalar")
+    numeric = float(value)
+    if not math.isfinite(numeric):
+        raise TypeError(f"{name} must be a finite real non-Boolean scalar")
+    return numeric
+
+
 def _as_bool(value: object, name: str) -> bool:
     if not isinstance(value, bool):
         raise TypeError(f"{name} must be a bool")
@@ -338,7 +349,7 @@ def _real_vector(value: object, name: str) -> FactorVector[float]:
         raise ValueError(f"{name} must have one value per frozen factor")
     return FactorVector(
         **{
-            factor_id: float(item)
+            factor_id: _finite_real(item, f"{name}.{factor_id}")
             for factor_id, item in zip(FACTOR_ORDER, value, strict=True)
         }
     )

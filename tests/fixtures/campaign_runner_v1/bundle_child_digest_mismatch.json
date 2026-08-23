@@ -15,14 +15,50 @@
     "omit_fields": [
       "protocol_file_sha256",
       "trial_inventory_file_sha256"
+    ],
+    "omit_field_cases": [
+      {
+        "name": "omit_protocol_digest",
+        "fields": ["protocol_file_sha256"]
+      },
+      {
+        "name": "omit_inventory_digest",
+        "fields": ["trial_inventory_file_sha256"]
+      },
+      {
+        "name": "omit_both_frozen_digests",
+        "fields": [
+          "protocol_file_sha256",
+          "trial_inventory_file_sha256"
+        ]
+      }
+    ],
+    "malformed_digest_cases": [
+      {
+        "name": "protocol_not_hex",
+        "field": "protocol_file_sha256",
+        "value": "not-a-digest"
+      },
+      {
+        "name": "inventory_short",
+        "field": "trial_inventory_file_sha256",
+        "value": "abcd"
+      },
+      {
+        "name": "protocol_null",
+        "field": "protocol_file_sha256",
+        "value": null
+      }
     ]
   },
   "expected": {
     "valid": false,
     "reason": "BUNDLE_CHILD_DIGEST_MISMATCH",
-    "omit_valid": true
+    "omit_valid": false,
+    "omit_reason": "BUNDLE_CHILD_DIGEST_MISMATCH"
   },
   "forbidden": {
-    "accept_substituted_child_with_frozen_digest": true
+    "accept_substituted_child_with_frozen_digest": true,
+    "accept_bundle_when_frozen_digest_omitted": true
   }
 }

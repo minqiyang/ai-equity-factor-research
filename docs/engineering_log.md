@@ -1,5 +1,28 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-4 Rank IC, bundle digest fields, Boolean vectors
+
+- Implemented owner-authorized closed set F-3, F-4, and F-5 from card
+  `EFR-GRK-PR3-FIX-4` on `codex/track-a-pr3-fix4` at start HEAD
+  `242c75e88d3d4ee92889c8cd7b099d5bd477bb25`. Escalation analysis
+  `5729fb16…16674782` and plan bytes `237194a9…bc90d` remained the
+  immutable inputs. F-1 and F-2 stayed out of scope.
+- `spearman_rank_ic` now returns an invalid `RankICResult` with
+  `FORWARD_RETURN_MISSING` or `FORWARD_RETURN_INVALID` when any pair
+  member is missing, Boolean, or non-finite. It no longer drops those
+  pairs before the distinct-value floors.
+- `assemble_evidence_bundle` now treats a missing or non-64-hex
+  `protocol_file_sha256` or `trial_inventory_file_sha256` field as
+  `BUNDLE_CHILD_DIGEST_MISMATCH` instead of skipping the check.
+- `assemble_diagnostic_inputs` rejects Boolean or non-finite members of
+  `mean_rank_ics`, both active-return vectors, and
+  `common_case_positive_year_fractions` before `float()` conversion.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited. No private panel, performance value, or 14-trial run was
+  accessed.
+- Focused campaign tests passed 146. Full suite after repo-map refresh:
+  3268 passed, 2 existing platform-conditional skipped.
+
 ## 2026-08-23 - Track A PR 3 FIX-3 eligibility prices and bundle child digests
 
 - Implemented frozen binding plan v3 card `EFR-GRK-PR3-FIX-3` on

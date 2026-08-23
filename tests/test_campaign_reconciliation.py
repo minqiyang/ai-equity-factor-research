@@ -5,7 +5,10 @@ from __future__ import annotations
 import inspect
 import json
 
+import pytest
+
 from campaign.reconciliation import (
+    assemble_diagnostic_inputs,
     parse_trial_inventory,
     reconcile_semantic_trials,
     required_output_names,
@@ -117,6 +120,25 @@ def test_invalid_primary_comparison_routes_hard_validity() -> None:
     assert result.diagnostic_inputs is not None
     assert result.diagnostic_inputs.hard_valid is expected["hard_valid"]
     assert result.diagnostic_inputs.prefrozen_coverage_met
+
+
+def test_boolean_or_nonfinite_diagnostic_vectors_are_rejected() -> None:
+    fixture = load_runner_fixture("reconciliation_boolean_vectors.json")
+    prepared = _prepared(fixture["inputs"]["prepared_file"])
+    payload = prepared["diagnostic_payload"]
+    for case in fixture["inputs"]["boolean_mutations"]:
+        mutated = dict(payload)
+        mutated[case["name"]] = case["value"]
+        with pytest.raises(TypeError):
+            assemble_diagnostic_inputs(mutated, True)
+    for case in fixture["inputs"]["nonfinite_mutations"]:
+        mutated = dict(payload)
+        values = list(payload[case["name"]])
+        values[case["index"]] = float(case["ieee"])
+        mutated[case["name"]] = values
+        with pytest.raises(TypeError):
+            assemble_diagnostic_inputs(mutated, True)
+    assert fixture["forbidden"]["boolean_laundered_to_one"]
 
 
 def test_required_output_names_follow_inventory() -> None:

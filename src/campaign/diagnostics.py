@@ -123,10 +123,20 @@ def spearman_rank_ic(
             raise TypeError(
                 "pairs must be (factor_value, forward_return) pairs"
             ) from exc
+        if factor_value is None or forward_return is None:
+            return _invalid_rank_ic(
+                _REASON_MISSING_FORWARD_RETURN,
+                factors,
+                returns,
+            )
         if not _is_finite_real(factor_value) or not _is_finite_real(
             forward_return
         ):
-            continue
+            return _invalid_rank_ic(
+                _REASON_INVALID_FORWARD_RETURN,
+                factors,
+                returns,
+            )
         factors.append(float(factor_value))
         returns.append(float(forward_return))
 
@@ -410,6 +420,20 @@ def _pearson(left: Sequence[float], right: Sequence[float]) -> float:
     left_ss = sum((value - left_mean) ** 2 for value in left)
     right_ss = sum((value - right_mean) ** 2 for value in right)
     return numerator / math.sqrt(left_ss * right_ss)
+
+
+def _invalid_rank_ic(
+    reason: str,
+    factors: Sequence[float],
+    returns: Sequence[float],
+) -> RankICResult:
+    return RankICResult(
+        None,
+        False,
+        reason,
+        len(set(factors)),
+        len(set(returns)),
+    )
 
 
 def _invalid_curve(reason: str) -> DecileCurve:

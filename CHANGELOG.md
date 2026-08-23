@@ -9,6 +9,13 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Closed owner-authorized Track A PR 3 FIX-4 findings F-3, F-4, and F-5:
+  Rank IC now invalidates a month when any pair member is missing, Boolean,
+  or non-finite; evidence-bundle assembly fails when a frozen protocol or
+  trial-inventory digest field is missing or not 64-hex; and diagnostic
+  real vectors reject Boolean or non-finite members before conversion.
+  F-1 and F-2 were not authorized. This adds no private data, result
+  access, or 14-trial run.
 - Closed remaining Track A PR 3 exact-head findings: eligibility now refuses
   listings whose referenced factor prices do not match the paired lineage
   `adjusted_close` values, and evidence-bundle assembly rejects protocol or

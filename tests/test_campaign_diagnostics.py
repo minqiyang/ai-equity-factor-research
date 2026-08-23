@@ -91,6 +91,36 @@ def test_spearman_rank_ic_is_average_tie_ranks_then_pearson() -> None:
     assert descriptive.valid is expected["descriptive"]["valid"]
 
 
+def _materialize_rank_ic_pair_member(value: object) -> object:
+    if isinstance(value, dict) and "ieee" in value:
+        return float(value["ieee"])
+    return value
+
+
+def test_rank_ic_missing_or_invalid_pair_is_retained_invalid() -> None:
+    fixture = load_runner_fixture("rank_ic_missing_label.json")
+    inputs = fixture["inputs"]
+    expected_cases = fixture["expected"]
+    for case in inputs["cases"]:
+        pairs = [
+            (
+                _materialize_rank_ic_pair_member(left),
+                _materialize_rank_ic_pair_member(right),
+            )
+            for left, right in case["pairs"]
+        ]
+        result = spearman_rank_ic(
+            pairs,
+            inputs["min_distinct_factor_values"],
+            inputs["min_distinct_forward_returns"],
+        )
+        expected = expected_cases[case["name"]]
+        assert result.valid is expected["valid"], case["name"]
+        assert result.value is expected["value"], case["name"]
+        assert result.reason == expected["reason"], case["name"]
+        assert result.value != fixture["forbidden"]["silent_drop_value"]
+
+
 def test_rank_ic_validity_gates_and_label_coverage() -> None:
     fixture = load_runner_fixture("rank_ic_validity_gates.json")
     inputs = fixture["inputs"]
