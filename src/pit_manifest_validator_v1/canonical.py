@@ -102,12 +102,7 @@ def has_lone_surrogate(value: str) -> bool:
 
 
 def require_nfc(value: str, field: str, *, input_id: str | None = None, locator: str | None = None) -> str:
-    if has_lone_surrogate(value):
-        fail("LONE_SURROGATE", field, input_id=input_id, locator=locator)
-    normalized = unicodedata.normalize("NFC", value)
-    if normalized != value:
-        fail("NOT_NFC", field, input_id=input_id, locator=locator)
-    return value
+    return nfc_text(value, field, input_id=input_id, locator=locator)
 
 
 def nfc_text(value: str, field: str, *, input_id: str | None = None, locator: str | None = None) -> str:
@@ -487,11 +482,14 @@ def normalize_timestamp(
                     )
                 ),
             )
-        except ValueError:
+            utc = local.astimezone(timezone.utc)
+        except (ValueError, OverflowError):
             fail("INVALID_TIMESTAMP", field, input_id=input_id, locator=locator)
-        utc = local.astimezone(timezone.utc)
         year, month, day = utc.year, utc.month, utc.day
         hour, minute, second = utc.hour, utc.minute, utc.second
+        _validate_gregorian_date(
+            year, month, day, field, input_id=input_id, locator=locator
+        )
     if fraction is not None:
         fraction = fraction.rstrip("0")
     if not fraction:

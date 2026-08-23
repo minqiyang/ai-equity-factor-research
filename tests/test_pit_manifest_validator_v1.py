@@ -8,6 +8,8 @@ import hashlib
 import json
 from pathlib import Path
 import socket
+import subprocess
+import unicodedata
 
 import pytest
 
@@ -15,6 +17,7 @@ from pit_manifest_validator_v1.canonical import (
     ValidationError,
     canonical_sha256,
     canonical_utf8,
+    nfc_text,
     parse_json_bytes,
 )
 from pit_manifest_validator_v1.cli import main as cli_main
@@ -457,3 +460,55 @@ def test_package_source_has_no_network_imports() -> None:
             else:
                 continue
             assert not (names & forbidden_roots), module_path.name
+
+
+def _package_tree_sha256() -> str:
+    digest = hashlib.sha256()
+    package_root = PROJECT_ROOT / "src/pit_manifest_validator_v1"
+    for module_path in sorted(package_root.glob("*.py")):
+        digest.update(module_path.name.encode("utf-8"))
+        digest.update(hashlib.sha256(module_path.read_bytes()).digest())
+    return digest.hexdigest()
+
+
+def test_published_validator_revision_is_reachable() -> None:
+    status = json.loads(
+        (PROJECT_ROOT / "docs/track_a_pr2_public_status_v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    code_sha = status["validator"]["code_sha"]
+    kind = subprocess.check_output(
+        ["git", "cat-file", "-t", code_sha],
+        cwd=PROJECT_ROOT,
+        text=True,
+    ).strip()
+    assert kind == "commit"
+    assert status["validator"]["package_tree_sha256"] == _package_tree_sha256()
+
+
+def test_nfc_composed_and_decomposed_text_hash_equal() -> None:
+    composed = "caf\u00e9"
+    decomposed = unicodedata.normalize("NFD", composed)
+    assert composed != decomposed
+    assert nfc_text(decomposed, "label") == composed
+    assert canonical_sha256({"label": nfc_text(decomposed, "label")}) == canonical_sha256(
+        {"label": composed}
+    )
+
+
+def test_offset_timestamp_overflow_and_sentinel_fail_closed() -> None:
+    freeze = deepcopy(_load_json(FREEZE_PATH))
+    freeze["as_of_cutoff"] = "0001-01-01T00:00:00+23:59"
+    _assert_error(lambda: project_freeze_record(freeze), "INVALID_TIMESTAMP")
+    freeze["as_of_cutoff"] = "9998-12-31T23:59:59-23:59"
+    _assert_error(lambda: project_freeze_record(freeze), "SENTINEL_TIMESTAMP")
+
+
+def test_accepted_decision_cannot_outrank_diagnostic_findings() -> None:
+    decision = deepcopy(_load_json(DECISION_PATH))
+    decision["decision"] = "accepted"
+    _assert_error(
+        lambda: project_dataset_review_decision(decision, verify_digest=False),
+        "DECISION_MORE_PERMISSIVE",
+    )

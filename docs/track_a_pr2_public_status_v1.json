@@ -2,15 +2,16 @@
   "artifact_id": "track_a_pr2_public_status_v1",
   "updated_utc": "2026-08-23",
   "operating_standard": {
-    "name": "herdr_pi_multi_agent_single_file_standard_v18.md",
-    "sha256": "dc9416283f2855aaaf143e77f96f29b89c6a4192a86e221fd0d310edc851c6e4"
+    "name": "herdr_pi_coord_1.md",
+    "sha256": "1f30c4ed3789cc3669a6ce9fad2a767ce8a6d382ab885d7936046dffe6184707"
   },
   "evidence_ceiling": "DIAGNOSTIC_ONLY",
   "dataset_acceptance": "NOT_GRANTED",
   "materialization": "NOT_ENTERED",
   "validator": {
     "package": "src/pit_manifest_validator_v1",
-    "code_sha": "5753f4a347bcce40fd5d5d83fe5b08f6401dd25e",
+    "code_sha": "886f7c3423585986d7b25e8c1278fe71f7c9eb63",
+    "package_tree_sha256": "0f70fe06db78a91c0ae1c120b2e4960015c4cde2456d1abf7844bc785868f4b0",
     "canonicalization_id": "pit_canonical_json_v1"
   },
   "plan_v2_sha256": "79ef61a26fe92b750c42a2af079db024a86d6c19fb0295fc10c98fc399bc2a81",

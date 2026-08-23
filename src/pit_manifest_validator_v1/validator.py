@@ -33,6 +33,7 @@ from pit_manifest_validator_v1.canonical import (
 
 
 DECISION_STATES = frozenset({"accepted", "diagnostic_only", "blocked"})
+DECISION_SEVERITY = {"accepted": 0, "diagnostic_only": 1, "blocked": 2}
 PRIVATE_FULL_MANIFEST_SCHEMA = "private_full_manifest_v1"
 ORDERED_INVENTORY_SCHEMA = "ordered_component_inventory_v1"
 PUBLIC_PROJECTION_SCHEMA = "public_redacted_projection_v1"
@@ -1156,6 +1157,25 @@ def _validate_findings(source: object) -> list[dict[str, object]]:
     return _sorted_objects(findings, "finding_id")
 
 
+def _reject_decision_more_permissive_than_findings(
+    projection: dict[str, object],
+) -> None:
+    decision = str(projection["decision"])
+    findings = projection["findings"]
+    if not isinstance(findings, list):
+        fail("UNEXPECTED_VALUE", "findings")
+    ranks = [DECISION_SEVERITY[decision]]
+    for finding in findings:
+        if not isinstance(finding, dict):
+            fail("UNEXPECTED_VALUE", "findings")
+        disposition = str(finding["disposition"])
+        ranks.append(DECISION_SEVERITY[disposition])
+        if decision == "accepted" and finding.get("unresolved_limitation") is not None:
+            fail("DECISION_MORE_PERMISSIVE", "decision")
+    if DECISION_SEVERITY[decision] < max(ranks):
+        fail("DECISION_MORE_PERMISSIVE", "decision")
+
+
 def project_dataset_review_decision(
     source: object,
     *,
@@ -1240,6 +1260,7 @@ def project_dataset_review_decision(
             raw["public_decision_reference"], "public_decision_reference"
         ),
     }
+    _reject_decision_more_permissive_than_findings(projection)
     if expected_binding:
         for field, expected in expected_binding.items():
             if field not in projection:
