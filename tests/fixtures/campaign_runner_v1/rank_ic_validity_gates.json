@@ -1,0 +1,62 @@
+{
+  "inputs": {
+    "min_distinct_factor_values": 10,
+    "min_distinct_forward_returns": 2,
+    "nine_distinct_pairs": [
+      [1.0, 1.0],
+      [2.0, 2.0],
+      [3.0, 3.0],
+      [4.0, 4.0],
+      [5.0, 5.0],
+      [6.0, 6.0],
+      [7.0, 7.0],
+      [8.0, 8.0],
+      [9.0, 9.0]
+    ],
+    "one_return_pairs": [
+      [1.0, 0.01],
+      [2.0, 0.01],
+      [3.0, 0.01],
+      [4.0, 0.01],
+      [5.0, 0.01],
+      [6.0, 0.01],
+      [7.0, 0.01],
+      [8.0, 0.01],
+      [9.0, 0.01],
+      [10.0, 0.01]
+    ],
+    "coverage_keys": ["T000", "T001", "T002"],
+    "coverage_returns": {
+      "T000": 0.01,
+      "T001": 0.02
+    },
+    "exchange": "XNYS",
+    "effective_from": "2014-01-01",
+    "effective_to": null
+  },
+  "expected": {
+    "nine_distinct": {
+      "valid": false,
+      "value": null,
+      "reason": "DISTINCT_FACTOR_VALUE_COUNT_BELOW_FLOOR",
+      "distinct_factor_values": 9,
+      "distinct_forward_returns": 9
+    },
+    "one_return": {
+      "valid": false,
+      "value": null,
+      "reason": "DISTINCT_FORWARD_RETURN_COUNT_BELOW_FLOOR",
+      "distinct_factor_values": 10,
+      "distinct_forward_returns": 1
+    },
+    "coverage": {
+      "eligible_count": 3,
+      "valid_label_count": 2,
+      "missing_label_count": 1,
+      "all_eligible_labels_valid": false
+    }
+  },
+  "forbidden": {
+    "compute_rank_ic_below_gates": true
+  }
+}

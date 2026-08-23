@@ -1,0 +1,30 @@
+{
+  "inputs": {
+    "binding_file": "precondition/binding_valid.json",
+    "grant_file": "precondition/grant_valid.json",
+    "inventory_file": "precondition/trial_inventory.json",
+    "prepared_file": "precondition/prepared_campaign.json",
+    "protocol_file": "precondition/protocol.yaml",
+    "record_file": "precondition/acceptance_valid.json"
+  },
+  "expected": {
+    "canonical_identity": "3617bbdb65ea5328152887348b8c399de1c3e7876041537c4c2fb877f955f422",
+    "decision_file_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+    "decision_identity_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+    "environment_lock_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "file_bytes": "94cd0d95aa3fdf396c12a770392afb305fbca66b8e88c35e53e9ba734b6e1db9",
+    "final_state": "NEGATIVE_DIAGNOSTIC",
+    "grant_file_bytes": "852f11173942e8d9b3744ab95a34a1af30719d62e904c222a2aab0f2613a4984",
+    "inventory_file_bytes": "da588e2abe3678ad4e2249fe82f84c0febc686241550060dc66e3a739fe9c1dc",
+    "protocol_file_bytes": "04661db15bc753b12f357b86d5f54e4098aeb611362e117dcaea8d816bed1232",
+    "reason": null,
+    "runner_code_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "semantic_trial_count": 14,
+    "status": "AUTHORIZED"
+  },
+  "forbidden": {
+    "assert_roles_equal": true,
+    "assert_roles_unequal": true,
+    "use_file_bytes_as_identity_expected": true
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "inputs": {
+    "required_fields": [
+      "runner_code_sha",
+      "environment_id",
+      "environment_lock_sha256",
+      "protocol_file_sha256",
+      "trial_inventory_file_sha256",
+      "acceptance_record_file_sha256",
+      "acceptance_identity_sha256",
+      "semantic_trial_count",
+      "attempt_count",
+      "per_trial_status",
+      "final_state"
+    ],
+    "null_fields": [
+      "runner_code_sha",
+      "environment_id",
+      "environment_lock_sha256",
+      "acceptance_record_file_sha256",
+      "acceptance_identity_sha256",
+      "semantic_trial_count",
+      "attempt_count",
+      "per_trial_status",
+      "final_state"
+    ],
+    "malformed_cases": [
+      {
+        "name": "empty_environment_id",
+        "field": "environment_id",
+        "value": ""
+      },
+      {
+        "name": "short_runner_sha",
+        "field": "runner_code_sha",
+        "value": "abcd"
+      },
+      {
+        "name": "boolean_trial_count",
+        "field": "semantic_trial_count",
+        "value": true
+      },
+      {
+        "name": "negative_attempt_count",
+        "field": "attempt_count",
+        "value": -1
+      },
+      {
+        "name": "status_as_string",
+        "field": "per_trial_status",
+        "value": "complete"
+      },
+      {
+        "name": "empty_final_state",
+        "field": "final_state",
+        "value": ""
+      }
+    ]
+  },
+  "expected": {
+    "valid": false,
+    "reason": "BUNDLE_ROOT_BINDING_MISSING"
+  },
+  "forbidden": {
+    "accept_bundle_with_none_root_bindings": true
+  }
+}

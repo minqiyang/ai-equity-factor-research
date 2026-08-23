@@ -1,0 +1,14 @@
+{
+  "inputs": {
+    "record_file": "precondition/acceptance_valid.json",
+    "wrong_identity": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  },
+  "expected": {
+    "canonical_identity": "3617bbdb65ea5328152887348b8c399de1c3e7876041537c4c2fb877f955f422",
+    "reason": "ACCEPTANCE_RECORD_IDENTITY_SELF_INCONSISTENT"
+  },
+  "forbidden": {
+    "accept": true,
+    "repair_field": true
+  }
+}

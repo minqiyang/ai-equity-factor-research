@@ -130,6 +130,10 @@ IMPORTANT_FILES = [
         "Active Track A/Track B diagnostic campaign scope authority.",
     ),
     (
+        "docs/campaign_bounded_diagnostic_runner_v1.md",
+        "Public-safe Track A PR 3 bounded diagnostic runner design note; not an authority source.",
+    ),
+    (
         "docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml",
         "Frozen public Track A machine-readable protocol.",
     ),

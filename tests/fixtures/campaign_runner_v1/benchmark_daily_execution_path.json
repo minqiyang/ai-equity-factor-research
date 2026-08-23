@@ -1,0 +1,105 @@
+{
+  "inputs": {
+    "exchange": "XNYS",
+    "effective_from": "2014-01-01",
+    "effective_to": null,
+    "signal_dates": ["2024-01-31", "2024-02-29"],
+    "campaign_schedule": {
+      "session_dates": [
+        "2024-01-31",
+        "2024-02-01",
+        "2024-02-28",
+        "2024-02-29",
+        "2024-03-01",
+        "2024-03-28",
+        "2024-04-01"
+      ],
+      "accepted_cutoff": "2024-04-01",
+      "horizon_return_rows": 1,
+      "horizon_purge_signal_axis_rows": 2,
+      "embargo_rows": 0,
+      "first_fold_year": 2018
+    },
+    "schedule_session_dates": [
+      "2024-02-01",
+      "2024-02-02",
+      "2024-02-05",
+      "2024-02-06",
+      "2024-02-07",
+      "2024-02-08",
+      "2024-02-09",
+      "2024-02-12",
+      "2024-02-13",
+      "2024-02-14",
+      "2024-02-15",
+      "2024-02-16",
+      "2024-02-20",
+      "2024-02-21",
+      "2024-02-22",
+      "2024-02-23",
+      "2024-02-26",
+      "2024-02-27",
+      "2024-02-28",
+      "2024-02-29",
+      "2024-03-01",
+      "2024-03-04",
+      "2024-03-05",
+      "2024-03-06",
+      "2024-03-07"
+    ],
+    "session_dates": [
+      "2024-02-01",
+      "2024-02-02",
+      "2024-02-05",
+      "2024-02-06",
+      "2024-02-07",
+      "2024-03-01",
+      "2024-03-04",
+      "2024-03-05",
+      "2024-03-06",
+      "2024-03-07"
+    ],
+    "initial_equity": 1.0,
+    "transaction_cost_bps": 0,
+    "role": "factor_matched_primary",
+    "min_eligible_count": 1,
+    "min_distinct_values": 1,
+    "benchmark_universe": {
+      "key_spec": {
+        "exchange": "XNYS",
+        "ticker_prefix": "U",
+        "ticker_width": 3,
+        "effective_from": "2014-01-01",
+        "effective_to": null
+      },
+      "count": 2,
+      "value_mode": "index",
+      "duplicate_last": false
+    },
+    "strategy": {
+      "initial_weights": {"T000": 1.0},
+      "held_returns": {"T000": 0.0},
+      "reset_weights": null
+    },
+    "benchmark_held_returns": [
+      {"U000": 0.1, "U001": 0.0},
+      {"U000": 0.1, "U001": 0.0},
+      {"U000": 0.0, "U001": 0.0},
+      {"U000": 0.0, "U001": 0.0},
+      {"U000": 0.0, "U001": 0.0},
+      {"U000": 0.2, "U001": 0.0},
+      {"U000": 0.0, "U001": 0.0},
+      {"U000": 0.0, "U001": 0.0},
+      {"U000": 0.0, "U001": 0.0},
+      {"U000": 0.0, "U001": 0.0}
+    ]
+  },
+  "expected": {
+    "refused": true,
+    "match": "session slice"
+  },
+  "forbidden": {
+    "valid_continuous_daily_path": true,
+    "jump_2024_02_07_to_2024_03_01": true
+  }
+}

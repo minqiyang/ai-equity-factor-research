@@ -1,0 +1,16 @@
+{
+  "inputs": {
+    "prepared_file": "precondition/prepared_campaign.json",
+    "mutation": {
+      "path": ["diagnostic_payload", "holm_rejections"],
+      "value": [true, true, true]
+    }
+  },
+  "expected": {
+    "status": "REFUSED",
+    "reason": "GRANT_DOES_NOT_AUTHORIZE_FOURTEEN_TRIAL_RUN"
+  },
+  "forbidden": {
+    "trust_unbound_prepared_file": true
+  }
+}

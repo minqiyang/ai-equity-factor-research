@@ -1,0 +1,68 @@
+{
+  "inputs": {
+    "session_dates": [
+      "2024-06-28",
+      "2024-07-01",
+      "2024-07-02",
+      "2024-07-03",
+      "2024-07-05",
+      "2024-07-08",
+      "2024-07-09",
+      "2024-07-10",
+      "2024-07-11",
+      "2024-07-12",
+      "2024-07-15",
+      "2024-07-16",
+      "2024-07-17",
+      "2024-07-18",
+      "2024-07-19",
+      "2024-07-22",
+      "2024-07-23",
+      "2024-07-24",
+      "2024-07-25",
+      "2024-07-26",
+      "2024-07-29",
+      "2024-07-30",
+      "2024-07-31",
+      "2024-08-01"
+    ],
+    "accepted_cutoff": "2024-07-31",
+    "horizon_return_rows": 21,
+    "horizon_purge_signal_axis_rows": 22,
+    "embargo_rows": 0,
+    "first_fold_year": 2018
+  },
+  "expected": {
+    "july_session_count": 22,
+    "june_signal": {
+      "signal_date": "2024-06-28",
+      "execution_date": "2024-07-01",
+      "label_end_date": "2024-07-31",
+      "factor_label_complete": true,
+      "continuous_included": false
+    },
+    "july_signal": {
+      "signal_date": "2024-07-31",
+      "execution_date": "2024-08-01",
+      "label_end_date": null,
+      "factor_label_complete": false,
+      "continuous_included": false
+    },
+    "campaign_invalid": false,
+    "folds": [
+      {
+        "fold_year": 2024,
+        "bound_end": "2024-07-31",
+        "partial": true,
+        "signal_dates": [
+          "2024-06-28"
+        ]
+      }
+    ]
+  },
+  "forbidden": {
+    "campaign_invalid": true,
+    "drop_june_factor_label": true,
+    "july_continuous_included": true
+  }
+}

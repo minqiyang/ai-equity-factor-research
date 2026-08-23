@@ -1,0 +1,13 @@
+{
+  "inputs": {
+    "empty_now_eligible": [],
+    "unrelated_now_eligible": ["UNRELATED_STAGE"]
+  },
+  "expected": {
+    "status": "REFUSED",
+    "reason": "GRANT_DOES_NOT_AUTHORIZE_TRACK_A_PR3_PLANNING"
+  },
+  "forbidden": {
+    "authorize_without_planning_eligibility": true
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "inputs": {
+    "invalid_name": "MOM_12_1:episode_21_row_return",
+    "invalid_reason": "CONSTITUENT_RETURN_INVALID",
+    "invalid_trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE",
+    "inventory_file": "precondition/trial_inventory.json",
+    "prepared_file": "precondition/prepared_campaign.json"
+  },
+  "expected": {
+    "complete": true,
+    "final_state": "NEGATIVE_DIAGNOSTIC",
+    "invalid_required_outputs": 1,
+    "missing_required_outputs": 0
+  },
+  "forbidden": {
+    "treat_invalid_as_missing": true
+  }
+}

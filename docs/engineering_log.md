@@ -1,5 +1,367 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-12 ledger cross-product equivalence
+
+- Implemented exact-head Codex item from card `EFR-GRK-PR3-FIX-12` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `be8ce63da6d96e0f364f805b0e154a4700034f18`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- `first_full_rest_smoke` still collapses later representatives to one
+  smoke case, but only after every representative is proven to delegate
+  to the same non-null constraint kind. Mixed kinds, unknown kinds, and
+  empty axes fail closed before any collapsed pairs are returned.
+- Ledger registry tests now prove field groups against the packaged
+  schema path before collapsing Boolean, null, length, and case cases.
+  Missing-field fixture groups prove shared requiredness. Fail-closed
+  `INVALID_EVENT` behavior is unchanged.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited. No private panel, performance value, or 14-trial run
+  was accessed.
+- Focused ledger tests passed 1267. Full suite after repo-map refresh:
+  2412 passed, 2 existing platform-conditional skipped.
+
+## 2026-08-23 - Track A PR 3 FIX-11 interior included decisions
+
+- Implemented exact-head Codex item from card `EFR-GRK-PR3-FIX-11` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `4d19e20db9817300e7a37cf6765187016a68d6eb`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- `factor_matched_cost_free_comparison` now requires the frozen signal
+  set to contain every continuously included schedule row between its
+  endpoints. Supplying January and March while February is continuously
+  included is refused, even when the daily path is the exact
+  execution-bounded span.
+- Already-closed excluded-row, signal-close, complete-span,
+  prefix/suffix, execution-close reset, sparse/duplicate/reversed
+  calendar, mixed-factor, grant-planning, environment, Rank IC,
+  frozen-child digest, Boolean real-vector, session-identity,
+  complete-root, and per-trial status gates were left in place.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited except `benchmarks.py`. No private panel, performance
+  value, or 14-trial run was accessed.
+- Focused campaign tests passed 164. Full suite after repo-map refresh:
+  2404 passed, 2 existing platform-conditional skipped.
+
+## 2026-08-23 - Track A PR 3 FIX-10 equal-length bypass and excluded rows
+
+- Implemented exact-head Codex items from card `EFR-GRK-PR3-FIX-10` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `993e66d50bad2b177c0223aff70c3d52c72f28e1`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- `factor_matched_cost_free_comparison` no longer treats an equal-length
+  path as a calendar exemption. A one-point strategy dated at signal
+  close must match the exact execution-bounded span and therefore is
+  refused. Every nonempty frozen set is checked through
+  `_validated_signal_row` and `_execution_bounded_span`.
+- A frozen decision on a `continuous_included=False` schedule row is
+  refused. The bounded endpoint may not exceed `accepted_cutoff`. The
+  committed `session_month_cutoff.json` June-excluded July 1 through
+  August 1 path cannot produce a valid comparison.
+- Already-closed complete-span, prefix/suffix, execution-close reset,
+  sparse/duplicate/reversed calendar, mixed-factor, grant-planning,
+  environment, Rank IC, frozen-child digest, Boolean real-vector,
+  session-identity, complete-root, and per-trial status gates were left
+  in place.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited except `benchmarks.py`. No private panel, performance
+  value, or 14-trial run was accessed.
+- Focused campaign tests passed 163. Full suite after repo-map refresh:
+  2403 passed, 2 existing platform-conditional skipped.
+
+## 2026-08-23 - Track A PR 3 FIX-9 complete execution-bounded span
+
+- Implemented exact-head Codex item from card `EFR-GRK-PR3-FIX-9` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `40469ce08b1737d20a1bd518ab250b44e75f55a6`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- `factor_matched_cost_free_comparison` now requires an accepted
+  `CampaignSchedule` rather than a caller-controlled session list. A
+  daily path must equal the exact span from the first included execution
+  through the execution following the last target. The committed
+  `benchmark_membership_boundary.json` start on `2024-02-28` after a
+  `2024-01-31` frozen decision is refused, as are prefix and suffix
+  truncations of that span.
+- Already-closed execution-close reset, sparse/duplicate/reversed
+  calendar, mixed-factor, grant-planning, environment, Rank IC, frozen-
+  child digest, Boolean real-vector, session-identity, complete-root, and
+  per-trial status gates were left in place.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited except `benchmarks.py`. No private panel, performance
+  value, or 14-trial run was accessed.
+- Focused campaign tests passed 161. Full suite after repo-map refresh:
+  2401 passed, 2 existing platform-conditional skipped.
+
+## 2026-08-23 - Track A PR 3 FIX-8 execution-close reset and calendar bind
+
+- Implemented exact-head Codex items from card `EFR-GRK-PR3-FIX-8` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `bbcb5e1fe63df2b93ef69f6259f2d34cc7f357a7`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- Daily factor-matched comparison now attaches a changed membership target
+  to the execution-close interval. Old holdings earn the incoming return;
+  the new equal-weight target resets after that close.
+- Daily mapping now requires the strategy sessions to be an exact ordered
+  contiguous slice of the supplied campaign schedule. The committed
+  `2024-02-07` to `2024-03-01` jump, plus duplicate and reversed dates,
+  are refused. Every frozen decision must keep the first factor identity.
+- Already-closed calendar, grant-planning, environment, Rank IC, frozen-
+  child digest, Boolean real-vector, session-identity, complete-root, and
+  per-trial status gates were left in place.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited except `benchmarks.py`. No private panel, performance
+  value, or 14-trial run was accessed.
+- Focused campaign tests passed 158. Full suite after repo-map refresh:
+  2398 passed, 2 existing platform-conditional skipped.
+
+## 2026-08-23 - Track A PR 3 FIX-7 daily benchmark map and per-trial status
+
+- Implemented exact-head Codex items from card `EFR-GRK-PR3-FIX-7` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `e3165f4868e0622e1825b8da5d099ae81807a414`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- `factor_matched_cost_free_comparison` now keeps the FIX-6 one-session
+  identity check when strategy intervals match frozen decisions, and maps
+  a longer daily execution path onto the latest prior monthly
+  `FrozenDecisionTime`. The equal-weight benchmark target resets only
+  when the daily calendar enters the next frozen factor-month.
+- `assemble_evidence_bundle` now parses the bound `trial_inventory.json`
+  child and requires one structured `{trial_id, status}` record for every
+  reconciled inventory trial. Empty, short, duplicate, and unknown-trial
+  `per_trial_status` lists are `BUNDLE_PER_TRIAL_STATUS_INVALID`.
+- Already-closed calendar, grant-planning, environment, Rank IC, frozen-
+  child digest, Boolean real-vector, session-identity, and complete-root
+  binding gates were left in place.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited except the named owners above. No private panel,
+  performance value, or 14-trial run was accessed.
+- Focused campaign tests passed 155. Full suite after repo-map refresh:
+  2395 passed, 2 existing platform-conditional skipped.
+
+## 2026-08-23 - Track A PR 3 FIX-6 frozen identity, bindings, and finite values
+
+- Implemented remaining exact-head Codex items from card
+  `EFR-GRK-PR3-FIX-6` on `codex/track-a-pr3-fix4` at start HEAD
+  `1b9f603367e0d8d311957fbf775c19777fbd8233`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- `FrozenDecisionTime` now carries `factor_id` and `signal_date`.
+  `random_rank_target` hashes only those frozen fields and raises when a
+  caller override disagrees. Factor-matched benchmark comparison now
+  requires `DatedHeldReturns` and verifies one session identity across
+  each frozen decision, held-return interval, and strategy point.
+- `assemble_evidence_bundle` now invalidates a missing, null, or
+  malformed detached-root binding instead of succeeding with `None`
+  fields. Lineage `adjusted_close` and referenced prices that are
+  Boolean or text invalidate eligibility and the simple-return gate.
+  `compute_registered_factor` rejects a non-finite computed value even
+  when the anchors were finite and positive.
+- Already-closed calendar, grant-planning, environment, Rank IC,
+  frozen-child digest, and Boolean real-vector gates were re-checked and
+  left in place. The return-gate Boolean/text price hole was hardened
+  because it was the same coercion Codex already exercised.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited except the named owners above. No private panel,
+  performance value, or 14-trial run was accessed.
+- Focused campaign tests passed 153. Full suite after repo-map refresh:
+  2393 passed, 2 existing platform-conditional skipped.
+
+## 2026-08-23 - Track A PR 3 FIX-5 environment bind and planning eligibility
+
+- Implemented exact-head Codex items from card `EFR-GRK-PR3-FIX-5` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `935140e3976b558e7c6be1d767d544bc56c27bc5`. F-1 and F-2 stayed out of
+  scope. Rank IC, frozen bundle digests, Boolean real-vector rejection,
+  calendar id/version binding, and return scalar/lineage price binding
+  were not reopened.
+- `authorize` now compares `RunConfig.environment_id` and
+  `environment_lock_sha256` with `record["calendar"]` before
+  `AUTHORIZED`. The detached binding already carries those fields and
+  still refuses a field mismatch. Changing both config and binding while
+  leaving the accepted record unchanged now refuses.
+- `authorize` now requires `TRACK_A_PR3_PLANNING` in `grant.now_eligible`.
+  Empty or unrelated eligibility returns
+  `GRANT_DOES_NOT_AUTHORIZE_TRACK_A_PR3_PLANNING`. `run_campaign` still
+  refuses a result-bearing bundle under the planning-only grant.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited. No private panel, performance value, or 14-trial run was
+  accessed.
+- Focused campaign tests passed 148. Full suite after repo-map refresh:
+  2388 passed, 2 existing platform-conditional skipped.
+
+## 2026-08-23 - Track A PR 3 FIX-4 Rank IC, bundle digest fields, Boolean vectors
+
+- Implemented owner-authorized closed set F-3, F-4, and F-5 from card
+  `EFR-GRK-PR3-FIX-4` on `codex/track-a-pr3-fix4` at start HEAD
+  `242c75e88d3d4ee92889c8cd7b099d5bd477bb25`. Escalation analysis
+  `5729fb16…16674782` and plan bytes `237194a9…bc90d` remained the
+  immutable inputs. F-1 and F-2 stayed out of scope.
+- `spearman_rank_ic` now returns an invalid `RankICResult` with
+  `FORWARD_RETURN_MISSING` or `FORWARD_RETURN_INVALID` when any pair
+  member is missing, Boolean, or non-finite. It no longer drops those
+  pairs before the distinct-value floors.
+- `assemble_evidence_bundle` now treats a missing or non-64-hex
+  `protocol_file_sha256` or `trial_inventory_file_sha256` field as
+  `BUNDLE_CHILD_DIGEST_MISMATCH` instead of skipping the check.
+- `assemble_diagnostic_inputs` rejects Boolean or non-finite members of
+  `mean_rank_ics`, both active-return vectors, and
+  `common_case_positive_year_fractions` before `float()` conversion.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited. No private panel, performance value, or 14-trial run was
+  accessed.
+- Focused campaign tests passed 146. Full suite after repo-map refresh:
+  3268 passed, 2 existing platform-conditional skipped.
+
+## 2026-08-23 - Track A PR 3 FIX-3 eligibility prices and bundle child digests
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-FIX-3` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `9705aace515e092ede229ad3f5b25096fd066f50`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- After a valid lineage check, `evaluate_decision_time_listings` now requires
+  each referenced factor price to match the corresponding lineage
+  `adjusted_close`. Unbound or count-mismatched prices invalidate the listing
+  with `ANCHOR_PRICE_MISMATCH` instead of computing a rank from independent
+  scalars.
+- `assemble_evidence_bundle` now compares protocol YAML and trial-inventory
+  child sha256 values with carried `protocol_file_sha256` and
+  `trial_inventory_file_sha256` fields. Substituted child bytes keep the
+  bundle invalid while those frozen digests remain.
+- Calendar mismatch still refuses before `AUTHORIZED`. The planning-only
+  grant surface still documents intended stage `TRACK_A_PR3_PLANNING` and
+  still refuses result-bearing fourteen-trial assembly. Return anchors remain
+  lineage-bound.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited. No private panel, performance value, or 14-trial run was
+  accessed.
+- Focused campaign tests passed 144. Full suite after repo-map refresh:
+  3266 passed, 2 existing platform-conditional skipped.
+
+## 2026-08-23 - Track A PR 3 FIX-2 grant, anchors, prepared file, missing outputs
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-FIX-2` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `b785ad9b95fd93d72d90a0dde6ce8858f40609ea`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- `authorize` still returns `AUTHORIZED` for the planning-only Stage 2 grant
+  and still refuses a calendar mismatch. It now examines `now_eligible` and
+  `does_not_authorize` so a result-bearing stage cannot authorize PR 3 and
+  `TRACK_A_PR3_PLANNING` cannot be forbidden. `run_campaign` refuses a
+  result-bearing bundle under that grant and does not load an unbound
+  prepared campaign file.
+- `simple_adjusted_close_return` now binds `start_anchor`/`end_anchor` to the
+  paired `anchors[*].adjusted_close` values. Missing required trial outputs
+  classify as `INVALID_DIAGNOSTIC` instead of a null final state.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited. No private panel, performance value, or 14-trial run was
+  accessed.
+- Focused campaign tests passed 141. Full suite after repo-map refresh:
+  3263 passed, 2 existing platform-conditional skipped.
+
+## 2026-08-23 - Track A PR 3 FIX-1 calendar binding and unreadable refusals
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-FIX-1` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `d6ec9cec3b87600a9ebea431df30c20e7ec5b5a9`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- `authorize` now refuses unless `RunConfig.calendar_id` and
+  `calendar_version` match `record["calendar"]` and the detached binding.
+  Missing or unreadable acceptance, grant, protocol, inventory, and binding
+  locators return `Authorization(status="REFUSED", ...)` with stable
+  reasons instead of raising `OSError`.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited. No private panel, performance value, or 14-trial run was
+  accessed.
+- Focused campaign tests passed 137. Full suite after repo-map refresh:
+  3259 passed, 2 existing platform-conditional skipped.
+
+## 2026-08-23 - Track A PR 3 EXEC-5 import-boundary, conformance, docs, CI
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-5` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `70120dc505349b45a8dc27b22b78f3e3847b149a`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- Added import-boundary, no-default, and T-7 owner-uniqueness conformance
+  tests, the public-safe runner design note, a repo-map refresh, and CI
+  wiring that runs committed synthetic campaign fixtures only. Existing
+  campaign modules, including `inference.py` at `be2e743c…50a130`, were
+  not edited.
+- Focused campaign tests passed 135. Full suite after repo-map refresh:
+  3257 passed, 2 existing platform-conditional skipped.
+- No private panel, performance value, or 14-trial run was accessed. This
+  card does not open a PR.
+
+## 2026-08-23 - Track A PR 3 EXEC-4 precondition, reconciliation, runner, bundle
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-4` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `576274055b0345e0226f68251a00b981aedfc2af`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- Added shippable `campaign.precondition`, `campaign.reconciliation`,
+  `campaign.runner`, and `campaign.bundle`. Existing campaign modules,
+  including `inference.py` at `be2e743c…50a130`, were not edited.
+- Bound P-1 through P-5, 14-trial required-output reconciliation, bundle
+  assembly without a self-hash, and the two-run determinism golden to
+  committed synthetic fixtures. No private panel, performance value, or
+  14-trial run was accessed.
+- Focused campaign tests passed 125. Full suite after repo-map refresh:
+  3247 passed, 2 existing platform-conditional skipped.
+- Next card remains PR3-EXEC-5: import-boundary, no-default, and T-7
+  conformance, docs, repo map, and CI wiring. This card does not open a PR.
+
+## 2026-08-23 - Track A PR 3 EXEC-3 paths, costs, benchmarks
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-3` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `689640f9d44f66e73f130c3972ed907d6ecdd326`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- Added shippable `campaign.paths`, `campaign.benchmarks`, and
+  `campaign.metrics`. Existing campaign modules, including `inference.py`
+  at `be2e743c…50a130`, were not edited. D-1 no longer calls
+  `backtest.portfolio`.
+- Bound the unit-multiplier cost table, accounting-order, random-rank 10-bps
+  basis, split, tied-month, three-month, comparison-gap, SPY-gap, and
+  unformable-universe goldens to committed synthetic fixtures. No private
+  panel, performance value, or 14-trial run was accessed.
+- Focused campaign tests passed 98. Full suite after repo-map refresh:
+  3219 passed, 2 existing platform-conditional skipped.
+- Next card remains PR3-EXEC-4: precondition, reconciliation, runner, and
+  bundle. This card does not open a PR.
+
+## 2026-08-23 - Track A PR 3 EXEC-2 eligibility, baselines, diagnostics
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-2` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `d493ed626f9f8f950ff2353ff53fb5ea43f16197`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- Added shippable `campaign.eligibility`, `campaign.baselines`, and
+  `campaign.diagnostics`, plus the post-`t` mutation oracle. Existing campaign
+  modules, including `inference.py` at `be2e743c…50a130`, were not edited.
+- Bound the three zero-target triggers, equal-weight/random-rank targets,
+  episode return, Spearman Rank IC, decile curve, and turnover-predecessor
+  goldens to committed synthetic fixtures. No private panel, performance
+  value, or 14-trial run was accessed.
+- Focused campaign tests passed 85. Full suite after repo-map refresh:
+  3207 passed, 2 existing platform-conditional skipped.
+- Next card remains PR3-EXEC-3: paths, costs, and benchmarks. Precondition
+  and bundle code stay out of this card.
+
+## 2026-08-23 - Track A PR 3 EXEC-1 decision-time spine
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-1` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `98f91acc29f7a208cca22e03b3c9b9051a140ac9`. Plan bytes
+  `237194a9…bc90d` / `dc55651e…8ffca3` remained the immutable input.
+- Added shippable `campaign.registry`, `campaign.lineage`,
+  `campaign.schedule`, and `campaign.returns`. Existing campaign modules,
+  including `inference.py` at `be2e743c…50a130`, were not edited.
+- Bound T-1 through T-8 and the EXEC-1 goldens to committed synthetic
+  fixtures under `tests/fixtures/campaign_runner_v1/`. No private panel,
+  performance value, or 14-trial run was accessed.
+- Focused campaign tests passed 70. Full suite after repo-map refresh:
+  3192 passed, 2 existing platform-conditional skipped.
+- Next card remains PR3-EXEC-2: eligibility, baselines, diagnostics, and
+  the post-`t` mutation oracle. Path, cost, benchmark, precondition, and
+  bundle code stay out of this card.
+
 ## 2026-08-23 - Public-safe Track A PR 2 validator and status
 
 - Added `src/pit_manifest_validator_v1` with synthetic fixtures and 31

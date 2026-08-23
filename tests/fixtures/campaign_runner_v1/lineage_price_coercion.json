@@ -1,0 +1,202 @@
+{
+  "inputs": {
+    "owner_index": 0,
+    "exchange": "XNYS",
+    "ticker_prefix": "T",
+    "ticker_width": 3,
+    "effective_from": "2014-01-01",
+    "effective_to": null,
+    "lineage_template": {
+      "anchor_sessions": ["2025-01-02", "2025-12-01"]
+    },
+    "rows": [
+      {
+        "name": "matched",
+        "ticker": "T000",
+        "in_universe_at_t": true,
+        "terminal_blocked_at_t": false,
+        "lookback_addressable_at_t": true,
+        "referenced_anchors": [80.0, 100.0]
+      },
+      {
+        "name": "record_boolean",
+        "ticker": "T001",
+        "in_universe_at_t": true,
+        "terminal_blocked_at_t": false,
+        "lookback_addressable_at_t": true,
+        "referenced_anchors": [1.0, 100.0],
+        "lineage_anchors": [
+          {
+            "resolved_permanent_security_id": "SECURITY-T001",
+            "resolved_listing_id": "LISTING-T001",
+            "resolved_listing_episode_id": "EPISODE-T001",
+            "source_exchange": "XNYS",
+            "source_ticker": "T001",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "EVIDENCE-T001",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2025-01-02",
+            "adjusted_close": true
+          },
+          {
+            "resolved_permanent_security_id": "SECURITY-T001",
+            "resolved_listing_id": "LISTING-T001",
+            "resolved_listing_episode_id": "EPISODE-T001",
+            "source_exchange": "XNYS",
+            "source_ticker": "T001",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "EVIDENCE-T001",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2025-12-01",
+            "adjusted_close": 100.0
+          }
+        ]
+      },
+      {
+        "name": "record_numeric_text",
+        "ticker": "T002",
+        "in_universe_at_t": true,
+        "terminal_blocked_at_t": false,
+        "lookback_addressable_at_t": true,
+        "referenced_anchors": [1.0, 100.0],
+        "lineage_anchors": [
+          {
+            "resolved_permanent_security_id": "SECURITY-T002",
+            "resolved_listing_id": "LISTING-T002",
+            "resolved_listing_episode_id": "EPISODE-T002",
+            "source_exchange": "XNYS",
+            "source_ticker": "T002",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "EVIDENCE-T002",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2025-01-02",
+            "adjusted_close": "1.0"
+          },
+          {
+            "resolved_permanent_security_id": "SECURITY-T002",
+            "resolved_listing_id": "LISTING-T002",
+            "resolved_listing_episode_id": "EPISODE-T002",
+            "source_exchange": "XNYS",
+            "source_ticker": "T002",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "EVIDENCE-T002",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2025-12-01",
+            "adjusted_close": 100.0
+          }
+        ]
+      },
+      {
+        "name": "referenced_boolean",
+        "ticker": "T003",
+        "in_universe_at_t": true,
+        "terminal_blocked_at_t": false,
+        "lookback_addressable_at_t": true,
+        "referenced_anchors": [true, 100.0],
+        "lineage_anchors": [
+          {
+            "resolved_permanent_security_id": "SECURITY-T003",
+            "resolved_listing_id": "LISTING-T003",
+            "resolved_listing_episode_id": "EPISODE-T003",
+            "source_exchange": "XNYS",
+            "source_ticker": "T003",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "EVIDENCE-T003",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2025-01-02",
+            "adjusted_close": 1.0
+          },
+          {
+            "resolved_permanent_security_id": "SECURITY-T003",
+            "resolved_listing_id": "LISTING-T003",
+            "resolved_listing_episode_id": "EPISODE-T003",
+            "source_exchange": "XNYS",
+            "source_ticker": "T003",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "EVIDENCE-T003",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2025-12-01",
+            "adjusted_close": 100.0
+          }
+        ]
+      },
+      {
+        "name": "non_numeric_text",
+        "ticker": "T004",
+        "in_universe_at_t": true,
+        "terminal_blocked_at_t": false,
+        "lookback_addressable_at_t": true,
+        "referenced_anchors": [80.0, 100.0],
+        "lineage_anchors": [
+          {
+            "resolved_permanent_security_id": "SECURITY-T004",
+            "resolved_listing_id": "LISTING-T004",
+            "resolved_listing_episode_id": "EPISODE-T004",
+            "source_exchange": "XNYS",
+            "source_ticker": "T004",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "EVIDENCE-T004",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2025-01-02",
+            "adjusted_close": "not-a-price"
+          },
+          {
+            "resolved_permanent_security_id": "SECURITY-T004",
+            "resolved_listing_id": "LISTING-T004",
+            "resolved_listing_episode_id": "EPISODE-T004",
+            "source_exchange": "XNYS",
+            "source_ticker": "T004",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "EVIDENCE-T004",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2025-12-01",
+            "adjusted_close": 100.0
+          }
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "rel_tol": 1e-12,
+    "abs_tol": 1e-15,
+    "cases": {
+      "matched": {
+        "eligible": true,
+        "reason": null,
+        "value": 0.25
+      },
+      "record_boolean": {
+        "eligible": false,
+        "reason": "ANCHOR_PRICE_MISMATCH",
+        "value": null
+      },
+      "record_numeric_text": {
+        "eligible": false,
+        "reason": "ANCHOR_PRICE_MISMATCH",
+        "value": null
+      },
+      "referenced_boolean": {
+        "eligible": false,
+        "reason": "ANCHOR_PRICE_MISMATCH",
+        "value": null
+      },
+      "non_numeric_text": {
+        "eligible": false,
+        "reason": "ANCHOR_PRICE_MISMATCH",
+        "value": null
+      }
+    }
+  },
+  "forbidden": {
+    "coerce_boolean_or_text_prices": true,
+    "boolean_true_as_one": 99.0
+  }
+}

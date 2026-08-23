@@ -1,0 +1,63 @@
+{
+  "inputs": {
+    "min_distinct_factor_values": 10,
+    "min_distinct_forward_returns": 2,
+    "sample_std_ddof": 1,
+    "monotone_pairs": [
+      [1.0, 1.0],
+      [2.0, 2.0],
+      [3.0, 3.0],
+      [4.0, 4.0],
+      [5.0, 5.0],
+      [6.0, 6.0],
+      [7.0, 7.0],
+      [8.0, 8.0],
+      [9.0, 9.0],
+      [10.0, 10.0]
+    ],
+    "reversed_pairs": [
+      [1.0, 10.0],
+      [2.0, 9.0],
+      [3.0, 8.0],
+      [4.0, 7.0],
+      [5.0, 6.0],
+      [6.0, 5.0],
+      [7.0, 4.0],
+      [8.0, 3.0],
+      [9.0, 2.0],
+      [10.0, 1.0]
+    ],
+    "descriptive_values": [0.1, 0.2, 0.3]
+  },
+  "expected": {
+    "monotone": {
+      "value": 1.0,
+      "valid": true,
+      "reason": null,
+      "distinct_factor_values": 10,
+      "distinct_forward_returns": 10
+    },
+    "reversed": {
+      "value": -1.0,
+      "valid": true,
+      "reason": null,
+      "distinct_factor_values": 10,
+      "distinct_forward_returns": 10
+    },
+    "descriptive": {
+      "count": 3,
+      "mean": 0.2,
+      "median": 0.2,
+      "sample_std": 0.1,
+      "monthly_icir": 2.0,
+      "valid": true,
+      "reason": null
+    },
+    "rel_tol": 0.0,
+    "abs_tol": 1e-15
+  },
+  "forbidden": {
+    "sign_reversal_of_reversed": 1.0,
+    "winsorized_monotone": 0.0
+  }
+}

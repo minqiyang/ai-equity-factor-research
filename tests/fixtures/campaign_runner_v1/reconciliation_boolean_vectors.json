@@ -1,0 +1,51 @@
+{
+  "inputs": {
+    "prepared_file": "precondition/prepared_campaign.json",
+    "boolean_mutations": [
+      {
+        "name": "mean_rank_ics",
+        "value": [true, 0.1, 0.1]
+      },
+      {
+        "name": "active_return_10bps",
+        "value": [true, 0.0, 0.0]
+      },
+      {
+        "name": "active_return_25bps",
+        "value": [0.0, false, 0.0]
+      },
+      {
+        "name": "common_case_positive_year_fractions",
+        "value": [true, 0.0, 0.0]
+      }
+    ],
+    "nonfinite_mutations": [
+      {
+        "name": "mean_rank_ics",
+        "index": 0,
+        "ieee": "nan"
+      },
+      {
+        "name": "active_return_10bps",
+        "index": 1,
+        "ieee": "inf"
+      },
+      {
+        "name": "active_return_25bps",
+        "index": 2,
+        "ieee": "-inf"
+      },
+      {
+        "name": "common_case_positive_year_fractions",
+        "index": 0,
+        "ieee": "nan"
+      }
+    ]
+  },
+  "expected": {
+    "error": "TypeError"
+  },
+  "forbidden": {
+    "boolean_laundered_to_one": true
+  }
+}

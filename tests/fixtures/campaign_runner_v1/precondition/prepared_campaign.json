@@ -1,0 +1,84 @@
+{
+  "attempt_count": 1,
+  "bundle_children": {
+    "baseline_comparison.json": {"schema_version": "synthetic-baseline"},
+    "cost_sensitivity.json": {"schema_version": "synthetic-cost"},
+    "dataset_full_manifest.json": {"schema_version": "synthetic-full-manifest"},
+    "dataset_public_projection.json": {"schema_version": "synthetic-projection"},
+    "decile_returns.parquet": "PARQUET",
+    "factor_diagnostics.parquet": "PARQUET",
+    "review_record.json": {"schema_version": "synthetic-review"},
+    "strategy_returns.parquet": "PARQUET",
+    "yearly_robustness.json": {"schema_version": "synthetic-yearly"}
+  },
+  "diagnostic_payload": {
+    "active_return_10bps": [0.0, 0.0, 0.0],
+    "active_return_25bps": [0.0, 0.0, 0.0],
+    "bootstrap_support_all_three_factors": true,
+    "common_case_all_loyo_means_positive": [false, false, false],
+    "common_case_positive_year_fractions": [0.0, 0.0, 0.0],
+    "common_months": 60,
+    "hard_valid": true,
+    "holm_rejections": [false, false, false],
+    "invalid_primary_comparison_count": 0,
+    "invalid_secondary_comparison_count": 0,
+    "mean_rank_ics": [-0.01, -0.02, -0.03],
+    "prefrozen_coverage_met": true,
+    "primary_matched_benchmark_comparisons_valid": true,
+    "secondary_spy_comparisons_valid": true
+  },
+  "trial_outputs": {
+    "BASELINE_EQUAL_WEIGHT_UNIVERSE": {
+      "LOW_VOL_3M:continuous_daily_return": {"present": true, "reason": null, "valid": true},
+      "LOW_VOL_3M:episode_21_row_return": {"present": true, "reason": null, "valid": true},
+      "MOM_12_1:continuous_daily_return": {"present": true, "reason": null, "valid": true},
+      "MOM_12_1:episode_21_row_return": {"present": true, "reason": null, "valid": true},
+      "REV_1M:continuous_daily_return": {"present": true, "reason": null, "valid": true},
+      "REV_1M:episode_21_row_return": {"present": true, "reason": null, "valid": true}
+    },
+    "BASELINE_RANDOM_RANK_TOP_DECILE": {
+      "LOW_VOL_3M:continuous_daily_return": {"present": true, "reason": null, "valid": true},
+      "LOW_VOL_3M:episode_21_row_return": {"present": true, "reason": null, "valid": true},
+      "MOM_12_1:continuous_daily_return": {"present": true, "reason": null, "valid": true},
+      "MOM_12_1:episode_21_row_return": {"present": true, "reason": null, "valid": true},
+      "REV_1M:continuous_daily_return": {"present": true, "reason": null, "valid": true},
+      "REV_1M:episode_21_row_return": {"present": true, "reason": null, "valid": true}
+    },
+    "DIAG_LOW_VOL_3M": {
+      "LOW_VOL_3M:monthly_rank_ic": {"present": true, "reason": null, "valid": true}
+    },
+    "DIAG_MOM_12_1": {
+      "MOM_12_1:monthly_rank_ic": {"present": true, "reason": null, "valid": true}
+    },
+    "DIAG_REV_1M": {
+      "REV_1M:monthly_rank_ic": {"present": true, "reason": null, "valid": true}
+    },
+    "STRAT_LOW_VOL_3M_0BPS": {
+      "LOW_VOL_3M:continuous_daily_return": {"present": true, "reason": null, "valid": true}
+    },
+    "STRAT_LOW_VOL_3M_10BPS": {
+      "LOW_VOL_3M:continuous_daily_return": {"present": true, "reason": null, "valid": true}
+    },
+    "STRAT_LOW_VOL_3M_25BPS": {
+      "LOW_VOL_3M:continuous_daily_return": {"present": true, "reason": null, "valid": true}
+    },
+    "STRAT_MOM_12_1_0BPS": {
+      "MOM_12_1:continuous_daily_return": {"present": true, "reason": null, "valid": true}
+    },
+    "STRAT_MOM_12_1_10BPS": {
+      "MOM_12_1:continuous_daily_return": {"present": true, "reason": null, "valid": true}
+    },
+    "STRAT_MOM_12_1_25BPS": {
+      "MOM_12_1:continuous_daily_return": {"present": true, "reason": null, "valid": true}
+    },
+    "STRAT_REV_1M_0BPS": {
+      "REV_1M:continuous_daily_return": {"present": true, "reason": null, "valid": true}
+    },
+    "STRAT_REV_1M_10BPS": {
+      "REV_1M:continuous_daily_return": {"present": true, "reason": null, "valid": true}
+    },
+    "STRAT_REV_1M_25BPS": {
+      "REV_1M:continuous_daily_return": {"present": true, "reason": null, "valid": true}
+    }
+  }
+}

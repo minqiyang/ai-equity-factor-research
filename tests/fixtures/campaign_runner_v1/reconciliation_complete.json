@@ -1,0 +1,16 @@
+{
+  "inputs": {
+    "inventory_file": "precondition/trial_inventory.json",
+    "prepared_file": "precondition/prepared_campaign.json"
+  },
+  "expected": {
+    "complete": true,
+    "final_state": "NEGATIVE_DIAGNOSTIC",
+    "invalid_required_outputs": 0,
+    "missing_required_outputs": 0,
+    "trial_count": 14
+  },
+  "forbidden": {
+    "drop_invalid_output": true
+  }
+}

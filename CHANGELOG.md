@@ -7,8 +7,115 @@ profitability, or trading readiness.
 
 ## Unreleased
 
+### Fixed
+
+- Closed remaining Track A PR 3 exact-head findings: ledger schema tests
+  still collapse independent fail-closed axes for speed, but only after an
+  equivalence check proves every representative delegates to the same
+  constraint kind. Mixed field kinds can no longer hide a later-field
+  schema regression behind `cases[0]`. F-1 and F-2 remain deferred. This
+  adds no private data, result access, or 14-trial run.
+- Closed remaining Track A PR 3 exact-head findings: a frozen signal set
+  must contain every continuously included schedule row between its
+  endpoints. Supplying January and March while February remains
+  continuously included is refused, so January membership cannot stay in
+  force across February execution. F-1 and F-2 remain deferred. This
+  adds no private data, result access, or 14-trial run.
+- Closed remaining Track A PR 3 exact-head findings: factor-matched
+  benchmark comparison now requires the exact execution-bounded span for
+  every nonempty frozen set, including a one-point path dated at signal
+  close. A frozen decision on a `continuous_included=False` schedule row
+  is refused, and the bounded endpoint may not exceed `accepted_cutoff`.
+  The committed June-excluded July 1 through August 1 path is invalid.
+  F-1 and F-2 remain deferred. This adds no private data, result access,
+  or 14-trial run.
+- Closed remaining Track A PR 3 exact-head findings: factor-matched
+  benchmark comparison now binds to the accepted `CampaignSchedule` and
+  requires the exact execution-bounded daily span from the first included
+  execution through the execution following the last target. A contiguous
+  sub-slice is invalid, including a February 28 start after a January 31
+  frozen decision that omits the February 1 execution. Prefix and suffix
+  truncation are refused. F-1 and F-2 remain deferred. This adds no
+  private data, result access, or 14-trial run.
+- Closed remaining Track A PR 3 exact-head findings: the factor-matched
+  benchmark now applies a new monthly target at execution close so old
+  holdings earn the incoming return, binds a daily path to the campaign
+  schedule's exact ordered session slice and refuses sparse, duplicate,
+  or reversed dates, and rejects a mixed-factor frozen-decision sequence.
+  F-1 and F-2 remain deferred. This adds no private data, result access,
+  or 14-trial run.
+- Closed remaining Track A PR 3 exact-head findings: factor-matched
+  benchmark comparison now maps daily execution-calendar points onto
+  monthly frozen decisions and resets membership only at the next
+  factor-month, and evidence-bundle assembly requires one structured
+  status for every reconciled inventory trial. Empty, short, duplicate,
+  and unknown-trial status lists are invalid. F-1 and F-2 remain
+  deferred. This adds no private data, result access, or 14-trial run.
+- Closed remaining Track A PR 3 exact-head findings: random-rank seeds
+  now hash only the frozen factor-month identity and refuse caller
+  overrides; factor-matched benchmark comparison requires the same
+  session on each decision, held-return interval, and strategy point;
+  evidence-bundle assembly fails unless every detached-root binding is
+  present and well-typed; lineage `adjusted_close` and referenced prices
+  that are Boolean or text invalidate eligibility and simple returns;
+  and computed factor values that are non-finite are invalid even when
+  the anchors were finite and positive. F-1 and F-2 remain deferred.
+  This adds no private data, result access, or 14-trial run.
+- Closed remaining Track A PR 3 exact-head findings: `authorize` now
+  refuses unless `RunConfig.environment_id` and
+  `environment_lock_sha256` match the accepted record calendar, and a
+  grant must list `TRACK_A_PR3_PLANNING` in `now_eligible`. Empty or
+  unrelated eligibility still refuses, and planning-only grants still
+  cannot emit a result-bearing run. F-1 and F-2 were not authorized.
+  This adds no private data, result access, or 14-trial run.
+- Closed owner-authorized Track A PR 3 FIX-4 findings F-3, F-4, and F-5:
+  Rank IC now invalidates a month when any pair member is missing, Boolean,
+  or non-finite; evidence-bundle assembly fails when a frozen protocol or
+  trial-inventory digest field is missing or not 64-hex; and diagnostic
+  real vectors reject Boolean or non-finite members before conversion.
+  F-1 and F-2 were not authorized. This adds no private data, result
+  access, or 14-trial run.
+- Closed remaining Track A PR 3 exact-head findings: eligibility now refuses
+  listings whose referenced factor prices do not match the paired lineage
+  `adjusted_close` values, and evidence-bundle assembly rejects protocol or
+  trial-inventory children that violate carried frozen digests. Calendar
+  mismatch still refuses before `AUTHORIZED`, planning-only grants still
+  authorize the `TRACK_A_PR3_PLANNING` code path without opening a
+  fourteen-trial run, and return anchors remain lineage-bound. This adds no
+  private data, result access, or 14-trial run.
+- Closed remaining Track A PR 3 exact-head findings: planning-only grants
+  still authorize the code-and-fixture path but refuse a result-bearing run,
+  return anchors must match the paired lineage `adjusted_close` values, the
+  runner no longer loads an unbound prepared campaign file, and missing
+  required trial outputs classify as `INVALID_DIAGNOSTIC`. Calendar binding
+  from FIX-1 remains in force. This adds no private data, result access, or
+  14-trial run.
+
 ### Added
 
+- Added the Track A PR 3 EXEC-5 repo-integration surface: import-boundary,
+  no-default, and T-7 owner-uniqueness conformance tests, the public-safe
+  bounded-runner design note, a repo-map refresh, and CI wiring that runs
+  only committed synthetic campaign fixtures. Existing frozen campaign
+  modules are unchanged. This adds no private data, result access, or
+  14-trial run.
+- Added the Track A PR 3 EXEC-3 continuous path, cost, benchmark, and
+  metric surface: drifted-weight holdings, post-return-equity cost, the
+  factor-matched primary comparison, SPY secondary retention, and path
+  metrics. D-1 now binds those goldens to `campaign.paths` instead of the
+  generic backtester. Existing frozen campaign modules are unchanged.
+  This adds no private data, result access, or 14-trial run.
+- Added the Track A PR 3 EXEC-2 decision-time eligibility, baseline-target,
+  and diagnostic surface: the five frozen-at-`t` objects, the three named
+  zero-target triggers, equal-weight and random-rank targets, the static
+  episode return, Spearman Rank IC, decile-curve diagnostics, and the
+  post-`t` mutation oracle. Existing frozen campaign modules are unchanged.
+  This adds no private data, result access, or 14-trial run.
+- Added the Track A PR 3 EXEC-1 decision-time spine: a derived factor
+  registry, `factor_anchor_lineage_v1`, the common-session schedule, and
+  one simple adjusted-close return gate, each bound to committed synthetic
+  fixtures. Existing frozen campaign modules are unchanged. This adds no
+  private data, result access, or 14-trial run.
 - Published Track A PR 2 public-safe validator, status hashes, allowlisted
   projection, and safe dataset-review fields. Raw private data stays out.
 

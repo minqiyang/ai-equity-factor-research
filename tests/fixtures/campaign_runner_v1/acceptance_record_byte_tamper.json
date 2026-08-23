@@ -1,0 +1,14 @@
+{
+  "inputs": {
+    "flip_offset": 0,
+    "record_file": "precondition/acceptance_valid.json"
+  },
+  "expected": {
+    "file_bytes": "94cd0d95aa3fdf396c12a770392afb305fbca66b8e88c35e53e9ba734b6e1db9",
+    "reason": "ACCEPTANCE_RECORD_FILE_BYTES_MISMATCH"
+  },
+  "forbidden": {
+    "identity_error": true,
+    "parse_first": true
+  }
+}

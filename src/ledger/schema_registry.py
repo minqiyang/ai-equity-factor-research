@@ -8,6 +8,8 @@ ledger storage, enforce lifecycle state, or establish campaign completeness.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from copy import deepcopy
+from functools import lru_cache
 import hashlib
 from importlib import resources
 import json
@@ -1238,15 +1240,19 @@ def load_default_registry() -> dict[str, object]:
     return load_registry_release("0.1.0")
 
 
-def load_registry_release(registry_version: str) -> dict[str, object]:
-    """Load one explicitly selected packaged registry release and digest."""
+@lru_cache(maxsize=None)
+def _cached_packaged_registry_release(registry_version: str) -> dict[str, object]:
     registry_resource, _ = _packaged_registry_resources(registry_version)
-    package_root = resources.files("ledger")
-    raw = package_root.joinpath(registry_resource).read_bytes()
+    raw = resources.files("ledger").joinpath(registry_resource).read_bytes()
     return load_registry_bytes(
         raw,
         expected_digest=_packaged_registry_digest(registry_version),
     )
+
+
+def load_registry_release(registry_version: str) -> dict[str, object]:
+    """Load one explicitly selected packaged registry release and digest."""
+    return deepcopy(_cached_packaged_registry_release(registry_version))
 
 
 def _validate_timestamp(value: object, *, context: str) -> None:

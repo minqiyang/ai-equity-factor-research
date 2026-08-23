@@ -1,0 +1,97 @@
+{
+  "inputs": {
+    "min_distinct_factor_values": 10,
+    "min_distinct_forward_returns": 2,
+    "cases": [
+      {
+        "name": "missing_label",
+        "pairs": [
+          [1.0, 1.0],
+          [2.0, 2.0],
+          [3.0, 3.0],
+          [4.0, 4.0],
+          [5.0, 5.0],
+          [6.0, 6.0],
+          [7.0, 7.0],
+          [8.0, 8.0],
+          [9.0, 9.0],
+          [10.0, 10.0],
+          [11.0, null]
+        ]
+      },
+      {
+        "name": "boolean_factor",
+        "pairs": [
+          [1.0, 1.0],
+          [2.0, 2.0],
+          [3.0, 3.0],
+          [4.0, 4.0],
+          [5.0, 5.0],
+          [6.0, 6.0],
+          [7.0, 7.0],
+          [8.0, 8.0],
+          [9.0, 9.0],
+          [10.0, 10.0],
+          [true, 11.0]
+        ]
+      },
+      {
+        "name": "boolean_return",
+        "pairs": [
+          [1.0, 1.0],
+          [2.0, 2.0],
+          [3.0, 3.0],
+          [4.0, 4.0],
+          [5.0, 5.0],
+          [6.0, 6.0],
+          [7.0, 7.0],
+          [8.0, 8.0],
+          [9.0, 9.0],
+          [10.0, 10.0],
+          [11.0, false]
+        ]
+      },
+      {
+        "name": "nonfinite_return",
+        "pairs": [
+          [1.0, 1.0],
+          [2.0, 2.0],
+          [3.0, 3.0],
+          [4.0, 4.0],
+          [5.0, 5.0],
+          [6.0, 6.0],
+          [7.0, 7.0],
+          [8.0, 8.0],
+          [9.0, 9.0],
+          [10.0, 10.0],
+          [11.0, {"ieee": "nan"}]
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "missing_label": {
+      "valid": false,
+      "value": null,
+      "reason": "FORWARD_RETURN_MISSING"
+    },
+    "boolean_factor": {
+      "valid": false,
+      "value": null,
+      "reason": "FORWARD_RETURN_INVALID"
+    },
+    "boolean_return": {
+      "valid": false,
+      "value": null,
+      "reason": "FORWARD_RETURN_INVALID"
+    },
+    "nonfinite_return": {
+      "valid": false,
+      "value": null,
+      "reason": "FORWARD_RETURN_INVALID"
+    }
+  },
+  "forbidden": {
+    "silent_drop_value": 1.0
+  }
+}

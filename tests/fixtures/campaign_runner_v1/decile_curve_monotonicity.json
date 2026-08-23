@@ -1,0 +1,48 @@
+{
+  "inputs": {
+    "key_spec": {
+      "exchange": "XNYS",
+      "ticker_prefix": "T",
+      "ticker_width": 3,
+      "effective_from": "2014-01-01",
+      "effective_to": null
+    },
+    "count": 10,
+    "value_mode": "index",
+    "duplicate_last": false,
+    "signal_date": "2026-01-30",
+    "min_eligible_count": 100,
+    "min_distinct_values": 10,
+    "quantile_count": 10,
+    "return_scale": 0.01
+  },
+  "expected": {
+    "means": {
+      "D1": 0.0,
+      "D2": 0.01,
+      "D3": 0.02,
+      "D4": 0.03,
+      "D5": 0.04,
+      "D6": 0.05,
+      "D7": 0.06,
+      "D8": 0.07,
+      "D9": 0.08,
+      "D10": 0.09
+    },
+    "spread": 0.09,
+    "adjacent_differences": [
+      0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01
+    ],
+    "monotonicity_share": 1.0,
+    "fully_monotone": true,
+    "valid": true,
+    "reason": null,
+    "missing_return_reason": "FORWARD_RETURN_MISSING",
+    "rel_tol": 0.0,
+    "abs_tol": 1e-15
+  },
+  "forbidden": {
+    "reversed_spread": -0.09,
+    "fully_monotone_if_reversed": true
+  }
+}

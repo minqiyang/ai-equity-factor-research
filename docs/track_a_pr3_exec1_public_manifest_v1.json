@@ -1,0 +1,76 @@
+{
+  "schema_version": "track_a_pr3_exec1_public_manifest_v1",
+  "card_id": "EFR-GRK-PR3-EXEC-1",
+  "branch": "codex/track-a-pr3-exec1",
+  "start_head": "98f91acc29f7a208cca22e03b3c9b9051a140ac9",
+  "plan": {
+    "md_sha256": "237194a9caf1f6c1486286438fabbb9d7b417c216de630d9425547e917cbc90d",
+    "json_sha256": "dc55651e31959d0dfd8db60735e86c80644fde5bfc050c95d024d3aed38ffca3",
+    "gate": "PASS_3_OF_3"
+  },
+  "scope": [
+    "src/campaign/registry.py",
+    "src/campaign/lineage.py",
+    "src/campaign/schedule.py",
+    "src/campaign/returns.py",
+    "tests/fixtures/campaign_runner_v1",
+    "T-1 through T-8"
+  ],
+  "not_included": [
+    "path",
+    "cost",
+    "benchmark",
+    "baseline",
+    "precondition",
+    "bundle",
+    "eligibility",
+    "diagnostics",
+    "14-trial run",
+    "private panel",
+    "performance access",
+    "result access"
+  ],
+  "unchanged_campaign_file_bytes": {
+    "src/campaign/inference.py": "be2e743c659c87791c99d0e27684cb48c730486719860773721423e08650a130",
+    "src/campaign/__init__.py": "5fd76e27290ac9b1a9360239e48cc8712a0fc41fd45bb3ec97b75158f8c70043",
+    "src/campaign/classifier.py": "316e5b5458aaba3c682b429b36216ccb568cbaed5f3bcdda0ad4b2a94dfd337c",
+    "src/campaign/deciles.py": "194aa4c521e09284cca386192dd78b037e302f7b4a4869f04e3bdc1e27da7841",
+    "src/campaign/factors.py": "95c95be3e5f05533c93c93a9f314b01f72a0a7088c417dae80fd207bec4667c9",
+    "src/campaign/listing_key.py": "18166cc25a5f8a990ba243af422cf874ffc18a87f4e6501840dc755b4c217b4a",
+    "src/campaign/turnover.py": "db51e116bf14f6908c6d2bb24701a3b405be699977f5a2853c0a00ad435bc51b"
+  },
+  "delivered_file_bytes": {
+    "src/campaign/registry.py": "e72921fb1a5745061a7ad64b518a16c8dd57aa8761fefa1a83d2dca9767a5d78",
+    "src/campaign/lineage.py": "a28744f3aef22b7997118192ac7ad66a06dc89b270f6961badb95ee61ac4ac66",
+    "src/campaign/schedule.py": "613b209a7d70b28353e4a039ecaf84efc1e4964b9320afb13a6f838d97fc356d",
+    "src/campaign/returns.py": "cc91d4005796bf622e9af5cc8fb2f0b058e53d6b9665f0e82bb576ec7a2546f5",
+    "tests/campaign_runner_v1_support.py": "60b593c3f8a5aa7f5dff2a49b965688b93dc0ff3a87d4a9b32b637e666d5ff4e",
+    "tests/conftest.py": "e393b29bb04ae87b20ed2347e48669392c647542512b499b8d0d04822b854869",
+    "tests/test_campaign_registry.py": "e38b2e988cafbfc85612decadb4e9ba75cfac41d2efc7f463a9eabd9a02ef3d6",
+    "tests/test_campaign_lineage.py": "71155b0bd67941679eafa8e30cbcb05cd790b4cbb79b5882f3298e261b24ae00",
+    "tests/test_campaign_schedule.py": "7d2d54351cde66e746331120180794339d86b153e08b97f5ec8800601add6a4d",
+    "tests/test_campaign_returns.py": "3ac27c06eb7f7a52e8f25a8427e124428966b10471f7821855f7874bdaacb74c",
+    "docs/engineering_log.md": "70d4d9a689372545e35d9ff4c796cfcdf6003b36ea7e9a4a5de1f9b0621bd26f",
+    "CHANGELOG.md": "e3a65a9d1769f0c8200e01839d14381d93689933b4cce248b6ae55b2461083bc",
+    "tests/fixtures/campaign_runner_v1/accepted_rename.json": "b43a79750cc90826fd44c537babef6364fb1e39fb02df1a2a1bd2db0ac065ff5",
+    "tests/fixtures/campaign_runner_v1/anchor_mutation_matrix.json": "96eec2087069a8157225af6d6bd0a08e2d4a2d8301d368eabdcc82276b1724d1",
+    "tests/fixtures/campaign_runner_v1/execution_anchored_label.json": "86d4afdcbe391294018b14efef7357da33fd60535953e9b2f063809a212edf42",
+    "tests/fixtures/campaign_runner_v1/interior_missing_momentum.json": "a166f546ecf2ee8a3d41ae542b9cb1a377b3316fd2843aa80f17699f55b64095",
+    "tests/fixtures/campaign_runner_v1/interior_missing_reversal.json": "b71554ca8f442bd9eafc37140817204d210234dfbdd45aaea26ba085e7aa4603",
+    "tests/fixtures/campaign_runner_v1/low_vol_anchor_count_matrix.json": "2dcc7f0f6ad2fee1306650f5367070e22dff49aa386a919fbee910d56cd1ed63",
+    "tests/fixtures/campaign_runner_v1/low_vol_golden.json": "6a4a90fd510a6fe0c9f2eb8773a727475bb5f09b58541ecd537ace5c02a5aa2a",
+    "tests/fixtures/campaign_runner_v1/momentum_golden.json": "3f49754875c6381004e613e22b64713d74e265ec5a5b9554ec2e002c6c03b1e8",
+    "tests/fixtures/campaign_runner_v1/registry_binding_golden.json": "13aac8ab638bc59ca6473f71cdb347472df5dfef2c22de60d2c3adc0a7191006",
+    "tests/fixtures/campaign_runner_v1/reuse_as_is_file_bytes.json": "a4b0a0d487b9cffe49938296f2a205591d5210a6f62a6f5d7e50ac17b9aca021",
+    "tests/fixtures/campaign_runner_v1/reused_ticker.json": "2aca03d0f6f706e62d0e31cf3c101f41468a38bd0d6d57ccafe5c20bde304850",
+    "tests/fixtures/campaign_runner_v1/reversal_golden.json": "fed61ab55f0522dd1c374d77aea5dc3dbaba42d4764086d0d186789396591efe",
+    "tests/fixtures/campaign_runner_v1/session_month_cutoff.json": "12336fe47dbbb36e0c7bfab490e8ce1a5f066b16e2197506cb3d2ec11f437957",
+    "tests/fixtures/campaign_runner_v1/staggered_key_freeze.json": "1384391d49d79246763b54ae266ef94c1f12577ef1aa681a0aa3b003c9572752",
+    "tests/fixtures/campaign_runner_v1/unknown_factor_lookup.json": "146c87206ddfc61910d62a06a85c2d2c307f45cff4ffe7d6557d2d7c8364ba1a"
+  },
+  "validation": {
+    "focused_campaign_tests_passed": 70,
+    "full_pytest_passed": 3192,
+    "full_pytest_skipped": 2
+  }
+}

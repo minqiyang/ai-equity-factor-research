@@ -1,0 +1,31 @@
+{
+  "inputs": {
+    "exchange": "XNYS",
+    "effective_from": "2014-01-01",
+    "effective_to": null,
+    "months": [
+      {
+        "tickers": ["T000"],
+        "weights": [1.0],
+        "outcome_valid": true
+      },
+      {
+        "tickers": [],
+        "weights": [],
+        "outcome_valid": true
+      },
+      {
+        "tickers": ["T002"],
+        "weights": [1.0],
+        "outcome_valid": true
+      }
+    ],
+    "outcome_invalid_mutations": [false, true, false]
+  },
+  "expected": {
+    "turnovers": [null, 1.0, 1.0]
+  },
+  "forbidden": {
+    "skip_invalid_middle_turnovers": [null, 2.0]
+  }
+}

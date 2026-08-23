@@ -1,0 +1,14 @@
+{
+  "inputs": {
+    "record_file": "precondition/acceptance_valid.json",
+    "stage2_status": "ACCEPTANCE_RECORD_ISSUED_PROMOTION_GATE_NOT_YET_GRANTED"
+  },
+  "expected": {
+    "stage2_status": "ACCEPTANCE_RECORD_ISSUED_PROMOTION_GATE_NOT_YET_GRANTED",
+    "status": "AUTHORIZED"
+  },
+  "forbidden": {
+    "read_stage2_status_as_denial": true,
+    "read_stage2_status_as_grant": true
+  }
+}

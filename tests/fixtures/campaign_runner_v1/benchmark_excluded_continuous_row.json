@@ -1,0 +1,44 @@
+{
+  "inputs": {
+    "schedule_fixture": "session_month_cutoff.json",
+    "signal_date": "2024-06-28",
+    "path_start": "2024-07-01",
+    "path_end": "2024-08-01",
+    "exchange": "XNYS",
+    "effective_from": "2014-01-01",
+    "effective_to": null,
+    "initial_equity": 1.0,
+    "transaction_cost_bps": 0,
+    "role": "factor_matched_primary",
+    "min_eligible_count": 1,
+    "min_distinct_values": 1,
+    "benchmark_universe": {
+      "key_spec": {
+        "exchange": "XNYS",
+        "ticker_prefix": "U",
+        "ticker_width": 3,
+        "effective_from": "2014-01-01",
+        "effective_to": null
+      },
+      "count": 1,
+      "value_mode": "constant",
+      "constant_value": 1.0,
+      "duplicate_last": false
+    },
+    "strategy": {
+      "initial_weights": {"T000": 1.0},
+      "held_returns": {"T000": 0.0},
+      "reset_weights": null
+    }
+  },
+  "expected": {
+    "refused": true,
+    "june_continuous_included": false,
+    "accepted_cutoff": "2024-07-31",
+    "match": "continuously included"
+  },
+  "forbidden": {
+    "valid_excluded_continuous_path": true,
+    "valid_post_cutoff_endpoint": true
+  }
+}

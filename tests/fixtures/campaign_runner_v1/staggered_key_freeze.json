@@ -1,0 +1,20 @@
+{
+  "inputs": {
+    "exchange": "XNYS",
+    "ticker": "T000",
+    "effective_from": "2026-07-01",
+    "first_eligibility_dates": [
+      "2026-07-31",
+      "2026-08-31",
+      "2026-09-30"
+    ],
+    "endpoint_known_date": "2026-08-15",
+    "endpoint_date": "2026-10-15"
+  },
+  "expected": {
+    "effective_to": null
+  },
+  "forbidden": {
+    "effective_to": "2026-10-15"
+  }
+}

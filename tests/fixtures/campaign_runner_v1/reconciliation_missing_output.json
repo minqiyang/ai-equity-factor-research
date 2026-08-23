@@ -1,0 +1,20 @@
+{
+  "inputs": {
+    "inventory_file": "precondition/trial_inventory.json",
+    "missing_name": "MOM_12_1:episode_21_row_return",
+    "missing_trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE",
+    "prepared_file": "precondition/prepared_campaign.json"
+  },
+  "expected": {
+    "complete": false,
+    "final_state": "INVALID_DIAGNOSTIC",
+    "hard_valid": false,
+    "missing_required_outputs": 1,
+    "reason": "REQUIRED_OUTPUT_MISSING",
+    "run_campaign_status": "REFUSED",
+    "run_campaign_reason": "GRANT_DOES_NOT_AUTHORIZE_FOURTEEN_TRIAL_RUN"
+  },
+  "forbidden": {
+    "treat_missing_as_invalid_present": true
+  }
+}

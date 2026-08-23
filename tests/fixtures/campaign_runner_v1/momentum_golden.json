@@ -1,0 +1,17 @@
+{
+  "inputs": {
+    "owner_index": 0,
+    "anchors": [
+      80.0,
+      100.0
+    ]
+  },
+  "expected": {
+    "value": 0.25,
+    "valid": true,
+    "reason": null,
+    "rel_tol": 0.0,
+    "abs_tol": 1e-15
+  },
+  "forbidden": null
+}

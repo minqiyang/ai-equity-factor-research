@@ -1,0 +1,63 @@
+{
+  "inputs": {
+    "sample_std_ddof": 1,
+    "months": [
+      [2018, 0.1],
+      [2018, 0.3],
+      [2019, 0.2]
+    ],
+    "required_years": [2018, 2019, 2020],
+    "common_case": [
+      {
+        "signal_year": 2018,
+        "label_intersection_years": [2018, 2019],
+        "rank_ics": [0.1, 0.1, 0.1]
+      },
+      {
+        "signal_year": 2019,
+        "label_intersection_years": [2019, 2020],
+        "rank_ics": [0.2, -0.1, 0.1]
+      },
+      {
+        "signal_year": 2020,
+        "label_intersection_years": [2020],
+        "rank_ics": [0.1, 0.1, -0.1]
+      }
+    ]
+  },
+  "expected": {
+    "yearly": [
+      {
+        "year": 2018,
+        "count": 2,
+        "mean": 0.2,
+        "contribution": 0.13333333333333333
+      },
+      {
+        "year": 2019,
+        "count": 1,
+        "mean": 0.2,
+        "contribution": 0.06666666666666667
+      }
+    ],
+    "robustness": [
+      {
+        "positive_year_fraction": 1.0,
+        "all_leave_one_year_out_means_positive": true
+      },
+      {
+        "positive_year_fraction": 0.6666666666666666,
+        "all_leave_one_year_out_means_positive": false
+      },
+      {
+        "positive_year_fraction": 0.6666666666666666,
+        "all_leave_one_year_out_means_positive": false
+      }
+    ],
+    "rel_tol": 0.0,
+    "abs_tol": 1e-15
+  },
+  "forbidden": {
+    "drop_required_year_from_denominator": 1.0
+  }
+}

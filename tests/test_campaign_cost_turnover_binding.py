@@ -1,123 +1,238 @@
-"""Conformance bindings to existing strategy turnover and cost accounting."""
+"""D-1: cost and turnover goldens bind campaign.paths, not backtest."""
 
 from __future__ import annotations
 
 import math
 
-import pandas as pd
-import pytest
-
-from backtest.portfolio import (
-    capture_backtest_source_provenance,
-    run_long_only_backtest,
+from campaign.metrics import aggregate_contributions
+from campaign.paths import advance_holdings, post_return_equity_cost
+from campaign_runner_v1_support import (
+    load_runner_fixture,
+    runner_holding_interval,
+    runner_weight_map,
 )
 
 
-def _run(
-    prices: pd.DataFrame,
-    signals: pd.DataFrame,
-    *,
-    transaction_cost_bps: float,
-    top_n: int,
-):
-    return run_long_only_backtest(
-        prices,
-        signals,
-        source_provenance=capture_backtest_source_provenance(prices, signals),
-        evaluation_start=prices.index[0],
-        evaluation_end=prices.index[-1],
-        rebalance_frequency="D",
-        top_n=top_n,
-        transaction_cost_bps=transaction_cost_bps,
-    )
+def test_unit_multiplier_cost_table_binds_campaign_paths() -> None:
+    fixture = load_runner_fixture("unit_multiplier_cost_table.json")
+    inputs = fixture["inputs"]
+    expected = fixture["expected"]
+    for turnover, row in zip(
+        inputs["turnovers"],
+        expected["table"],
+        strict=True,
+    ):
+        for bps, cost in zip(inputs["transaction_cost_bps"], row, strict=True):
+            observed = post_return_equity_cost(
+                turnover,
+                bps,
+                inputs["gross_multiplier"],
+            )
+            assert math.isclose(
+                observed,
+                cost,
+                rel_tol=expected["rel_tol"],
+                abs_tol=expected["abs_tol"],
+            )
 
 
-@pytest.mark.parametrize(
-    ("bps", "expected_costs"),
-    [
-        (0, (0.0, 0.0, 0.0)),
-        (10, (0.0010, 0.0004, 0.0020)),
-        (25, (0.0025, 0.0010, 0.0050)),
-    ],
-)
-def test_fixed_bps_cost_table_binds_strategy_turnover_and_costs(
-    bps: int,
-    expected_costs: tuple[float, float, float],
-) -> None:
-    dates = pd.date_range("2026-01-01", periods=5, freq="D")
-    columns = list("ABCDEFGHIJK")
-    prices = pd.DataFrame(100.0, index=dates, columns=columns)
-    signals = pd.DataFrame(0.0, index=dates, columns=columns)
-    signals.loc[dates[0], list("ABCDE")] = 1.0
-    signals.loc[dates[1], list("BCDEF")] = 1.0
-    signals.loc[dates[2], list("GHIJK")] = 1.0
-    signals.loc[dates[3], list("GHIJK")] = 1.0
+def test_unit_multiplier_sequence_turnovers_and_costs() -> None:
+    fixture = load_runner_fixture("unit_multiplier_cost_table.json")
+    inputs = fixture["inputs"]
+    expected = fixture["expected"]
+    sequence = inputs["sequence"]
+    for bps in inputs["transaction_cost_bps"]:
+        holdings = advance_holdings(
+            runner_weight_map(
+                inputs["exchange"],
+                inputs["effective_from"],
+                inputs["effective_to"],
+                sequence["initial_weights"],
+            ),
+            tuple(
+                runner_holding_interval(
+                    session_date,
+                    inputs["exchange"],
+                    inputs["effective_from"],
+                    inputs["effective_to"],
+                    sequence["held_returns"],
+                    reset,
+                )
+                for session_date, reset in zip(
+                    sequence["session_dates"],
+                    sequence["resets"],
+                    strict=True,
+                )
+            ),
+            bps,
+            inputs["initial_equity"],
+        )
+        assert holdings.valid
+        turnovers = tuple(point.turnover for point in holdings.points)
+        costs = tuple(point.cost_impact for point in holdings.points)
+        for observed, wanted in zip(
+            turnovers,
+            expected["sequence_turnovers"],
+            strict=True,
+        ):
+            assert observed is not None
+            assert math.isclose(
+                observed,
+                wanted,
+                rel_tol=expected["rel_tol"],
+                abs_tol=expected["abs_tol"],
+            )
+        for observed, wanted in zip(
+            costs,
+            expected["sequence_costs"][str(bps)],
+            strict=True,
+        ):
+            assert observed is not None
+            assert math.isclose(
+                observed,
+                wanted,
+                rel_tol=expected["rel_tol"],
+                abs_tol=expected["abs_tol"],
+            )
 
-    result = _run(
-        prices,
-        signals,
-        transaction_cost_bps=float(bps),
-        top_n=5,
-    )
 
-    observed_turnovers = tuple(
-        float(result.turnover.loc[date]) for date in dates[1:4]
+def test_accounting_order_uses_post_return_equity() -> None:
+    fixture = load_runner_fixture("accounting_order_golden.json")
+    inputs = fixture["inputs"]
+    expected = fixture["expected"]
+    holdings = advance_holdings(
+        runner_weight_map(
+            inputs["exchange"],
+            inputs["effective_from"],
+            inputs["effective_to"],
+            inputs["initial_weights"],
+        ),
+        (
+            runner_holding_interval(
+                inputs["session_date"],
+                inputs["exchange"],
+                inputs["effective_from"],
+                inputs["effective_to"],
+                inputs["held_returns"],
+                inputs["reset_weights"],
+            ),
+        ),
+        inputs["transaction_cost_bps"],
+        inputs["initial_equity"],
     )
-    observed_costs = tuple(
-        float(result.transaction_costs.loc[date]) for date in dates[1:4]
-    )
-    assert observed_turnovers == pytest.approx((1.0, 0.4, 2.0), abs=1e-15)
-    assert observed_costs == pytest.approx(expected_costs, abs=1e-15)
-
-
-@pytest.mark.parametrize(
-    ("bps", "expected_cost", "expected_net"),
-    [(25, 0.0055, 0.0945), (10, 0.0022, 0.0978)],
-)
-def test_post_return_execution_cost_goldens_bind_existing_accounting(
-    bps: int,
-    expected_cost: float,
-    expected_net: float,
-) -> None:
-    dates = pd.date_range("2026-02-01", periods=4, freq="D")
-    prices = pd.DataFrame(
-        {
-            "AAA": [100.0, 100.0, 110.0, 110.0],
-            "BBB": [100.0, 100.0, 100.0, 100.0],
-        },
-        index=dates,
-    )
-    signals = pd.DataFrame(
-        {
-            "AAA": [2.0, 1.0, 1.0, 1.0],
-            "BBB": [1.0, 2.0, 2.0, 2.0],
-        },
-        index=dates,
-    )
-    result = _run(
-        prices,
-        signals,
-        transaction_cost_bps=float(bps),
-        top_n=1,
-    )
-    rebalance = dates[2]
-
-    assert result.gross_returns.loc[rebalance] == pytest.approx(0.10)
-    assert result.turnover.loc[rebalance] == pytest.approx(2.0)
+    point = holdings.points[0]
+    assert holdings.valid
+    assert point.gross_return is not None
+    assert point.gross_multiplier is not None
+    assert point.turnover is not None
+    assert point.cost_impact is not None
+    assert point.net_return is not None
     assert math.isclose(
-        float(result.transaction_costs.loc[rebalance]),
-        expected_cost,
-        abs_tol=1e-15,
+        point.gross_return,
+        expected["gross_return"],
+        rel_tol=expected["rel_tol"],
+        abs_tol=expected["abs_tol"],
     )
     assert math.isclose(
-        float(result.returns.loc[rebalance]),
-        expected_net,
-        abs_tol=1e-15,
+        point.gross_multiplier,
+        expected["gross_multiplier"],
+        rel_tol=expected["rel_tol"],
+        abs_tol=expected["abs_tol"],
+    )
+    assert math.isclose(
+        point.turnover,
+        expected["turnover"],
+        rel_tol=expected["rel_tol"],
+        abs_tol=expected["abs_tol"],
+    )
+    assert math.isclose(
+        point.cost_impact,
+        expected["cost_impact"],
+        rel_tol=expected["rel_tol"],
+        abs_tol=expected["abs_tol"],
+    )
+    assert math.isclose(
+        point.net_return,
+        expected["net_return"],
+        rel_tol=expected["rel_tol"],
+        abs_tol=expected["abs_tol"],
+    )
+    assert point.cost_impact != fixture["forbidden"]["pre_return_equity_cost"]
+    totals = aggregate_contributions(holdings.points)
+    assert totals.valid
+    assert totals.cost_sum is not None
+    assert math.isclose(
+        totals.cost_sum,
+        expected["contribution_cost_sum"],
+        rel_tol=expected["rel_tol"],
+        abs_tol=expected["abs_tol"],
     )
 
-    forbidden_pre_return_equity_cost = 2.0 * bps / 10000
-    assert not math.isclose(
-        forbidden_pre_return_equity_cost,
-        expected_cost,
-        abs_tol=1e-15,
+
+def test_random_rank_primary_basis_is_ten_bps_only() -> None:
+    fixture = load_runner_fixture("random_rank_primary_basis.json")
+    inputs = fixture["inputs"]
+    expected = fixture["expected"]
+    holdings = advance_holdings(
+        runner_weight_map(
+            inputs["exchange"],
+            inputs["effective_from"],
+            inputs["effective_to"],
+            inputs["initial_weights"],
+        ),
+        (
+            runner_holding_interval(
+                inputs["session_date"],
+                inputs["exchange"],
+                inputs["effective_from"],
+                inputs["effective_to"],
+                inputs["held_returns"],
+                inputs["reset_weights"],
+            ),
+        ),
+        inputs["transaction_cost_bps"],
+        inputs["initial_equity"],
     )
+    point = holdings.points[0]
+    assert holdings.valid
+    assert point.cost_impact is not None
+    assert point.net_return is not None
+    assert math.isclose(
+        point.cost_impact,
+        expected["cost_impact"],
+        rel_tol=expected["rel_tol"],
+        abs_tol=expected["abs_tol"],
+    )
+    assert math.isclose(
+        point.net_return,
+        expected["net_return"],
+        rel_tol=expected["rel_tol"],
+        abs_tol=expected["abs_tol"],
+    )
+    assert point.cost_impact != fixture["forbidden"]["zero_bps_cost"]
+    assert point.net_return != fixture["forbidden"]["zero_bps_net"]
+    assert point.cost_impact != fixture["forbidden"]["twenty_five_bps_cost"]
+    assert point.net_return != fixture["forbidden"]["twenty_five_bps_net"]
+    for bps in inputs["forbidden_bps"]:
+        other = advance_holdings(
+            runner_weight_map(
+                inputs["exchange"],
+                inputs["effective_from"],
+                inputs["effective_to"],
+                inputs["initial_weights"],
+            ),
+            (
+                runner_holding_interval(
+                    inputs["session_date"],
+                    inputs["exchange"],
+                    inputs["effective_from"],
+                    inputs["effective_to"],
+                    inputs["held_returns"],
+                    inputs["reset_weights"],
+                ),
+            ),
+            bps,
+            inputs["initial_equity"],
+        )
+        assert other.points[0].cost_impact != expected["cost_impact"]
+        assert other.points[0].net_return != expected["net_return"]

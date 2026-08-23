@@ -1,0 +1,131 @@
+{
+  "inputs": {
+    "exchange": "XNYS",
+    "effective_from": "2014-01-01",
+    "effective_to": null,
+    "session_date": "2026-04-02",
+    "initial_equity": 1.0,
+    "initial_weights": {"T000": 0.5, "T001": 0.5},
+    "reset_weights": {"T000": 0.5, "T001": 0.5},
+    "transaction_cost_bps": 10,
+    "adjusted": {
+      "T000": {
+        "start_anchor": 50.0,
+        "end_anchor": 50.0,
+        "target_identity": {
+          "resolved_permanent_security_id": "SECURITY-T000",
+          "resolved_listing_id": "LISTING-T000",
+          "resolved_listing_episode_id": "EPISODE-T000"
+        },
+        "alias_chain": [
+          {
+            "resolved_permanent_security_id": "SECURITY-T000",
+            "resolved_listing_id": "LISTING-T000",
+            "resolved_listing_episode_id": "EPISODE-T000",
+            "source_exchange": "XNYS",
+            "source_ticker": "T000",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "evidence-t000",
+            "transition_to_next": "TARGET_ALIAS"
+          }
+        ],
+        "anchors": [
+          {
+            "resolved_permanent_security_id": "SECURITY-T000",
+            "resolved_listing_id": "LISTING-T000",
+            "resolved_listing_episode_id": "EPISODE-T000",
+            "source_exchange": "XNYS",
+            "source_ticker": "T000",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "evidence-t000",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2026-04-01",
+            "adjusted_close": 50.0
+          },
+          {
+            "resolved_permanent_security_id": "SECURITY-T000",
+            "resolved_listing_id": "LISTING-T000",
+            "resolved_listing_episode_id": "EPISODE-T000",
+            "source_exchange": "XNYS",
+            "source_ticker": "T000",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "evidence-t000",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2026-04-02",
+            "adjusted_close": 50.0
+          }
+        ]
+      },
+      "T001": {
+        "start_anchor": 100.0,
+        "end_anchor": 100.0,
+        "target_identity": {
+          "resolved_permanent_security_id": "SECURITY-T001",
+          "resolved_listing_id": "LISTING-T001",
+          "resolved_listing_episode_id": "EPISODE-T001"
+        },
+        "alias_chain": [
+          {
+            "resolved_permanent_security_id": "SECURITY-T001",
+            "resolved_listing_id": "LISTING-T001",
+            "resolved_listing_episode_id": "EPISODE-T001",
+            "source_exchange": "XNYS",
+            "source_ticker": "T001",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "evidence-t001",
+            "transition_to_next": "TARGET_ALIAS"
+          }
+        ],
+        "anchors": [
+          {
+            "resolved_permanent_security_id": "SECURITY-T001",
+            "resolved_listing_id": "LISTING-T001",
+            "resolved_listing_episode_id": "EPISODE-T001",
+            "source_exchange": "XNYS",
+            "source_ticker": "T001",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "evidence-t001",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2026-04-01",
+            "adjusted_close": 100.0
+          },
+          {
+            "resolved_permanent_security_id": "SECURITY-T001",
+            "resolved_listing_id": "LISTING-T001",
+            "resolved_listing_episode_id": "EPISODE-T001",
+            "source_exchange": "XNYS",
+            "source_ticker": "T001",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "evidence-t001",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2026-04-02",
+            "adjusted_close": 100.0
+          }
+        ]
+      }
+    }
+  },
+  "expected": {
+    "adjusted_held_returns": {"T000": 0.0, "T001": 0.0},
+    "gross_return": 0.0,
+    "drifted_weights": {"T000": 0.5, "T001": 0.5},
+    "turnover": 0.0,
+    "cost_impact": 0.0,
+    "valid": true,
+    "rel_tol": 0.0,
+    "abs_tol": 1e-15
+  },
+  "forbidden": {
+    "raw_held_returns": {"T000": -0.5, "T001": 0.0},
+    "raw_gross_return": -0.25,
+    "raw_drifted_weights": {"T000": 0.3333333333333333, "T001": 0.6666666666666666},
+    "raw_turnover": 0.3333333333333333,
+    "raw_cost_impact": 0.00025
+  }
+}

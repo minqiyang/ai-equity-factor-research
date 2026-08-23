@@ -1,0 +1,15 @@
+{
+  "inputs": {
+    "wrong_calendar_id": "XLON",
+    "wrong_calendar_version": "other-calendar-v1"
+  },
+  "expected": {
+    "status": "REFUSED",
+    "calendar_id_reason": "CALENDAR_ID_MISMATCH",
+    "calendar_version_reason": "CALENDAR_VERSION_MISMATCH",
+    "binding_field_reason": "DETACHED_BINDING_FIELD_MISMATCH"
+  },
+  "forbidden": {
+    "authorize_altered_calendar": true
+  }
+}

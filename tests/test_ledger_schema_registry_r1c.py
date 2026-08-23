@@ -16,6 +16,10 @@ from ledger.schema_registry import (
     validate_raw_event_bytes,
     validate_registry,
 )
+from ledger_cross_product import (
+    first_full_rest_smoke,
+    registry_field_constraint_kind,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -132,6 +136,14 @@ def _family_schema(registry: dict[str, object]) -> dict[str, object]:
         entry
         for entry in registry["event_schemas"]
         if entry["event_type"] == "TRIAL_FAMILY_REGISTERED"
+    )
+
+
+def _payload_constraint_kind(field: str) -> object:
+    return registry_field_constraint_kind(
+        _registry(),
+        "TRIAL_FAMILY_REGISTERED",
+        ("payload", field),
     )
 
 
@@ -439,31 +451,31 @@ def test_r1c_rejects_scope_order_uniqueness_namespace_and_type(
 
 
 @pytest.mark.parametrize(
-    "field",
-    [
-        "family_authority_id",
-        "family_definition_record_id",
-        "family_acceptance_decision_id",
-    ],
-)
-@pytest.mark.parametrize(
-    "bad_value",
-    [
-        "",
-        "Uppercase",
-        "has space",
-        "has/slash",
-        "has\\backslash",
-        "has:colon",
-        "has?query",
-        "has#fragment",
-        "has%escape",
-        "has@sign",
-        "nonascii-\u00e9",
-        "a" * 129,
-        None,
-        True,
-    ],
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        (
+            "family_authority_id",
+            "family_definition_record_id",
+            "family_acceptance_decision_id",
+        ),
+        (
+            "",
+            "Uppercase",
+            "has space",
+            "has/slash",
+            "has\\backslash",
+            "has:colon",
+            "has?query",
+            "has#fragment",
+            "has%escape",
+            "has@sign",
+            "nonascii-\u00e9",
+            "a" * 129,
+            None,
+            True,
+        ),
+        constraint_kind=_payload_constraint_kind,
+    ),
 )
 def test_r1c_rejects_unsafe_authority_record_and_decision_ids(
     field: str, bad_value: object
@@ -478,16 +490,16 @@ def test_r1c_rejects_unsafe_authority_record_and_decision_ids(
 
 
 @pytest.mark.parametrize(
-    "field",
-    [
-        "family_authority_version",
-        "family_definition_record_version",
-        "family_acceptance_generation",
-    ],
-)
-@pytest.mark.parametrize(
-    "bad_value",
-    [0, -1, True, False, 1.0, "1", None, 2**53],
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        (
+            "family_authority_version",
+            "family_definition_record_version",
+            "family_acceptance_generation",
+        ),
+        (0, -1, True, False, 1.0, "1", None, 2**53),
+        constraint_kind=_payload_constraint_kind,
+    ),
 )
 def test_r1c_rejects_invalid_versions_and_generations(
     field: str, bad_value: object
@@ -517,16 +529,16 @@ def test_r1c_accepts_safe_integer_maximum_for_version_fields(field: str) -> None
 
 
 @pytest.mark.parametrize(
-    "field",
-    [
-        "family_authority_registry_sha256",
-        "family_definition_record_sha256",
-        "family_acceptance_record_sha256",
-    ],
-)
-@pytest.mark.parametrize(
-    "bad_value",
-    ["A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True],
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        (
+            "family_authority_registry_sha256",
+            "family_definition_record_sha256",
+            "family_acceptance_record_sha256",
+        ),
+        ("A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True),
+        constraint_kind=_payload_constraint_kind,
+    ),
 )
 def test_r1c_rejects_invalid_authority_record_and_acceptance_digests(
     field: str, bad_value: object

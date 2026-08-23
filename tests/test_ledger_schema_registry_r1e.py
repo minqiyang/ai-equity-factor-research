@@ -16,6 +16,11 @@ from ledger.schema_registry import (
     validate_raw_event_bytes,
     validate_registry,
 )
+from ledger_cross_product import (
+    first_full_rest_smoke,
+    registry_field_constraint_kind,
+    registry_requiredness_kind,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -162,6 +167,39 @@ def _binding_schema(registry: dict[str, object]) -> dict[str, object]:
 
 def _stage3_schema(registry: dict[str, object]) -> dict[str, object]:
     return _event_schema(registry, "STAGE3_SAMPLE_REFERENCE_BOUND")
+
+
+def _envelope_requiredness_kind(fixture_key: str) -> object:
+    return registry_requiredness_kind(
+        _registry(),
+        _event(fixture_key),
+        tuple((field,) for field in EXPECTED_EVENT_FIELDS),
+    )
+
+
+def _scope_constraint_kind(fixture_key: str) -> object:
+    return registry_field_constraint_kind(
+        _registry(),
+        _event(fixture_key),
+        ("payload", "campaign_scope_ids"),
+    )
+
+
+def _source_field_constraint_kind(pair: tuple[str, str]) -> object:
+    fixture_key, field = pair
+    return registry_field_constraint_kind(
+        _registry(),
+        _event(fixture_key),
+        ("payload", field),
+    )
+
+
+def _stage3_payload_constraint_kind(field: str) -> object:
+    return registry_field_constraint_kind(
+        _registry(),
+        "STAGE3_SAMPLE_REFERENCE_BOUND",
+        ("payload", field),
+    )
 
 
 def test_r1e_release_is_explicit_and_preserves_all_prior_releases() -> None:
@@ -444,8 +482,14 @@ def test_r1e_binding_envelopes_and_stage3_tuple_are_exact_r1d_successors() -> No
     assert stage3 == expected_stage3
 
 
-@pytest.mark.parametrize("fixture_key", FIXTURE_EVENT_KEYS)
-@pytest.mark.parametrize("event_field", EXPECTED_EVENT_FIELDS)
+@pytest.mark.parametrize(
+    ("fixture_key", "event_field"),
+    first_full_rest_smoke(
+        FIXTURE_EVENT_KEYS,
+        EXPECTED_EVENT_FIELDS,
+        constraint_kind=_envelope_requiredness_kind,
+    ),
+)
 def test_r1e_rejects_every_missing_envelope_field(
     fixture_key: str, event_field: str
 ) -> None:
@@ -658,22 +702,25 @@ def test_r1e_rejects_subject_namespace_killers(
     )
 
 
-@pytest.mark.parametrize("fixture_key", FIXTURE_EVENT_KEYS)
 @pytest.mark.parametrize(
-    "bad_scope",
-    [
-        [],
-        [
+    ("fixture_key", "bad_scope"),
+    first_full_rest_smoke(
+        FIXTURE_EVENT_KEYS,
+        (
+            [],
+            [
+                "cmp_00000000000000000000000000000001",
+                "cmp_00000000000000000000000000000002",
+            ],
+            ["exp_00000000000000000000000000000001"],
+            ["CMP_00000000000000000000000000000001"],
+            None,
+            True,
             "cmp_00000000000000000000000000000001",
-            "cmp_00000000000000000000000000000002",
-        ],
-        ["exp_00000000000000000000000000000001"],
-        ["CMP_00000000000000000000000000000001"],
-        None,
-        True,
-        "cmp_00000000000000000000000000000001",
-        {},
-    ],
+            {},
+        ),
+        constraint_kind=_scope_constraint_kind,
+    ),
 )
 def test_r1e_rejects_non_singleton_wrong_namespace_and_wrong_type_scope(
     fixture_key: str, bad_scope: object
@@ -686,23 +733,26 @@ def test_r1e_rejects_non_singleton_wrong_namespace_and_wrong_type_scope(
 
 
 @pytest.mark.parametrize(
-    ("fixture_key", "field"),
-    [
-        ("trial_family_global_bound", "source_registration_event_id"),
-        ("sample_global_local_bound", "source_registration_event_id"),
-        ("sample_external_origin_reused", "source_reference_event_id"),
-    ],
-)
-@pytest.mark.parametrize(
-    "bad_value",
-    [
-        "event-1",
-        "EVT_00000000000000000000000000000001",
-        "evt_0000000000000000000000000000001",
-        "evt_0000000000000000000000000000000g",
-        None,
-        True,
-    ],
+    ("fixture_key", "field", "bad_value"),
+    tuple(
+        (fixture_key, field, bad_value)
+        for (fixture_key, field), bad_value in first_full_rest_smoke(
+            (
+                ("trial_family_global_bound", "source_registration_event_id"),
+                ("sample_global_local_bound", "source_registration_event_id"),
+                ("sample_external_origin_reused", "source_reference_event_id"),
+            ),
+            (
+                "event-1",
+                "EVT_00000000000000000000000000000001",
+                "evt_0000000000000000000000000000001",
+                "evt_0000000000000000000000000000000g",
+                None,
+                True,
+            ),
+            constraint_kind=_source_field_constraint_kind,
+        )
+    ),
 )
 def test_r1e_rejects_invalid_source_event_ids(
     fixture_key: str, field: str, bad_value: object
@@ -715,15 +765,28 @@ def test_r1e_rejects_invalid_source_event_ids(
 
 
 @pytest.mark.parametrize(
-    ("fixture_key", "field"),
-    [
-        ("trial_family_global_bound", "source_registration_event_sha256"),
-        ("sample_global_local_bound", "source_registration_event_sha256"),
-        ("sample_external_origin_reused", "source_reference_event_sha256"),
-    ],
-)
-@pytest.mark.parametrize(
-    "bad_value", ["A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True]
+    ("fixture_key", "field", "bad_value"),
+    tuple(
+        (fixture_key, field, bad_value)
+        for (fixture_key, field), bad_value in first_full_rest_smoke(
+            (
+                (
+                    "trial_family_global_bound",
+                    "source_registration_event_sha256",
+                ),
+                (
+                    "sample_global_local_bound",
+                    "source_registration_event_sha256",
+                ),
+                (
+                    "sample_external_origin_reused",
+                    "source_reference_event_sha256",
+                ),
+            ),
+            ("A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True),
+            constraint_kind=_source_field_constraint_kind,
+        )
+    ),
 )
 def test_r1e_rejects_invalid_source_event_digests(
     fixture_key: str, field: str, bad_value: object
@@ -781,33 +844,33 @@ def test_r1e_rejects_outer_and_nested_branch_field_bleed(
 
 
 @pytest.mark.parametrize(
-    "field",
-    [
-        "sample_acceptance_decision_id",
-        "sample_authority_id",
-        "sample_public_projection_id",
-        "sample_publication_approval_id",
-        "sample_record_id",
-    ],
-)
-@pytest.mark.parametrize(
-    "bad_value",
-    [
-        "",
-        "Uppercase",
-        "has space",
-        "has/slash",
-        "has\\backslash",
-        "has:colon",
-        "has?query",
-        "has#fragment",
-        "has%escape",
-        "has@sign",
-        "nonascii-\u00e9",
-        "a" * 129,
-        None,
-        True,
-    ],
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        (
+            "sample_acceptance_decision_id",
+            "sample_authority_id",
+            "sample_public_projection_id",
+            "sample_publication_approval_id",
+            "sample_record_id",
+        ),
+        (
+            "",
+            "Uppercase",
+            "has space",
+            "has/slash",
+            "has\\backslash",
+            "has:colon",
+            "has?query",
+            "has#fragment",
+            "has%escape",
+            "has@sign",
+            "nonascii-\u00e9",
+            "a" * 129,
+            None,
+            True,
+        ),
+        constraint_kind=_stage3_payload_constraint_kind,
+    ),
 )
 def test_r1e_rejects_unsafe_stage3_public_reference_ids(
     field: str, bad_value: object
@@ -820,16 +883,17 @@ def test_r1e_rejects_unsafe_stage3_public_reference_ids(
 
 
 @pytest.mark.parametrize(
-    "field",
-    [
-        "sample_acceptance_generation",
-        "sample_authority_version",
-        "sample_publication_approval_generation",
-        "sample_record_version",
-    ],
-)
-@pytest.mark.parametrize(
-    "bad_value", [0, -1, True, False, 1.0, "1", None, 2**53]
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        (
+            "sample_acceptance_generation",
+            "sample_authority_version",
+            "sample_publication_approval_generation",
+            "sample_record_version",
+        ),
+        (0, -1, True, False, 1.0, "1", None, 2**53),
+        constraint_kind=_stage3_payload_constraint_kind,
+    ),
 )
 def test_r1e_rejects_invalid_stage3_versions_and_generations(
     field: str, bad_value: object
@@ -842,17 +906,18 @@ def test_r1e_rejects_invalid_stage3_versions_and_generations(
 
 
 @pytest.mark.parametrize(
-    "field",
-    [
-        "sample_acceptance_record_sha256",
-        "sample_authority_registry_sha256",
-        "sample_public_projection_sha256",
-        "sample_publication_approval_record_sha256",
-        "sample_record_sha256",
-    ],
-)
-@pytest.mark.parametrize(
-    "bad_value", ["A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True]
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        (
+            "sample_acceptance_record_sha256",
+            "sample_authority_registry_sha256",
+            "sample_public_projection_sha256",
+            "sample_publication_approval_record_sha256",
+            "sample_record_sha256",
+        ),
+        ("A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True),
+        constraint_kind=_stage3_payload_constraint_kind,
+    ),
 )
 def test_r1e_rejects_invalid_stage3_digests(
     field: str, bad_value: object

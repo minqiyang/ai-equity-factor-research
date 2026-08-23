@@ -1,0 +1,59 @@
+{
+  "inputs": {
+    "empty": [],
+    "short": [
+      {"status": "RECONCILED", "trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE"},
+      {"status": "RECONCILED", "trial_id": "BASELINE_RANDOM_RANK_TOP_DECILE"},
+      {"status": "RECONCILED", "trial_id": "DIAG_MOM_12_1"},
+      {"status": "RECONCILED", "trial_id": "DIAG_REV_1M"},
+      {"status": "RECONCILED", "trial_id": "DIAG_LOW_VOL_3M"},
+      {"status": "RECONCILED", "trial_id": "STRAT_MOM_12_1_0BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_MOM_12_1_10BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_MOM_12_1_25BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_REV_1M_0BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_REV_1M_10BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_REV_1M_25BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_LOW_VOL_3M_0BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_LOW_VOL_3M_10BPS"}
+    ],
+    "duplicate": [
+      {"status": "RECONCILED", "trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE"},
+      {"status": "RECONCILED", "trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE"},
+      {"status": "RECONCILED", "trial_id": "DIAG_MOM_12_1"},
+      {"status": "RECONCILED", "trial_id": "DIAG_REV_1M"},
+      {"status": "RECONCILED", "trial_id": "DIAG_LOW_VOL_3M"},
+      {"status": "RECONCILED", "trial_id": "STRAT_MOM_12_1_0BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_MOM_12_1_10BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_MOM_12_1_25BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_REV_1M_0BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_REV_1M_10BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_REV_1M_25BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_LOW_VOL_3M_0BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_LOW_VOL_3M_10BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_LOW_VOL_3M_25BPS"}
+    ],
+    "unknown": [
+      {"status": "RECONCILED", "trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE"},
+      {"status": "RECONCILED", "trial_id": "BASELINE_RANDOM_RANK_TOP_DECILE"},
+      {"status": "RECONCILED", "trial_id": "DIAG_MOM_12_1"},
+      {"status": "RECONCILED", "trial_id": "DIAG_REV_1M"},
+      {"status": "RECONCILED", "trial_id": "DIAG_LOW_VOL_3M"},
+      {"status": "RECONCILED", "trial_id": "STRAT_MOM_12_1_0BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_MOM_12_1_10BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_MOM_12_1_25BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_REV_1M_0BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_REV_1M_10BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_REV_1M_25BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_LOW_VOL_3M_0BPS"},
+      {"status": "RECONCILED", "trial_id": "STRAT_LOW_VOL_3M_10BPS"},
+      {"status": "RECONCILED", "trial_id": "UNKNOWN_TRIAL"}
+    ]
+  },
+  "expected": {
+    "valid": false,
+    "reason": "BUNDLE_PER_TRIAL_STATUS_INVALID"
+  },
+  "forbidden": {
+    "accept_empty_per_trial_status": true
+  }
+}

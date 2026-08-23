@@ -1,0 +1,48 @@
+{
+  "inputs": {
+    "role": "equal_weight_eligible_universe",
+    "signal_date": "2026-07-29",
+    "min_eligible_count": 100,
+    "min_distinct_values": 10,
+    "tied_universe": {
+      "key_spec": {
+        "exchange": "XNYS",
+        "ticker_prefix": "T",
+        "ticker_width": 3,
+        "effective_from": "2014-01-01",
+        "effective_to": null
+      },
+      "count": 100,
+      "value_mode": "constant",
+      "constant_value": 0.25,
+      "duplicate_last": false
+    },
+    "empty_universe": {
+      "key_spec": {
+        "exchange": "XNYS",
+        "ticker_prefix": "T",
+        "ticker_width": 3,
+        "effective_from": "2014-01-01",
+        "effective_to": null
+      },
+      "count": 0,
+      "value_mode": "index",
+      "duplicate_last": false
+    }
+  },
+  "expected": {
+    "tied": {
+      "formable": true,
+      "count": 100,
+      "weight": 0.01,
+      "factor_target_empty": true
+    },
+    "empty": {
+      "formable": false,
+      "count": 0
+    }
+  },
+  "forbidden": {
+    "reuse_factor_zero_target_when_invested": true
+  }
+}

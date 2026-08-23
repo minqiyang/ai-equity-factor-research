@@ -16,6 +16,10 @@ from ledger.schema_registry import (
     validate_raw_event_bytes,
     validate_registry,
 )
+from ledger_cross_product import (
+    first_full_rest_smoke,
+    registry_field_constraint_kind,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -127,6 +131,14 @@ def _sample_schema(registry: dict[str, object]) -> dict[str, object]:
         entry
         for entry in registry["event_schemas"]
         if entry["event_type"] == "SAMPLE_REGISTERED"
+    )
+
+
+def _payload_constraint_kind(field: str) -> object:
+    return registry_field_constraint_kind(
+        _registry(),
+        "SAMPLE_REGISTERED",
+        ("payload", field),
     )
 
 
@@ -405,33 +417,33 @@ def test_r1d_rejects_scope_order_uniqueness_namespace_and_type(
 
 
 @pytest.mark.parametrize(
-    "field",
-    [
-        "sample_acceptance_decision_id",
-        "sample_authority_id",
-        "sample_public_projection_id",
-        "sample_publication_approval_id",
-        "sample_record_id",
-    ],
-)
-@pytest.mark.parametrize(
-    "bad_value",
-    [
-        "",
-        "Uppercase",
-        "has space",
-        "has/slash",
-        "has\\backslash",
-        "has:colon",
-        "has?query",
-        "has#fragment",
-        "has%escape",
-        "has@sign",
-        "nonascii-\u00e9",
-        "a" * 129,
-        None,
-        True,
-    ],
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        (
+            "sample_acceptance_decision_id",
+            "sample_authority_id",
+            "sample_public_projection_id",
+            "sample_publication_approval_id",
+            "sample_record_id",
+        ),
+        (
+            "",
+            "Uppercase",
+            "has space",
+            "has/slash",
+            "has\\backslash",
+            "has:colon",
+            "has?query",
+            "has#fragment",
+            "has%escape",
+            "has@sign",
+            "nonascii-\u00e9",
+            "a" * 129,
+            None,
+            True,
+        ),
+        constraint_kind=_payload_constraint_kind,
+    ),
 )
 def test_r1d_rejects_unsafe_public_reference_ids(
     field: str, bad_value: object
@@ -444,16 +456,17 @@ def test_r1d_rejects_unsafe_public_reference_ids(
 
 
 @pytest.mark.parametrize(
-    "field",
-    [
-        "sample_acceptance_generation",
-        "sample_authority_version",
-        "sample_publication_approval_generation",
-        "sample_record_version",
-    ],
-)
-@pytest.mark.parametrize(
-    "bad_value", [0, -1, True, False, 1.0, "1", None, 2**53]
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        (
+            "sample_acceptance_generation",
+            "sample_authority_version",
+            "sample_publication_approval_generation",
+            "sample_record_version",
+        ),
+        (0, -1, True, False, 1.0, "1", None, 2**53),
+        constraint_kind=_payload_constraint_kind,
+    ),
 )
 def test_r1d_rejects_invalid_versions_and_generations(
     field: str, bad_value: object
@@ -481,17 +494,18 @@ def test_r1d_accepts_safe_integer_maximum(field: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "field",
-    [
-        "sample_acceptance_record_sha256",
-        "sample_authority_registry_sha256",
-        "sample_public_projection_sha256",
-        "sample_publication_approval_record_sha256",
-        "sample_record_sha256",
-    ],
-)
-@pytest.mark.parametrize(
-    "bad_value", ["A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True]
+    ("field", "bad_value"),
+    first_full_rest_smoke(
+        (
+            "sample_acceptance_record_sha256",
+            "sample_authority_registry_sha256",
+            "sample_public_projection_sha256",
+            "sample_publication_approval_record_sha256",
+            "sample_record_sha256",
+        ),
+        ("A" * 64, "a" * 63, "a" * 65, "g" * 64, "", None, True),
+        constraint_kind=_payload_constraint_kind,
+    ),
 )
 def test_r1d_rejects_invalid_digests(
     field: str, bad_value: object
