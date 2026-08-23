@@ -19,6 +19,7 @@ from campaign_runner_v1_support import (
     freeze_numeric_universe,
     load_runner_fixture,
     runner_holding_interval,
+    runner_return_map,
     runner_weight_map,
 )
 
@@ -479,6 +480,111 @@ def test_permuted_decision_return_pairs_cannot_reuse_strategy_order() -> None:
             inputs["role"],
         )
     assert fixture["forbidden"]["align_only_by_sequence_position"]
+
+
+def test_daily_execution_path_maps_onto_monthly_frozen_decisions() -> None:
+    fixture = load_runner_fixture("benchmark_daily_execution_path.json")
+    inputs = fixture["inputs"]
+    expected = fixture["expected"]
+    frozen = tuple(
+        freeze_numeric_universe(
+            inputs["benchmark_universe"],
+            inputs["min_eligible_count"],
+            inputs["min_distinct_values"],
+            FACTOR_ORDER[0],
+            signal_date,
+        )
+        for signal_date in inputs["signal_dates"]
+    )
+    spec = inputs["strategy"]
+    strategy = advance_holdings(
+        runner_weight_map(
+            inputs["exchange"],
+            inputs["effective_from"],
+            inputs["effective_to"],
+            spec["initial_weights"],
+        ),
+        tuple(
+            runner_holding_interval(
+                session_date,
+                inputs["exchange"],
+                inputs["effective_from"],
+                inputs["effective_to"],
+                spec["held_returns"],
+                spec["reset_weights"],
+            )
+            for session_date in inputs["session_dates"]
+        ),
+        inputs["transaction_cost_bps"],
+        inputs["initial_equity"],
+    )
+    observed = tuple(
+        dated_held_returns(
+            session_date,
+            runner_return_map(
+                inputs["exchange"],
+                inputs["effective_from"],
+                inputs["effective_to"],
+                held_returns,
+            ),
+        )
+        for session_date, held_returns in zip(
+            inputs["session_dates"],
+            inputs["benchmark_held_returns"],
+            strict=True,
+        )
+    )
+    comparison = factor_matched_cost_free_comparison(
+        frozen,
+        strategy,
+        observed,
+        inputs["initial_equity"],
+        inputs["role"],
+    )
+    assert len(strategy.points) == expected["daily_count"]
+    assert len(frozen) == expected["frozen_count"]
+    assert len(strategy.points) != len(frozen)
+    assert (
+        len(strategy.points) // len(frozen)
+        == expected["points_per_frozen_decision"]
+    )
+    assert comparison.valid is expected["valid"]
+    assert len(comparison.benchmark_gross_returns) == expected["daily_count"]
+    for observed_gross, wanted in zip(
+        comparison.benchmark_gross_returns,
+        expected["benchmark_gross"],
+        strict=True,
+    ):
+        assert observed_gross is not None
+        assert math.isclose(
+            observed_gross,
+            wanted,
+            rel_tol=expected["rel_tol"],
+            abs_tol=expected["abs_tol"],
+        )
+    assert comparison.benchmark_gross_returns[1] != fixture["forbidden"][
+        "daily_rebalanced_second_interval"
+    ]
+    assert comparison.benchmark_gross_returns[5] != fixture["forbidden"][
+        "no_monthly_reset_first_next_month"
+    ]
+    assert fixture["forbidden"]["one_strategy_interval_per_frozen_decision"]
+    permuted = factor_matched_cost_free_comparison(
+        (frozen[1], frozen[0]),
+        strategy,
+        observed,
+        inputs["initial_equity"],
+        inputs["role"],
+    )
+    assert permuted.benchmark_gross_returns == comparison.benchmark_gross_returns
+    with pytest.raises(ValueError, match="session identity"):
+        factor_matched_cost_free_comparison(
+            frozen,
+            strategy,
+            (observed[1], observed[0], *observed[2:]),
+            inputs["initial_equity"],
+            inputs["role"],
+        )
 
 
 def test_benchmark_functions_have_no_fill_or_defaults() -> None:

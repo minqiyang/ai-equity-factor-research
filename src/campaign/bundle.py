@@ -10,7 +10,7 @@ from numbers import Integral
 import re
 from types import MappingProxyType
 
-from campaign.reconciliation import ReconciliationResult
+from campaign.reconciliation import ReconciliationResult, parse_trial_inventory
 
 
 _REQUIRED_CHILDREN = (
@@ -39,6 +39,7 @@ _REASON_MISSING = "BUNDLE_CHILD_MISSING"
 _REASON_SELF_HASH = "BUNDLE_MANIFEST_SELF_HASH_FORBIDDEN"
 _REASON_DIGEST_MISMATCH = "BUNDLE_CHILD_DIGEST_MISMATCH"
 _REASON_ROOT_BINDING = "BUNDLE_ROOT_BINDING_MISSING"
+_REASON_STATUS = "BUNDLE_PER_TRIAL_STATUS_INVALID"
 _SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
 _GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _FROZEN_CHILD_DIGEST_FIELDS = (
@@ -129,6 +130,20 @@ def assemble_evidence_bundle(
             None,
             None,
         )
+    status_error = _per_trial_status_error(
+        root_fields,
+        bytes(children["trial_inventory.json"]),
+    )
+    if status_error is not None:
+        return BundleAssembly(
+            False,
+            status_error,
+            MappingProxyType(digests),
+            MappingProxyType({}),
+            b"",
+            None,
+            None,
+        )
     manifest = {
         "schema_version": "campaign_bundle_manifest_v1",
         "children": dict(digests),
@@ -208,6 +223,59 @@ def _binding_value_valid(kind: str, value: object) -> bool:
             and isinstance(value, Sequence)
         )
     return False
+
+
+def _per_trial_status_error(
+    root_fields: Mapping[str, object],
+    inventory_bytes: bytes,
+) -> str | None:
+    trial_ids = _inventory_trial_ids(inventory_bytes)
+    if trial_ids is None:
+        return _REASON_STATUS
+    count = root_fields["semantic_trial_count"]
+    if int(count) != len(trial_ids):
+        return _REASON_STATUS
+    raw_status = root_fields["per_trial_status"]
+    if (
+        isinstance(raw_status, (str, bytes, bytearray))
+        or not isinstance(raw_status, Sequence)
+    ):
+        return _REASON_ROOT_BINDING
+    if len(raw_status) != len(trial_ids):
+        return _REASON_STATUS
+    known = set(trial_ids)
+    seen: set[str] = set()
+    for entry in raw_status:
+        if not isinstance(entry, Mapping):
+            return _REASON_STATUS
+        trial_id = entry.get("trial_id")
+        status = entry.get("status")
+        if not isinstance(trial_id, str) or not trial_id:
+            return _REASON_STATUS
+        if not isinstance(status, str) or not status:
+            return _REASON_STATUS
+        if trial_id not in known or trial_id in seen:
+            return _REASON_STATUS
+        seen.add(trial_id)
+    if seen != known:
+        return _REASON_STATUS
+    return None
+
+
+def _inventory_trial_ids(raw: bytes) -> tuple[str, ...] | None:
+    try:
+        records = parse_trial_inventory(raw)
+    except (TypeError, ValueError):
+        return None
+    trial_ids: list[str] = []
+    seen: set[str] = set()
+    for trial in records:
+        trial_id = trial.get("trial_id")
+        if not isinstance(trial_id, str) or not trial_id or trial_id in seen:
+            return None
+        seen.add(trial_id)
+        trial_ids.append(trial_id)
+    return tuple(trial_ids)
 
 
 def _frozen_child_digest_error(

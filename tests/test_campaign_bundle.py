@@ -125,6 +125,30 @@ def test_missing_or_malformed_root_bindings_are_invalid() -> None:
     assert mutation["forbidden"]["accept_bundle_with_none_root_bindings"]
 
 
+def test_per_trial_status_must_cover_every_inventory_trial() -> None:
+    fixture = load_runner_fixture("bundle_assembly.json")
+    mutation = load_runner_fixture("bundle_per_trial_status.json")
+    children = {
+        name: value.encode("utf-8")
+        for name, value in fixture["inputs"]["children"].items()
+    }
+    valid = assemble_evidence_bundle(children, fixture["inputs"]["root_fields"])
+    assert valid.valid is True
+    assert valid.detached_root is not None
+    assert (
+        len(valid.detached_root["per_trial_status"])
+        == fixture["inputs"]["root_fields"]["semantic_trial_count"]
+    )
+    for name in ("empty", "short", "duplicate", "unknown"):
+        root_fields = dict(fixture["inputs"]["root_fields"])
+        root_fields["per_trial_status"] = mutation["inputs"][name]
+        assembly = assemble_evidence_bundle(children, root_fields)
+        assert assembly.valid is mutation["expected"]["valid"], name
+        assert assembly.reason == mutation["expected"]["reason"], name
+        assert assembly.detached_root is None, name
+    assert mutation["forbidden"]["accept_empty_per_trial_status"]
+
+
 def test_bundle_functions_have_no_defaults() -> None:
     for function in (
         assemble_evidence_bundle,

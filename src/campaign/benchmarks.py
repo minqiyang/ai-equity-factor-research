@@ -10,6 +10,7 @@ from types import MappingProxyType
 from campaign.eligibility import FrozenDecisionTime
 from campaign.paths import (
     ContinuousHoldings,
+    HoldingInterval,
     IntervalPoint,
     advance_holdings,
     holding_interval,
@@ -71,7 +72,10 @@ def factor_matched_cost_free_comparison(
     """Compare strategy net to the frozen equal-weight membership path.
 
     Membership is read from each FrozenDecisionTime and is never recomputed
-    from later returns. The comparison is structurally cost-free.
+    from later returns. Daily strategy points map onto the governing monthly
+    frozen decision. The benchmark target resets only when the execution
+    calendar enters the next frozen factor-month. The comparison is
+    structurally cost-free.
     """
 
     if not isinstance(role, str) or not role:
@@ -90,17 +94,19 @@ def factor_matched_cost_free_comparison(
         raise TypeError("held_returns_by_interval must be a sequence")
     frozen = tuple(frozen_decisions)
     observed = tuple(held_returns_by_interval)
-    if len(frozen) != len(observed):
+    if len(observed) != len(strategy.points):
         raise ValueError(
-            "frozen_decisions and held_returns_by_interval must align"
+            "held_returns_by_interval must align with strategy intervals"
         )
-    if len(strategy.points) != len(frozen):
-        raise ValueError("strategy interval count must match frozen_decisions")
     if any(not isinstance(item, FrozenDecisionTime) for item in frozen):
         raise TypeError("frozen_decisions must contain FrozenDecisionTime")
     if any(not isinstance(item, DatedHeldReturns) for item in observed):
         raise TypeError("held_returns_by_interval must contain DatedHeldReturns")
     if not frozen:
+        if strategy.points:
+            raise ValueError(
+                "strategy interval count must match frozen_decisions"
+            )
         return BenchmarkComparison(
             role=role,
             valid=True,
@@ -119,33 +125,19 @@ def factor_matched_cost_free_comparison(
             valid=False,
             reason=_REASON_UNFORMABLE,
             hard_validity_failure=True,
-            active_returns=tuple(None for _ in frozen),
-            benchmark_gross_returns=tuple(None for _ in frozen),
+            active_returns=tuple(None for _ in strategy.points),
+            benchmark_gross_returns=tuple(None for _ in strategy.points),
             holdings=None,
             reason_counts=MappingProxyType({_REASON_UNFORMABLE: unformable}),
         )
 
-    intervals = []
-    for index, item in enumerate(frozen):
-        session_date = _aligned_session(
-            item,
-            observed[index],
-            strategy.points[index],
-        )
-        reset = (
-            frozen[index + 1].matched_benchmark_target
-            if index + 1 < len(frozen)
-            else None
-        )
-        intervals.append(
-            holding_interval(
-                session_date,
-                observed[index].held_returns,
-                reset,
-            )
-        )
+    intervals, initial_weights = _benchmark_intervals(
+        frozen,
+        observed,
+        strategy.points,
+    )
     holdings = advance_holdings(
-        frozen[0].matched_benchmark_target,
+        initial_weights,
         intervals,
         _COST_FREE_BPS,
         initial_equity,
@@ -218,6 +210,86 @@ def spy_secondary_comparison(
         holdings=None,
         reason_counts=MappingProxyType(counts),
     )
+
+
+def _benchmark_intervals(
+    frozen: tuple[FrozenDecisionTime, ...],
+    observed: tuple[DatedHeldReturns, ...],
+    strategy_points: tuple[IntervalPoint, ...],
+) -> tuple[tuple[HoldingInterval, ...], MappingProxyType[bytes, float]]:
+    if len(strategy_points) == len(frozen):
+        intervals = tuple(
+            holding_interval(
+                _aligned_session(item, observed[index], strategy_points[index]),
+                observed[index].held_returns,
+                (
+                    frozen[index + 1].matched_benchmark_target
+                    if index + 1 < len(frozen)
+                    else None
+                ),
+            )
+            for index, item in enumerate(frozen)
+        )
+        return intervals, frozen[0].matched_benchmark_target
+    if len(strategy_points) < len(frozen):
+        raise ValueError("strategy interval count must match frozen_decisions")
+    for item, point in zip(observed, strategy_points, strict=True):
+        if item.session_date != point.session_date:
+            raise ValueError(
+                "frozen decision, held returns, and strategy point must share "
+                "one session identity"
+            )
+    governors = _governing_indices(
+        frozen,
+        tuple(point.session_date for point in strategy_points),
+    )
+    intervals = []
+    for index, point in enumerate(strategy_points):
+        next_governor = (
+            governors[index + 1] if index + 1 < len(governors) else None
+        )
+        reset = (
+            frozen[next_governor].matched_benchmark_target
+            if next_governor is not None and next_governor != governors[index]
+            else None
+        )
+        intervals.append(
+            holding_interval(
+                point.session_date,
+                observed[index].held_returns,
+                reset,
+            )
+        )
+    return tuple(intervals), frozen[governors[0]].matched_benchmark_target
+
+
+def _governing_indices(
+    frozen: tuple[FrozenDecisionTime, ...],
+    session_dates: tuple[str, ...],
+) -> tuple[int, ...]:
+    signals = tuple(_strict_date(item.signal_date) for item in frozen)
+    if len(set(signals)) != len(signals):
+        raise ValueError("frozen decisions must have unique signal dates")
+    governors: list[int] = []
+    for session_date in session_dates:
+        session = _strict_date(session_date)
+        best_index = None
+        best_signal = None
+        for index, signal in enumerate(signals):
+            if signal < session and (
+                best_signal is None or signal > best_signal
+            ):
+                best_index = index
+                best_signal = signal
+        if best_index is None:
+            raise ValueError(
+                "frozen decision, held returns, and strategy point must share "
+                "one session identity"
+            )
+        governors.append(best_index)
+    if set(governors) != set(range(len(frozen))):
+        raise ValueError("strategy interval count must match frozen_decisions")
+    return tuple(governors)
 
 
 def _aligned_session(

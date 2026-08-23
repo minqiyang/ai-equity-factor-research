@@ -1,5 +1,29 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-7 daily benchmark map and per-trial status
+
+- Implemented exact-head Codex items from card `EFR-GRK-PR3-FIX-7` on
+  `codex/track-a-pr3-fix4` at start HEAD
+  `e3165f4868e0622e1825b8da5d099ae81807a414`. F-1 and F-2 stayed out of
+  scope under the recorded `REFUTE_AND_DEFER` disposition.
+- `factor_matched_cost_free_comparison` now keeps the FIX-6 one-session
+  identity check when strategy intervals match frozen decisions, and maps
+  a longer daily execution path onto the latest prior monthly
+  `FrozenDecisionTime`. The equal-weight benchmark target resets only
+  when the daily calendar enters the next frozen factor-month.
+- `assemble_evidence_bundle` now parses the bound `trial_inventory.json`
+  child and requires one structured `{trial_id, status}` record for every
+  reconciled inventory trial. Empty, short, duplicate, and unknown-trial
+  `per_trial_status` lists are `BUNDLE_PER_TRIAL_STATUS_INVALID`.
+- Already-closed calendar, grant-planning, environment, Rank IC, frozen-
+  child digest, Boolean real-vector, session-identity, and complete-root
+  binding gates were left in place.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited except the named owners above. No private panel,
+  performance value, or 14-trial run was accessed.
+- Focused campaign tests passed 155. Full suite after repo-map refresh:
+  2395 passed, 2 existing platform-conditional skipped.
+
 ## 2026-08-23 - Track A PR 3 FIX-6 frozen identity, bindings, and finite values
 
 - Implemented remaining exact-head Codex items from card

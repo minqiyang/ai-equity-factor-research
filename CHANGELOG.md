@@ -9,6 +9,13 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Closed remaining Track A PR 3 exact-head findings: factor-matched
+  benchmark comparison now maps daily execution-calendar points onto
+  monthly frozen decisions and resets membership only at the next
+  factor-month, and evidence-bundle assembly requires one structured
+  status for every reconciled inventory trial. Empty, short, duplicate,
+  and unknown-trial status lists are invalid. F-1 and F-2 remain
+  deferred. This adds no private data, result access, or 14-trial run.
 - Closed remaining Track A PR 3 exact-head findings: random-rank seeds
   now hash only the frozen factor-month identity and refuse caller
   overrides; factor-matched benchmark comparison requires the same
