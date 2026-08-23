@@ -1,0 +1,71 @@
+{
+  "inputs": {
+    "owner_index": 0,
+    "min_eligible_count": 100,
+    "min_distinct_values": 10,
+    "exchange": "XNYS",
+    "ticker_prefix": "T",
+    "ticker_width": 3,
+    "effective_from": "2014-01-01",
+    "effective_to": null,
+    "count": 12,
+    "lineage_template": {
+      "anchor_sessions": ["2025-01-02", "2025-12-01"]
+    },
+    "row_defaults": {
+      "in_universe_at_t": true,
+      "terminal_blocked_at_t": false,
+      "lookback_addressable_at_t": true,
+      "referenced_anchors": [80.0, 100.0]
+    },
+    "post_t": {
+      "execution_price_present": true,
+      "endpoint_present": true,
+      "held_return": 0.01,
+      "later_halt": false,
+      "later_delisting": false,
+      "spy_available": true,
+      "later_lineage_endpoint": "2026-12-31"
+    },
+    "post_t_mutations": {
+      "execution_price_present": false,
+      "endpoint_present": false,
+      "held_return": null,
+      "later_halt": true,
+      "later_delisting": true,
+      "spy_available": false,
+      "later_lineage_endpoint": "2027-06-30"
+    }
+  },
+  "expected": {
+    "eligible_count": 12,
+    "triggers": [
+      "ELIGIBLE_SECURITY_COUNT_BELOW_100_AT_T",
+      "DISTINCT_FINITE_FACTOR_VALUE_COUNT_BELOW_10_AT_T"
+    ],
+    "long_only_empty": true,
+    "benchmark_formable": true,
+    "benchmark_count": 12,
+    "factor_value": 0.25
+  },
+  "forbidden": {
+    "parameter_tokens": [
+      "execution_price",
+      "endpoint",
+      "held_return",
+      "halt",
+      "delist",
+      "spy",
+      "later_lineage"
+    ],
+    "field_tokens": [
+      "execution_price",
+      "endpoint",
+      "held_return",
+      "later_halt",
+      "later_delisting",
+      "spy_available",
+      "later_lineage_endpoint"
+    ]
+  }
+}

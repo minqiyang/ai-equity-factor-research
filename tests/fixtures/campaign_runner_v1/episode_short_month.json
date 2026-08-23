@@ -1,0 +1,127 @@
+{
+  "inputs": {
+    "execution_row": 0,
+    "next_monthly_execution_row": 20,
+    "endpoint_row": 21,
+    "exchange": "XNYS",
+    "effective_from": "2014-01-01",
+    "effective_to": null,
+    "weights": [0.5, 0.5],
+    "constituents": [
+      {
+        "ticker": "T000",
+        "start_anchor": 100.0,
+        "end_anchor": 121.0,
+        "target_identity": {
+          "resolved_permanent_security_id": "SECURITY-T000",
+          "resolved_listing_id": "LISTING-T000",
+          "resolved_listing_episode_id": "EPISODE-T000"
+        },
+        "alias_chain": [
+          {
+            "resolved_permanent_security_id": "SECURITY-T000",
+            "resolved_listing_id": "LISTING-T000",
+            "resolved_listing_episode_id": "EPISODE-T000",
+            "source_exchange": "XNYS",
+            "source_ticker": "T000",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "evidence-t000",
+            "transition_to_next": "TARGET_ALIAS"
+          }
+        ],
+        "anchors": [
+          {
+            "resolved_permanent_security_id": "SECURITY-T000",
+            "resolved_listing_id": "LISTING-T000",
+            "resolved_listing_episode_id": "EPISODE-T000",
+            "source_exchange": "XNYS",
+            "source_ticker": "T000",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "evidence-t000",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2024-07-01",
+            "adjusted_close": 100.0
+          },
+          {
+            "resolved_permanent_security_id": "SECURITY-T000",
+            "resolved_listing_id": "LISTING-T000",
+            "resolved_listing_episode_id": "EPISODE-T000",
+            "source_exchange": "XNYS",
+            "source_ticker": "T000",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "evidence-t000",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2024-07-31",
+            "adjusted_close": 121.0
+          }
+        ]
+      },
+      {
+        "ticker": "T001",
+        "start_anchor": 100.0,
+        "end_anchor": 81.0,
+        "target_identity": {
+          "resolved_permanent_security_id": "SECURITY-T001",
+          "resolved_listing_id": "LISTING-T001",
+          "resolved_listing_episode_id": "EPISODE-T001"
+        },
+        "alias_chain": [
+          {
+            "resolved_permanent_security_id": "SECURITY-T001",
+            "resolved_listing_id": "LISTING-T001",
+            "resolved_listing_episode_id": "EPISODE-T001",
+            "source_exchange": "XNYS",
+            "source_ticker": "T001",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "evidence-t001",
+            "transition_to_next": "TARGET_ALIAS"
+          }
+        ],
+        "anchors": [
+          {
+            "resolved_permanent_security_id": "SECURITY-T001",
+            "resolved_listing_id": "LISTING-T001",
+            "resolved_listing_episode_id": "EPISODE-T001",
+            "source_exchange": "XNYS",
+            "source_ticker": "T001",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "evidence-t001",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2024-07-01",
+            "adjusted_close": 100.0
+          },
+          {
+            "resolved_permanent_security_id": "SECURITY-T001",
+            "resolved_listing_id": "LISTING-T001",
+            "resolved_listing_episode_id": "EPISODE-T001",
+            "source_exchange": "XNYS",
+            "source_ticker": "T001",
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "evidence-t001",
+            "transition_to_next": "TARGET_ALIAS",
+            "session_date": "2024-07-31",
+            "adjusted_close": 81.0
+          }
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "constituent_returns": [0.21, -0.19],
+    "value": 0.01,
+    "valid": true,
+    "reason": null,
+    "rel_tol": 0.0,
+    "abs_tol": 1e-15
+  },
+  "forbidden": {
+    "continuous_path_slice_return": 0.10,
+    "continuous_reset_target_at_row_20": [1.0, 0.0]
+  }
+}

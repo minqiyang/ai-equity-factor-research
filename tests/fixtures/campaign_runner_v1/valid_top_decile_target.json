@@ -1,0 +1,53 @@
+{
+  "inputs": {
+    "key_spec": {
+      "exchange": "XNYS",
+      "ticker_prefix": "T",
+      "ticker_width": 3,
+      "effective_from": "2014-01-01",
+      "effective_to": null
+    },
+    "count": 100,
+    "value_mode": "index",
+    "duplicate_last": false,
+    "min_eligible_count": 100,
+    "min_distinct_values": 10
+  },
+  "expected": {
+    "triggers": [],
+    "invalid_factor_month": false,
+    "eligible_count": 100,
+    "top_decile_tickers": [
+      "T099",
+      "T098",
+      "T097",
+      "T096",
+      "T095",
+      "T094",
+      "T093",
+      "T092",
+      "T091",
+      "T090"
+    ],
+    "long_only_weight": 0.1,
+    "benchmark_count": 100,
+    "benchmark_weight": 0.01,
+    "first_rank_ticker": "T099",
+    "last_rank_ticker": "T000"
+  },
+  "forbidden": {
+    "floor_only_top_decile_size": 10,
+    "last_chunk_tickers": [
+      "T009",
+      "T008",
+      "T007",
+      "T006",
+      "T005",
+      "T004",
+      "T003",
+      "T002",
+      "T001",
+      "T000"
+    ]
+  }
+}

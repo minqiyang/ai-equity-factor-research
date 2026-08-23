@@ -1,5 +1,23 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 EXEC-2 eligibility, baselines, diagnostics
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-2` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `d493ed626f9f8f950ff2353ff53fb5ea43f16197`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- Added shippable `campaign.eligibility`, `campaign.baselines`, and
+  `campaign.diagnostics`, plus the post-`t` mutation oracle. Existing campaign
+  modules, including `inference.py` at `be2e743c…50a130`, were not edited.
+- Bound the three zero-target triggers, equal-weight/random-rank targets,
+  episode return, Spearman Rank IC, decile curve, and turnover-predecessor
+  goldens to committed synthetic fixtures. No private panel, performance
+  value, or 14-trial run was accessed.
+- Focused campaign tests passed 85. Full suite after repo-map refresh:
+  3207 passed, 2 existing platform-conditional skipped.
+- Next card remains PR3-EXEC-3: paths, costs, and benchmarks. Precondition
+  and bundle code stay out of this card.
+
 ## 2026-08-23 - Track A PR 3 EXEC-1 decision-time spine
 
 - Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-1` on

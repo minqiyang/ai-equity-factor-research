@@ -38,6 +38,147 @@ def decode_fixture_anchor(item: dict[str, Any]) -> object:
     return item["value"]
 
 
+def encode_runner_listing_key(
+    exchange: str,
+    ticker: str,
+    effective_from: str,
+    effective_to: str | None,
+) -> bytes:
+    """Encode one synthetic fixture listing key."""
+
+    from campaign.listing_key import encode_listing_lineage_key_v1
+
+    return encode_listing_lineage_key_v1(
+        exchange,
+        ticker,
+        effective_from,
+        effective_to,
+    )
+
+
+def fixture_ticker(prefix: str, width: int, index: int) -> str:
+    """Format a synthetic T000-style ticker label."""
+
+    return f"{prefix}{index:0{width}d}"
+
+
+def expand_encoded_keys(spec: dict[str, Any]) -> tuple[bytes, ...]:
+    """Encode a compact ticker-sequence listing-key spec."""
+
+    return tuple(
+        encode_runner_listing_key(
+            spec["exchange"],
+            fixture_ticker(spec["ticker_prefix"], spec["ticker_width"], index),
+            spec["effective_from"],
+            spec["effective_to"],
+        )
+        for index in range(spec["count"])
+    )
+
+
+def listing_decisions_from_numeric_spec(
+    spec: dict[str, Any],
+) -> tuple[Any, ...]:
+    """Build eligible ListingDecision values from a compact numeric spec."""
+
+    from campaign.eligibility import ListingDecision
+
+    key_spec = dict(spec["key_spec"])
+    key_spec["count"] = spec["count"]
+    keys = list(expand_encoded_keys(key_spec))
+    if spec.get("duplicate_last"):
+        keys = [keys[0], keys[0]]
+    values: list[float] = []
+    for index in range(len(keys)):
+        if spec["value_mode"] == "constant":
+            values.append(float(spec["constant_value"]))
+        else:
+            values.append(float(index))
+    return tuple(
+        ListingDecision(key, True, None, value)
+        for key, value in zip(keys, values, strict=True)
+    )
+
+
+def expand_decision_time_listings(spec: dict[str, Any]) -> tuple[Any, ...]:
+    """Expand a compact at-t listing spec into DecisionTimeListing values."""
+
+    from campaign.eligibility import DecisionTimeListing
+
+    rows = spec.get("rows")
+    if rows is None:
+        defaults = spec["row_defaults"]
+        rows = [
+            {
+                **defaults,
+                "ticker": fixture_ticker(
+                    spec["ticker_prefix"],
+                    spec["ticker_width"],
+                    index,
+                ),
+            }
+            for index in range(spec["count"])
+        ]
+
+    listings: list[Any] = []
+    for row in rows:
+        ticker = row["ticker"]
+        identity = row.get(
+            "target_identity",
+            {
+                "resolved_permanent_security_id": f"SECURITY-{ticker}",
+                "resolved_listing_id": f"LISTING-{ticker}",
+                "resolved_listing_episode_id": f"EPISODE-{ticker}",
+            },
+        )
+        alias_chain = row.get("alias_chain")
+        if alias_chain is None:
+            alias_chain = [
+                {
+                    **identity,
+                    "source_exchange": spec["exchange"],
+                    "source_ticker": ticker,
+                    "alias_effective_from": spec["effective_from"],
+                    "alias_effective_to": spec["effective_to"],
+                    "lineage_resolution_evidence_id": f"EVIDENCE-{ticker}",
+                    "transition_to_next": "TARGET_ALIAS",
+                }
+            ]
+        lineage_anchors = row.get("lineage_anchors")
+        if lineage_anchors is None:
+            template = spec["lineage_template"]
+            lineage_anchors = [
+                {
+                    **alias_chain[-1],
+                    "session_date": session,
+                    "adjusted_close": price,
+                }
+                for session, price in zip(
+                    template["anchor_sessions"],
+                    row["referenced_anchors"],
+                    strict=True,
+                )
+            ]
+        listings.append(
+            DecisionTimeListing(
+                listing_key=encode_runner_listing_key(
+                    spec["exchange"],
+                    ticker,
+                    spec["effective_from"],
+                    spec["effective_to"],
+                ),
+                in_universe_at_t=row["in_universe_at_t"],
+                terminal_blocked_at_t=row["terminal_blocked_at_t"],
+                lookback_addressable_at_t=row["lookback_addressable_at_t"],
+                referenced_anchors=tuple(row["referenced_anchors"]),
+                lineage_anchors=tuple(lineage_anchors),
+                target_identity=identity,
+                alias_chain=tuple(alias_chain),
+            )
+        )
+    return tuple(listings)
+
+
 def collect_disallowed_factor_id_literals(
     factor_ids: tuple[str, ...],
 ) -> tuple[tuple[str, int, str], ...]:

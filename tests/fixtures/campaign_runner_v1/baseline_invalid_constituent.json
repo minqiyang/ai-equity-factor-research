@@ -1,0 +1,70 @@
+{
+  "inputs": {
+    "exchange": "XNYS",
+    "effective_from": "2014-01-01",
+    "effective_to": null,
+    "weights": [0.5, 0.5],
+    "valid_constituent": {
+      "ticker": "T000",
+      "start_anchor": 100.0,
+      "end_anchor": 121.0,
+      "target_identity": {
+        "resolved_permanent_security_id": "SECURITY-T000",
+        "resolved_listing_id": "LISTING-T000",
+        "resolved_listing_episode_id": "EPISODE-T000"
+      },
+      "alias_chain": [
+        {
+          "resolved_permanent_security_id": "SECURITY-T000",
+          "resolved_listing_id": "LISTING-T000",
+          "resolved_listing_episode_id": "EPISODE-T000",
+          "source_exchange": "XNYS",
+          "source_ticker": "T000",
+          "alias_effective_from": "2014-01-01",
+          "alias_effective_to": null,
+          "lineage_resolution_evidence_id": "evidence-t000",
+          "transition_to_next": "TARGET_ALIAS"
+        }
+      ],
+      "anchors": [
+        {
+          "resolved_permanent_security_id": "SECURITY-T000",
+          "resolved_listing_id": "LISTING-T000",
+          "resolved_listing_episode_id": "EPISODE-T000",
+          "source_exchange": "XNYS",
+          "source_ticker": "T000",
+          "alias_effective_from": "2014-01-01",
+          "alias_effective_to": null,
+          "lineage_resolution_evidence_id": "evidence-t000",
+          "transition_to_next": "TARGET_ALIAS",
+          "session_date": "2024-07-01",
+          "adjusted_close": 100.0
+        },
+        {
+          "resolved_permanent_security_id": "SECURITY-T000",
+          "resolved_listing_id": "LISTING-T000",
+          "resolved_listing_episode_id": "EPISODE-T000",
+          "source_exchange": "XNYS",
+          "source_ticker": "T000",
+          "alias_effective_from": "2014-01-01",
+          "alias_effective_to": null,
+          "lineage_resolution_evidence_id": "evidence-t000",
+          "transition_to_next": "TARGET_ALIAS",
+          "session_date": "2024-07-31",
+          "adjusted_close": 121.0
+        }
+      ]
+    },
+    "invalid_ticker": "T001"
+  },
+  "expected": {
+    "valid": false,
+    "value": null,
+    "reason": "CONSTITUENT_RETURN_MISSING",
+    "zero_target_reason": "ZERO_TARGET"
+  },
+  "forbidden": {
+    "survivor_renormalized_return": 0.21,
+    "half_survivor_return": 0.105
+  }
+}

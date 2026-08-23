@@ -9,6 +9,12 @@ profitability, or trading readiness.
 
 ### Added
 
+- Added the Track A PR 3 EXEC-2 decision-time eligibility, baseline-target,
+  and diagnostic surface: the five frozen-at-`t` objects, the three named
+  zero-target triggers, equal-weight and random-rank targets, the static
+  episode return, Spearman Rank IC, decile-curve diagnostics, and the
+  post-`t` mutation oracle. Existing frozen campaign modules are unchanged.
+  This adds no private data, result access, or 14-trial run.
 - Added the Track A PR 3 EXEC-1 decision-time spine: a derived factor
   registry, `factor_anchor_lineage_v1`, the common-session schedule, and
   one simple adjusted-close return gate, each bound to committed synthetic
