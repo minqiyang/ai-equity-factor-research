@@ -1,5 +1,22 @@
 # Engineering Log
 
+## 2026-08-23 - Track A PR 3 FIX-1 calendar binding and unreadable refusals
+
+- Implemented frozen binding plan v3 card `EFR-GRK-PR3-FIX-1` on
+  `codex/track-a-pr3-exec1` at start HEAD
+  `d6ec9cec3b87600a9ebea431df30c20e7ec5b5a9`. Plan bytes
+  `237194a9…bc90d` remained the immutable input.
+- `authorize` now refuses unless `RunConfig.calendar_id` and
+  `calendar_version` match `record["calendar"]` and the detached binding.
+  Missing or unreadable acceptance, grant, protocol, inventory, and binding
+  locators return `Authorization(status="REFUSED", ...)` with stable
+  reasons instead of raising `OSError`.
+- Existing campaign modules, including `inference.py` at `be2e743c…50a130`,
+  were not edited. No private panel, performance value, or 14-trial run was
+  accessed.
+- Focused campaign tests passed 137. Full suite after repo-map refresh:
+  3259 passed, 2 existing platform-conditional skipped.
+
 ## 2026-08-23 - Track A PR 3 EXEC-5 import-boundary, conformance, docs, CI
 
 - Implemented frozen binding plan v3 card `EFR-GRK-PR3-EXEC-5` on

@@ -43,6 +43,12 @@ _REASON_GRANT_UNPARSEABLE = "STAGE2_GRANT_UNPARSEABLE"
 _REASON_GRANT_SCHEMA = "STAGE2_GRANT_SCHEMA_INVALID"
 _REASON_BINDING_UNPARSEABLE = "DETACHED_BINDING_UNPARSEABLE"
 _REASON_BINDING_SCHEMA = "DETACHED_BINDING_SCHEMA_INVALID"
+_REASON_ACCEPTANCE_ABSENT = "ACCEPTANCE_RECORD_ABSENT"
+_REASON_GRANT_ABSENT = "STAGE2_GRANT_ABSENT"
+_REASON_PROTOCOL_ABSENT = "PROTOCOL_FREEZE_ABSENT"
+_REASON_INVENTORY_ABSENT = "TRIAL_INVENTORY_ABSENT"
+_REASON_CALENDAR_ID = "CALENDAR_ID_MISMATCH"
+_REASON_CALENDAR_VERSION = "CALENDAR_VERSION_MISMATCH"
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -207,6 +213,8 @@ _BINDING_TOP = frozenset(
         "runner_code_sha",
         "environment_id",
         "environment_lock_sha256",
+        "calendar_id",
+        "calendar_version",
         "protocol_file_sha256",
         "trial_inventory_file_sha256",
         "acceptance_record_file_sha256",
@@ -261,7 +269,12 @@ class Authorization:
 def authorize(config: object) -> Authorization:
     """Return AUTHORIZED only after P-1 through P-5 succeed in order."""
 
-    raw = _read_octets(getattr(config, "acceptance_record_file"))
+    raw = _read_octets(
+        getattr(config, "acceptance_record_file"),
+        _REASON_ACCEPTANCE_ABSENT,
+    )
+    if isinstance(raw, Authorization):
+        return raw
     expected_file = _hex64(
         getattr(config, "acceptance_record_file_sha256"),
         "acceptance_record_file_sha256",
@@ -303,13 +316,23 @@ def authorize(config: object) -> Authorization:
     if grant_auth is not None:
         return grant_auth
 
-    protocol_raw = _read_octets(getattr(config, "protocol_file"))
+    protocol_raw = _read_octets(
+        getattr(config, "protocol_file"),
+        _REASON_PROTOCOL_ABSENT,
+    )
+    if isinstance(protocol_raw, Authorization):
+        return protocol_raw
     if sha256_hex(protocol_raw) != _hex64(
         getattr(config, "protocol_file_sha256"),
         "protocol_file_sha256",
     ):
         return _refuse(_REASON_PROTOCOL)
-    inventory_raw = _read_octets(getattr(config, "trial_inventory_file"))
+    inventory_raw = _read_octets(
+        getattr(config, "trial_inventory_file"),
+        _REASON_INVENTORY_ABSENT,
+    )
+    if isinstance(inventory_raw, Authorization):
+        return inventory_raw
     if sha256_hex(inventory_raw) != _hex64(
         getattr(config, "trial_inventory_file_sha256"),
         "trial_inventory_file_sha256",
@@ -365,11 +388,22 @@ def _authorize_record_fields(
         "decision_identity_sha256",
     ):
         return _refuse("DECISION_IDENTITY_NOT_THE_BOUND_IDENTITY")
+    calendar = record["calendar"]
+    assert isinstance(calendar, dict)
+    if calendar["calendar_id"] != getattr(config, "calendar_id"):
+        return _refuse(_REASON_CALENDAR_ID)
+    if calendar["calendar_version"] != getattr(config, "calendar_version"):
+        return _refuse(_REASON_CALENDAR_VERSION)
     return None
 
 
 def _load_grant(config: object) -> Authorization | dict[str, object]:
-    raw = _read_octets(getattr(config, "stage2_grant_file"))
+    raw = _read_octets(
+        getattr(config, "stage2_grant_file"),
+        _REASON_GRANT_ABSENT,
+    )
+    if isinstance(raw, Authorization):
+        return raw
     if sha256_hex(raw) != _hex64(
         getattr(config, "stage2_grant_file_sha256"),
         "stage2_grant_file_sha256",
@@ -419,13 +453,12 @@ def _authorize_grant_fields(
 
 
 def _authorize_binding(config: object) -> Authorization | dict[str, object]:
-    locator = getattr(config, "detached_binding_file")
-    if not isinstance(locator, str) or not locator:
-        return _refuse(_REASON_BINDING_ABSENT)
-    binding_file = Path(locator)
-    if not binding_file.is_file():
-        return _refuse(_REASON_BINDING_ABSENT)
-    raw = binding_file.read_bytes()
+    raw = _read_octets(
+        getattr(config, "detached_binding_file"),
+        _REASON_BINDING_ABSENT,
+    )
+    if isinstance(raw, Authorization):
+        return raw
     try:
         parsed = parse_json_bytes(raw)
     except ValidationError:
@@ -441,6 +474,8 @@ def _authorize_binding(config: object) -> Authorization | dict[str, object]:
         "runner_code_sha": getattr(config, "runner_code_sha"),
         "environment_id": getattr(config, "environment_id"),
         "environment_lock_sha256": getattr(config, "environment_lock_sha256"),
+        "calendar_id": getattr(config, "calendar_id"),
+        "calendar_version": getattr(config, "calendar_version"),
         "protocol_file_sha256": getattr(config, "protocol_file_sha256"),
         "trial_inventory_file_sha256": getattr(
             config, "trial_inventory_file_sha256"
@@ -678,6 +713,10 @@ def _binding_schema_valid(value: object) -> bool:
         return False
     if not _nonempty_string(value["environment_id"]):
         return False
+    if not _nonempty_string(value["calendar_id"]):
+        return False
+    if not _nonempty_string(value["calendar_version"]):
+        return False
     if not _is_git_sha(value["runner_code_sha"]):
         return False
     for key in (
@@ -731,10 +770,16 @@ def _as_utc_timestamp(value: object) -> str | None:
         return None
 
 
-def _read_octets(locator: object) -> bytes:
+def _read_octets(locator: object, absent_reason: str) -> bytes | Authorization:
     if not isinstance(locator, str) or not locator:
-        raise ValueError("file locator must be a nonempty string")
-    return Path(locator).read_bytes()
+        return _refuse(absent_reason)
+    path = Path(locator)
+    try:
+        if not path.is_file():
+            return _refuse(absent_reason)
+        return path.read_bytes()
+    except OSError:
+        return _refuse(absent_reason)
 
 
 def _hex64(value: object, name: str) -> str:

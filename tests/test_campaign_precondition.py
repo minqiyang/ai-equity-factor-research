@@ -312,3 +312,60 @@ def test_authorize_has_no_defaults() -> None:
     for parameter in inspect.signature(authorize).parameters.values():
         assert parameter.default is inspect.Parameter.empty
     assert "acceptance_record_sha256" in IDENTITY_EXCLUDE
+
+
+def test_calendar_mutation_refuses_before_authorized(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("calendar_binding_mutation.json")
+    expected = fixture["expected"]
+    inputs = fixture["inputs"]
+    calendar_id = authorize(
+        _authorized_config(calendar_id=inputs["wrong_calendar_id"])
+    )
+    assert calendar_id.status == expected["status"]
+    assert calendar_id.reason == expected["calendar_id_reason"]
+    calendar_version = authorize(
+        _authorized_config(calendar_version=inputs["wrong_calendar_version"])
+    )
+    assert calendar_version.status == expected["status"]
+    assert calendar_version.reason == expected["calendar_version_reason"]
+    binding = json.loads(
+        fixture_file("precondition/binding_valid.json").read_text(encoding="utf-8")
+    )
+    binding["calendar_id"] = inputs["wrong_calendar_id"]
+    id_path = tmp_path / "binding_calendar_id.json"
+    _write_json(id_path, binding)
+    binding_id = authorize(_authorized_config(detached_binding_file=str(id_path)))
+    assert binding_id.status == expected["status"]
+    assert binding_id.reason == expected["binding_field_reason"]
+    binding["calendar_id"] = _authorized_config().calendar_id
+    binding["calendar_version"] = inputs["wrong_calendar_version"]
+    version_path = tmp_path / "binding_calendar_version.json"
+    _write_json(version_path, binding)
+    binding_version = authorize(
+        _authorized_config(detached_binding_file=str(version_path))
+    )
+    assert binding_version.status == expected["status"]
+    assert binding_version.reason == expected["binding_field_reason"]
+    assert fixture["forbidden"]["authorize_altered_calendar"]
+
+
+def test_missing_or_unreadable_authorization_inputs_refuse(
+    tmp_path: Path,
+) -> None:
+    fixture = load_runner_fixture("authorization_unreadable_inputs.json")
+    expected = fixture["expected"]
+    missing = tmp_path / fixture["inputs"]["missing_name"]
+    unreadable = tmp_path / fixture["inputs"]["unreadable_name"]
+    unreadable.mkdir()
+    for case in fixture["inputs"]["cases"]:
+        absent = authorize(
+            _authorized_config(**{case["config_field"]: str(missing)})
+        )
+        assert absent.status == expected["status"], case
+        assert absent.reason == case["reason"], case
+        blocked = authorize(
+            _authorized_config(**{case["config_field"]: str(unreadable)})
+        )
+        assert blocked.status == expected["status"], case
+        assert blocked.reason == case["reason"], case
+    assert fixture["forbidden"]["raise_oserror"]

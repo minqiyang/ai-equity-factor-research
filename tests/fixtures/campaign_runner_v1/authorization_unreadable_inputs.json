@@ -1,0 +1,34 @@
+{
+  "inputs": {
+    "missing_name": "missing-authorization-input.json",
+    "unreadable_name": "unreadable-authorization-input.json",
+    "cases": [
+      {
+        "config_field": "acceptance_record_file",
+        "reason": "ACCEPTANCE_RECORD_ABSENT"
+      },
+      {
+        "config_field": "stage2_grant_file",
+        "reason": "STAGE2_GRANT_ABSENT"
+      },
+      {
+        "config_field": "protocol_file",
+        "reason": "PROTOCOL_FREEZE_ABSENT"
+      },
+      {
+        "config_field": "trial_inventory_file",
+        "reason": "TRIAL_INVENTORY_ABSENT"
+      },
+      {
+        "config_field": "detached_binding_file",
+        "reason": "DETACHED_BINDING_ABSENT"
+      }
+    ]
+  },
+  "expected": {
+    "status": "REFUSED"
+  },
+  "forbidden": {
+    "raise_oserror": true
+  }
+}
