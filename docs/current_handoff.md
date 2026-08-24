@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-08-23 after public-safe Track A PR 2 progress publication.
+Updated: 2026-08-24 after protected merges of Track A PR 3 and README status.
 
 Canonical responsibility: the latest recorded operational checkpoint, exact
 last-verified repository and PR facts, immediate blockers or owner decisions,
@@ -24,54 +24,56 @@ requirements.
 ## Latest Recorded Operational Checkpoint
 
 - Last externally verified protected baseline when this handoff was authored:
-  `6957473bdbc5d92c7227d74785d4fc4bc097d035`.
+  `cc90b34602ee54117ac5bca2445a73b7cac7b90a`.
 - Historical CCA1 start baseline:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
 - PR #180 is merged. It records the long-term factor-to-portfolio direction
   and leaves the frozen Track A campaign in place.
 - PR #181 is merged at `12e280d9afa2f23aa2850b13a08f7e8447c4b89e`. It
   records the authorized same-PR protected lifecycle.
-- PR #182, #183, #184, and #185 later merged protocol-core and Stage 1
-  public-safe records.
+- PR #186 published the PR 2 validator and public-safe status hashes.
+- PR #187 merged the bounded diagnostic runner at
+  `bcb169e80ccc1566321f08e201a808663366da15` from final head
+  `4a67618a7571aaee8c49c1d100c6f12f36365b16`.
+- PR #188 refreshed README program status on the same protected baseline.
 - PR #177 remains the accepted Track A PR 1 research baseline at merge
   `f50b6e77b0c3a0226e246459e2a394d1489210ac`, from final head
   `c04133315911c74c96e77984b5968792434aee8f`.
 - PR #178 merged the governance convergence, and Draft PR #148 was
   closed without merge after that work absorbed its valid intent.
 - No pull request was open at the verified start of this work.
-- This publication began from a clean
-  `codex/pr2-public-progress-sync` branch. Its live PR and merge state
-  must be checked separately after publication.
+- This publication began from a clean `main` checkout at the baseline above.
+  Its live PR and merge state must be checked separately after publication.
 - Raw private data, ticker lists, provider responses, and performance values
   remain outside the public repository.
 
 ## Recorded Delivery Scope
 
-- Publish the Track A PR 2 validator and public-safe status: hashes, counts,
-  allowlisted projection, and safe decision fields.
-- Bind the private manifest, freeze record, and full decision by hash only.
+- Refresh public handoff, roadmap, and PR 2 status so a GitHub clone sees
+  post-PR 3 stage facts and hash-bound `DIAGNOSTIC_READY` acceptance.
+- Bind private manifests, freeze records, and acceptance bodies by hash only.
 - The frozen campaign contract, preregistration, 14-trial inventory, and
   `DIAGNOSTIC_ONLY` ceiling remain in place.
 
 ## Current Research Gate Summary
 
 Stage 1 is accepted. See `docs/current_roadmap.md` and
-`docs/track_a_pr2_public_status.md`. Track A PR 2 has a public validator and a
-local `diagnostic_only` dataset-review decision. Dataset acceptance is not granted.
+`docs/track_a_pr2_public_status.md`. PR 2 public surfaces and campaign
+`DIAGNOSTIC_READY` hashes are recorded. Formal interpretation is not granted.
+PR 3 runner code is on protected main. Detached pre-run binding is next.
 
 ## Immediate Blockers Or Owner Decisions
 
-- Materiality thresholds are proposed and await exact-SHA approval.
-- Dataset acceptance of `diagnostic_only` as stage 2 is not granted.
+- Detached pre-run binding is not complete and still blocks the 14-trial run.
 - Terminal-event policy is explicitly deferred.
-- D8 materialization, result access, the 14-trial run, A2, and purchases
-  stay closed.
+- D8 materialization, result access, A2, and purchases stay closed.
+- Private control-tree bodies remain off GitHub and need a private channel.
 
 ## Next Safe Action
 
-- Owner exact-SHA approve or reject the materiality proposal, then decide
-  stage 2. Continue from `docs/track_a_pr2_public_status.md` and the
-  controller. Private artifact bodies remain on the originating workstation.
+- Start detached pre-run binding under `DIAGNOSTIC_ONLY`, or keep only
+  public-safe documentation hygiene.
+- Do not run the 14 trials or enter D8 until that binding verifies.
 
 ## Source Routing
 

@@ -1,5 +1,19 @@
 # Engineering Log
 
+## 2026-08-24 - Public docs sync for post-PR3 resume surface
+
+- Updated `docs/current_handoff.md` and `docs/current_roadmap.md` so protected
+  `main` no longer points readers at already-closed PR2 owner gates.
+- Refreshed `docs/track_a_pr2_public_status.md` and
+  `docs/track_a_pr2_public_status_v1.json` with campaign `DIAGNOSTIC_READY`
+  acceptance hashes, materiality exact-SHA approval, PR #187 merge identity,
+  and next stage `DETACHED_PRE_RUN_BINDING`.
+- Recorded that formal interpretation remains not granted, evidence ceiling
+  remains `DIAGNOSTIC_ONLY`, the 14-trial run has not executed, and private
+  control-tree bodies are not on GitHub.
+- No runner, validator, private data, or result-bearing behavior changed.
+
+
 ## 2026-08-23 - Track A PR 3 FIX-12 ledger cross-product equivalence
 
 - Implemented exact-head Codex item from card `EFR-GRK-PR3-FIX-12` on

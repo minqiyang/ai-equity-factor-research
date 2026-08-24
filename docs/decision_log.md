@@ -15,6 +15,49 @@ investment performance.
 
 ---
 
+## 2026-08-24 - Public Docs Sync After PR 3 And README Merges
+
+Context:
+
+- Protected `main` reached `cc90b34602ee54117ac5bca2445a73b7cac7b90a` after
+  PR #187 (bounded diagnostic runner) and PR #188 (README program status).
+- Public handoff, roadmap, and PR 2 status still described pre-PR3 state:
+  materiality awaiting approval, Stage 2 not granted, PR 3 blocked.
+- The owner wants GitHub clone readers and other machines to see the newest
+  public-safe program state.
+
+Decision:
+
+- Replace stale public handoff and roadmap checkpoints with post-#187/#188
+  facts.
+- Publish campaign `DIAGNOSTIC_READY` acceptance and materiality exact-SHA
+  approval as hashes only, while keeping formal interpretation not granted
+  and the evidence ceiling `DIAGNOSTIC_ONLY`.
+- Record detached pre-run binding as the next roadmap stage.
+- Do not upload private control-tree bodies; state explicitly that private
+  cards still need a private-channel `private_data` transfer.
+
+Rationale:
+
+- Public process docs are the resume surface for another machine or reader.
+- Stale "next owner gate" text would send a fresh clone to already-closed gates.
+- Hash-bound acceptance facts are allowed public aggregates under Stage 1 terms.
+
+Consequences:
+
+- A GitHub clone can see PR 2/PR 3 public completion state and the true next
+  stage (detached binding).
+- Private acceptance bodies, freeze bodies, and evidence packs remain local.
+- No 14-trial run, performance access, D8, or A2 is authorized by this docs
+  change.
+
+Follow-up:
+
+- Start Stage 4 detached pre-run binding under `DIAGNOSTIC_ONLY`.
+- Keep public docs updated whenever a protected merge changes stage status.
+
+---
+
 ## 2026-08-23 - Publish Public-Safe Track A PR 2 Progress
 
 Context:
