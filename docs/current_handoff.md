@@ -1,6 +1,7 @@
 # Current Handoff
 
-Updated: 2026-08-23 after public-safe Track A PR 2 progress publication.
+Updated: 2026-08-24 after protected merges of Track A PR 3 (#187) and the
+README program-status sync (#188).
 
 Canonical responsibility: the latest recorded operational checkpoint, exact
 last-verified repository and PR facts, immediate blockers or owner decisions,
@@ -23,55 +24,73 @@ requirements.
 
 ## Latest Recorded Operational Checkpoint
 
-- Last externally verified protected baseline when this handoff was authored:
-  `6957473bdbc5d92c7227d74785d4fc4bc097d035`.
+- Last externally verified protected `main` when this handoff was authored:
+  `cc90b34602ee54117ac5bca2445a73b7cac7b90a`.
 - Historical CCA1 start baseline:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
-- PR #180 is merged. It records the long-term factor-to-portfolio direction
-  and leaves the frozen Track A campaign in place.
-- PR #181 is merged at `12e280d9afa2f23aa2850b13a08f7e8447c4b89e`. It
-  records the authorized same-PR protected lifecycle.
-- PR #182, #183, #184, and #185 later merged protocol-core and Stage 1
-  public-safe records.
-- PR #177 remains the accepted Track A PR 1 research baseline at merge
-  `f50b6e77b0c3a0226e246459e2a394d1489210ac`, from final head
-  `c04133315911c74c96e77984b5968792434aee8f`.
-- PR #178 merged the governance convergence, and Draft PR #148 was
-  closed without merge after that work absorbed its valid intent.
-- No pull request was open at the verified start of this work.
-- This publication began from a clean
-  `codex/pr2-public-progress-sync` branch. Its live PR and merge state
-  must be checked separately after publication.
-- Raw private data, ticker lists, provider responses, and performance values
-  remain outside the public repository.
+- Stage 1 is accepted. Public-safe record:
+  `docs/stage1_accepted_public_record_v1.json`.
+- Track A PR 2 public validator and status are on `main` through PR #186.
+  Public status: `docs/track_a_pr2_public_status.md` and
+  `docs/track_a_pr2_public_status_v1.json`.
+- Blinded dataset-review class remains `diagnostic_only`
+  (`docs/dataset_review_public_projection_v1.json`).
+- Campaign dataset acceptance under the diagnostic ceiling is
+  `DIAGNOSTIC_READY`, bound by public hashes in the PR 2 status record.
+  Formal interpretation acceptance is not granted. Evidence ceiling remains
+  `DIAGNOSTIC_ONLY`.
+- Track A PR 3 bounded diagnostic runner code is on `main` through PR #187
+  merge `bcb169e80ccc1566321f08e201a808663366da15` (final PR head
+  `4a67618a7571aaee8c49c1d100c6f12f36365b16`). Package surface:
+  `src/campaign/` plus synthetic fixtures.
+- README program status was refreshed through PR #188 merge
+  `cc90b34602ee54117ac5bca2445a73b7cac7b90a`.
+- The 14-trial diagnostic run has not executed. No performance values are
+  published.
+- Raw private data, ticker lists, provider responses, private filesystem
+  paths, and full private control-tree bodies remain outside this repository.
 
 ## Recorded Delivery Scope
 
-- Publish the Track A PR 2 validator and public-safe status: hashes, counts,
-  allowlisted projection, and safe decision fields.
-- Bind the private manifest, freeze record, and full decision by hash only.
-- The frozen campaign contract, preregistration, 14-trial inventory, and
-  `DIAGNOSTIC_ONLY` ceiling remain in place.
+- Keep public GitHub current for another machine or reader: roadmap, handoff,
+  decision log, engineering log, and public-safe status/hash records.
+- Bind private manifests, freeze records, acceptance bodies, and evidence packs
+  by hash only in public docs.
+- Do not upload raw private data.
 
 ## Current Research Gate Summary
 
-Stage 1 is accepted. See `docs/current_roadmap.md` and
-`docs/track_a_pr2_public_status.md`. Track A PR 2 has a public validator and a
-local `diagnostic_only` dataset-review decision. Dataset acceptance is not granted.
+| Stage | Public status |
+| --- | --- |
+| Stage 1 entitlement/retention/publication | Accepted |
+| Track A PR 2 validator + public-safe status | On `main` |
+| Campaign dataset acceptance class | `DIAGNOSTIC_READY` under `DIAGNOSTIC_ONLY` |
+| Formal interpretation / promotion acceptance | Not granted |
+| Track A PR 3 bounded runner code | On `main` via #187 |
+| Detached pre-run binding | Not complete |
+| Track A PR 4 fourteen-trial evidence | Not started |
+| D8 materialization, A2, result access | Closed |
 
 ## Immediate Blockers Or Owner Decisions
 
-- Materiality thresholds are proposed and await exact-SHA approval.
-- Dataset acceptance of `diagnostic_only` as stage 2 is not granted.
-- Terminal-event policy is explicitly deferred.
-- D8 materialization, result access, the 14-trial run, A2, and purchases
-  stay closed.
+- Detached pre-run binding must freeze exact code, configuration, environment,
+  protocol, trial inventory, and accepted-dataset identities outside the repo
+  before any result-bearing run.
+- Terminal-event policy remains explicitly deferred; contract default still
+  blocks unresolved return-relevant terminals and counts them.
+- D8 materialization, A2 exchange retrieval, identity reopen, purchases, and
+  performance/result access remain closed.
+- Another machine can resume **public** work from this clone. Continuing
+  **private** cards still requires a private-channel copy of the local
+  `private_data` control tree; GitHub alone is not sufficient.
 
 ## Next Safe Action
 
-- Owner exact-SHA approve or reject the materiality proposal, then decide
-  stage 2. Continue from `docs/track_a_pr2_public_status.md` and the
-  controller. Private artifact bodies remain on the originating workstation.
+- Start Stage 4 detached pre-run binding under the frozen PR 3 plan and the
+  `DIAGNOSTIC_ONLY` ceiling, or continue only documentation hygiene that does
+  not claim run results.
+- Do not run the 14 trials, access performance, or enter D8 until binding is
+  complete and any required owner gates are recorded.
 
 ## Source Routing
 
@@ -83,5 +102,8 @@ local `diagnostic_only` dataset-review decision. Dataset acceptance is not grant
 - Long-term evidence policy: `docs/research_program_charter.md`.
 - Track A protocol and gate semantics:
   `docs/eodhd_sp500_diagnostic_campaign_contract.md` and its preregistrations.
+- Public-safe PR 2 / Stage 1 records:
+  `docs/track_a_pr2_public_status.md`,
+  `docs/stage1_accepted_public_record_v1.json`.
 - Historical decisions, validation, and failures: `docs/decision_log.md`,
   `docs/engineering_log.md`, and `docs/troubleshooting_log.md`.

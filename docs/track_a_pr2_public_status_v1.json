@@ -1,17 +1,21 @@
 {
   "artifact_id": "track_a_pr2_public_status_v1",
-  "updated_utc": "2026-08-23",
+  "updated_utc": "2026-08-24",
   "operating_standard": {
-    "name": "herdr_pi_coordinator_standard_v2.6.md",
-    "sha256": "7b534bb340e5a9600bd4ba646abd435d59ac7ad467cbdc26cbc97f0d9ab0c659"
+    "name": "herdr_pi_coordinator_standard_v3.md",
+    "sha256": "f3e3560c2fa0b67895b1f2aad96cc397728f6924c1fd551b8ea12dcdd2d7f594"
   },
   "evidence_ceiling": "DIAGNOSTIC_ONLY",
-  "dataset_acceptance": "NOT_GRANTED",
+  "dataset_review_decision": "diagnostic_only",
+  "campaign_dataset_acceptance": "DIAGNOSTIC_READY",
+  "formal_interpretation_acceptance": "NOT_GRANTED",
   "materialization": "NOT_ENTERED",
+  "protected_main_sha_at_update": "cc90b34602ee54117ac5bca2445a73b7cac7b90a",
   "validator": {
     "package": "src/pit_manifest_validator_v1",
     "package_tree_sha256": "6b8573c4f7ed72be3866d61690648274bc431f013e8f284daaf35a399e6ffc3f",
-    "canonicalization_id": "pit_canonical_json_v1"
+    "canonicalization_id": "pit_canonical_json_v1",
+    "public_pr": 186
   },
   "plan_v2_sha256": "79ef61a26fe92b750c42a2af079db024a86d6c19fb0295fc10c98fc399bc2a81",
   "private_manifest": {
@@ -32,6 +36,16 @@
     "reviewer_id": "efr-dsrev",
     "gate": "CRITICAL_3_OF_3_PASS"
   },
+  "campaign_acceptance": {
+    "dataset_acceptance": "DIAGNOSTIC_READY",
+    "acceptance_record_sha256": "1f0c92f0fc8001f08e95d2004c571751a5ceb3696f077cbb5df10895c78e0039",
+    "acceptance_record_file_sha256": "7cfea361fd2042f09f8b046db22c29d7a3531b8aaf656d63b30dca92d9c6d73d",
+    "stage2_grant_choice": "GRANT_STAGE2_DIAGNOSTIC_READY",
+    "stage2_grant_file_sha256": "681ab6e243b9992b0bfa2714385e5bac5126408989d1e936c8c2ff2c659b2dde",
+    "materiality_proposal_sha256": "d52b1441f6f66f650da082f01d2f2060c304cb12c3eefcc83ce540291d81e6e5",
+    "materiality_approval_choice": "APPROVE_EXACT_SHA",
+    "materiality_approval_file_sha256": "0816d9c67df95dbdd53808578043c075e3c848f9db5ca2949093c89ce823eca8"
+  },
   "identity": {
     "identities_adjudicated": 189,
     "accepted_identities": 0,
@@ -39,10 +53,19 @@
   },
   "owner_gates": {
     "terminal_event_policy": "EXPLICIT_DEFER",
-    "materiality_thresholds": "PROPOSED_AWAITING_EXACT_SHA",
+    "materiality_thresholds": "APPROVED_EXACT_SHA",
     "materiality_proposal_sha256": "d52b1441f6f66f650da082f01d2f2060c304cb12c3eefcc83ce540291d81e6e5",
-    "dataset_acceptance": "NOT_GRANTED",
-    "publication_of_this_public_safe_set": "OWNER_AUTHORIZED_2026-08-23"
+    "campaign_dataset_acceptance": "DIAGNOSTIC_READY",
+    "formal_interpretation_acceptance": "NOT_GRANTED",
+    "publication_of_this_public_safe_set": "OWNER_AUTHORIZED_AND_MERGED"
+  },
+  "downstream_public_code": {
+    "track_a_pr3_runner_merged": true,
+    "track_a_pr3_merge_pr": 187,
+    "track_a_pr3_merge_commit": "bcb169e80ccc1566321f08e201a808663366da15",
+    "track_a_pr3_final_head": "4a67618a7571aaee8c49c1d100c6f12f36365b16",
+    "fourteen_trial_run_executed": false,
+    "detached_pre_run_binding_complete": false
   },
   "counts": {
     "coverage_constraints": 450,
@@ -59,6 +82,9 @@
     "full_private_manifest",
     "freeze_record_body",
     "evidence_pack_body",
-    "full_dataset_review_decision_body"
-  ]
+    "full_dataset_review_decision_body",
+    "full_acceptance_record_body",
+    "private_program_control_tree"
+  ],
+  "next_stage": "DETACHED_PRE_RUN_BINDING"
 }
