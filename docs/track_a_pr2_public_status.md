@@ -1,6 +1,6 @@
 # Track A PR 2 Public Status
 
-Updated: 2026-08-24
+Updated: 2026-08-25
 
 Public-safe progress for Track A PR 2 and the diagnostic-track acceptance
 that unblocked PR 3. Machine-readable hashes and counts:
@@ -29,12 +29,22 @@ Safe decision fields:
 - Identity: 189 adjudicated, 0 accepted, D7 terminal fail-closed.
 - Track A PR 3 bounded runner code later landed on `main` through PR #187.
   That does not complete detached binding or the 14-trial run.
+- Stage 4 G-2 binding is accepted by hash. Acceptance-file SHA
+  `84f1ce471af19b4473a2a3bfa9ffb65b08927cc0218c55bd6922a7ddc5c30de0`.
+  Frozen plan markdown SHA
+  `d847c6305469b050f3d2e0426ff589cf422a2fa1f54044b9dcf037963567f992`.
+  EXEC-2 fileset SHA
+  `29aeec97ebc8146fccac1f575c1c098cbc9db2b106831a1b53d12e7ad2995c92`.
+  Protected main at acceptance
+  `11a9cb8849b5239faa1081eda046d2254a12febc`. Stage 4 is not fully complete.
+  The 14-trial run has not executed.
 
 ## Not in this repository
 
 Raw vendor rows, ticker lists, private filesystem paths, provider responses,
 the full private manifest, the freeze-record body, the evidence pack, the full
-decision record, and the full acceptance-record body stay off GitHub.
+decision record, the full acceptance-record body, the G-2 acceptance-file body,
+the frozen plan markdown body, and the EXEC-2 fileset body stay off GitHub.
 
 ## Closed owner gates (diagnostic track)
 
@@ -42,19 +52,22 @@ decision record, and the full acceptance-record body stay off GitHub.
 2. `diagnostic_only` plus `DIAGNOSTIC_READY` acceptance: accepted for the
    diagnostic track under `DIAGNOSTIC_ONLY`.
 3. Public-safe PR 2 publication set: on `main`.
+4. Stage 4 G-2 binding: accepted by hash under `DIAGNOSTIC_ONLY`.
 
 ## Still closed
 
 - Formal interpretation / promotion acceptance
 - D8 materialization
 - Result or performance access
-- Fourteen-trial run (needs detached pre-run binding first)
+- Remaining Stage 4 detached pre-run binding after G-2
+- Fourteen-trial run
 - A2 exchange retrieval
 - Identity reopen
 - Raw private upload
 
 ## Next
 
-Detached pre-run binding, then Track A PR 4 evidence only after binding
-verifies. Another machine can read this public status from GitHub; private
-control-tree bodies still require a private-channel transfer.
+Remaining Stage 4 detached pre-run binding after G-2, then Track A PR 4
+evidence only after remaining binding verifies. Another machine can read this
+public status from GitHub; private control-tree bodies still require a
+private-channel transfer.

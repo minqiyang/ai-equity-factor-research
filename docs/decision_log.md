@@ -15,6 +15,51 @@ investment performance.
 
 ---
 
+## 2026-08-25 - Public-Safe Stage 4 G-2 Status
+
+Context:
+
+- Protected `main` is `11a9cb8849b5239faa1081eda046d2254a12febc` after
+  PR #189.
+- Stage 4 G-2 binding is accepted privately. Public docs still described
+  detached pre-run binding as unstarted.
+- The owner authorized public-safe G-4 status only: hashes, not bodies.
+
+Decision:
+
+- Record Stage 4 G-2 as accepted by hash on the public handoff, roadmap,
+  and PR 2 status surfaces.
+- Publish only the allowed hashes: G-2 acceptance file
+  `84f1ce471af19b4473a2a3bfa9ffb65b08927cc0218c55bd6922a7ddc5c30de0`,
+  frozen plan markdown
+  `d847c6305469b050f3d2e0426ff589cf422a2fa1f54044b9dcf037963567f992`,
+  EXEC-2 fileset
+  `29aeec97ebc8146fccac1f575c1c098cbc9db2b106831a1b53d12e7ad2995c92`,
+  and protected main `11a9cb8849b5239faa1081eda046d2254a12febc`.
+- Keep Stage 4 not fully complete, the 14-trial run not executed, and the
+  evidence ceiling `DIAGNOSTIC_ONLY`.
+
+Rationale:
+
+- A GitHub clone should see G-2 accepted rather than an unstarted Stage 4.
+- Hash-only publication keeps private paths, ticker lists, performance
+  values, and raw rows off GitHub.
+
+Consequences:
+
+- Public resume surfaces bind G-2 by hash and do not claim a 14-trial run
+  or Stage 4 completion beyond that binding.
+- Remaining Stage 4 detached pre-run binding still blocks the 14-trial
+  run, D8, result access, and A2.
+
+Follow-up:
+
+- Continue remaining Stage 4 detached pre-run binding under
+  `DIAGNOSTIC_ONLY`.
+- Do not run the 14 trials until remaining Stage 4 binding verifies.
+
+---
+
 ## 2026-08-24 - Public Docs Sync After PR 3 And README Merges
 
 Context:
