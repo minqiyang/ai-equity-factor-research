@@ -1,6 +1,6 @@
 # Current Roadmap
 
-Updated: 2026-08-24 after protected merges of Track A PR 3 and README status.
+Updated: 2026-08-25 after public-safe Stage 4 G-2 status publication.
 
 Canonical responsibility: program stage sequence, dependency order, gate and
 completion criteria, and coarse stage status.
@@ -16,7 +16,7 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 - Historical CCA1 start baseline:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
 - Last live-verified protected main when this roadmap was authored:
-  `cc90b34602ee54117ac5bca2445a73b7cac7b90a`.
+  `11a9cb8849b5239faa1081eda046d2254a12febc`.
 - PR #180 and PR #181 are merged. No pull request was open at the verified
   start of this work.
 - Track A PR 1 is complete through PR #177: the EODHD diagnostic scope,
@@ -31,6 +31,9 @@ operational checkpoint is in the [current handoff](current_handoff.md).
   `DIAGNOSTIC_READY`, bound by hash. Formal interpretation is not accepted.
 - Track A PR 2 public validator and status are on protected main through
   PR #186. Track A PR 3 runner code is on protected main through PR #187.
+- Stage 4 G-2 binding is accepted by hash. Stage 4 is not fully complete.
+  The 14-trial run has not executed. Evidence ceiling remains
+  `DIAGNOSTIC_ONLY`.
 - The 2025-05-01 through 2026-05-31 interval remains permanently
   `historical_evaluation`, never a pristine holdout.
 
@@ -61,7 +64,7 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 | 1 | Private entitlement, retention, and publication gate | Accepted 2026-08-22 | Accepted private capability and written-term record exists; public-safe hashes are in `docs/stage1_accepted_public_record_v1.json`. |
 | 2 | Track A PR 2: dataset manifest and validation | Public validator on main; campaign `DIAGNOSTIC_READY`; formal interpretation not granted | Complete for the diagnostic track with validator, safe projection, freeze hashes, blinded `diagnostic_only` review, and `DIAGNOSTIC_READY` hashes. |
 | 3 | Track A PR 3: bounded diagnostic runner | Code on main via PR #187 | Complete when shippable runner code and synthetic golden fixtures satisfy the binding PR 3 acceptance criteria. Does not include a 14-trial run. |
-| 4 | Detached pre-run binding | Next; not complete | Complete only when exact code, configuration, environment, protocol, inventory, and accepted dataset identities are bound outside the repository. |
+| 4 | Detached pre-run binding | G-2 accepted by hash; not complete | Complete only when exact code, configuration, environment, protocol, inventory, and accepted dataset identities are bound outside the repository. G-2 is accepted by hash; the 14-trial run has not executed. |
 | 5 | Track A PR 4: frozen diagnostic evidence | Blocked by stage 4 | Complete only after all 14 trials run once, every outcome is retained externally, and an approved safe aggregate projection is produced. |
 | 6 | Track B minimal formal evidence runtime | Deferred until Track A closes | Required before prospective performance access or formal promotion; not a Track A prerequisite. |
 
@@ -109,8 +112,9 @@ Track A PR 3 must satisfy all of the following:
 
 Stage 1 is accepted. Track A PR 2 public surfaces and campaign
 `DIAGNOSTIC_READY` hashes are recorded under `DIAGNOSTIC_ONLY`. Track A PR 3
-runner code is on protected main. The next completion gate is detached
-pre-run binding. The handoff owns the timestamped operational checkpoint.
+runner code is on protected main. Stage 4 G-2 binding is accepted by hash.
+Stage 4 is not fully complete and the 14-trial run has not executed. The
+handoff owns the timestamped operational checkpoint.
 
 This section defines dependency and completion state only. It grants no
 authority and adds no vendor, data, publication, or interpretation rule beyond

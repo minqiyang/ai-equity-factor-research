@@ -1,6 +1,6 @@
 {
   "artifact_id": "track_a_pr2_public_status_v1",
-  "updated_utc": "2026-08-24",
+  "updated_utc": "2026-08-25",
   "operating_standard": {
     "name": "herdr_pi_coordinator_standard_v3.md",
     "sha256": "f3e3560c2fa0b67895b1f2aad96cc397728f6924c1fd551b8ea12dcdd2d7f594"
@@ -10,7 +10,7 @@
   "campaign_dataset_acceptance": "DIAGNOSTIC_READY",
   "formal_interpretation_acceptance": "NOT_GRANTED",
   "materialization": "NOT_ENTERED",
-  "protected_main_sha_at_update": "cc90b34602ee54117ac5bca2445a73b7cac7b90a",
+  "protected_main_sha_at_update": "11a9cb8849b5239faa1081eda046d2254a12febc",
   "validator": {
     "package": "src/pit_manifest_validator_v1",
     "package_tree_sha256": "6b8573c4f7ed72be3866d61690648274bc431f013e8f284daaf35a399e6ffc3f",
@@ -65,7 +65,18 @@
     "track_a_pr3_merge_commit": "bcb169e80ccc1566321f08e201a808663366da15",
     "track_a_pr3_final_head": "4a67618a7571aaee8c49c1d100c6f12f36365b16",
     "fourteen_trial_run_executed": false,
-    "detached_pre_run_binding_complete": false
+    "detached_pre_run_binding_complete": false,
+    "stage4_g2_binding_accepted": true
+  },
+  "stage4_g2": {
+    "binding_status": "ACCEPTED_BY_HASH",
+    "stage_complete": false,
+    "acceptance_file_sha256": "84f1ce471af19b4473a2a3bfa9ffb65b08927cc0218c55bd6922a7ddc5c30de0",
+    "frozen_plan_md_sha256": "d847c6305469b050f3d2e0426ff589cf422a2fa1f54044b9dcf037963567f992",
+    "exec2_fileset_sha256": "29aeec97ebc8146fccac1f575c1c098cbc9db2b106831a1b53d12e7ad2995c92",
+    "protected_main_sha": "11a9cb8849b5239faa1081eda046d2254a12febc",
+    "fourteen_trial_run_executed": false,
+    "evidence_ceiling": "DIAGNOSTIC_ONLY"
   },
   "counts": {
     "coverage_constraints": 450,
@@ -84,6 +95,9 @@
     "evidence_pack_body",
     "full_dataset_review_decision_body",
     "full_acceptance_record_body",
+    "g2_acceptance_file_body",
+    "frozen_plan_md_body",
+    "exec2_fileset_body",
     "private_program_control_tree"
   ],
   "next_stage": "DETACHED_PRE_RUN_BINDING"

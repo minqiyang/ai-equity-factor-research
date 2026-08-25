@@ -1,5 +1,20 @@
 # Engineering Log
 
+## 2026-08-25 - Public-safe Stage 4 G-2 status
+
+- Updated `docs/current_handoff.md` and `docs/current_roadmap.md` so a
+  GitHub clone sees Stage 4 G-2 accepted by hash, the 14-trial run not
+  executed, and evidence ceiling `DIAGNOSTIC_ONLY`.
+- Refreshed `docs/track_a_pr2_public_status.md` and
+  `docs/track_a_pr2_public_status_v1.json` with G-2 acceptance-file,
+  frozen-plan markdown, and EXEC-2 fileset hashes on protected main
+  `11a9cb8849b5239faa1081eda046d2254a12febc`.
+- Recorded that Stage 4 is not fully complete beyond G-2, formal
+  interpretation remains not granted, and private control-tree bodies
+  stay off GitHub.
+- No runner, validator, private data, or result-bearing behavior changed.
+
+
 ## 2026-08-24 - Public docs sync for post-PR3 resume surface
 
 - Updated `docs/current_handoff.md` and `docs/current_roadmap.md` so protected
