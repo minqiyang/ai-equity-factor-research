@@ -6,11 +6,15 @@ import dataclasses
 import inspect
 import json
 from pathlib import Path
+import subprocess
+import sys
 
+from campaign.bundle import invalid_and_missing_bytes
 from campaign.precondition import authorize, result_bearing_refusal_reason
 from campaign.runner import (
     CampaignRun,
     RunConfig,
+    attempt_ledger_path,
     campaign_identity,
     configuration_projection,
     run_campaign,
@@ -219,6 +223,23 @@ def _copy_attempt_state(
     return str(target)
 
 
+def _seed_identity_ledger(identity: str) -> str:
+    payload = json.loads(
+        fixture_file("precondition/attempt_state.json").read_text(encoding="utf-8")
+    )
+    payload["campaign_identity_sha256"] = identity
+    target = attempt_ledger_path(identity)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+    return str(target)
+
+
+def _run_config_payload(config: RunConfig) -> dict[str, object]:
+    payload = dataclasses.asdict(config)
+    payload["cost_bps"] = list(config.cost_bps)
+    return payload
+
+
 def _binding_identity(path: str) -> str:
     return campaign_identity(
         json.loads(Path(path).read_text(encoding="utf-8"))
@@ -251,6 +272,7 @@ def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
         tmp_path, "authorized_binding.json", prepared_digest
     )
     identity = _binding_identity(binding_path)
+    _seed_identity_ledger(identity)
     config = _config_with_grant(
         inputs["grant_file"],
         tmp_path,
@@ -284,6 +306,12 @@ def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
     assert (
         result.bundle.detached_root["attempt_count"]
         == expected["ledger_attempt_count"]
+    )
+    for name in expected["runner_owned_children"]:
+        assert name in result.bundle.child_digests
+    invalid_name = expected["invalid_child"]
+    assert result.bundle.child_digests[invalid_name] == sha256_hex(
+        invalid_and_missing_bytes(result.reconciliation)
     )
     replay = run_campaign(config)
     assert replay.status == "REFUSED"
@@ -469,9 +497,11 @@ def test_malformed_prepared_campaign_is_named_refusal(tmp_path: Path) -> None:
     nested_path.write_text(json.dumps(nested), encoding="utf-8")
     nested_digest = sha256_hex(nested_path.read_bytes())
     nested_binding = _write_binding(tmp_path, "binding_nested.json", nested_digest)
+    nested_identity = _binding_identity(nested_binding)
     nested_state = _copy_attempt_state(
-        tmp_path, _binding_identity(nested_binding), "attempt_nested.json"
+        tmp_path, nested_identity, "attempt_nested.json"
     )
+    nested_ledger = _seed_identity_ledger(nested_identity)
     nested_run = run_campaign(
         _config_with_grant(
             inputs["grant_file"],
@@ -484,7 +514,7 @@ def test_malformed_prepared_campaign_is_named_refusal(tmp_path: Path) -> None:
     )
     assert nested_run.status == "REFUSED"
     assert nested_run.reason == expected["schema_reason"]
-    leftover = json.loads(Path(nested_state).read_text(encoding="utf-8"))
+    leftover = json.loads(Path(nested_ledger).read_text(encoding="utf-8"))
     assert leftover["consumed"] is False
 
 
@@ -495,9 +525,10 @@ def test_negative_ledger_execution_count_is_refused(tmp_path: Path) -> None:
     binding_path = str(fixture_file("precondition/binding_valid.json"))
     identity = _binding_identity(binding_path)
     state = _copy_attempt_state(tmp_path, identity, "attempt_negative.json")
-    payload = json.loads(Path(state).read_text(encoding="utf-8"))
+    ledger = _seed_identity_ledger(identity)
+    payload = json.loads(Path(ledger).read_text(encoding="utf-8"))
     payload["execution_count"] = inputs["negative_execution_count"]
-    Path(state).write_text(json.dumps(payload), encoding="utf-8")
+    Path(ledger).write_text(json.dumps(payload), encoding="utf-8")
     result = run_campaign(
         _config_with_grant(
             inputs["grant_file"],
@@ -507,6 +538,111 @@ def test_negative_ledger_execution_count_is_refused(tmp_path: Path) -> None:
     )
     assert result.status == "REFUSED"
     assert result.reason == expected["negative_count_reason"]
-    leftover = json.loads(Path(state).read_text(encoding="utf-8"))
+    leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
     assert leftover["consumed"] is False
     assert leftover["execution_count"] == inputs["negative_execution_count"]
+
+
+def test_two_process_replay_consumes_the_identity_ledger(
+    tmp_path: Path,
+) -> None:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    expected = fixture["expected"]
+    inputs = fixture["inputs"]
+    prepared = json.loads(
+        fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
+    )
+    prepared["attempt_count"] = inputs["conflicting_attempt_count"]
+    prepared_path = tmp_path / "two_process_prepared.json"
+    prepared_path.write_text(json.dumps(prepared), encoding="utf-8")
+    prepared_digest = sha256_hex(prepared_path.read_bytes())
+    binding_path = _write_binding(
+        tmp_path, "two_process_binding.json", prepared_digest
+    )
+    identity = _binding_identity(binding_path)
+    _seed_identity_ledger(identity)
+    first_config = _config_with_grant(
+        inputs["grant_file"],
+        tmp_path,
+        prepared_campaign_file=str(prepared_path),
+        prepared_campaign_file_sha256=prepared_digest,
+        detached_binding_file=binding_path,
+        attempt_state_file=_copy_attempt_state(
+            tmp_path, identity, "attempt_process_one.json"
+        ),
+    )
+    first_payload = tmp_path / "first_config.json"
+    first_payload.write_text(
+        json.dumps(_run_config_payload(first_config)), encoding="utf-8"
+    )
+    worker = Path(__file__).resolve().parent / expected["two_process_worker"]
+    first = subprocess.run(
+        [sys.executable, str(worker), str(first_payload)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    first_result = json.loads(first.stdout)
+    assert first_result["status"] == expected["status"]
+    assert first_result["reason"] is None
+    second_config = _config_with_grant(
+        inputs["grant_file"],
+        tmp_path,
+        prepared_campaign_file=str(prepared_path),
+        prepared_campaign_file_sha256=prepared_digest,
+        detached_binding_file=binding_path,
+        attempt_state_file=_copy_attempt_state(
+            tmp_path, identity, "attempt_process_two.json"
+        ),
+    )
+    second_payload = tmp_path / "second_config.json"
+    second_payload.write_text(
+        json.dumps(_run_config_payload(second_config)), encoding="utf-8"
+    )
+    second = subprocess.run(
+        [sys.executable, str(worker), str(second_payload)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    second_result = json.loads(second.stdout)
+    assert second_result["status"] == "REFUSED"
+    assert second_result["reason"] == expected["attempt_consumed_reason"]
+
+
+def test_prepared_runner_owned_child_names_are_refused(
+    tmp_path: Path,
+) -> None:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    expected = fixture["expected"]
+    inputs = fixture["inputs"]
+    base = json.loads(
+        fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
+    )
+    for name in expected["runner_owned_children"]:
+        prepared = json.loads(json.dumps(base))
+        prepared["bundle_children"][name] = expected["colliding_child_body"]
+        prepared_path = tmp_path / "colliding_prepared.json"
+        prepared_path.write_text(json.dumps(prepared), encoding="utf-8")
+        prepared_digest = sha256_hex(prepared_path.read_bytes())
+        binding_path = _write_binding(
+            tmp_path, "colliding_binding.json", prepared_digest
+        )
+        identity = _binding_identity(binding_path)
+        ledger = _seed_identity_ledger(identity)
+        result = run_campaign(
+            _config_with_grant(
+                inputs["grant_file"],
+                tmp_path,
+                prepared_campaign_file=str(prepared_path),
+                prepared_campaign_file_sha256=prepared_digest,
+                detached_binding_file=binding_path,
+                attempt_state_file=_copy_attempt_state(
+                    tmp_path, identity, "attempt_collision.json"
+                ),
+            )
+        )
+        assert result.status == "REFUSED", name
+        assert result.reason == expected["child_collision_reason"], name
+        leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
+        assert leftover["consumed"] is False, name

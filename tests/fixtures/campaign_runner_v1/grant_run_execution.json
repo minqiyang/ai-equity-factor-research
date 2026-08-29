@@ -76,7 +76,17 @@
     "ledger_attempt_count": 1,
     "alternate_locator_reason": "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED",
     "mutated_grant_reason": "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED",
-    "negative_count_reason": "CAMPAIGN_ATTEMPT_STATE_INVALID"
+    "negative_count_reason": "CAMPAIGN_ATTEMPT_STATE_INVALID",
+    "child_collision_reason": "PREPARED_CAMPAIGN_CHILD_COLLISION",
+    "colliding_child_body": {"trial_count": 0},
+    "invalid_child": "invalid_and_missing_summary.json",
+    "runner_owned_children": [
+      "eodhd_sp500_three_factor_diagnostic_v1.yaml",
+      "trial_inventory.json",
+      "invalid_and_missing_summary.json",
+      "run_manifest.json"
+    ],
+    "two_process_worker": "campaign_replay_worker.py"
   },
   "forbidden": {
     "campaign_artifact_write": true,

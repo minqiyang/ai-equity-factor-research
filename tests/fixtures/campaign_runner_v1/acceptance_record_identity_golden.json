@@ -1,21 +1,12 @@
 {
-  "inputs": {
-    "attempt_state_file": "precondition/attempt_state.json",
-    "binding_file": "precondition/binding_valid.json",
-    "grant_file": "precondition/grant_valid.json",
-    "inventory_file": "precondition/trial_inventory.json",
-    "prepared_file": "precondition/prepared_campaign.json",
-    "protocol_file": "precondition/protocol.yaml",
-    "record_file": "precondition/acceptance_valid.json"
-  },
   "expected": {
-    "canonical_identity": "3617bbdb65ea5328152887348b8c399de1c3e7876041537c4c2fb877f955f422",
+    "canonical_identity": "bad9399c47a28a043bda8f8d4b7a137dd634d49b6257843318c85faadde48847",
     "decision_file_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
     "decision_identity_sha256": "5555555555555555555555555555555555555555555555555555555555555555",
     "environment_lock_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
-    "file_bytes": "94cd0d95aa3fdf396c12a770392afb305fbca66b8e88c35e53e9ba734b6e1db9",
+    "file_bytes": "9e681534c1f2fe0cff1d32ea4a1cec5b21633dfe5e0aa042817ac228dde524cd",
     "final_state": "NEGATIVE_DIAGNOSTIC",
-    "grant_file_bytes": "103e5bfae53f3d7a7512066f9df1395017deca3a9d3838de35934d7a60f29851",
+    "grant_file_bytes": "6d09344f4229fa72ae753f194c348c64afa59968361ed4f0119d592e028717d8",
     "inventory_file_bytes": "da588e2abe3678ad4e2249fe82f84c0febc686241550060dc66e3a739fe9c1dc",
     "owner_authorization_file_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
     "prepared_file_bytes": "9b8e39a8c3c10d6c403b13582165629b787ce0ff946b672674d8be113f2895f1",
@@ -29,5 +20,14 @@
     "assert_roles_equal": true,
     "assert_roles_unequal": true,
     "use_file_bytes_as_identity_expected": true
+  },
+  "inputs": {
+    "attempt_state_file": "precondition/attempt_state.json",
+    "binding_file": "precondition/binding_valid.json",
+    "grant_file": "precondition/grant_valid.json",
+    "inventory_file": "precondition/trial_inventory.json",
+    "prepared_file": "precondition/prepared_campaign.json",
+    "protocol_file": "precondition/protocol.yaml",
+    "record_file": "precondition/acceptance_valid.json"
   }
 }

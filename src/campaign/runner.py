@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
+import tempfile
 from types import MappingProxyType
 
 from campaign.bundle import (
@@ -65,7 +66,9 @@ _REASON_ATTEMPT_ABSENT = "CAMPAIGN_ATTEMPT_STATE_ABSENT"
 _REASON_ATTEMPT_INVALID = "CAMPAIGN_ATTEMPT_STATE_INVALID"
 _REASON_ATTEMPT_CONSUMED = "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED"
 _REASON_ATTEMPT_LEDGER = "CAMPAIGN_ATTEMPT_LEDGER_MISMATCH"
+_REASON_CHILD_COLLISION = "PREPARED_CAMPAIGN_CHILD_COLLISION"
 _ATTEMPT_SCHEMA = "campaign_attempt_state_v1"
+_ATTEMPT_LEDGER_DIRNAME = "campaign_attempt_ledger_v1"
 _ATTEMPT_KEYS = frozenset(
     {
         "schema_version",
@@ -75,7 +78,14 @@ _ATTEMPT_KEYS = frozenset(
     }
 )
 _PREPARED_REQUIRED = ("trial_outputs", "diagnostic_payload")
-_CONSUMED_CAMPAIGN_IDENTITIES: set[str] = set()
+_RUNNER_OWNED_CHILDREN = frozenset(
+    {
+        _PROTOCOL_CHILD,
+        _INVENTORY_CHILD,
+        _INVALID_CHILD,
+        _RUN_MANIFEST_CHILD,
+    }
+)
 _BOUND_FIELDS = (
     "runner_code_sha",
     "environment_id",
@@ -295,6 +305,9 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     prepared = _parse_prepared_campaign(prepared_raw)
     if isinstance(prepared, str):
         return _refused(authorization, prepared)
+    collision = _prepared_child_collision(prepared)
+    if collision is not None:
+        return _refused(authorization, collision)
     inventory_raw = Path(config.trial_inventory_file).read_bytes()
     protocol_raw = Path(config.protocol_file).read_bytes()
     reconciled = _reconcile_prepared(inventory_raw, prepared)
@@ -308,11 +321,7 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     assert isinstance(block, dict)
     limit = block["execution_count_limit"]
     assert isinstance(limit, int)
-    consumed = _consume_attempt(
-        config.attempt_state_file,
-        limit,
-        campaign_identity(binding),
-    )
+    consumed = _consume_attempt(limit, campaign_identity(binding))
     if isinstance(consumed, str):
         return _refused(authorization, consumed)
     started_at = _utc_now()
@@ -430,27 +439,41 @@ def campaign_identity(binding: object) -> str:
     ).hexdigest()
 
 
-def _consume_attempt(
-    locator: str,
-    limit: int,
-    identity: str,
-) -> str | int:
-    path = Path(locator)
+def attempt_ledger_path(identity: str) -> Path:
+    """Return the durable ledger path uniquely keyed by campaign identity."""
+
+    if not isinstance(identity, str) or _SHA256_RE.fullmatch(identity) is None:
+        raise ValueError("identity must be a 64-hex digest")
+    return Path(tempfile.gettempdir()) / _ATTEMPT_LEDGER_DIRNAME / f"{identity}.json"
+
+
+def _consume_attempt(limit: int, identity: str) -> str | int:
+    path = attempt_ledger_path(identity)
     try:
-        if not path.is_file():
-            return _REASON_ATTEMPT_ABSENT
-        fd = os.open(path, os.O_RDWR)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
     except OSError:
         return _REASON_ATTEMPT_ABSENT
     try:
         fcntl.flock(fd, fcntl.LOCK_EX)
         size = os.fstat(fd).st_size
         raw = os.read(fd, size) if size else b""
-        try:
-            parsed = json.loads(raw.decode("utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            return _REASON_ATTEMPT_INVALID
-        if not isinstance(parsed, dict) or set(parsed) != _ATTEMPT_KEYS:
+        if not raw:
+            parsed: dict[str, object] = {
+                "schema_version": _ATTEMPT_SCHEMA,
+                "consumed": False,
+                "execution_count": 0,
+                "campaign_identity_sha256": identity,
+            }
+        else:
+            try:
+                loaded = json.loads(raw.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                return _REASON_ATTEMPT_INVALID
+            if not isinstance(loaded, dict):
+                return _REASON_ATTEMPT_INVALID
+            parsed = loaded
+        if set(parsed) != _ATTEMPT_KEYS:
             return _REASON_ATTEMPT_INVALID
         if parsed.get("schema_version") != _ATTEMPT_SCHEMA:
             return _REASON_ATTEMPT_INVALID
@@ -467,8 +490,7 @@ def _consume_attempt(
             return _REASON_ATTEMPT_INVALID
         if consumed == (execution_count == 0):
             return _REASON_ATTEMPT_INVALID
-        if identity in _CONSUMED_CAMPAIGN_IDENTITIES or consumed or execution_count >= limit:
-            _CONSUMED_CAMPAIGN_IDENTITIES.add(identity)
+        if consumed or execution_count >= limit:
             return _REASON_ATTEMPT_CONSUMED
         new_count = execution_count + 1
         payload = json.dumps(
@@ -485,7 +507,6 @@ def _consume_attempt(
         os.write(fd, payload)
         os.ftruncate(fd, len(payload))
         os.fsync(fd)
-        _CONSUMED_CAMPAIGN_IDENTITIES.add(identity)
     finally:
         os.close(fd)
     return new_count
@@ -504,22 +525,33 @@ def _child_bytes(value: object) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
+def _prepared_child_collision(prepared: object) -> str | None:
+    if not isinstance(prepared, dict):
+        return None
+    bundle_children = prepared.get("bundle_children")
+    if not isinstance(bundle_children, dict):
+        return None
+    for name in bundle_children:
+        if str(name) in _RUNNER_OWNED_CHILDREN:
+            return _REASON_CHILD_COLLISION
+    return None
+
+
 def _bundle_children(
     prepared: object,
     protocol_raw: bytes,
     inventory_raw: bytes,
     reconciliation: ReconciliationResult,
 ) -> dict[str, bytes]:
-    children: dict[str, bytes] = {
-        _PROTOCOL_CHILD: protocol_raw,
-        _INVENTORY_CHILD: inventory_raw,
-        _INVALID_CHILD: invalid_and_missing_bytes(reconciliation),
-    }
+    children: dict[str, bytes] = {}
     if isinstance(prepared, dict):
         bundle_children = prepared.get("bundle_children")
         if isinstance(bundle_children, dict):
             for name, value in bundle_children.items():
                 children[str(name)] = _child_bytes(value)
+    children[_PROTOCOL_CHILD] = protocol_raw
+    children[_INVENTORY_CHILD] = inventory_raw
+    children[_INVALID_CHILD] = invalid_and_missing_bytes(reconciliation)
     return children
 
 
@@ -572,6 +604,7 @@ def _require_int(value: object, name: str, expected: int) -> None:
 __all__ = [
     "CampaignRun",
     "RunConfig",
+    "attempt_ledger_path",
     "campaign_identity",
     "configuration_projection",
     "run_campaign",

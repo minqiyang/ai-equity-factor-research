@@ -591,3 +591,34 @@ def test_binding_v2_schema_and_prepared_digest_refusals(tmp_path: Path) -> None:
     naive_result = authorize(_authorized_config(detached_binding_file=str(naive_path)))
     assert naive_result.status == "REFUSED"
     assert naive_result.reason == expected["binding_timestamp_reason"]
+
+
+def test_joint_grant_and_binding_owner_digest_mutation_is_refused(
+    tmp_path: Path,
+) -> None:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    expected = fixture["expected"]
+    grant = json.loads(
+        fixture_file(fixture["inputs"]["grant_file"]).read_text(encoding="utf-8")
+    )
+    grant["fourteen_trial_run_authorization"]["owner_authorization_file_sha256"] = (
+        expected["wrong_owner_digest"]
+    )
+    grant_path = tmp_path / "joint_owner_grant.json"
+    grant_raw = _write_json(grant_path, grant)
+    binding = json.loads(
+        fixture_file("precondition/binding_valid.json").read_text(encoding="utf-8")
+    )
+    binding["owner_authorization_file_sha256"] = expected["wrong_owner_digest"]
+    binding_path = tmp_path / "joint_owner_binding.json"
+    _write_json(binding_path, binding)
+    result = authorize(
+        _authorized_config(
+            stage2_grant_file=str(grant_path),
+            stage2_grant_file_sha256=sha256_hex(grant_raw),
+            detached_binding_file=str(binding_path),
+            owner_authorization_file_sha256=expected["wrong_owner_digest"],
+        )
+    )
+    assert result.status == "REFUSED"
+    assert result.reason == expected["owner_mismatch_reason"]

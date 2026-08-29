@@ -1,6 +1,6 @@
 {
   "acceptance_record_id": "synthetic-acceptance-record-v1",
-  "acceptance_record_sha256": "3617bbdb65ea5328152887348b8c399de1c3e7876041537c4c2fb877f955f422",
+  "acceptance_record_sha256": "bad9399c47a28a043bda8f8d4b7a137dd634d49b6257843318c85faadde48847",
   "accepted_at_utc": "2019-06-15T20:00:00Z",
   "as_of_cutoff": "2019-12-31T21:00:00Z",
   "calendar": {
@@ -89,6 +89,7 @@
     ]
   },
   "materialization": "NOT_ENTERED",
+  "owner_authorization_file_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
   "performance_access": "FORBIDDEN",
   "public_projection_id": "synthetic-public-projection-v1",
   "public_projection_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",

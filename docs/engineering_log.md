@@ -1,5 +1,22 @@
 # Engineering Log
 
+## 2026-08-29 - Track A PR 4 owner binding, cross-process cap, reserved children
+
+- The detached owner digest is authenticated against
+  `owner_authorization_file_sha256` on the independently accepted
+  acceptance record. Matching RunConfig, grant-block, and binding
+  values is not enough; a joint grant-and-binding mutation is refused
+  `GRANT_OWNER_AUTHORIZATION_DIGEST_MISMATCH`.
+- Attempt consumption uses one durable store uniquely keyed by
+  campaign identity. Caller-selected `attempt_state_file` locators and
+  process-local sets are not the cap. A second process with a fresh
+  caller ledger is refused `CAMPAIGN_ATTEMPT_ALREADY_CONSUMED`.
+- Prepared `bundle_children` that collide with runner-owned names
+  refuse `PREPARED_CAMPAIGN_CHILD_COLLISION` before the attempt is
+  consumed. Runner-owned children are written after prepared children.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, or 14-trial
+  run.
+
 ## 2026-08-29 - Track A PR 4 attempt identity and ledger count
 
 - Attempt consumption is keyed by `campaign_identity` of the trusted

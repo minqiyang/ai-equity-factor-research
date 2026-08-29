@@ -1,14 +1,14 @@
 {
-  "inputs": {
-    "flip_offset": 0,
-    "record_file": "precondition/acceptance_valid.json"
-  },
   "expected": {
-    "file_bytes": "94cd0d95aa3fdf396c12a770392afb305fbca66b8e88c35e53e9ba734b6e1db9",
+    "file_bytes": "9e681534c1f2fe0cff1d32ea4a1cec5b21633dfe5e0aa042817ac228dde524cd",
     "reason": "ACCEPTANCE_RECORD_FILE_BYTES_MISMATCH"
   },
   "forbidden": {
     "identity_error": true,
     "parse_first": true
+  },
+  "inputs": {
+    "flip_offset": 0,
+    "record_file": "precondition/acceptance_valid.json"
   }
 }

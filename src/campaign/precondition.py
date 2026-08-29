@@ -142,6 +142,7 @@ _ACCEPTANCE_TOP = frozenset(
         "performance_access",
         "result_access",
         "does_not_authorize",
+        "owner_authorization_file_sha256",
         "acceptance_record_sha256",
     }
 )
@@ -551,7 +552,7 @@ def _authorize_grant_fields(
         return _refuse(_REASON_INTENDED_STAGE_FORBIDDEN)
     if _STAGE_PR3_PLANNING not in eligible:
         return _refuse(_REASON_INTENDED_STAGE_FORBIDDEN)
-    return _authorize_run_block(config, grant[_RUN_AUTH_KEY])
+    return _authorize_run_block(config, record, grant[_RUN_AUTH_KEY])
 
 
 def _authorize_binding(config: object) -> Authorization | dict[str, object]:
@@ -632,6 +633,7 @@ def _validate_acceptance_schema(record: dict[str, object]) -> str | None:
         "decision_file_sha256",
         "reviewer_appointment_sha256",
         "stage2_decision_sha256",
+        "owner_authorization_file_sha256",
         "acceptance_record_sha256",
     )
     for field in sha_fields:
@@ -837,13 +839,20 @@ def _run_authorization_schema_valid(value: object) -> bool:
     return True
 
 
-def _authorize_run_block(config: object, block: object) -> Authorization | None:
+def _authorize_run_block(
+    config: object,
+    record: dict[str, object],
+    block: object,
+) -> Authorization | None:
     assert isinstance(block, dict)
+    accepted_owner = record["owner_authorization_file_sha256"]
     bound_owner = _hex64(
         getattr(config, "owner_authorization_file_sha256"),
         "owner_authorization_file_sha256",
     )
-    if block["owner_authorization_file_sha256"] != bound_owner:
+    if bound_owner != accepted_owner:
+        return _refuse(_REASON_OWNER_AUTHORIZATION_DIGEST)
+    if block["owner_authorization_file_sha256"] != accepted_owner:
         return _refuse(_REASON_OWNER_AUTHORIZATION_DIGEST)
     if block["ceiling"] != _RUN_CEILING:
         return _refuse(_REASON_RUN_CEILING)

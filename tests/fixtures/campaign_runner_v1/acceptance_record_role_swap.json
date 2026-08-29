@@ -1,16 +1,16 @@
 {
-  "inputs": {
-    "identity_operand": "file_bytes",
-    "record_file": "precondition/acceptance_valid.json"
-  },
   "expected": {
-    "canonical_identity": "3617bbdb65ea5328152887348b8c399de1c3e7876041537c4c2fb877f955f422",
-    "file_bytes": "94cd0d95aa3fdf396c12a770392afb305fbca66b8e88c35e53e9ba734b6e1db9",
+    "canonical_identity": "bad9399c47a28a043bda8f8d4b7a137dd634d49b6257843318c85faadde48847",
+    "file_bytes": "9e681534c1f2fe0cff1d32ea4a1cec5b21633dfe5e0aa042817ac228dde524cd",
     "reason": "ACCEPTANCE_IDENTITY_NOT_THE_BOUND_IDENTITY"
   },
   "forbidden": {
     "compare_config_digest_fields": true,
     "pass": true,
     "treat_file_digest_as_identity": true
+  },
+  "inputs": {
+    "identity_operand": "file_bytes",
+    "record_file": "precondition/acceptance_valid.json"
   }
 }
