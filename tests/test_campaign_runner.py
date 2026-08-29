@@ -11,6 +11,7 @@ from campaign.precondition import authorize, result_bearing_refusal_reason
 from campaign.runner import (
     CampaignRun,
     RunConfig,
+    campaign_identity,
     configuration_projection,
     run_campaign,
 )
@@ -174,10 +175,6 @@ def test_runner_functions_have_no_defaults() -> None:
             assert parameter.default is inspect.Parameter.empty
 
 
-def _grant_digest(grant_file: str) -> str:
-    return sha256_hex(fixture_file(grant_file).read_bytes())
-
-
 def _write_binding(
     tmp_path: Path,
     name: str,
@@ -200,25 +197,32 @@ def _config_with_grant(
 ) -> RunConfig:
     del tmp_path
     grant_path = fixture_file(grant_file)
-    return _authorized_config(
-        stage2_grant_file=str(grant_path),
-        stage2_grant_file_sha256=sha256_hex(grant_path.read_bytes()),
-        **overrides,
-    )
+    payload = {
+        "stage2_grant_file": str(grant_path),
+        "stage2_grant_file_sha256": sha256_hex(grant_path.read_bytes()),
+    }
+    payload.update(overrides)
+    return _authorized_config(**payload)
 
 
 def _copy_attempt_state(
     tmp_path: Path,
-    grant_digest: str,
+    identity: str,
     name: str,
 ) -> str:
     payload = json.loads(
         fixture_file("precondition/attempt_state.json").read_text(encoding="utf-8")
     )
-    payload["grant_file_sha256"] = grant_digest
+    payload["campaign_identity_sha256"] = identity
     target = tmp_path / name
     target.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
     return str(target)
+
+
+def _binding_identity(path: str) -> str:
+    return campaign_identity(
+        json.loads(Path(path).read_text(encoding="utf-8"))
+    )
 
 
 def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
@@ -236,7 +240,6 @@ def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
         fixture_file("precondition/trial_inventory.json"),
     )
     before = {path: sha256_hex(path.read_bytes()) for path in locators}
-    grant_digest = _grant_digest(inputs["grant_file"])
     prepared = json.loads(
         fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
     )
@@ -244,16 +247,18 @@ def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
     prepared_path = tmp_path / "conflicting_prepared.json"
     prepared_path.write_text(json.dumps(prepared), encoding="utf-8")
     prepared_digest = sha256_hex(prepared_path.read_bytes())
+    binding_path = _write_binding(
+        tmp_path, "authorized_binding.json", prepared_digest
+    )
+    identity = _binding_identity(binding_path)
     config = _config_with_grant(
         inputs["grant_file"],
         tmp_path,
         prepared_campaign_file=str(prepared_path),
         prepared_campaign_file_sha256=prepared_digest,
-        detached_binding_file=_write_binding(
-            tmp_path, "authorized_binding.json", prepared_digest
-        ),
+        detached_binding_file=binding_path,
         attempt_state_file=_copy_attempt_state(
-            tmp_path, grant_digest, "attempt_state.json"
+            tmp_path, identity, "attempt_state.json"
         ),
     )
     grant = json.loads(fixture_file(inputs["grant_file"]).read_text(encoding="utf-8"))
@@ -289,16 +294,36 @@ def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
             tmp_path,
             prepared_campaign_file=str(prepared_path),
             prepared_campaign_file_sha256=prepared_digest,
-            detached_binding_file=_write_binding(
-                tmp_path, "authorized_binding_alt.json", prepared_digest
-            ),
+            detached_binding_file=binding_path,
             attempt_state_file=_copy_attempt_state(
-                tmp_path, grant_digest, "attempt_alt.json"
+                tmp_path, identity, "attempt_alt.json"
             ),
         )
     )
     assert alternate.status == "REFUSED"
     assert alternate.reason == expected["alternate_locator_reason"]
+    mutated_grant = json.loads(
+        fixture_file(inputs["grant_file"]).read_text(encoding="utf-8")
+    )
+    mutated_grant["artifact_id"] = inputs["mutated_artifact_id"]
+    mutated_path = tmp_path / "mutated_grant.json"
+    mutated_path.write_text(json.dumps(mutated_grant), encoding="utf-8")
+    mutated_run = run_campaign(
+        _config_with_grant(
+            inputs["grant_file"],
+            tmp_path,
+            stage2_grant_file=str(mutated_path),
+            stage2_grant_file_sha256=sha256_hex(mutated_path.read_bytes()),
+            prepared_campaign_file=str(prepared_path),
+            prepared_campaign_file_sha256=prepared_digest,
+            detached_binding_file=binding_path,
+            attempt_state_file=_copy_attempt_state(
+                tmp_path, identity, "attempt_mutated.json"
+            ),
+        )
+    )
+    assert mutated_run.status == "REFUSED"
+    assert mutated_run.reason == expected["mutated_grant_reason"]
     after = {path: sha256_hex(path.read_bytes()) for path in locators}
     assert before == after
     assert fixture["forbidden"]["campaign_artifact_write"]
@@ -372,21 +397,23 @@ def test_malformed_prepared_campaign_is_named_refusal(tmp_path: Path) -> None:
     fixture = load_runner_fixture("grant_run_execution.json")
     expected = fixture["expected"]
     inputs = fixture["inputs"]
-    grant_digest = _grant_digest(inputs["grant_file"])
     malformed_path = tmp_path / "malformed.json"
     malformed_path.write_bytes(inputs["malformed_prepared"].encode("utf-8"))
     malformed_digest = sha256_hex(malformed_path.read_bytes())
+    malformed_binding = _write_binding(
+        tmp_path, "binding_malformed.json", malformed_digest
+    )
     malformed = run_campaign(
         _config_with_grant(
             inputs["grant_file"],
             tmp_path,
             prepared_campaign_file=str(malformed_path),
             prepared_campaign_file_sha256=malformed_digest,
-            detached_binding_file=_write_binding(
-                tmp_path, "binding_malformed.json", malformed_digest
-            ),
+            detached_binding_file=malformed_binding,
             attempt_state_file=_copy_attempt_state(
-                tmp_path, grant_digest, "attempt_malformed.json"
+                tmp_path,
+                _binding_identity(malformed_binding),
+                "attempt_malformed.json",
             ),
         )
     )
@@ -395,17 +422,20 @@ def test_malformed_prepared_campaign_is_named_refusal(tmp_path: Path) -> None:
     missing_path = tmp_path / "missing.json"
     missing_path.write_text(json.dumps(inputs["missing_key_prepared"]), encoding="utf-8")
     missing_digest = sha256_hex(missing_path.read_bytes())
+    missing_binding = _write_binding(
+        tmp_path, "binding_missing.json", missing_digest
+    )
     missing = run_campaign(
         _config_with_grant(
             inputs["grant_file"],
             tmp_path,
             prepared_campaign_file=str(missing_path),
             prepared_campaign_file_sha256=missing_digest,
-            detached_binding_file=_write_binding(
-                tmp_path, "binding_missing.json", missing_digest
-            ),
+            detached_binding_file=missing_binding,
             attempt_state_file=_copy_attempt_state(
-                tmp_path, grant_digest, "attempt_missing.json"
+                tmp_path,
+                _binding_identity(missing_binding),
+                "attempt_missing.json",
             ),
         )
     )
@@ -414,17 +444,18 @@ def test_malformed_prepared_campaign_is_named_refusal(tmp_path: Path) -> None:
     wrong_path = tmp_path / "wrong_type.json"
     wrong_path.write_text(json.dumps(inputs["wrong_type_prepared"]), encoding="utf-8")
     wrong_digest = sha256_hex(wrong_path.read_bytes())
+    wrong_binding = _write_binding(tmp_path, "binding_wrong.json", wrong_digest)
     wrong = run_campaign(
         _config_with_grant(
             inputs["grant_file"],
             tmp_path,
             prepared_campaign_file=str(wrong_path),
             prepared_campaign_file_sha256=wrong_digest,
-            detached_binding_file=_write_binding(
-                tmp_path, "binding_wrong.json", wrong_digest
-            ),
+            detached_binding_file=wrong_binding,
             attempt_state_file=_copy_attempt_state(
-                tmp_path, grant_digest, "attempt_wrong.json"
+                tmp_path,
+                _binding_identity(wrong_binding),
+                "attempt_wrong.json",
             ),
         )
     )
@@ -437,8 +468,9 @@ def test_malformed_prepared_campaign_is_named_refusal(tmp_path: Path) -> None:
     nested_path = tmp_path / "nested.json"
     nested_path.write_text(json.dumps(nested), encoding="utf-8")
     nested_digest = sha256_hex(nested_path.read_bytes())
+    nested_binding = _write_binding(tmp_path, "binding_nested.json", nested_digest)
     nested_state = _copy_attempt_state(
-        tmp_path, grant_digest, "attempt_nested.json"
+        tmp_path, _binding_identity(nested_binding), "attempt_nested.json"
     )
     nested_run = run_campaign(
         _config_with_grant(
@@ -446,9 +478,7 @@ def test_malformed_prepared_campaign_is_named_refusal(tmp_path: Path) -> None:
             tmp_path,
             prepared_campaign_file=str(nested_path),
             prepared_campaign_file_sha256=nested_digest,
-            detached_binding_file=_write_binding(
-                tmp_path, "binding_nested.json", nested_digest
-            ),
+            detached_binding_file=nested_binding,
             attempt_state_file=nested_state,
         )
     )
@@ -456,3 +486,27 @@ def test_malformed_prepared_campaign_is_named_refusal(tmp_path: Path) -> None:
     assert nested_run.reason == expected["schema_reason"]
     leftover = json.loads(Path(nested_state).read_text(encoding="utf-8"))
     assert leftover["consumed"] is False
+
+
+def test_negative_ledger_execution_count_is_refused(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    expected = fixture["expected"]
+    inputs = fixture["inputs"]
+    binding_path = str(fixture_file("precondition/binding_valid.json"))
+    identity = _binding_identity(binding_path)
+    state = _copy_attempt_state(tmp_path, identity, "attempt_negative.json")
+    payload = json.loads(Path(state).read_text(encoding="utf-8"))
+    payload["execution_count"] = inputs["negative_execution_count"]
+    Path(state).write_text(json.dumps(payload), encoding="utf-8")
+    result = run_campaign(
+        _config_with_grant(
+            inputs["grant_file"],
+            tmp_path,
+            attempt_state_file=state,
+        )
+    )
+    assert result.status == "REFUSED"
+    assert result.reason == expected["negative_count_reason"]
+    leftover = json.loads(Path(state).read_text(encoding="utf-8"))
+    assert leftover["consumed"] is False
+    assert leftover["execution_count"] == inputs["negative_execution_count"]

@@ -14,7 +14,8 @@ profitability, or trading readiness.
   `now_eligible` only with a valid run-authorization block and explicit
   forbiddance of `RESULT_ACCESS` and `PERFORMANCE_ACCESS`. The grant's
   owner-authorization digest must match the detached binding. The
-  attempt ledger is keyed by the bound grant digest. Authorized
+  attempt ledger is keyed by the trusted detached campaign identity.
+  Authorized
   prepared-payload work returns `RECONCILED_DIAGNOSTIC_ONLY` and does
   not claim trial execution. Nested prepared payloads are validated
   before the one-run attempt is consumed. Those access stages stay

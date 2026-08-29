@@ -1,6 +1,6 @@
 {
+  "campaign_identity_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "consumed": false,
   "execution_count": 0,
-  "grant_file_sha256": "7d3c67858a1a2fb327554d44960ef40ba4dd59aa32052b983f2bd7dfb3b745c3",
   "schema_version": "campaign_attempt_state_v1"
 }

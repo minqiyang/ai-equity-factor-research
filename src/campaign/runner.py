@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import fcntl
@@ -66,10 +67,15 @@ _REASON_ATTEMPT_CONSUMED = "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED"
 _REASON_ATTEMPT_LEDGER = "CAMPAIGN_ATTEMPT_LEDGER_MISMATCH"
 _ATTEMPT_SCHEMA = "campaign_attempt_state_v1"
 _ATTEMPT_KEYS = frozenset(
-    {"schema_version", "consumed", "execution_count", "grant_file_sha256"}
+    {
+        "schema_version",
+        "consumed",
+        "execution_count",
+        "campaign_identity_sha256",
+    }
 )
 _PREPARED_REQUIRED = ("trial_outputs", "diagnostic_payload")
-_CONSUMED_GRANT_DIGESTS: set[str] = set()
+_CONSUMED_CAMPAIGN_IDENTITIES: set[str] = set()
 _BOUND_FIELDS = (
     "runner_code_sha",
     "environment_id",
@@ -295,6 +301,9 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     if isinstance(reconciled, str):
         return _refused(authorization, reconciled)
     inventory, reconciliation = reconciled
+    binding = authorization.binding
+    if binding is None:
+        return _refused(authorization, "DETACHED_BINDING_ABSENT")
     block = grant["fourteen_trial_run_authorization"]
     assert isinstance(block, dict)
     limit = block["execution_count_limit"]
@@ -302,15 +311,12 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     consumed = _consume_attempt(
         config.attempt_state_file,
         limit,
-        config.stage2_grant_file_sha256,
+        campaign_identity(binding),
     )
     if isinstance(consumed, str):
         return _refused(authorization, consumed)
     started_at = _utc_now()
     trial_ids = tuple(str(trial["trial_id"]) for trial in inventory)
-    binding = authorization.binding
-    if binding is None:
-        return _refused(authorization, "DETACHED_BINDING_ABSENT")
     bound_fields = {name: binding[name] for name in _BOUND_FIELDS}
     projection_digest = hashlib.sha256(
         json.dumps(
@@ -413,13 +419,22 @@ def _reconcile_prepared(
     return inventory, reconciliation
 
 
+def campaign_identity(binding: object) -> str:
+    """Return the FILE_BYTES digest of the trusted detached bound fields."""
+
+    if not isinstance(binding, Mapping):
+        raise TypeError("binding must be a mapping")
+    payload = {name: binding[name] for name in _BOUND_FIELDS}
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
 def _consume_attempt(
     locator: str,
     limit: int,
-    grant_digest: str,
+    identity: str,
 ) -> str | int:
-    if grant_digest in _CONSUMED_GRANT_DIGESTS:
-        return _REASON_ATTEMPT_CONSUMED
     path = Path(locator)
     try:
         if not path.is_file():
@@ -439,8 +454,8 @@ def _consume_attempt(
             return _REASON_ATTEMPT_INVALID
         if parsed.get("schema_version") != _ATTEMPT_SCHEMA:
             return _REASON_ATTEMPT_INVALID
-        ledger_grant = parsed.get("grant_file_sha256")
-        if not isinstance(ledger_grant, str) or ledger_grant != grant_digest:
+        ledger_identity = parsed.get("campaign_identity_sha256")
+        if not isinstance(ledger_identity, str) or ledger_identity != identity:
             return _REASON_ATTEMPT_LEDGER
         consumed = parsed.get("consumed")
         execution_count = parsed.get("execution_count")
@@ -448,8 +463,12 @@ def _consume_attempt(
             return _REASON_ATTEMPT_INVALID
         if isinstance(execution_count, bool) or not isinstance(execution_count, int):
             return _REASON_ATTEMPT_INVALID
-        if consumed or execution_count >= limit:
-            _CONSUMED_GRANT_DIGESTS.add(grant_digest)
+        if execution_count < 0:
+            return _REASON_ATTEMPT_INVALID
+        if consumed == (execution_count == 0):
+            return _REASON_ATTEMPT_INVALID
+        if identity in _CONSUMED_CAMPAIGN_IDENTITIES or consumed or execution_count >= limit:
+            _CONSUMED_CAMPAIGN_IDENTITIES.add(identity)
             return _REASON_ATTEMPT_CONSUMED
         new_count = execution_count + 1
         payload = json.dumps(
@@ -457,7 +476,7 @@ def _consume_attempt(
                 "schema_version": _ATTEMPT_SCHEMA,
                 "consumed": True,
                 "execution_count": new_count,
-                "grant_file_sha256": grant_digest,
+                "campaign_identity_sha256": identity,
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -466,7 +485,7 @@ def _consume_attempt(
         os.write(fd, payload)
         os.ftruncate(fd, len(payload))
         os.fsync(fd)
-        _CONSUMED_GRANT_DIGESTS.add(grant_digest)
+        _CONSUMED_CAMPAIGN_IDENTITIES.add(identity)
     finally:
         os.close(fd)
     return new_count
@@ -553,6 +572,7 @@ def _require_int(value: object, name: str, expected: int) -> None:
 __all__ = [
     "CampaignRun",
     "RunConfig",
+    "campaign_identity",
     "configuration_projection",
     "run_campaign",
 ]

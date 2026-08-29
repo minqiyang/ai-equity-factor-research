@@ -10,7 +10,9 @@
     "v1_shape_file": "precondition/grant_v1_shape.json",
     "wrong_type_prepared": {"diagnostic_payload": [], "trial_outputs": {}},
     "nested_wrong_trial_id": "DIAG_MOM_12_1",
-    "conflicting_attempt_count": 0
+    "conflicting_attempt_count": 0,
+    "mutated_artifact_id": "synthetic-stage2-grant-v2-mutated",
+    "negative_execution_count": -1
   },
   "expected": {
     "authorization_status": "AUTHORIZED",
@@ -72,7 +74,9 @@
     "naive_bound_at_utc": "2019-06-16T12:00:00",
     "wrong_prepared_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     "ledger_attempt_count": 1,
-    "alternate_locator_reason": "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED"
+    "alternate_locator_reason": "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED",
+    "mutated_grant_reason": "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED",
+    "negative_count_reason": "CAMPAIGN_ATTEMPT_STATE_INVALID"
   },
   "forbidden": {
     "campaign_artifact_write": true,

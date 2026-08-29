@@ -1,5 +1,16 @@
 # Engineering Log
 
+## 2026-08-29 - Track A PR 4 attempt identity and ledger count
+
+- Attempt consumption is keyed by `campaign_identity` of the trusted
+  detached bound fields, not the caller-supplied grant FILE_BYTES.
+  A metadata-mutated grant with a fresh ledger still refuses
+  `CAMPAIGN_ATTEMPT_ALREADY_CONSUMED`.
+- Negative or inconsistent ledger `execution_count` refuses
+  `CAMPAIGN_ATTEMPT_STATE_INVALID` before mutation.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, or 14-trial
+  run.
+
 ## 2026-08-29 - Track A PR 4 exact-head P1 replay/ledger remediation
 
 - The attempt ledger is keyed by the bound grant digest. A second
