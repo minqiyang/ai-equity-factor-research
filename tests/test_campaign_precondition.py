@@ -33,6 +33,7 @@ def _authorized_config(**overrides: object) -> RunConfig:
         "trial_inventory_file": str(fixture_file(inputs["inventory_file"])),
         "detached_binding_file": str(fixture_file(inputs["binding_file"])),
         "prepared_campaign_file": str(fixture_file(inputs["prepared_file"])),
+        "attempt_state_file": str(fixture_file(inputs["attempt_state_file"])),
     }
     digests = {
         "acceptance_record_file_sha256": expected["file_bytes"],
@@ -43,6 +44,9 @@ def _authorized_config(**overrides: object) -> RunConfig:
         "protocol_file_sha256": expected["protocol_file_bytes"],
         "trial_inventory_file_sha256": expected["inventory_file_bytes"],
         "prepared_campaign_file_sha256": expected["prepared_file_bytes"],
+        "owner_authorization_file_sha256": expected[
+            "owner_authorization_file_sha256"
+        ],
     }
     return make_run_config(locators, digests, protocol, **overrides)
 

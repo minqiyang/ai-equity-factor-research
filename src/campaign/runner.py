@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import fcntl
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 from types import MappingProxyType
@@ -46,7 +48,7 @@ _RANDOM_RANK_SEED = 20260729
 _BOOTSTRAP_SEED = 20260730
 _STATUS_REFUSED = "REFUSED"
 _STATUS_AUTHORIZED = "AUTHORIZED"
-_STATUS_EXECUTED = "EXECUTED_DIAGNOSTIC_ONLY"
+_STATUS_RECONCILED = "RECONCILED_DIAGNOSTIC_ONLY"
 _EVIDENCE_CEILING = "DIAGNOSTIC_ONLY"
 _RUN_RECORD_SCHEMA = "campaign_run_record_v1"
 _PROTOCOL_CHILD = "eodhd_sp500_three_factor_diagnostic_v1.yaml"
@@ -56,6 +58,14 @@ _INVALID_CHILD = "invalid_and_missing_summary.json"
 _SENTINEL_BODY = b"STAGE4_G2_PREPARED_CAMPAIGN_NOT_BOUND_NO_PANEL_ACCESS"
 _REASON_PREPARED_BYTES = "PREPARED_CAMPAIGN_BYTES_MISMATCH"
 _REASON_PREPARED_SENTINEL = "PREPARED_CAMPAIGN_IS_SENTINEL"
+_REASON_PREPARED_UNPARSEABLE = "PREPARED_CAMPAIGN_UNPARSEABLE"
+_REASON_PREPARED_SCHEMA = "PREPARED_CAMPAIGN_SCHEMA_INVALID"
+_REASON_ATTEMPT_ABSENT = "CAMPAIGN_ATTEMPT_STATE_ABSENT"
+_REASON_ATTEMPT_INVALID = "CAMPAIGN_ATTEMPT_STATE_INVALID"
+_REASON_ATTEMPT_CONSUMED = "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED"
+_ATTEMPT_SCHEMA = "campaign_attempt_state_v1"
+_ATTEMPT_KEYS = frozenset({"schema_version", "consumed", "execution_count"})
+_PREPARED_REQUIRED = ("trial_outputs", "diagnostic_payload")
 _BOUND_FIELDS = (
     "runner_code_sha",
     "environment_id",
@@ -67,6 +77,7 @@ _BOUND_FIELDS = (
     "acceptance_record_file_sha256",
     "acceptance_identity_sha256",
     "prepared_campaign_file_sha256",
+    "owner_authorization_file_sha256",
 )
 
 
@@ -93,6 +104,8 @@ class RunConfig:
     calendar_version: str
     prepared_campaign_file: str
     prepared_campaign_file_sha256: str
+    owner_authorization_file_sha256: str
+    attempt_state_file: str
     horizon_return_rows: int
     horizon_purge_signal_axis_rows: int
     embargo_rows: int
@@ -120,6 +133,7 @@ class RunConfig:
             "calendar_id",
             "calendar_version",
             "prepared_campaign_file",
+            "attempt_state_file",
             "familywise_alpha",
             "bit_generator",
             "quantile_method",
@@ -139,6 +153,7 @@ class RunConfig:
             "trial_inventory_file_sha256",
             "environment_lock_sha256",
             "prepared_campaign_file_sha256",
+            "owner_authorization_file_sha256",
         ):
             value = getattr(self, name)
             if not isinstance(value, str) or _SHA256_RE.fullmatch(value) is None:
@@ -187,7 +202,7 @@ class RunConfig:
 
 @dataclass(frozen=True)
 class CampaignRun:
-    """Authorized diagnostic execution, or a named refusal with no outputs."""
+    """Authorized diagnostic reconciliation, or a named refusal with no outputs."""
 
     status: str
     reason: str | None
@@ -234,6 +249,7 @@ def configuration_projection(config: RunConfig) -> dict[str, object]:
             "environment_lock_sha256": "ENV_LOCK",
             "runner_code_sha": "GIT_COMMIT",
             "prepared_campaign_file_sha256": "FILE_BYTES",
+            "owner_authorization_file_sha256": "FILE_BYTES",
         },
         "protocol_file_sha256": config.protocol_file_sha256,
         "trial_inventory_file_sha256": config.trial_inventory_file_sha256,
@@ -241,11 +257,12 @@ def configuration_projection(config: RunConfig) -> dict[str, object]:
         "runner_code_sha": config.runner_code_sha,
         "environment_id": config.environment_id,
         "prepared_campaign_file_sha256": config.prepared_campaign_file_sha256,
+        "owner_authorization_file_sha256": config.owner_authorization_file_sha256,
     }
 
 
 def run_campaign(config: RunConfig) -> CampaignRun:
-    """Authorize the code path, then execute the diagnostic campaign once."""
+    """Authorize, then reconcile a prepared diagnostic payload at most once."""
 
     if not isinstance(config, RunConfig):
         raise TypeError("config must be RunConfig")
@@ -265,11 +282,20 @@ def run_campaign(config: RunConfig) -> CampaignRun:
         return _refused(authorization, _REASON_PREPARED_BYTES)
     if _is_sentinel(prepared_raw):
         return _refused(authorization, _REASON_PREPARED_SENTINEL)
+    prepared = _parse_prepared_campaign(prepared_raw)
+    if isinstance(prepared, str):
+        return _refused(authorization, prepared)
+    block = grant["fourteen_trial_run_authorization"]
+    assert isinstance(block, dict)
+    limit = block["execution_count_limit"]
+    assert isinstance(limit, int)
+    consumed = _consume_attempt(config.attempt_state_file, limit)
+    if consumed is not None:
+        return _refused(authorization, consumed)
     started_at = _utc_now()
     inventory_raw = Path(config.trial_inventory_file).read_bytes()
     protocol_raw = Path(config.protocol_file).read_bytes()
     inventory = parse_trial_inventory(inventory_raw)
-    prepared = json.loads(prepared_raw.decode("utf-8"))
     reconciliation = reconcile_semantic_trials(
         inventory,
         prepared["trial_outputs"],
@@ -291,7 +317,7 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     run_record = {
         "schema_version": _RUN_RECORD_SCHEMA,
         "evidence_ceiling": _EVIDENCE_CEILING,
-        "trials_executed": len(trial_ids),
+        "trials_reconciled": len(trial_ids),
         "trial_ids": list(trial_ids),
         "bound_fields": bound_fields,
         "configuration_projection_sha256": projection_digest,
@@ -309,7 +335,7 @@ def run_campaign(config: RunConfig) -> CampaignRun:
         _root_fields(config, prepared, inventory, reconciliation),
     )
     return CampaignRun(
-        _STATUS_EXECUTED,
+        _STATUS_RECONCILED,
         None,
         authorization,
         reconciliation,
@@ -341,6 +367,66 @@ def _read_prepared_octets(locator: str) -> bytes | None:
 
 def _is_sentinel(raw: bytes) -> bool:
     return raw == _SENTINEL_BODY or raw == _SENTINEL_BODY + b"\n"
+
+
+def _parse_prepared_campaign(raw: bytes) -> dict[str, object] | str:
+    try:
+        parsed = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return _REASON_PREPARED_UNPARSEABLE
+    if not isinstance(parsed, dict):
+        return _REASON_PREPARED_SCHEMA
+    for key in _PREPARED_REQUIRED:
+        value = parsed.get(key)
+        if not isinstance(value, dict):
+            return _REASON_PREPARED_SCHEMA
+    return parsed
+
+
+def _consume_attempt(locator: str, limit: int) -> str | None:
+    path = Path(locator)
+    try:
+        if not path.is_file():
+            return _REASON_ATTEMPT_ABSENT
+        fd = os.open(path, os.O_RDWR)
+    except OSError:
+        return _REASON_ATTEMPT_ABSENT
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        size = os.fstat(fd).st_size
+        raw = os.read(fd, size) if size else b""
+        try:
+            parsed = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return _REASON_ATTEMPT_INVALID
+        if not isinstance(parsed, dict) or set(parsed) != _ATTEMPT_KEYS:
+            return _REASON_ATTEMPT_INVALID
+        if parsed.get("schema_version") != _ATTEMPT_SCHEMA:
+            return _REASON_ATTEMPT_INVALID
+        consumed = parsed.get("consumed")
+        execution_count = parsed.get("execution_count")
+        if not isinstance(consumed, bool):
+            return _REASON_ATTEMPT_INVALID
+        if isinstance(execution_count, bool) or not isinstance(execution_count, int):
+            return _REASON_ATTEMPT_INVALID
+        if consumed or execution_count >= limit:
+            return _REASON_ATTEMPT_CONSUMED
+        payload = json.dumps(
+            {
+                "schema_version": _ATTEMPT_SCHEMA,
+                "consumed": True,
+                "execution_count": execution_count + 1,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        os.lseek(fd, 0, os.SEEK_SET)
+        os.write(fd, payload)
+        os.ftruncate(fd, len(payload))
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+    return None
 
 
 def _utc_now() -> str:

@@ -34,6 +34,7 @@ def _authorized_config(**overrides: object) -> RunConfig:
         "trial_inventory_file": str(fixture_file(inputs["inventory_file"])),
         "detached_binding_file": str(fixture_file(inputs["binding_file"])),
         "prepared_campaign_file": str(fixture_file(inputs["prepared_file"])),
+        "attempt_state_file": str(fixture_file(inputs["attempt_state_file"])),
     }
     digests = {
         "acceptance_record_file_sha256": expected["file_bytes"],
@@ -44,6 +45,9 @@ def _authorized_config(**overrides: object) -> RunConfig:
         "protocol_file_sha256": expected["protocol_file_bytes"],
         "trial_inventory_file_sha256": expected["inventory_file_bytes"],
         "prepared_campaign_file_sha256": expected["prepared_file_bytes"],
+        "owner_authorization_file_sha256": expected[
+            "owner_authorization_file_sha256"
+        ],
     }
     return make_run_config(locators, digests, protocol, **overrides)
 
@@ -142,6 +146,7 @@ def test_configuration_projection_labels_digest_roles() -> None:
     assert roles["acceptance_record_file_sha256"] == "FILE_BYTES"
     assert roles["acceptance_identity_sha256"] == "CANONICAL_IDENTITY"
     assert roles["prepared_campaign_file_sha256"] == "FILE_BYTES"
+    assert roles["owner_authorization_file_sha256"] == "FILE_BYTES"
     assert (
         projection["acceptance_record_file_sha256"]
         == config.acceptance_record_file_sha256
@@ -150,6 +155,10 @@ def test_configuration_projection_labels_digest_roles() -> None:
     assert (
         projection["prepared_campaign_file_sha256"]
         == config.prepared_campaign_file_sha256
+    )
+    assert (
+        projection["owner_authorization_file_sha256"]
+        == config.owner_authorization_file_sha256
     )
 
 
@@ -174,7 +183,26 @@ def _config_with_grant(grant_file: str, **overrides: object) -> RunConfig:
     )
 
 
-def test_exact_grant_v2_lists_reach_diagnostic_execution() -> None:
+def _copy_attempt_state(tmp_path: Path) -> str:
+    source = fixture_file("precondition/attempt_state.json")
+    target = tmp_path / "attempt_state.json"
+    target.write_bytes(source.read_bytes())
+    return str(target)
+
+
+def _binding_for_prepared(tmp_path: Path, digest: str) -> str:
+    binding = json.loads(
+        fixture_file("precondition/binding_valid.json").read_text(encoding="utf-8")
+    )
+    binding["prepared_campaign_file_sha256"] = digest
+    path = tmp_path / "binding_prepared.json"
+    path.write_text(json.dumps(binding), encoding="utf-8")
+    return str(path)
+
+
+def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
+    tmp_path: Path,
+) -> None:
     fixture = load_runner_fixture("grant_run_execution.json")
     expected = fixture["expected"]
     inputs = fixture["inputs"]
@@ -187,7 +215,10 @@ def test_exact_grant_v2_lists_reach_diagnostic_execution() -> None:
         fixture_file("precondition/trial_inventory.json"),
     )
     before = {path: sha256_hex(path.read_bytes()) for path in locators}
-    config = _config_with_grant(inputs["grant_file"])
+    config = _config_with_grant(
+        inputs["grant_file"],
+        attempt_state_file=_copy_attempt_state(tmp_path),
+    )
     grant = json.loads(fixture_file(inputs["grant_file"]).read_text(encoding="utf-8"))
     assert grant["now_eligible"] == expected["now_eligible"]
     assert grant["does_not_authorize"] == expected["does_not_authorize"]
@@ -203,14 +234,16 @@ def test_exact_grant_v2_lists_reach_diagnostic_execution() -> None:
     assert result.bundle is not None
     assert result.run_record is not None
     assert list(result.run_record) == expected["run_record_keys"]
+    assert expected["execution_claim_key"] not in result.run_record
     assert result.run_record["evidence_ceiling"] == expected["evidence_ceiling"]
-    assert result.run_record["trials_executed"] == expected["trials_executed"]
+    assert result.run_record["trials_reconciled"] == expected["trials_reconciled"]
     assert result.run_record["trial_ids"] == expected["trial_ids"]
     after = {path: sha256_hex(path.read_bytes()) for path in locators}
     assert before == after
-    assert fixture["forbidden"]["filesystem_write"]
+    assert fixture["forbidden"]["campaign_artifact_write"]
     assert fixture["forbidden"]["result_access_executable"]
     assert fixture["forbidden"]["performance_access_executable"]
+    assert fixture["forbidden"]["trial_execution_claim"]
 
 
 def test_run_campaign_refuses_sentinel_and_prepared_byte_mismatch(
@@ -239,7 +272,7 @@ def test_run_campaign_refuses_sentinel_and_prepared_byte_mismatch(
     mutated = json.loads(
         fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
     )
-    mutated["attempt_count"] = expected["trials_executed"]
+    mutated["attempt_count"] = expected["trials_reconciled"]
     mutated_path = tmp_path / "mutated_prepared.json"
     mutated_path.write_text(json.dumps(mutated), encoding="utf-8")
     mismatched = run_campaign(
@@ -250,3 +283,90 @@ def test_run_campaign_refuses_sentinel_and_prepared_byte_mismatch(
     )
     assert mismatched.status == "REFUSED"
     assert mismatched.reason == expected["prepared_bytes_reason"]
+
+
+def test_second_authorized_invocation_is_refused(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    expected = fixture["expected"]
+    attempt_state = _copy_attempt_state(tmp_path)
+    config = _config_with_grant(
+        fixture["inputs"]["grant_file"],
+        attempt_state_file=attempt_state,
+    )
+    first = run_campaign(config)
+    second = run_campaign(config)
+    assert first.status == expected["status"]
+    assert second.status == "REFUSED"
+    assert second.reason == expected["attempt_consumed_reason"]
+    assert second.bundle is None
+    assert second.run_record is None
+
+
+def test_forged_owner_authorization_digest_is_refused(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    expected = fixture["expected"]
+    grant = json.loads(
+        fixture_file(fixture["inputs"]["grant_file"]).read_text(encoding="utf-8")
+    )
+    grant["fourteen_trial_run_authorization"]["owner_authorization_file_sha256"] = (
+        expected["wrong_owner_digest"]
+    )
+    grant_path = tmp_path / "forged_grant.json"
+    grant_path.write_text(json.dumps(grant), encoding="utf-8")
+    result = authorize(
+        _authorized_config(
+            stage2_grant_file=str(grant_path),
+            stage2_grant_file_sha256=sha256_hex(grant_path.read_bytes()),
+        )
+    )
+    assert result.status == "REFUSED"
+    assert result.reason == expected["owner_mismatch_reason"]
+
+
+def test_malformed_prepared_campaign_is_named_refusal(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    expected = fixture["expected"]
+    inputs = fixture["inputs"]
+    malformed_path = tmp_path / "malformed.json"
+    malformed_path.write_bytes(inputs["malformed_prepared"].encode("utf-8"))
+    malformed = run_campaign(
+        _config_with_grant(
+            inputs["grant_file"],
+            prepared_campaign_file=str(malformed_path),
+            prepared_campaign_file_sha256=sha256_hex(malformed_path.read_bytes()),
+            detached_binding_file=_binding_for_prepared(
+                tmp_path, sha256_hex(malformed_path.read_bytes())
+            ),
+            attempt_state_file=_copy_attempt_state(tmp_path),
+        )
+    )
+    assert malformed.status == "REFUSED"
+    assert malformed.reason == expected["malformed_reason"]
+    missing_path = tmp_path / "missing.json"
+    missing_path.write_text(json.dumps(inputs["missing_key_prepared"]), encoding="utf-8")
+    missing_digest = sha256_hex(missing_path.read_bytes())
+    missing = run_campaign(
+        _config_with_grant(
+            inputs["grant_file"],
+            prepared_campaign_file=str(missing_path),
+            prepared_campaign_file_sha256=missing_digest,
+            detached_binding_file=_binding_for_prepared(tmp_path, missing_digest),
+            attempt_state_file=_copy_attempt_state(tmp_path),
+        )
+    )
+    assert missing.status == "REFUSED"
+    assert missing.reason == expected["schema_reason"]
+    wrong_path = tmp_path / "wrong_type.json"
+    wrong_path.write_text(json.dumps(inputs["wrong_type_prepared"]), encoding="utf-8")
+    wrong_digest = sha256_hex(wrong_path.read_bytes())
+    wrong = run_campaign(
+        _config_with_grant(
+            inputs["grant_file"],
+            prepared_campaign_file=str(wrong_path),
+            prepared_campaign_file_sha256=wrong_digest,
+            detached_binding_file=_binding_for_prepared(tmp_path, wrong_digest),
+            attempt_state_file=_copy_attempt_state(tmp_path),
+        )
+    )
+    assert wrong.status == "REFUSED"
+    assert wrong.reason == expected["schema_reason"]

@@ -9,13 +9,15 @@ profitability, or trading readiness.
 
 ### Changed
 
-- Track A PR 4 diagnostic execution is now reachable under
+- Track A PR 4 diagnostic reconciliation is now reachable under
   `DIAGNOSTIC_ONLY`. A grant may list `FOURTEEN_TRIAL_RUN` in
   `now_eligible` only with a valid run-authorization block and explicit
-  forbiddance of `RESULT_ACCESS` and `PERFORMANCE_ACCESS`. Those access
-  stages stay unexecutable. Authorized runs return
-  `EXECUTED_DIAGNOSTIC_ONLY`. This adds no private data, D8, A2, or
-  14-trial run.
+  forbiddance of `RESULT_ACCESS` and `PERFORMANCE_ACCESS`. The grant's
+  owner-authorization digest must match the detached binding. Authorized
+  prepared-payload work returns `RECONCILED_DIAGNOSTIC_ONLY` and does
+  not claim trial execution. A durable attempt-state file consumes the
+  one-run limit. Those access stages stay unexecutable. This adds no
+  private data, D8, A2, or 14-trial run.
 
 ### Fixed
 

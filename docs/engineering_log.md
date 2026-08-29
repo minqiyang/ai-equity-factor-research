@@ -1,5 +1,20 @@
 # Engineering Log
 
+## 2026-08-29 - Track A PR 4 exact-head P1 remediation
+
+- Bound `owner_authorization_file_sha256` through RunConfig, the
+  detached binding, and the grant block. A forged grant digest now
+  refuses `GRANT_OWNER_AUTHORIZATION_DIGEST_MISMATCH`.
+- `run_campaign` consumes a durable attempt-state file under an
+  exclusive lock so a second authorized invocation refuses
+  `CAMPAIGN_ATTEMPT_ALREADY_CONSUMED`.
+- Prepared-payload work is labeled `RECONCILED_DIAGNOSTIC_ONLY` with
+  `trials_reconciled`. It does not claim trial execution.
+- Malformed prepared documents refuse `PREPARED_CAMPAIGN_UNPARSEABLE`
+  or `PREPARED_CAMPAIGN_SCHEMA_INVALID`.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, or 14-trial
+  run.
+
 ## 2026-08-29 - Track A PR 4 diagnostic execution path
 
 - Split grant eligibility so `FOURTEEN_TRIAL_RUN` may appear in

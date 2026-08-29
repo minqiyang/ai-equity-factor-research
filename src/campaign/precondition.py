@@ -68,6 +68,7 @@ _REASON_RUN_RETENTION = "GRANT_RUN_RETENTION_NOT_ALL_EXTERNAL"
 _REASON_RUN_CHERRY_PICK = "GRANT_RUN_CHERRY_PICK_NOT_FORBIDDEN"
 _REASON_RUN_SELECTION = "GRANT_RUN_SELECTION_NOT_FORBIDDEN"
 _REASON_RUN_INTERPRETATION = "GRANT_RUN_INTERPRETATION_NOT_UNGRANTED"
+_REASON_OWNER_AUTHORIZATION_DIGEST = "GRANT_OWNER_AUTHORIZATION_DIGEST_MISMATCH"
 _STAGE_PR3_PLANNING = "TRACK_A_PR3_PLANNING"
 _STAGE_FOURTEEN_TRIAL = "FOURTEEN_TRIAL_RUN"
 _STAGE_RESULT_ACCESS = "RESULT_ACCESS"
@@ -270,6 +271,7 @@ _BINDING_TOP = frozenset(
         "acceptance_record_file_sha256",
         "acceptance_identity_sha256",
         "prepared_campaign_file_sha256",
+        "owner_authorization_file_sha256",
         "bound_at_utc",
     }
 )
@@ -549,7 +551,7 @@ def _authorize_grant_fields(
         return _refuse(_REASON_INTENDED_STAGE_FORBIDDEN)
     if _STAGE_PR3_PLANNING not in eligible:
         return _refuse(_REASON_INTENDED_STAGE_FORBIDDEN)
-    return _authorize_run_block(grant[_RUN_AUTH_KEY])
+    return _authorize_run_block(config, grant[_RUN_AUTH_KEY])
 
 
 def _authorize_binding(config: object) -> Authorization | dict[str, object]:
@@ -588,6 +590,9 @@ def _authorize_binding(config: object) -> Authorization | dict[str, object]:
         ),
         "prepared_campaign_file_sha256": getattr(
             config, "prepared_campaign_file_sha256"
+        ),
+        "owner_authorization_file_sha256": getattr(
+            config, "owner_authorization_file_sha256"
         ),
     }
     for field, wanted in expected.items():
@@ -832,8 +837,14 @@ def _run_authorization_schema_valid(value: object) -> bool:
     return True
 
 
-def _authorize_run_block(block: object) -> Authorization | None:
+def _authorize_run_block(config: object, block: object) -> Authorization | None:
     assert isinstance(block, dict)
+    bound_owner = _hex64(
+        getattr(config, "owner_authorization_file_sha256"),
+        "owner_authorization_file_sha256",
+    )
+    if block["owner_authorization_file_sha256"] != bound_owner:
+        return _refuse(_REASON_OWNER_AUTHORIZATION_DIGEST)
     if block["ceiling"] != _RUN_CEILING:
         return _refuse(_REASON_RUN_CEILING)
     if block["trials_authorized"] != _RUN_TRIALS_AUTHORIZED:
@@ -872,6 +883,7 @@ def _binding_schema_valid(value: object) -> bool:
         "acceptance_record_file_sha256",
         "acceptance_identity_sha256",
         "prepared_campaign_file_sha256",
+        "owner_authorization_file_sha256",
     ):
         if not _is_sha256(value[key]):
             return False
