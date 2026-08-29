@@ -1,5 +1,20 @@
 # Engineering Log
 
+## 2026-08-29 - Track A PR 4 exact-head P1 replay/ledger remediation
+
+- The attempt ledger is keyed by the bound grant digest. A second
+  fresh locator for the same grant refuses
+  `CAMPAIGN_ATTEMPT_ALREADY_CONSUMED`. A ledger whose grant digest does
+  not match refuses `CAMPAIGN_ATTEMPT_LEDGER_MISMATCH`.
+- Nested prepared payloads are reconciled before the attempt is
+  consumed, so a nested wrong-type document refuses
+  `PREPARED_CAMPAIGN_SCHEMA_INVALID` without spending the one-run
+  limit.
+- Bundle `attempt_count` comes from the consumed ledger, not the
+  prepared payload.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, or 14-trial
+  run.
+
 ## 2026-08-29 - Track A PR 4 exact-head P1 remediation
 
 - Bound `owner_authorization_file_sha256` through RunConfig, the
@@ -25,8 +40,10 @@
   `does_not_authorize`; it is not a disqualifier.
 - Revised `result_bearing_refusal_reason` branch order. Deleted the
   unconditional `RESULT_BEARING_RUN_NOT_AUTHORIZED` terminal refusal.
-- Authorized diagnostic runs return `EXECUTED_DIAGNOSTIC_ONLY` with a
-  value-free `run_record`. `run_campaign` performs no filesystem write.
+- Superseded by later same-day entries: authorized prepared-payload
+  work returns `RECONCILED_DIAGNOSTIC_ONLY`, not
+  `EXECUTED_DIAGNOSTIC_ONLY`, and `run_campaign` writes the bound
+  attempt-state ledger.
 - Synthetic tests cover the exact grant-v2 lists, the Lock 2 truth
   table, grant v1 schema invalidity, run-block value refusals, sentinel
   and prepared-byte mismatch, and binding v2 exact-key checks.

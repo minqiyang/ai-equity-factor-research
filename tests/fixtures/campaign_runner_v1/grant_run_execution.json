@@ -8,7 +8,9 @@
     "prepared_file": "precondition/prepared_campaign.json",
     "sentinel_file": "precondition/prepared_campaign_sentinel.txt",
     "v1_shape_file": "precondition/grant_v1_shape.json",
-    "wrong_type_prepared": {"diagnostic_payload": [], "trial_outputs": {}}
+    "wrong_type_prepared": {"diagnostic_payload": [], "trial_outputs": {}},
+    "nested_wrong_trial_id": "DIAG_MOM_12_1",
+    "conflicting_attempt_count": 0
   },
   "expected": {
     "authorization_status": "AUTHORIZED",
@@ -68,7 +70,9 @@
     "binding_timestamp_reason": "TIMESTAMP_NOT_TZ_AWARE",
     "extra_binding_key": "unbound_extra_field",
     "naive_bound_at_utc": "2019-06-16T12:00:00",
-    "wrong_prepared_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    "wrong_prepared_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "ledger_attempt_count": 1,
+    "alternate_locator_reason": "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED"
   },
   "forbidden": {
     "campaign_artifact_write": true,

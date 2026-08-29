@@ -63,9 +63,13 @@ _REASON_PREPARED_SCHEMA = "PREPARED_CAMPAIGN_SCHEMA_INVALID"
 _REASON_ATTEMPT_ABSENT = "CAMPAIGN_ATTEMPT_STATE_ABSENT"
 _REASON_ATTEMPT_INVALID = "CAMPAIGN_ATTEMPT_STATE_INVALID"
 _REASON_ATTEMPT_CONSUMED = "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED"
+_REASON_ATTEMPT_LEDGER = "CAMPAIGN_ATTEMPT_LEDGER_MISMATCH"
 _ATTEMPT_SCHEMA = "campaign_attempt_state_v1"
-_ATTEMPT_KEYS = frozenset({"schema_version", "consumed", "execution_count"})
+_ATTEMPT_KEYS = frozenset(
+    {"schema_version", "consumed", "execution_count", "grant_file_sha256"}
+)
 _PREPARED_REQUIRED = ("trial_outputs", "diagnostic_payload")
+_CONSUMED_GRANT_DIGESTS: set[str] = set()
 _BOUND_FIELDS = (
     "runner_code_sha",
     "environment_id",
@@ -285,22 +289,24 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     prepared = _parse_prepared_campaign(prepared_raw)
     if isinstance(prepared, str):
         return _refused(authorization, prepared)
+    inventory_raw = Path(config.trial_inventory_file).read_bytes()
+    protocol_raw = Path(config.protocol_file).read_bytes()
+    reconciled = _reconcile_prepared(inventory_raw, prepared)
+    if isinstance(reconciled, str):
+        return _refused(authorization, reconciled)
+    inventory, reconciliation = reconciled
     block = grant["fourteen_trial_run_authorization"]
     assert isinstance(block, dict)
     limit = block["execution_count_limit"]
     assert isinstance(limit, int)
-    consumed = _consume_attempt(config.attempt_state_file, limit)
-    if consumed is not None:
+    consumed = _consume_attempt(
+        config.attempt_state_file,
+        limit,
+        config.stage2_grant_file_sha256,
+    )
+    if isinstance(consumed, str):
         return _refused(authorization, consumed)
     started_at = _utc_now()
-    inventory_raw = Path(config.trial_inventory_file).read_bytes()
-    protocol_raw = Path(config.protocol_file).read_bytes()
-    inventory = parse_trial_inventory(inventory_raw)
-    reconciliation = reconcile_semantic_trials(
-        inventory,
-        prepared["trial_outputs"],
-        prepared["diagnostic_payload"],
-    )
     trial_ids = tuple(str(trial["trial_id"]) for trial in inventory)
     binding = authorization.binding
     if binding is None:
@@ -332,7 +338,7 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     ).encode("utf-8")
     bundle = assemble_evidence_bundle(
         children,
-        _root_fields(config, prepared, inventory, reconciliation),
+        _root_fields(config, inventory, reconciliation, consumed),
     )
     return CampaignRun(
         _STATUS_RECONCILED,
@@ -380,10 +386,40 @@ def _parse_prepared_campaign(raw: bytes) -> dict[str, object] | str:
         value = parsed.get(key)
         if not isinstance(value, dict):
             return _REASON_PREPARED_SCHEMA
+    trial_outputs = parsed["trial_outputs"]
+    assert isinstance(trial_outputs, dict)
+    for value in trial_outputs.values():
+        if not isinstance(value, dict):
+            return _REASON_PREPARED_SCHEMA
+        for record in value.values():
+            if record is not None and not isinstance(record, dict):
+                return _REASON_PREPARED_SCHEMA
     return parsed
 
 
-def _consume_attempt(locator: str, limit: int) -> str | None:
+def _reconcile_prepared(
+    inventory_raw: bytes,
+    prepared: dict[str, object],
+) -> tuple[tuple[object, ...], ReconciliationResult] | str:
+    try:
+        inventory = parse_trial_inventory(inventory_raw)
+        reconciliation = reconcile_semantic_trials(
+            inventory,
+            prepared["trial_outputs"],
+            prepared["diagnostic_payload"],
+        )
+    except (TypeError, ValueError):
+        return _REASON_PREPARED_SCHEMA
+    return inventory, reconciliation
+
+
+def _consume_attempt(
+    locator: str,
+    limit: int,
+    grant_digest: str,
+) -> str | int:
+    if grant_digest in _CONSUMED_GRANT_DIGESTS:
+        return _REASON_ATTEMPT_CONSUMED
     path = Path(locator)
     try:
         if not path.is_file():
@@ -403,6 +439,9 @@ def _consume_attempt(locator: str, limit: int) -> str | None:
             return _REASON_ATTEMPT_INVALID
         if parsed.get("schema_version") != _ATTEMPT_SCHEMA:
             return _REASON_ATTEMPT_INVALID
+        ledger_grant = parsed.get("grant_file_sha256")
+        if not isinstance(ledger_grant, str) or ledger_grant != grant_digest:
+            return _REASON_ATTEMPT_LEDGER
         consumed = parsed.get("consumed")
         execution_count = parsed.get("execution_count")
         if not isinstance(consumed, bool):
@@ -410,12 +449,15 @@ def _consume_attempt(locator: str, limit: int) -> str | None:
         if isinstance(execution_count, bool) or not isinstance(execution_count, int):
             return _REASON_ATTEMPT_INVALID
         if consumed or execution_count >= limit:
+            _CONSUMED_GRANT_DIGESTS.add(grant_digest)
             return _REASON_ATTEMPT_CONSUMED
+        new_count = execution_count + 1
         payload = json.dumps(
             {
                 "schema_version": _ATTEMPT_SCHEMA,
                 "consumed": True,
-                "execution_count": execution_count + 1,
+                "execution_count": new_count,
+                "grant_file_sha256": grant_digest,
             },
             sort_keys=True,
             separators=(",", ":"),
@@ -424,9 +466,10 @@ def _consume_attempt(locator: str, limit: int) -> str | None:
         os.write(fd, payload)
         os.ftruncate(fd, len(payload))
         os.fsync(fd)
+        _CONSUMED_GRANT_DIGESTS.add(grant_digest)
     finally:
         os.close(fd)
-    return None
+    return new_count
 
 
 def _utc_now() -> str:
@@ -463,15 +506,10 @@ def _bundle_children(
 
 def _root_fields(
     config: RunConfig,
-    prepared: object,
     inventory: tuple[object, ...],
     reconciliation: ReconciliationResult,
+    attempt_count: int,
 ) -> dict[str, object]:
-    attempt_count = 0
-    if isinstance(prepared, dict):
-        raw_attempt = prepared.get("attempt_count")
-        if not isinstance(raw_attempt, bool) and isinstance(raw_attempt, int):
-            attempt_count = raw_attempt
     if reconciliation.trials:
         statuses: list[dict[str, str]] = [
             {
