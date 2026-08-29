@@ -1,5 +1,23 @@
 # Engineering Log
 
+## 2026-08-29 - Track A PR 4 diagnostic execution path
+
+- Split grant eligibility so `FOURTEEN_TRIAL_RUN` may appear in
+  `now_eligible` when the run-authorization block is valid.
+- `RESULT_ACCESS` and `PERFORMANCE_ACCESS` in `now_eligible` still
+  refuse `GRANT_NOW_ELIGIBLE_AUTHORIZES_FORBIDDEN_STAGE`.
+- Explicit forbiddance of both access stages is required in
+  `does_not_authorize`; it is not a disqualifier.
+- Revised `result_bearing_refusal_reason` branch order. Deleted the
+  unconditional `RESULT_BEARING_RUN_NOT_AUTHORIZED` terminal refusal.
+- Authorized diagnostic runs return `EXECUTED_DIAGNOSTIC_ONLY` with a
+  value-free `run_record`. `run_campaign` performs no filesystem write.
+- Synthetic tests cover the exact grant-v2 lists, the Lock 2 truth
+  table, grant v1 schema invalidity, run-block value refusals, sentinel
+  and prepared-byte mismatch, and binding v2 exact-key checks.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, identity
+  reopen, performance-informed selection, or 14-trial run.
+
 ## 2026-08-25 - Public-safe Stage 4 G-2 status
 
 - Updated `docs/current_handoff.md` and `docs/current_roadmap.md` so a

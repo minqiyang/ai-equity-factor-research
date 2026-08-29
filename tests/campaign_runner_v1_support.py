@@ -444,6 +444,7 @@ def make_run_config(
         "calendar_id": protocol["calendar_id"],
         "calendar_version": protocol["calendar_version"],
         "prepared_campaign_file": locators["prepared_campaign_file"],
+        "prepared_campaign_file_sha256": digests["prepared_campaign_file_sha256"],
         "horizon_return_rows": protocol["horizon_return_rows"],
         "horizon_purge_signal_axis_rows": protocol[
             "horizon_purge_signal_axis_rows"

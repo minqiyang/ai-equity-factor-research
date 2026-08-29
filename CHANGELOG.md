@@ -7,6 +7,16 @@ profitability, or trading readiness.
 
 ## Unreleased
 
+### Changed
+
+- Track A PR 4 diagnostic execution is now reachable under
+  `DIAGNOSTIC_ONLY`. A grant may list `FOURTEEN_TRIAL_RUN` in
+  `now_eligible` only with a valid run-authorization block and explicit
+  forbiddance of `RESULT_ACCESS` and `PERFORMANCE_ACCESS`. Those access
+  stages stay unexecutable. Authorized runs return
+  `EXECUTED_DIAGNOSTIC_ONLY`. This adds no private data, D8, A2, or
+  14-trial run.
+
 ### Fixed
 
 - Closed remaining Track A PR 3 exact-head findings: ledger schema tests

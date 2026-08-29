@@ -42,6 +42,7 @@ def _authorized_config(**overrides: object) -> RunConfig:
         "stage2_grant_file_sha256": expected["grant_file_bytes"],
         "protocol_file_sha256": expected["protocol_file_bytes"],
         "trial_inventory_file_sha256": expected["inventory_file_bytes"],
+        "prepared_campaign_file_sha256": expected["prepared_file_bytes"],
     }
     return make_run_config(locators, digests, protocol, **overrides)
 
@@ -460,3 +461,129 @@ def test_missing_or_unreadable_authorization_inputs_refuse(
         assert blocked.status == expected["status"], case
         assert blocked.reason == case["reason"], case
     assert fixture["forbidden"]["raise_oserror"]
+
+
+def _mutated_grant_lists(
+    grant: dict[str, object],
+    mutation: dict[str, object],
+    replacements: dict[str, object],
+) -> dict[str, object]:
+    action = mutation["action"]
+    if action == "none":
+        return grant
+    if action == "add":
+        field = str(mutation["field"])
+        grant[field] = list(grant[field]) + [mutation["value"]]
+        return grant
+    if action == "remove":
+        field = str(mutation["field"])
+        grant[field] = [
+            item for item in grant[field] if item != mutation["value"]
+        ]
+        return grant
+    if action == "replace_lists":
+        lists = replacements[str(mutation["source"])]
+        grant["now_eligible"] = list(lists["now_eligible"])
+        grant["does_not_authorize"] = list(lists["does_not_authorize"])
+        return grant
+    raise AssertionError(action)
+
+
+def test_revised_lock2_truth_table(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("lock2_truth_table.json")
+    base = json.loads(
+        fixture_file(fixture["inputs"]["grant_file"]).read_text(encoding="utf-8")
+    )
+    replacements = {"grant_v1_lists": fixture["inputs"]["grant_v1_lists"]}
+    for row in fixture["expected"]["rows"]:
+        grant = json.loads(json.dumps(base))
+        grant = _mutated_grant_lists(grant, row["mutation"], replacements)
+        assert result_bearing_refusal_reason(grant) == row["reason"], row["id"]
+        if not row["also_refused_by_authorize"]:
+            continue
+        grant_path = tmp_path / "lock2_grant.json"
+        grant_raw = _write_json(grant_path, grant)
+        result = authorize(
+            _authorized_config(
+                stage2_grant_file=str(grant_path),
+                stage2_grant_file_sha256=sha256_hex(grant_raw),
+            )
+        )
+        assert result.status == "REFUSED", row["id"]
+        assert result.reason == row["reason"], row["id"]
+    assert fixture["forbidden"]["result_or_performance_executable"]
+
+
+def test_grant_v1_shape_is_schema_invalid() -> None:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    grant_path = fixture_file(fixture["inputs"]["v1_shape_file"])
+    result = authorize(
+        _authorized_config(
+            stage2_grant_file=str(grant_path),
+            stage2_grant_file_sha256=sha256_hex(grant_path.read_bytes()),
+        )
+    )
+    assert result.status == "REFUSED"
+    assert result.reason == fixture["expected"]["v1_shape_reason"]
+
+
+def test_run_authorization_block_value_refusals(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("grant_run_authorization_mutations.json")
+    expected = fixture["expected"]
+    base = json.loads(
+        fixture_file(fixture["inputs"]["grant_file"]).read_text(encoding="utf-8")
+    )
+    for case in fixture["inputs"]["cases"]:
+        grant = json.loads(json.dumps(base))
+        grant["fourteen_trial_run_authorization"][case["field"]] = case["value"]
+        grant_path = tmp_path / "run_block_grant.json"
+        grant_raw = _write_json(grant_path, grant)
+        result = authorize(
+            _authorized_config(
+                stage2_grant_file=str(grant_path),
+                stage2_grant_file_sha256=sha256_hex(grant_raw),
+            )
+        )
+        assert result.status == expected["status"], case
+        assert result.reason == case["reason"], case
+    assert fixture["forbidden"]["block_value_authorizes"]
+
+
+def test_binding_v2_schema_and_prepared_digest_refusals(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    expected = fixture["expected"]
+    base = json.loads(
+        fixture_file("precondition/binding_valid.json").read_text(encoding="utf-8")
+    )
+    extra = json.loads(json.dumps(base))
+    extra[expected["extra_binding_key"]] = expected["extra_binding_key"]
+    extra_path = tmp_path / "binding_extra.json"
+    _write_json(extra_path, extra)
+    extra_result = authorize(_authorized_config(detached_binding_file=str(extra_path)))
+    assert extra_result.status == "REFUSED"
+    assert extra_result.reason == expected["binding_schema_reason"]
+    missing = json.loads(json.dumps(base))
+    del missing["prepared_campaign_file_sha256"]
+    missing_path = tmp_path / "binding_missing.json"
+    _write_json(missing_path, missing)
+    missing_result = authorize(
+        _authorized_config(detached_binding_file=str(missing_path))
+    )
+    assert missing_result.status == "REFUSED"
+    assert missing_result.reason == expected["binding_schema_reason"]
+    mutated = json.loads(json.dumps(base))
+    mutated["prepared_campaign_file_sha256"] = expected["wrong_prepared_digest"]
+    mutated_path = tmp_path / "binding_prepared.json"
+    _write_json(mutated_path, mutated)
+    mutated_result = authorize(
+        _authorized_config(detached_binding_file=str(mutated_path))
+    )
+    assert mutated_result.status == "REFUSED"
+    assert mutated_result.reason == expected["binding_field_reason"]
+    naive = json.loads(json.dumps(base))
+    naive["bound_at_utc"] = expected["naive_bound_at_utc"]
+    naive_path = tmp_path / "binding_naive.json"
+    _write_json(naive_path, naive)
+    naive_result = authorize(_authorized_config(detached_binding_file=str(naive_path)))
+    assert naive_result.status == "REFUSED"
+    assert naive_result.reason == expected["binding_timestamp_reason"]

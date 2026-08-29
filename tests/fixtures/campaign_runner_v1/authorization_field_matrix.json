@@ -23,7 +23,9 @@
       {"field": "result", "reason": "GRANT_GATE_RESULT_NOT_UNANIMOUS", "target": "grant_gate", "value": "SPLIT"},
       {"field": "dataset_acceptance", "reason": "GRANT_DATASET_ACCEPTANCE_MISMATCH", "target": "grant", "value": "blocked"},
       {"field": "review_decision", "reason": "GRANT_REVIEW_DECISION_MISMATCH", "target": "grant", "value": "accepted"},
-      {"field": "now_eligible", "reason": "GRANT_NOW_ELIGIBLE_AUTHORIZES_FORBIDDEN_STAGE", "target": "grant", "value": ["FOURTEEN_TRIAL_RUN"]},
+      {"field": "now_eligible", "reason": "GRANT_NOW_ELIGIBLE_AUTHORIZES_FORBIDDEN_STAGE", "target": "grant", "value": ["TRACK_A_PR3_PLANNING", "RESULT_ACCESS"]},
+      {"field": "now_eligible", "reason": "GRANT_NOW_ELIGIBLE_AUTHORIZES_FORBIDDEN_STAGE", "target": "grant", "value": ["TRACK_A_PR3_PLANNING", "PERFORMANCE_ACCESS"]},
+      {"field": "now_eligible", "reason": "GRANT_DOES_NOT_AUTHORIZE_TRACK_A_PR3_PLANNING", "target": "grant", "value": ["FOURTEEN_TRIAL_RUN"]},
       {"field": "now_eligible", "reason": "GRANT_DOES_NOT_AUTHORIZE_TRACK_A_PR3_PLANNING", "target": "grant", "value": []},
       {"field": "now_eligible", "reason": "GRANT_DOES_NOT_AUTHORIZE_TRACK_A_PR3_PLANNING", "target": "grant", "value": ["UNRELATED_STAGE"]},
       {"field": "does_not_authorize", "reason": "GRANT_DOES_NOT_AUTHORIZE_TRACK_A_PR3_PLANNING", "target": "grant", "value": ["TRACK_A_PR3_PLANNING"]}

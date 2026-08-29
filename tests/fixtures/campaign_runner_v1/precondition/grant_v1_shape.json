@@ -10,16 +10,6 @@
     "RESULT_ACCESS",
     "FOURTEEN_TRIAL_RUN"
   ],
-  "fourteen_trial_run_authorization": {
-    "ceiling": "DIAGNOSTIC_ONLY",
-    "cherry_pick": "FORBIDDEN",
-    "execution_count_limit": 1,
-    "formal_interpretation": "NOT_GRANTED",
-    "outcome_retention": "ALL_OUTCOMES_RETAINED_EXTERNAL",
-    "owner_authorization_file_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-    "performance_informed_selection": "FORBIDDEN",
-    "trials_authorized": 14
-  },
   "gate": {
     "fable": "PASS",
     "grok": "PASS",

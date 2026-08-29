@@ -1,0 +1,48 @@
+{
+  "inputs": {
+    "grant_file": "precondition/grant_run_authorized.json",
+    "cases": [
+      {
+        "field": "ceiling",
+        "reason": "GRANT_RUN_CEILING_NOT_DIAGNOSTIC_ONLY",
+        "value": "FORMAL"
+      },
+      {
+        "field": "trials_authorized",
+        "reason": "GRANT_RUN_TRIAL_COUNT_NOT_FOURTEEN",
+        "value": 13
+      },
+      {
+        "field": "execution_count_limit",
+        "reason": "GRANT_RUN_EXECUTION_LIMIT_NOT_ONE",
+        "value": 2
+      },
+      {
+        "field": "outcome_retention",
+        "reason": "GRANT_RUN_RETENTION_NOT_ALL_EXTERNAL",
+        "value": "DROPPED"
+      },
+      {
+        "field": "cherry_pick",
+        "reason": "GRANT_RUN_CHERRY_PICK_NOT_FORBIDDEN",
+        "value": "ALLOWED"
+      },
+      {
+        "field": "performance_informed_selection",
+        "reason": "GRANT_RUN_SELECTION_NOT_FORBIDDEN",
+        "value": "ALLOWED"
+      },
+      {
+        "field": "formal_interpretation",
+        "reason": "GRANT_RUN_INTERPRETATION_NOT_UNGRANTED",
+        "value": "GRANTED"
+      }
+    ]
+  },
+  "expected": {
+    "status": "REFUSED"
+  },
+  "forbidden": {
+    "block_value_authorizes": true
+  }
+}

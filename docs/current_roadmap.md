@@ -65,7 +65,7 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 | 2 | Track A PR 2: dataset manifest and validation | Public validator on main; campaign `DIAGNOSTIC_READY`; formal interpretation not granted | Complete for the diagnostic track with validator, safe projection, freeze hashes, blinded `diagnostic_only` review, and `DIAGNOSTIC_READY` hashes. |
 | 3 | Track A PR 3: bounded diagnostic runner | Code on main via PR #187 | Complete when shippable runner code and synthetic golden fixtures satisfy the binding PR 3 acceptance criteria. Does not include a 14-trial run. |
 | 4 | Detached pre-run binding | G-2 accepted by hash; not complete | Complete only when exact code, configuration, environment, protocol, inventory, and accepted dataset identities are bound outside the repository. G-2 is accepted by hash; the 14-trial run has not executed. |
-| 5 | Track A PR 4: frozen diagnostic evidence | Blocked by stage 4 | Complete only after all 14 trials run once, every outcome is retained externally, and an approved safe aggregate projection is produced. |
+| 5 | Track A PR 4: frozen diagnostic evidence | in progress | Complete only after all 14 trials run once, every outcome is retained externally, and an approved safe aggregate projection is produced. |
 | 6 | Track B minimal formal evidence runtime | Deferred until Track A closes | Required before prospective performance access or formal promotion; not a Track A prerequisite. |
 
 ## Parallel Dataset-Independent Protocol-Core Lane
