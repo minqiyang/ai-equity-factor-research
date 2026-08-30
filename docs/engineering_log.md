@@ -1,5 +1,99 @@
 # Engineering Log
 
+## 2026-08-30 - Track A PR 4 durable ledger, bundle preflight, digest recheck
+
+- Attempt consumption lives under the user data directory, not
+  `tempfile.gettempdir()`. A missing identity file refuses
+  `CAMPAIGN_ATTEMPT_STATE_ABSENT`; deleting a tmp ledger or planting a
+  fresh tmp file cannot replay.
+- Bundle completeness is checked before consume. Missing required
+  children refuse `BUNDLE_CHILD_MISSING`. Invalid assembly is a named
+  refusal, not `RECONCILED_DIAGNOSTIC_ONLY`.
+- Protocol and inventory bytes consumed after `authorize()` are
+  rehashed against the bound digests. A file swap refuses
+  `PROTOCOL_FREEZE_BYTES_MISMATCH` or `TRIAL_INVENTORY_BYTES_MISMATCH`
+  without spending the attempt.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, or 14-trial
+  run.
+
+## 2026-08-29 - Track A PR 4 owner binding, cross-process cap, reserved children
+
+- The detached owner digest is authenticated against
+  `owner_authorization_file_sha256` on the independently accepted
+  acceptance record. Matching RunConfig, grant-block, and binding
+  values is not enough; a joint grant-and-binding mutation is refused
+  `GRANT_OWNER_AUTHORIZATION_DIGEST_MISMATCH`.
+- Attempt consumption uses one durable store uniquely keyed by
+  campaign identity. Caller-selected `attempt_state_file` locators and
+  process-local sets are not the cap. A second process with a fresh
+  caller ledger is refused `CAMPAIGN_ATTEMPT_ALREADY_CONSUMED`.
+- Prepared `bundle_children` that collide with runner-owned names
+  refuse `PREPARED_CAMPAIGN_CHILD_COLLISION` before the attempt is
+  consumed. Runner-owned children are written after prepared children.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, or 14-trial
+  run.
+
+## 2026-08-29 - Track A PR 4 attempt identity and ledger count
+
+- Attempt consumption is keyed by `campaign_identity` of the trusted
+  detached bound fields, not the caller-supplied grant FILE_BYTES.
+  A metadata-mutated grant with a fresh ledger still refuses
+  `CAMPAIGN_ATTEMPT_ALREADY_CONSUMED`.
+- Negative or inconsistent ledger `execution_count` refuses
+  `CAMPAIGN_ATTEMPT_STATE_INVALID` before mutation.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, or 14-trial
+  run.
+
+## 2026-08-29 - Track A PR 4 exact-head P1 replay/ledger remediation
+
+- The attempt ledger is keyed by the bound grant digest. A second
+  fresh locator for the same grant refuses
+  `CAMPAIGN_ATTEMPT_ALREADY_CONSUMED`. A ledger whose grant digest does
+  not match refuses `CAMPAIGN_ATTEMPT_LEDGER_MISMATCH`.
+- Nested prepared payloads are reconciled before the attempt is
+  consumed, so a nested wrong-type document refuses
+  `PREPARED_CAMPAIGN_SCHEMA_INVALID` without spending the one-run
+  limit.
+- Bundle `attempt_count` comes from the consumed ledger, not the
+  prepared payload.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, or 14-trial
+  run.
+
+## 2026-08-29 - Track A PR 4 exact-head P1 remediation
+
+- Bound `owner_authorization_file_sha256` through RunConfig, the
+  detached binding, and the grant block. A forged grant digest now
+  refuses `GRANT_OWNER_AUTHORIZATION_DIGEST_MISMATCH`.
+- `run_campaign` consumes a durable attempt-state file under an
+  exclusive lock so a second authorized invocation refuses
+  `CAMPAIGN_ATTEMPT_ALREADY_CONSUMED`.
+- Prepared-payload work is labeled `RECONCILED_DIAGNOSTIC_ONLY` with
+  `trials_reconciled`. It does not claim trial execution.
+- Malformed prepared documents refuse `PREPARED_CAMPAIGN_UNPARSEABLE`
+  or `PREPARED_CAMPAIGN_SCHEMA_INVALID`.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, or 14-trial
+  run.
+
+## 2026-08-29 - Track A PR 4 diagnostic execution path
+
+- Split grant eligibility so `FOURTEEN_TRIAL_RUN` may appear in
+  `now_eligible` when the run-authorization block is valid.
+- `RESULT_ACCESS` and `PERFORMANCE_ACCESS` in `now_eligible` still
+  refuse `GRANT_NOW_ELIGIBLE_AUTHORIZES_FORBIDDEN_STAGE`.
+- Explicit forbiddance of both access stages is required in
+  `does_not_authorize`; it is not a disqualifier.
+- Revised `result_bearing_refusal_reason` branch order. Deleted the
+  unconditional `RESULT_BEARING_RUN_NOT_AUTHORIZED` terminal refusal.
+- Superseded by later same-day entries: authorized prepared-payload
+  work returns `RECONCILED_DIAGNOSTIC_ONLY`, not
+  `EXECUTED_DIAGNOSTIC_ONLY`, and `run_campaign` writes the bound
+  attempt-state ledger.
+- Synthetic tests cover the exact grant-v2 lists, the Lock 2 truth
+  table, grant v1 schema invalidity, run-block value refusals, sentinel
+  and prepared-byte mismatch, and binding v2 exact-key checks.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, identity
+  reopen, performance-informed selection, or 14-trial run.
+
 ## 2026-08-25 - Public-safe Stage 4 G-2 status
 
 - Updated `docs/current_handoff.md` and `docs/current_roadmap.md` so a

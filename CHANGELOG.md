@@ -7,6 +7,20 @@ profitability, or trading readiness.
 
 ## Unreleased
 
+### Changed
+
+- Track A PR 4 diagnostic reconciliation is now reachable under
+  `DIAGNOSTIC_ONLY`. A grant may list `FOURTEEN_TRIAL_RUN` in
+  `now_eligible` only with a valid run-authorization block and explicit
+  forbiddance of `RESULT_ACCESS` and `PERFORMANCE_ACCESS`. The grant's
+  owner-authorization digest must match the detached binding. The
+  attempt ledger is keyed by the trusted detached campaign identity.
+  Authorized
+  prepared-payload work returns `RECONCILED_DIAGNOSTIC_ONLY` and does
+  not claim trial execution. Nested prepared payloads are validated
+  before the one-run attempt is consumed. Those access stages stay
+  unexecutable. This adds no private data, D8, A2, or 14-trial run.
+
 ### Fixed
 
 - Closed remaining Track A PR 3 exact-head findings: ledger schema tests

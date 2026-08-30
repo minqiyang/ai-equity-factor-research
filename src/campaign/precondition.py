@@ -55,22 +55,50 @@ _REASON_ENVIRONMENT_LOCK = "ENVIRONMENT_LOCK_SHA256_MISMATCH"
 _REASON_ELIGIBLE_FORBIDDEN_STAGE = "GRANT_NOW_ELIGIBLE_AUTHORIZES_FORBIDDEN_STAGE"
 _REASON_INTENDED_STAGE_FORBIDDEN = "GRANT_DOES_NOT_AUTHORIZE_TRACK_A_PR3_PLANNING"
 _REASON_FOURTEEN_TRIAL_FORBIDDEN = "GRANT_DOES_NOT_AUTHORIZE_FOURTEEN_TRIAL_RUN"
-_REASON_RESULT_ACCESS_FORBIDDEN = "GRANT_DOES_NOT_AUTHORIZE_RESULT_ACCESS"
-_REASON_PERFORMANCE_ACCESS_FORBIDDEN = "GRANT_DOES_NOT_AUTHORIZE_PERFORMANCE_ACCESS"
+_REASON_RESULT_OR_PERFORMANCE_NOT_EXPLICITLY_FORBIDDEN = (
+    "GRANT_RESULT_OR_PERFORMANCE_NOT_EXPLICITLY_FORBIDDEN"
+)
 _REASON_ELIGIBLE_NOT_CAMPAIGN_RUN = (
     "GRANT_NOW_ELIGIBLE_DOES_NOT_AUTHORIZE_CAMPAIGN_RUN"
 )
+_REASON_RUN_CEILING = "GRANT_RUN_CEILING_NOT_DIAGNOSTIC_ONLY"
+_REASON_RUN_TRIAL_COUNT = "GRANT_RUN_TRIAL_COUNT_NOT_FOURTEEN"
+_REASON_RUN_EXECUTION_LIMIT = "GRANT_RUN_EXECUTION_LIMIT_NOT_ONE"
+_REASON_RUN_RETENTION = "GRANT_RUN_RETENTION_NOT_ALL_EXTERNAL"
+_REASON_RUN_CHERRY_PICK = "GRANT_RUN_CHERRY_PICK_NOT_FORBIDDEN"
+_REASON_RUN_SELECTION = "GRANT_RUN_SELECTION_NOT_FORBIDDEN"
+_REASON_RUN_INTERPRETATION = "GRANT_RUN_INTERPRETATION_NOT_UNGRANTED"
+_REASON_OWNER_AUTHORIZATION_DIGEST = "GRANT_OWNER_AUTHORIZATION_DIGEST_MISMATCH"
 _STAGE_PR3_PLANNING = "TRACK_A_PR3_PLANNING"
 _STAGE_FOURTEEN_TRIAL = "FOURTEEN_TRIAL_RUN"
 _STAGE_RESULT_ACCESS = "RESULT_ACCESS"
 _STAGE_PERFORMANCE_ACCESS = "PERFORMANCE_ACCESS"
-_RESULT_BEARING_STAGES = frozenset(
+_ALWAYS_FORBIDDEN_ELIGIBLE_STAGES = frozenset(
     {
-        _STAGE_FOURTEEN_TRIAL,
         _STAGE_RESULT_ACCESS,
         _STAGE_PERFORMANCE_ACCESS,
     }
 )
+_RUN_AUTH_KEY = "fourteen_trial_run_authorization"
+_RUN_AUTH_KEYS = frozenset(
+    {
+        "owner_authorization_file_sha256",
+        "ceiling",
+        "trials_authorized",
+        "execution_count_limit",
+        "outcome_retention",
+        "cherry_pick",
+        "performance_informed_selection",
+        "formal_interpretation",
+    }
+)
+_RUN_CEILING = "DIAGNOSTIC_ONLY"
+_RUN_TRIALS_AUTHORIZED = 14
+_RUN_EXECUTION_LIMIT = 1
+_RUN_RETENTION = "ALL_OUTCOMES_RETAINED_EXTERNAL"
+_RUN_CHERRY_PICK = "FORBIDDEN"
+_RUN_SELECTION = "FORBIDDEN"
+_RUN_INTERPRETATION = "NOT_GRANTED"
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _GIT_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
@@ -114,6 +142,7 @@ _ACCEPTANCE_TOP = frozenset(
         "performance_access",
         "result_access",
         "does_not_authorize",
+        "owner_authorization_file_sha256",
         "acceptance_record_sha256",
     }
 )
@@ -225,6 +254,7 @@ _GRANT_TOP = frozenset(
         "review_file_sha256",
         "now_eligible",
         "does_not_authorize",
+        "fourteen_trial_run_authorization",
     }
 )
 _GRANT_GATE_KEYS = frozenset({"qa", "grok", "sol", "fable", "result"})
@@ -241,6 +271,8 @@ _BINDING_TOP = frozenset(
         "trial_inventory_file_sha256",
         "acceptance_record_file_sha256",
         "acceptance_identity_sha256",
+        "prepared_campaign_file_sha256",
+        "owner_authorization_file_sha256",
         "bound_at_utc",
     }
 )
@@ -387,10 +419,16 @@ def result_bearing_refusal_reason(grant: object) -> str | None:
     assert isinstance(forbidden, list)
     if _STAGE_FOURTEEN_TRIAL in forbidden:
         return _REASON_FOURTEEN_TRIAL_FORBIDDEN
-    if _STAGE_RESULT_ACCESS in forbidden:
-        return _REASON_RESULT_ACCESS_FORBIDDEN
-    if _STAGE_PERFORMANCE_ACCESS in forbidden:
-        return _REASON_PERFORMANCE_ACCESS_FORBIDDEN
+    if (
+        _STAGE_RESULT_ACCESS in eligible
+        or _STAGE_PERFORMANCE_ACCESS in eligible
+    ):
+        return _REASON_ELIGIBLE_FORBIDDEN_STAGE
+    if (
+        _STAGE_RESULT_ACCESS not in forbidden
+        or _STAGE_PERFORMANCE_ACCESS not in forbidden
+    ):
+        return _REASON_RESULT_OR_PERFORMANCE_NOT_EXPLICITLY_FORBIDDEN
     if _STAGE_FOURTEEN_TRIAL not in eligible:
         return _REASON_ELIGIBLE_NOT_CAMPAIGN_RUN
     return None
@@ -503,13 +541,18 @@ def _authorize_grant_fields(
     forbidden = grant["does_not_authorize"]
     assert isinstance(eligible, list)
     assert isinstance(forbidden, list)
-    if any(stage in eligible for stage in _RESULT_BEARING_STAGES):
+    if any(stage in eligible for stage in _ALWAYS_FORBIDDEN_ELIGIBLE_STAGES):
         return _refuse(_REASON_ELIGIBLE_FORBIDDEN_STAGE)
+    if _STAGE_FOURTEEN_TRIAL in eligible and (
+        _STAGE_RESULT_ACCESS not in forbidden
+        or _STAGE_PERFORMANCE_ACCESS not in forbidden
+    ):
+        return _refuse(_REASON_RESULT_OR_PERFORMANCE_NOT_EXPLICITLY_FORBIDDEN)
     if _STAGE_PR3_PLANNING in forbidden:
         return _refuse(_REASON_INTENDED_STAGE_FORBIDDEN)
     if _STAGE_PR3_PLANNING not in eligible:
         return _refuse(_REASON_INTENDED_STAGE_FORBIDDEN)
-    return None
+    return _authorize_run_block(config, record, grant[_RUN_AUTH_KEY])
 
 
 def _authorize_binding(config: object) -> Authorization | dict[str, object]:
@@ -545,6 +588,12 @@ def _authorize_binding(config: object) -> Authorization | dict[str, object]:
         ),
         "acceptance_identity_sha256": getattr(
             config, "acceptance_identity_sha256"
+        ),
+        "prepared_campaign_file_sha256": getattr(
+            config, "prepared_campaign_file_sha256"
+        ),
+        "owner_authorization_file_sha256": getattr(
+            config, "owner_authorization_file_sha256"
         ),
     }
     for field, wanted in expected.items():
@@ -584,6 +633,7 @@ def _validate_acceptance_schema(record: dict[str, object]) -> str | None:
         "decision_file_sha256",
         "reviewer_appointment_sha256",
         "stage2_decision_sha256",
+        "owner_authorization_file_sha256",
         "acceptance_record_sha256",
     )
     for field in sha_fields:
@@ -760,9 +810,65 @@ def _grant_schema_valid(value: object) -> bool:
         shas=tuple(_GRANT_REVIEW_FILE_KEYS),
     ):
         return False
-    return _string_list(value["now_eligible"]) and _string_list(
-        value["does_not_authorize"]
+    return (
+        _string_list(value["now_eligible"])
+        and _string_list(value["does_not_authorize"])
+        and _run_authorization_schema_valid(value[_RUN_AUTH_KEY])
     )
+
+
+def _run_authorization_schema_valid(value: object) -> bool:
+    if not _exact_keys(value, _RUN_AUTH_KEYS):
+        return False
+    assert isinstance(value, dict)
+    if not _is_sha256(value["owner_authorization_file_sha256"]):
+        return False
+    for key in (
+        "ceiling",
+        "outcome_retention",
+        "cherry_pick",
+        "performance_informed_selection",
+        "formal_interpretation",
+    ):
+        if not _nonempty_string(value[key]):
+            return False
+    for key in ("trials_authorized", "execution_count_limit"):
+        item = value[key]
+        if isinstance(item, bool) or not isinstance(item, int):
+            return False
+    return True
+
+
+def _authorize_run_block(
+    config: object,
+    record: dict[str, object],
+    block: object,
+) -> Authorization | None:
+    assert isinstance(block, dict)
+    accepted_owner = record["owner_authorization_file_sha256"]
+    bound_owner = _hex64(
+        getattr(config, "owner_authorization_file_sha256"),
+        "owner_authorization_file_sha256",
+    )
+    if bound_owner != accepted_owner:
+        return _refuse(_REASON_OWNER_AUTHORIZATION_DIGEST)
+    if block["owner_authorization_file_sha256"] != accepted_owner:
+        return _refuse(_REASON_OWNER_AUTHORIZATION_DIGEST)
+    if block["ceiling"] != _RUN_CEILING:
+        return _refuse(_REASON_RUN_CEILING)
+    if block["trials_authorized"] != _RUN_TRIALS_AUTHORIZED:
+        return _refuse(_REASON_RUN_TRIAL_COUNT)
+    if block["execution_count_limit"] != _RUN_EXECUTION_LIMIT:
+        return _refuse(_REASON_RUN_EXECUTION_LIMIT)
+    if block["outcome_retention"] != _RUN_RETENTION:
+        return _refuse(_REASON_RUN_RETENTION)
+    if block["cherry_pick"] != _RUN_CHERRY_PICK:
+        return _refuse(_REASON_RUN_CHERRY_PICK)
+    if block["performance_informed_selection"] != _RUN_SELECTION:
+        return _refuse(_REASON_RUN_SELECTION)
+    if block["formal_interpretation"] != _RUN_INTERPRETATION:
+        return _refuse(_REASON_RUN_INTERPRETATION)
+    return None
 
 
 def _binding_schema_valid(value: object) -> bool:
@@ -785,6 +891,8 @@ def _binding_schema_valid(value: object) -> bool:
         "trial_inventory_file_sha256",
         "acceptance_record_file_sha256",
         "acceptance_identity_sha256",
+        "prepared_campaign_file_sha256",
+        "owner_authorization_file_sha256",
     ):
         if not _is_sha256(value[key]):
             return False

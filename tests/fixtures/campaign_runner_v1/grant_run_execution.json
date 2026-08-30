@@ -1,0 +1,112 @@
+{
+  "inputs": {
+    "attempt_state_file": "precondition/attempt_state.json",
+    "grant_file": "precondition/grant_run_authorized.json",
+    "inventory_file": "precondition/trial_inventory.json",
+    "malformed_prepared": "{",
+    "missing_key_prepared": {"diagnostic_payload": {}},
+    "prepared_file": "precondition/prepared_campaign.json",
+    "sentinel_file": "precondition/prepared_campaign_sentinel.txt",
+    "v1_shape_file": "precondition/grant_v1_shape.json",
+    "wrong_type_prepared": {"diagnostic_payload": [], "trial_outputs": {}},
+    "nested_wrong_trial_id": "DIAG_MOM_12_1",
+    "conflicting_attempt_count": 0,
+    "mutated_artifact_id": "synthetic-stage2-grant-v2-mutated",
+    "negative_execution_count": -1
+  },
+  "expected": {
+    "authorization_status": "AUTHORIZED",
+    "authorization_reason": null,
+    "does_not_authorize": [
+      "PERFORMANCE_ACCESS",
+      "RESULT_ACCESS",
+      "D8_MATERIALIZATION",
+      "A2",
+      "IDENTITY_REOPEN",
+      "RAW_PRIVATE_UPLOAD",
+      "FORMAL_INTERPRETATION",
+      "PERFORMANCE_INFORMED_SELECTION"
+    ],
+    "evidence_ceiling": "DIAGNOSTIC_ONLY",
+    "now_eligible": ["TRACK_A_PR3_PLANNING", "FOURTEEN_TRIAL_RUN"],
+    "refusal_reason": null,
+    "run_record_keys": [
+      "schema_version",
+      "evidence_ceiling",
+      "trials_reconciled",
+      "trial_ids",
+      "bound_fields",
+      "configuration_projection_sha256",
+      "started_at_utc",
+      "finished_at_utc"
+    ],
+    "status": "RECONCILED_DIAGNOSTIC_ONLY",
+    "trial_ids": [
+      "BASELINE_EQUAL_WEIGHT_UNIVERSE",
+      "BASELINE_RANDOM_RANK_TOP_DECILE",
+      "DIAG_MOM_12_1",
+      "DIAG_REV_1M",
+      "DIAG_LOW_VOL_3M",
+      "STRAT_MOM_12_1_0BPS",
+      "STRAT_MOM_12_1_10BPS",
+      "STRAT_MOM_12_1_25BPS",
+      "STRAT_REV_1M_0BPS",
+      "STRAT_REV_1M_10BPS",
+      "STRAT_REV_1M_25BPS",
+      "STRAT_LOW_VOL_3M_0BPS",
+      "STRAT_LOW_VOL_3M_10BPS",
+      "STRAT_LOW_VOL_3M_25BPS"
+    ],
+    "trials_reconciled": 14,
+    "attempt_consumed_reason": "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED",
+    "malformed_reason": "PREPARED_CAMPAIGN_UNPARSEABLE",
+    "schema_reason": "PREPARED_CAMPAIGN_SCHEMA_INVALID",
+    "owner_mismatch_reason": "GRANT_OWNER_AUTHORIZATION_DIGEST_MISMATCH",
+    "wrong_owner_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "execution_claim_key": "trials_executed",
+    "v1_shape_reason": "STAGE2_GRANT_SCHEMA_INVALID",
+    "prepared_bytes_reason": "PREPARED_CAMPAIGN_BYTES_MISMATCH",
+    "sentinel_reason": "PREPARED_CAMPAIGN_IS_SENTINEL",
+    "binding_schema_reason": "DETACHED_BINDING_SCHEMA_INVALID",
+    "binding_field_reason": "DETACHED_BINDING_FIELD_MISMATCH",
+    "binding_timestamp_reason": "TIMESTAMP_NOT_TZ_AWARE",
+    "extra_binding_key": "unbound_extra_field",
+    "naive_bound_at_utc": "2019-06-16T12:00:00",
+    "wrong_prepared_digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "ledger_attempt_count": 1,
+    "alternate_locator_reason": "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED",
+    "mutated_grant_reason": "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED",
+    "negative_count_reason": "CAMPAIGN_ATTEMPT_STATE_INVALID",
+    "child_collision_reason": "PREPARED_CAMPAIGN_CHILD_COLLISION",
+    "colliding_child_body": {"trial_count": 0},
+    "invalid_child": "invalid_and_missing_summary.json",
+    "runner_owned_children": [
+      "eodhd_sp500_three_factor_diagnostic_v1.yaml",
+      "trial_inventory.json",
+      "invalid_and_missing_summary.json",
+      "run_manifest.json"
+    ],
+    "two_process_worker": "campaign_replay_worker.py",
+    "omitted_child": "dataset_full_manifest.json",
+    "omitted_child_reason": "BUNDLE_CHILD_MISSING",
+    "tmp_ledger_dirname": "campaign_attempt_ledger_v1",
+    "file_swap_cases": [
+      {
+        "config_field": "protocol_file",
+        "reason": "PROTOCOL_FREEZE_BYTES_MISMATCH",
+        "source": "precondition/protocol.yaml"
+      },
+      {
+        "config_field": "trial_inventory_file",
+        "reason": "TRIAL_INVENTORY_BYTES_MISMATCH",
+        "source": "precondition/trial_inventory.json"
+      }
+    ]
+  },
+  "forbidden": {
+    "campaign_artifact_write": true,
+    "result_access_executable": true,
+    "performance_access_executable": true,
+    "trial_execution_claim": true
+  }
+}

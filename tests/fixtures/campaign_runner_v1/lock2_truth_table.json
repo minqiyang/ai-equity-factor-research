@@ -1,0 +1,92 @@
+{
+  "inputs": {
+    "grant_file": "precondition/grant_run_authorized.json",
+    "grant_v1_lists": {
+      "does_not_authorize": [
+        "PERFORMANCE_ACCESS",
+        "RESULT_ACCESS",
+        "FOURTEEN_TRIAL_RUN"
+      ],
+      "now_eligible": ["TRACK_A_PR3_PLANNING"]
+    }
+  },
+  "expected": {
+    "rows": [
+      {
+        "also_refused_by_authorize": false,
+        "id": "NONE_EXACT_GRANT_V2_LISTS",
+        "mutation": {"action": "none"},
+        "reason": null
+      },
+      {
+        "also_refused_by_authorize": false,
+        "id": "FOURTEEN_TRIAL_RUN_added_to_does_not_authorize_both_lists_case",
+        "mutation": {
+          "action": "add",
+          "field": "does_not_authorize",
+          "value": "FOURTEEN_TRIAL_RUN"
+        },
+        "reason": "GRANT_DOES_NOT_AUTHORIZE_FOURTEEN_TRIAL_RUN"
+      },
+      {
+        "also_refused_by_authorize": true,
+        "id": "RESULT_ACCESS_added_to_now_eligible",
+        "mutation": {
+          "action": "add",
+          "field": "now_eligible",
+          "value": "RESULT_ACCESS"
+        },
+        "reason": "GRANT_NOW_ELIGIBLE_AUTHORIZES_FORBIDDEN_STAGE"
+      },
+      {
+        "also_refused_by_authorize": true,
+        "id": "PERFORMANCE_ACCESS_added_to_now_eligible",
+        "mutation": {
+          "action": "add",
+          "field": "now_eligible",
+          "value": "PERFORMANCE_ACCESS"
+        },
+        "reason": "GRANT_NOW_ELIGIBLE_AUTHORIZES_FORBIDDEN_STAGE"
+      },
+      {
+        "also_refused_by_authorize": false,
+        "id": "RESULT_ACCESS_removed_from_does_not_authorize",
+        "mutation": {
+          "action": "remove",
+          "field": "does_not_authorize",
+          "value": "RESULT_ACCESS"
+        },
+        "reason": "GRANT_RESULT_OR_PERFORMANCE_NOT_EXPLICITLY_FORBIDDEN"
+      },
+      {
+        "also_refused_by_authorize": false,
+        "id": "PERFORMANCE_ACCESS_removed_from_does_not_authorize",
+        "mutation": {
+          "action": "remove",
+          "field": "does_not_authorize",
+          "value": "PERFORMANCE_ACCESS"
+        },
+        "reason": "GRANT_RESULT_OR_PERFORMANCE_NOT_EXPLICITLY_FORBIDDEN"
+      },
+      {
+        "also_refused_by_authorize": false,
+        "id": "FOURTEEN_TRIAL_RUN_removed_from_now_eligible",
+        "mutation": {
+          "action": "remove",
+          "field": "now_eligible",
+          "value": "FOURTEEN_TRIAL_RUN"
+        },
+        "reason": "GRANT_NOW_ELIGIBLE_DOES_NOT_AUTHORIZE_CAMPAIGN_RUN"
+      },
+      {
+        "also_refused_by_authorize": false,
+        "id": "GRANT_V1_LISTS",
+        "mutation": {"action": "replace_lists", "source": "grant_v1_lists"},
+        "reason": "GRANT_DOES_NOT_AUTHORIZE_FOURTEEN_TRIAL_RUN"
+      }
+    ]
+  },
+  "forbidden": {
+    "result_or_performance_executable": true
+  }
+}

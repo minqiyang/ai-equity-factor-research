@@ -1,14 +1,19 @@
 {
   "acceptance_record_file_sha256": "9e681534c1f2fe0cff1d32ea4a1cec5b21633dfe5e0aa042817ac228dde524cd",
   "acceptance_record_sha256": "bad9399c47a28a043bda8f8d4b7a137dd634d49b6257843318c85faadde48847",
-  "artifact_id": "synthetic-stage2-grant-v1",
+  "artifact_id": "synthetic-stage2-grant-v2",
   "choice": "GRANT_STAGE2_DIAGNOSTIC_READY",
   "dataset_acceptance": "DIAGNOSTIC_READY",
   "decision_id": "synthetic-stage2-decision-v1",
   "does_not_authorize": [
     "PERFORMANCE_ACCESS",
     "RESULT_ACCESS",
-    "FOURTEEN_TRIAL_RUN"
+    "D8_MATERIALIZATION",
+    "A2",
+    "IDENTITY_REOPEN",
+    "RAW_PRIVATE_UPLOAD",
+    "FORMAL_INTERPRETATION",
+    "PERFORMANCE_INFORMED_SELECTION"
   ],
   "fourteen_trial_run_authorization": {
     "ceiling": "DIAGNOSTIC_ONLY",
@@ -30,7 +35,8 @@
   "granted_at_utc": "2019-06-16T00:00:00Z",
   "materiality_proposal_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "now_eligible": [
-    "TRACK_A_PR3_PLANNING"
+    "TRACK_A_PR3_PLANNING",
+    "FOURTEEN_TRIAL_RUN"
   ],
   "operating_standard": "herdr_pi_coordinator_standard_v2.6",
   "operating_standard_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
