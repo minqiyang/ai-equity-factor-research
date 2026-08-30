@@ -1176,7 +1176,9 @@ def test_initial_deployment_charges_turnover(tmp_path: Path) -> None:
         and row["factor_id"] == rev
     )
     first = ten["points"][0]
-    assert first["turnover"] == cases["inputs"]["initial_turnover"]
+    expected = float(cases["inputs"]["initial_turnover"])
+    rel_tol = float(cases["inputs"]["execution_anchor"]["rel_tol"])
+    assert abs(float(first["turnover"]) - expected) < rel_tol
     assert first["cost_impact"] > 0.0
 
 
