@@ -1398,6 +1398,50 @@ def test_unscheduled_listing_dates_are_not_continuous_resets(
     )
 
 
+def test_eligible_unscheduled_dates_do_not_corrupt_required_outputs(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["mid_month_injection"]
+    rebalance = cases["inputs"]["rebalance"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = {
+        str(row["signal_date"]): bool(row["in_universe"])
+        for row in rebalance["signals"]
+    }
+    control = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        flags,
+        "rebalance",
+        cases,
+    )
+    injected = json.loads(json.dumps(control))
+    template = next(iter(injected["listings"].values()))
+    injected["listings"][str(cfg["injected_date"])] = [
+        {**row, "in_universe_at_t": True} for row in template
+    ]
+    control_result = _run_prepared(tmp_path, control, "eligible_mid_control")
+    injected_result = _run_prepared(tmp_path, injected, "eligible_mid_injected")
+    assert control_result.status == cases["inputs"]["executed_status"]
+    assert injected_result.status == cases["inputs"]["executed_status"]
+    assert control_result.reconciliation is not None
+    assert injected_result.reconciliation is not None
+    assert (
+        control_result.reconciliation.invalid_and_missing["invalid_required_outputs"]
+        == injected_result.reconciliation.invalid_and_missing["invalid_required_outputs"]
+    )
+    assert _parse_child(control_result, "factor_diagnostics.parquet") == _parse_child(
+        injected_result, "factor_diagnostics.parquet"
+    )
+    assert _parse_child(control_result, "decile_returns.parquet")["rows"] == _parse_child(
+        injected_result, "decile_returns.parquet"
+    )["rows"]
+
+
 def test_warmup_missing_labels_do_not_invalidate_primary(
     tmp_path: Path,
 ) -> None:

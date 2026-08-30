@@ -556,7 +556,7 @@ def _execute_prepared(
     try:
         inventory = parse_trial_inventory(inventory_raw)
         schedule = _campaign_schedule(config, panel)
-        frozen = _freeze_panel(config, panel)
+        frozen = _freeze_panel(config, panel, schedule)
         monthly_ics = {
             factor_id: _monthly_rank_ics(config, factor_id, panel, frozen, schedule)
             for factor_id in FACTOR_ORDER
@@ -718,9 +718,10 @@ def _session_dates(
 def _freeze_panel(
     config: RunConfig,
     panel: _PreparedPanel,
+    schedule: CampaignSchedule | None,
 ) -> dict[tuple[str, str], object]:
     frozen: dict[tuple[str, str], object] = {}
-    for signal_date, rows in panel.listings.items():
+    for signal_date, rows in _scheduled_listing_items(panel, schedule):
         for factor_id in FACTOR_ORDER:
             listings = tuple(
                 _decision_listing(panel, row, signal_date, factor_id) for row in rows
@@ -862,7 +863,7 @@ def _monthly_rank_ics(
     schedule: CampaignSchedule | None,
 ) -> tuple[_MonthResult, ...]:
     months: list[_MonthResult] = []
-    for signal_date, rows in panel.listings.items():
+    for signal_date, rows in _scheduled_listing_items(panel, schedule):
         window = _execution_window(
             schedule, panel.session_dates, signal_date, config.horizon_return_rows
         )
@@ -924,7 +925,7 @@ def _episode_output(
     schedule: CampaignSchedule | None,
 ) -> dict[str, object]:
     last: dict[str, object] | None = None
-    for signal_date, rows in panel.listings.items():
+    for signal_date, rows in _scheduled_listing_items(panel, schedule):
         frozen_dt = frozen.get((factor_id, signal_date))
         weights = _trial_weights(config, trial, factor_id, frozen_dt, signal_date)
         window = _execution_window(
@@ -959,9 +960,9 @@ def _continuous_output(
         cost = 0
     resets: dict[str, Mapping[bytes, float]] = {}
     ordered_exec: list[str] = []
-    for signal_date in panel.listings:
+    for signal_date, _rows in _scheduled_listing_items(panel, schedule):
         row = _schedule_signal(schedule, signal_date)
-        if schedule is not None and (row is None or not row.continuous_included):
+        if row is not None and not row.continuous_included:
             continue
         window = _execution_window(
             schedule, panel.session_dates, signal_date, config.horizon_return_rows
@@ -1091,6 +1092,18 @@ def _campaign_schedule(
         )
     except (TypeError, ValueError):
         return None
+
+
+def _scheduled_listing_items(
+    panel: _PreparedPanel,
+    schedule: CampaignSchedule | None,
+) -> tuple[tuple[str, tuple[_ListingRow, ...]], ...]:
+    items: list[tuple[str, tuple[_ListingRow, ...]]] = []
+    for signal_date, rows in panel.listings.items():
+        if schedule is not None and _schedule_signal(schedule, signal_date) is None:
+            continue
+        items.append((signal_date, rows))
+    return tuple(items)
 
 
 def _schedule_signal(

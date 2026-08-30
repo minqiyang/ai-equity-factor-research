@@ -4,8 +4,9 @@
 
 - Rank IC cross-sections use eligible listings only; ineligible names are
   omitted rather than appended as missing pairs.
-- Unscheduled listing dates are rejected before continuous resets. A
-  schema-valid non-month-end date is not an extra execution.
+- Unscheduled listing dates are skipped in Rank IC, episode, freeze, and
+  continuous resets. A schema-valid non-month-end date does not enter
+  trial calculations or required-output reconciliation.
 - Coverage gates use primary evaluation dates. Pre-2018 missing labels are
   warm-up only and do not force `INVALID_DIAGNOSTIC`.
 - Evidence ceiling remains `DIAGNOSTIC_ONLY`. No private control-tree

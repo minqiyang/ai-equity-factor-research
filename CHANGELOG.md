@@ -29,10 +29,10 @@ profitability, or trading readiness.
 
 - Monthly Rank IC omits ineligible listings instead of appending missing
   pairs that invalidate a month with eligible n>=100. Unscheduled listing
-  dates are not continuous resets. Coverage gates use primary evaluation
-  dates, so pre-2018 warm-up missing labels do not force
-  `INVALID_DIAGNOSTIC`. Evidence ceiling remains `DIAGNOSTIC_ONLY`. This
-  adds no private data, D8, A2, or real 14-trial run.
+  dates are skipped in Rank IC, episode, freeze, and continuous resets.
+  Coverage gates use primary evaluation dates, so pre-2018 warm-up missing
+  labels do not force `INVALID_DIAGNOSTIC`. Evidence ceiling remains
+  `DIAGNOSTIC_ONLY`. This adds no private data, D8, A2, or real 14-trial run.
 - Closed remaining Track A PR 3 exact-head findings: ledger schema tests
   still collapse independent fail-closed axes for speed, but only after an
   equivalence check proves every representative delegates to the same
