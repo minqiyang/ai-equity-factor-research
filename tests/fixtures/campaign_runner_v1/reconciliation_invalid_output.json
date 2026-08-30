@@ -4,7 +4,7 @@
     "invalid_reason": "CONSTITUENT_RETURN_INVALID",
     "invalid_trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE",
     "inventory_file": "precondition/trial_inventory.json",
-    "prepared_file": "precondition/prepared_campaign.json"
+    "prepared_file": "precondition/reconciled_payload.json"
   },
   "expected": {
     "complete": true,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import fcntl
 import hashlib
 import json
@@ -13,13 +13,25 @@ from pathlib import Path
 import re
 from types import MappingProxyType
 
+from campaign.baselines import (
+    episode_gross_return,
+    equal_weight_universe_target,
+    random_rank_target,
+)
 from campaign.bundle import (
     BundleAssembly,
     assemble_evidence_bundle,
     invalid_and_missing_bytes,
     required_bundle_children,
 )
-from campaign.inference import HOLM_ALPHA, LONG_SEGMENT_BLOCK_LENGTH
+from campaign.diagnostics import spearman_rank_ic
+from campaign.eligibility import (
+    DecisionTimeListing,
+    FrozenDecisionTime,
+    build_frozen_decision_time,
+)
+from campaign.inference import FACTOR_ORDER, HOLM_ALPHA, LONG_SEGMENT_BLOCK_LENGTH
+from campaign.paths import advance_holdings, holding_interval
 from campaign.precondition import (
     Authorization,
     authorize,
@@ -29,7 +41,10 @@ from campaign.reconciliation import (
     ReconciliationResult,
     parse_trial_inventory,
     reconcile_semantic_trials,
+    required_output_names,
 )
+from campaign.registry import factor_spec
+from campaign.returns import simple_adjusted_close_return
 
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -50,7 +65,7 @@ _RANDOM_RANK_SEED = 20260729
 _BOOTSTRAP_SEED = 20260730
 _STATUS_REFUSED = "REFUSED"
 _STATUS_AUTHORIZED = "AUTHORIZED"
-_STATUS_RECONCILED = "RECONCILED_DIAGNOSTIC_ONLY"
+_STATUS_EXECUTED = "EXECUTED_DIAGNOSTIC_ONLY"
 _EVIDENCE_CEILING = "DIAGNOSTIC_ONLY"
 _RUN_RECORD_SCHEMA = "campaign_run_record_v1"
 _PROTOCOL_CHILD = "eodhd_sp500_three_factor_diagnostic_v1.yaml"
@@ -66,10 +81,21 @@ _REASON_ATTEMPT_ABSENT = "CAMPAIGN_ATTEMPT_STATE_ABSENT"
 _REASON_ATTEMPT_INVALID = "CAMPAIGN_ATTEMPT_STATE_INVALID"
 _REASON_ATTEMPT_CONSUMED = "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED"
 _REASON_ATTEMPT_LEDGER = "CAMPAIGN_ATTEMPT_LEDGER_MISMATCH"
-_REASON_CHILD_COLLISION = "PREPARED_CAMPAIGN_CHILD_COLLISION"
 _REASON_BUNDLE_MISSING = "BUNDLE_CHILD_MISSING"
 _REASON_PROTOCOL = "PROTOCOL_FREEZE_BYTES_MISMATCH"
 _REASON_INVENTORY = "TRIAL_INVENTORY_BYTES_MISMATCH"
+_REASON_ZERO_TARGET = "ZERO_TARGET"
+_REASON_HELD_MISSING = "HELD_RETURN_MISSING"
+_REASON_OUTPUT_INVALID = "TRIAL_OUTPUT_INVALID"
+_CONTINUOUS = "continuous_daily_return"
+_MONTHLY_RANK_IC = "monthly_rank_ic"
+_EPISODE = "episode_21_row_return"
+_BASELINE_TYPE = "BASELINE"
+_EQUAL_WEIGHT_TRIAL = "BASELINE_EQUAL_WEIGHT_UNIVERSE"
+_RANDOM_RANK_TRIAL = "BASELINE_RANDOM_RANK_TOP_DECILE"
+_EQUAL_WEIGHT_ROLE = "equal_weight_universe"
+_RANDOM_RANK_SCHEME = "random_rank_v1"
+_INITIAL_EQUITY = 1.0
 _ATTEMPT_SCHEMA = "campaign_attempt_state_v1"
 _ATTEMPT_LEDGER_DIRNAME = "campaign_attempt_ledger_v1"
 _ATTEMPT_LEDGER_ROOT = (".local", "share", "equity-factor-research")
@@ -81,13 +107,35 @@ _ATTEMPT_KEYS = frozenset(
         "campaign_identity_sha256",
     }
 )
-_PREPARED_REQUIRED = ("trial_outputs", "diagnostic_payload")
+_PREPARED_REQUIRED = frozenset({"prices", "anchors", "listings"})
+_PREPARED_FORBIDDEN = frozenset(
+    {
+        "trial_outputs",
+        "diagnostic_payload",
+        "returns",
+        "factors",
+        "factor",
+        "portfolio",
+        "cumulative",
+        "bundle_children",
+    }
+)
 _RUNNER_OWNED_CHILDREN = frozenset(
     {
         _PROTOCOL_CHILD,
         _INVENTORY_CHILD,
         _INVALID_CHILD,
         _RUN_MANIFEST_CHILD,
+    }
+)
+_LISTING_ROW_KEYS = frozenset(
+    {
+        "listing_key",
+        "in_universe_at_t",
+        "terminal_blocked_at_t",
+        "lookback_addressable_at_t",
+        "target_identity",
+        "alias_chain",
     }
 )
 _BOUND_FIELDS = (
@@ -226,7 +274,7 @@ class RunConfig:
 
 @dataclass(frozen=True)
 class CampaignRun:
-    """Authorized diagnostic reconciliation, or a named refusal with no outputs."""
+    """Authorized diagnostic execution, or a named refusal with no outputs."""
 
     status: str
     reason: str | None
@@ -234,6 +282,24 @@ class CampaignRun:
     reconciliation: ReconciliationResult | None
     bundle: BundleAssembly | None
     run_record: MappingProxyType[str, object] | None
+
+
+@dataclass(frozen=True)
+class _ListingRow:
+    listing_key: bytes
+    in_universe_at_t: bool
+    terminal_blocked_at_t: bool
+    lookback_addressable_at_t: bool
+    target_identity: MappingProxyType[str, str]
+    alias_chain: tuple[MappingProxyType[str, object], ...]
+
+
+@dataclass(frozen=True)
+class _PreparedPanel:
+    prices: MappingProxyType[bytes, MappingProxyType[str, float]]
+    anchors: MappingProxyType[bytes, tuple[MappingProxyType[str, object], ...]]
+    listings: MappingProxyType[str, tuple[_ListingRow, ...]]
+    session_dates: tuple[str, ...]
 
 
 def configuration_projection(config: RunConfig) -> dict[str, object]:
@@ -286,7 +352,7 @@ def configuration_projection(config: RunConfig) -> dict[str, object]:
 
 
 def run_campaign(config: RunConfig) -> CampaignRun:
-    """Authorize, then reconcile a prepared diagnostic payload at most once."""
+    """Authorize, then execute 14 inventory trials from an input-bearing panel."""
 
     if not isinstance(config, RunConfig):
         raise TypeError("config must be RunConfig")
@@ -306,15 +372,9 @@ def run_campaign(config: RunConfig) -> CampaignRun:
         return _refused(authorization, _REASON_PREPARED_BYTES)
     if _is_sentinel(prepared_raw):
         return _refused(authorization, _REASON_PREPARED_SENTINEL)
-    prepared = _parse_prepared_campaign(prepared_raw)
-    if isinstance(prepared, str):
-        return _refused(authorization, prepared)
-    collision = _prepared_child_collision(prepared)
-    if collision is not None:
-        return _refused(authorization, collision)
-    missing = _missing_required_children(prepared)
-    if missing is not None:
-        return _refused(authorization, missing)
+    panel = _parse_prepared_campaign(prepared_raw)
+    if isinstance(panel, str):
+        return _refused(authorization, panel)
     protocol_raw = _bound_file_bytes(
         config.protocol_file,
         config.protocol_file_sha256,
@@ -329,10 +389,10 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     )
     if isinstance(inventory_raw, str):
         return _refused(authorization, inventory_raw)
-    reconciled = _reconcile_prepared(inventory_raw, prepared)
-    if isinstance(reconciled, str):
-        return _refused(authorization, reconciled)
-    inventory, reconciliation = reconciled
+    executed = _execute_prepared(config, inventory_raw, panel)
+    if isinstance(executed, str):
+        return _refused(authorization, executed)
+    inventory, reconciliation = executed
     binding = authorization.binding
     if binding is None:
         return _refused(authorization, "DETACHED_BINDING_ABSENT")
@@ -354,19 +414,22 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     run_record = {
         "schema_version": _RUN_RECORD_SCHEMA,
         "evidence_ceiling": _EVIDENCE_CEILING,
-        "trials_reconciled": len(trial_ids),
+        "trials_executed": len(trial_ids),
         "trial_ids": list(trial_ids),
         "bound_fields": bound_fields,
         "configuration_projection_sha256": projection_digest,
         "started_at_utc": started_at,
         "finished_at_utc": finished_at,
     }
-    children = _bundle_children(prepared, protocol_raw, inventory_raw, reconciliation)
+    children = _bundle_children(protocol_raw, inventory_raw, reconciliation)
     children[_RUN_MANIFEST_CHILD] = json.dumps(
         dict(run_record),
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
+    missing = _missing_required_children(children)
+    if missing is not None:
+        return _refused(authorization, missing)
     bundle = assemble_evidence_bundle(
         children,
         _root_fields(config, inventory, reconciliation, limit),
@@ -390,7 +453,7 @@ def run_campaign(config: RunConfig) -> CampaignRun:
                 reason = _REASON_BUNDLE_MISSING
             return _refused(authorization, reason)
     return CampaignRun(
-        _STATUS_RECONCILED,
+        _STATUS_EXECUTED,
         None,
         authorization,
         reconciliation,
@@ -424,42 +487,548 @@ def _is_sentinel(raw: bytes) -> bool:
     return raw == _SENTINEL_BODY or raw == _SENTINEL_BODY + b"\n"
 
 
-def _parse_prepared_campaign(raw: bytes) -> dict[str, object] | str:
+def _parse_prepared_campaign(raw: bytes) -> _PreparedPanel | str:
     try:
         parsed = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError):
         return _REASON_PREPARED_UNPARSEABLE
     if not isinstance(parsed, dict):
         return _REASON_PREPARED_SCHEMA
-    for key in _PREPARED_REQUIRED:
-        value = parsed.get(key)
-        if not isinstance(value, dict):
-            return _REASON_PREPARED_SCHEMA
-    trial_outputs = parsed["trial_outputs"]
-    assert isinstance(trial_outputs, dict)
-    for value in trial_outputs.values():
-        if not isinstance(value, dict):
-            return _REASON_PREPARED_SCHEMA
-        for record in value.values():
-            if record is not None and not isinstance(record, dict):
-                return _REASON_PREPARED_SCHEMA
-    return parsed
+    if any(key in parsed for key in _PREPARED_FORBIDDEN):
+        return _REASON_PREPARED_SCHEMA
+    if set(parsed) != _PREPARED_REQUIRED:
+        return _REASON_PREPARED_SCHEMA
+    prices = _parse_prices(parsed["prices"])
+    if isinstance(prices, str):
+        return prices
+    anchors = _parse_anchors(parsed["anchors"], set(prices))
+    if isinstance(anchors, str):
+        return anchors
+    listings = _parse_listings(parsed["listings"], set(prices))
+    if isinstance(listings, str):
+        return listings
+    sessions = _session_dates(prices)
+    if isinstance(sessions, str):
+        return sessions
+    return _PreparedPanel(prices, anchors, listings, sessions)
 
 
-def _reconcile_prepared(
+def _execute_prepared(
+    config: RunConfig,
     inventory_raw: bytes,
-    prepared: dict[str, object],
+    panel: _PreparedPanel,
 ) -> tuple[tuple[object, ...], ReconciliationResult] | str:
     try:
         inventory = parse_trial_inventory(inventory_raw)
+        frozen = _freeze_panel(config, panel)
+        trial_outputs: dict[str, dict[str, dict[str, object]]] = {}
+        for trial in inventory:
+            trial_id = trial.get("trial_id")
+            if not isinstance(trial_id, str) or not trial_id:
+                return _REASON_PREPARED_SCHEMA
+            trial_outputs[trial_id] = _execute_trial(
+                config,
+                trial,
+                panel,
+                frozen,
+            )
         reconciliation = reconcile_semantic_trials(
             inventory,
-            prepared["trial_outputs"],
-            prepared["diagnostic_payload"],
+            trial_outputs,
+            _fail_closed_diagnostic_payload(),
         )
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, KeyError):
         return _REASON_PREPARED_SCHEMA
     return inventory, reconciliation
+
+
+def _parse_prices(
+    raw: object,
+) -> MappingProxyType[bytes, MappingProxyType[str, float]] | str:
+    if not isinstance(raw, dict):
+        return _REASON_PREPARED_SCHEMA
+    prices: dict[bytes, MappingProxyType[str, float]] = {}
+    for key, series in raw.items():
+        listing_key = _parse_listing_key(key)
+        if listing_key is None or not isinstance(series, dict):
+            return _REASON_PREPARED_SCHEMA
+        parsed_series: dict[str, float] = {}
+        for session, price in series.items():
+            if _invalid_session(session) or not _finite_price(price):
+                return _REASON_PREPARED_SCHEMA
+            parsed_series[str(session)] = float(price)
+        prices[listing_key] = MappingProxyType(parsed_series)
+    return MappingProxyType(prices)
+
+
+def _parse_anchors(
+    raw: object,
+    known_keys: set[bytes],
+) -> MappingProxyType[bytes, tuple[MappingProxyType[str, object], ...]] | str:
+    if not isinstance(raw, dict):
+        return _REASON_PREPARED_SCHEMA
+    anchors: dict[bytes, tuple[MappingProxyType[str, object], ...]] = {}
+    for key, records in raw.items():
+        listing_key = _parse_listing_key(key)
+        if listing_key is None or listing_key not in known_keys:
+            return _REASON_PREPARED_SCHEMA
+        if not isinstance(records, list):
+            return _REASON_PREPARED_SCHEMA
+        parsed_records: list[MappingProxyType[str, object]] = []
+        for record in records:
+            if not isinstance(record, dict):
+                return _REASON_PREPARED_SCHEMA
+            session = record.get("session_date")
+            if _invalid_session(session):
+                return _REASON_PREPARED_SCHEMA
+            parsed_records.append(MappingProxyType(dict(record)))
+        anchors[listing_key] = tuple(parsed_records)
+    if set(anchors) != known_keys:
+        return _REASON_PREPARED_SCHEMA
+    return MappingProxyType(anchors)
+
+
+def _parse_listings(
+    raw: object,
+    known_keys: set[bytes],
+) -> MappingProxyType[str, tuple[_ListingRow, ...]] | str:
+    if not isinstance(raw, dict):
+        return _REASON_PREPARED_SCHEMA
+    listings: dict[str, tuple[_ListingRow, ...]] = {}
+    for signal_date, rows in raw.items():
+        if _invalid_session(signal_date) or not isinstance(rows, list):
+            return _REASON_PREPARED_SCHEMA
+        parsed_rows: list[_ListingRow] = []
+        seen: set[bytes] = set()
+        for row in rows:
+            parsed = _parse_listing_row(row, known_keys)
+            if isinstance(parsed, str):
+                return parsed
+            if parsed.listing_key in seen:
+                return _REASON_PREPARED_SCHEMA
+            seen.add(parsed.listing_key)
+            parsed_rows.append(parsed)
+        listings[str(signal_date)] = tuple(parsed_rows)
+    return MappingProxyType(listings)
+
+
+def _parse_listing_row(raw: object, known_keys: set[bytes]) -> _ListingRow | str:
+    if not isinstance(raw, dict) or set(raw) != _LISTING_ROW_KEYS:
+        return _REASON_PREPARED_SCHEMA
+    listing_key = _parse_listing_key(raw.get("listing_key"))
+    if listing_key is None or listing_key not in known_keys:
+        return _REASON_PREPARED_SCHEMA
+    identity = raw.get("target_identity")
+    alias_chain = raw.get("alias_chain")
+    if not isinstance(identity, dict) or not isinstance(alias_chain, list):
+        return _REASON_PREPARED_SCHEMA
+    if any(not isinstance(item, dict) for item in alias_chain):
+        return _REASON_PREPARED_SCHEMA
+    in_universe = raw.get("in_universe_at_t")
+    terminal = raw.get("terminal_blocked_at_t")
+    lookback = raw.get("lookback_addressable_at_t")
+    if not isinstance(in_universe, bool):
+        return _REASON_PREPARED_SCHEMA
+    if not isinstance(terminal, bool) or not isinstance(lookback, bool):
+        return _REASON_PREPARED_SCHEMA
+    parsed_identity = {
+        str(key): str(value) for key, value in identity.items() if isinstance(value, str)
+    }
+    if len(parsed_identity) != len(identity):
+        return _REASON_PREPARED_SCHEMA
+    return _ListingRow(
+        listing_key=listing_key,
+        in_universe_at_t=in_universe,
+        terminal_blocked_at_t=terminal,
+        lookback_addressable_at_t=lookback,
+        target_identity=MappingProxyType(parsed_identity),
+        alias_chain=tuple(MappingProxyType(dict(item)) for item in alias_chain),
+    )
+
+
+def _session_dates(
+    prices: Mapping[bytes, Mapping[str, float]],
+) -> tuple[str, ...] | str:
+    sessions: set[str] = set()
+    for series in prices.values():
+        sessions.update(series)
+    if not sessions:
+        return _REASON_PREPARED_SCHEMA
+    ordered = tuple(sorted(sessions))
+    if any(_invalid_session(session) for session in ordered):
+        return _REASON_PREPARED_SCHEMA
+    return ordered
+
+
+def _freeze_panel(
+    config: RunConfig,
+    panel: _PreparedPanel,
+) -> dict[tuple[str, str], object]:
+    frozen: dict[tuple[str, str], object] = {}
+    for signal_date, rows in panel.listings.items():
+        for factor_id in FACTOR_ORDER:
+            listings = tuple(
+                _decision_listing(panel, row, signal_date, factor_id) for row in rows
+            )
+            frozen[(factor_id, signal_date)] = build_frozen_decision_time(
+                listings,
+                factor_id,
+                signal_date,
+                config.min_eligible_count,
+                config.min_distinct_values,
+            )
+    return frozen
+
+
+def _decision_listing(
+    panel: _PreparedPanel,
+    row: _ListingRow,
+    signal_date: str,
+    factor_id: str,
+) -> DecisionTimeListing:
+    selected = _select_factor_anchors(panel, row.listing_key, signal_date, factor_id)
+    referenced, lineage = ((), ()) if selected is None else selected
+    return DecisionTimeListing(
+        listing_key=row.listing_key,
+        in_universe_at_t=row.in_universe_at_t,
+        terminal_blocked_at_t=row.terminal_blocked_at_t,
+        lookback_addressable_at_t=row.lookback_addressable_at_t,
+        referenced_anchors=referenced,
+        lineage_anchors=lineage,
+        target_identity=row.target_identity,
+        alias_chain=row.alias_chain,
+    )
+
+
+def _select_factor_anchors(
+    panel: _PreparedPanel,
+    listing_key: bytes,
+    signal_date: str,
+    factor_id: str,
+) -> tuple[tuple[float, ...], tuple[MappingProxyType[str, object], ...]] | None:
+    spec = factor_spec(factor_id)
+    try:
+        signal_index = panel.session_dates.index(signal_date)
+    except ValueError:
+        return None
+    if spec.referenced_anchor_offsets is not None:
+        indexes = tuple(signal_index + offset for offset in spec.referenced_anchor_offsets)
+    elif spec.required_history_price_anchor_span is not None:
+        start, end = spec.required_history_price_anchor_span
+        indexes = tuple(range(signal_index + start, signal_index + end + 1))
+    else:
+        return None
+    if any(index < 0 or index >= len(panel.session_dates) for index in indexes):
+        return None
+    dates = tuple(panel.session_dates[index] for index in indexes)
+    series = panel.prices.get(listing_key)
+    records = panel.anchors.get(listing_key)
+    if series is None or records is None:
+        return None
+    by_date = {
+        str(record.get("session_date")): record
+        for record in records
+        if isinstance(record.get("session_date"), str)
+    }
+    scalars: list[float] = []
+    lineage: list[MappingProxyType[str, object]] = []
+    for session in dates:
+        if session not in series or session not in by_date:
+            return None
+        scalars.append(float(series[session]))
+        lineage.append(by_date[session])
+    return tuple(scalars), tuple(lineage)
+
+
+def _execute_trial(
+    config: RunConfig,
+    trial: Mapping[str, object],
+    panel: _PreparedPanel,
+    frozen: Mapping[tuple[str, str], object],
+) -> dict[str, dict[str, object]]:
+    outputs: dict[str, dict[str, object]] = {}
+    for name in required_output_names(trial):
+        outputs[name] = _execute_named_output(config, trial, name, panel, frozen)
+    return outputs
+
+
+def _execute_named_output(
+    config: RunConfig,
+    trial: Mapping[str, object],
+    name: str,
+    panel: _PreparedPanel,
+    frozen: Mapping[tuple[str, str], object],
+) -> dict[str, object]:
+    factor_id, _, series = name.partition(":")
+    if not factor_id or not series:
+        return _invalid_output(_REASON_OUTPUT_INVALID)
+    try:
+        if series == _MONTHLY_RANK_IC:
+            return _rank_ic_output(config, factor_id, panel, frozen)
+        if series == _EPISODE:
+            return _episode_output(config, trial, factor_id, panel, frozen)
+        if series == _CONTINUOUS:
+            return _continuous_output(config, trial, factor_id, panel, frozen)
+    except (TypeError, ValueError, KeyError):
+        return _invalid_output(_REASON_OUTPUT_INVALID)
+    return _invalid_output(_REASON_OUTPUT_INVALID)
+
+
+def _rank_ic_output(
+    config: RunConfig,
+    factor_id: str,
+    panel: _PreparedPanel,
+    frozen: Mapping[tuple[str, str], object],
+) -> dict[str, object]:
+    pairs: list[tuple[object, object]] = []
+    for signal_date, rows in panel.listings.items():
+        frozen_dt = frozen.get((factor_id, signal_date))
+        values = _eligible_values(frozen_dt)
+        horizon = _horizon_date(
+            panel.session_dates,
+            signal_date,
+            config.horizon_return_rows,
+        )
+        for row in rows:
+            factor_value = values.get(row.listing_key)
+            if factor_value is None or horizon is None:
+                pairs.append((None, None))
+                continue
+            held = _held_return(panel, row, signal_date, horizon)
+            pairs.append(
+                (
+                    factor_value,
+                    None if held is None or not held.valid else held.value,
+                )
+            )
+    result = spearman_rank_ic(
+        pairs,
+        config.min_distinct_values,
+        config.min_distinct_values,
+    )
+    return _from_valid(result.valid, result.reason)
+
+
+def _episode_output(
+    config: RunConfig,
+    trial: Mapping[str, object],
+    factor_id: str,
+    panel: _PreparedPanel,
+    frozen: Mapping[tuple[str, str], object],
+) -> dict[str, object]:
+    frozen_dt, signal_date = _first_frozen(factor_id, panel, frozen)
+    weights = _trial_weights(config, trial, factor_id, frozen_dt, signal_date)
+    horizon = None if signal_date is None else _horizon_date(
+        panel.session_dates,
+        signal_date,
+        config.horizon_return_rows,
+    )
+    constituent: dict[bytes, object] = {}
+    if frozen_dt is not None and signal_date is not None and horizon is not None:
+        for row in panel.listings[signal_date]:
+            held = _held_return(panel, row, signal_date, horizon)
+            constituent[row.listing_key] = (
+                None if held is None or not held.valid else held.value
+            )
+    result = episode_gross_return(weights, constituent)
+    return _from_valid(result.valid, result.reason)
+
+
+def _continuous_output(
+    config: RunConfig,
+    trial: Mapping[str, object],
+    factor_id: str,
+    panel: _PreparedPanel,
+    frozen: Mapping[tuple[str, str], object],
+) -> dict[str, object]:
+    frozen_dt, signal_date = _first_frozen(factor_id, panel, frozen)
+    weights = _trial_weights(config, trial, factor_id, frozen_dt, signal_date)
+    if not weights:
+        return _invalid_output(_REASON_ZERO_TARGET)
+    cost = trial.get("cost_bps", 0)
+    if isinstance(cost, bool) or not isinstance(cost, int):
+        cost = 0
+    intervals = _holding_intervals(panel, signal_date)
+    if not intervals:
+        return _invalid_output(_REASON_HELD_MISSING)
+    holdings = advance_holdings(weights, intervals, float(cost), _INITIAL_EQUITY)
+    return _from_valid(holdings.valid, holdings.reason)
+
+
+def _trial_weights(
+    config: RunConfig,
+    trial: Mapping[str, object],
+    factor_id: str,
+    frozen_dt: object,
+    signal_date: str | None,
+) -> Mapping[bytes, float]:
+    if not isinstance(frozen_dt, FrozenDecisionTime) or signal_date is None:
+        return {}
+    trial_type = trial.get("type")
+    trial_id = trial.get("trial_id")
+    if trial_type == _BASELINE_TYPE and trial_id == _EQUAL_WEIGHT_TRIAL:
+        return equal_weight_universe_target(frozen_dt, _EQUAL_WEIGHT_ROLE).weights
+    if trial_type == _BASELINE_TYPE and trial_id == _RANDOM_RANK_TRIAL:
+        return random_rank_target(
+            frozen_dt,
+            factor_id,
+            signal_date,
+            _RANDOM_RANK_SCHEME,
+            str(config.random_rank_seed),
+            config.bit_generator,
+        ).weights
+    return frozen_dt.long_only_target
+
+
+def _holding_intervals(
+    panel: _PreparedPanel,
+    signal_date: str | None,
+) -> tuple[object, ...]:
+    if signal_date is None:
+        return ()
+    try:
+        start = panel.session_dates.index(signal_date)
+    except ValueError:
+        return ()
+    intervals = []
+    for index in range(start, len(panel.session_dates) - 1):
+        begin = panel.session_dates[index]
+        end = panel.session_dates[index + 1]
+        held: dict[bytes, object] = {}
+        rows = panel.listings.get(signal_date, ())
+        for row in rows:
+            result = _held_return(panel, row, begin, end)
+            held[row.listing_key] = (
+                None if result is None or not result.valid else result.value
+            )
+        intervals.append(holding_interval(end, held, None))
+    return tuple(intervals)
+
+
+def _held_return(
+    panel: _PreparedPanel,
+    row: _ListingRow,
+    start_date: str,
+    end_date: str,
+):
+    records = [
+        record
+        for record in panel.anchors.get(row.listing_key, ())
+        if isinstance(record.get("session_date"), str)
+        and start_date <= str(record["session_date"]) <= end_date
+    ]
+    if len(records) < 2:
+        return None
+    start = records[0]
+    end = records[-1]
+    return simple_adjusted_close_return(
+        start.get("adjusted_close"),
+        end.get("adjusted_close"),
+        records,
+        row.target_identity,
+        row.alias_chain,
+    )
+
+
+def _first_frozen(
+    factor_id: str,
+    panel: _PreparedPanel,
+    frozen: Mapping[tuple[str, str], object],
+) -> tuple[object | None, str | None]:
+    for signal_date in panel.listings:
+        item = frozen.get((factor_id, signal_date))
+        if item is not None:
+            return item, signal_date
+    return None, None
+
+
+def _eligible_values(frozen_dt: object) -> dict[bytes, float]:
+    if not isinstance(frozen_dt, FrozenDecisionTime):
+        return {}
+    values: dict[bytes, float] = {}
+    for decision in frozen_dt.retained_decisions:
+        if decision.eligible and decision.factor_value is not None:
+            values[decision.listing_key] = float(decision.factor_value)
+    return values
+
+
+def _horizon_date(
+    session_dates: tuple[str, ...],
+    signal_date: str,
+    rows: int,
+) -> str | None:
+    try:
+        index = session_dates.index(signal_date)
+    except ValueError:
+        return None
+    end = index + rows
+    if end >= len(session_dates):
+        return None
+    return session_dates[end]
+
+
+def _fail_closed_diagnostic_payload() -> dict[str, object]:
+    zeros = [0.0, 0.0, 0.0]
+    falses = [False, False, False]
+    return {
+        "hard_valid": False,
+        "prefrozen_coverage_met": False,
+        "common_months": 0,
+        "bootstrap_support_all_three_factors": False,
+        "primary_matched_benchmark_comparisons_valid": False,
+        "secondary_spy_comparisons_valid": False,
+        "mean_rank_ics": zeros,
+        "holm_rejections": falses,
+        "active_return_10bps": zeros,
+        "active_return_25bps": zeros,
+        "common_case_positive_year_fractions": zeros,
+        "common_case_all_loyo_means_positive": falses,
+        "invalid_primary_comparison_count": 1,
+        "invalid_secondary_comparison_count": 1,
+    }
+
+
+def _from_valid(valid: bool, reason: str | None) -> dict[str, object]:
+    if valid:
+        return {"present": True, "valid": True, "reason": None}
+    return {
+        "present": True,
+        "valid": False,
+        "reason": reason or _REASON_OUTPUT_INVALID,
+    }
+
+
+def _invalid_output(reason: str) -> dict[str, object]:
+    return {"present": True, "valid": False, "reason": reason}
+
+
+def _parse_listing_key(value: object) -> bytes | None:
+    if not isinstance(value, str) or len(value) < 2 or len(value) % 2:
+        return None
+    try:
+        listing_key = bytes.fromhex(value)
+    except ValueError:
+        return None
+    if not listing_key:
+        return None
+    return listing_key
+
+
+def _invalid_session(value: object) -> bool:
+    if not isinstance(value, str) or len(value) != 10:
+        return True
+    try:
+        parsed = date.fromisoformat(value)
+    except ValueError:
+        return True
+    return parsed.isoformat() != value
+
+
+def _finite_price(value: object) -> bool:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    numeric = float(value)
+    return numeric == numeric and numeric not in {float("inf"), float("-inf")}
 
 
 def campaign_identity(binding: object) -> str:
@@ -495,12 +1064,8 @@ def _bound_file_bytes(locator: str, expected: str, reason: str) -> bytes | str:
     return raw
 
 
-def _missing_required_children(prepared: object) -> str | None:
-    names = set(_RUNNER_OWNED_CHILDREN)
-    if isinstance(prepared, dict):
-        bundle_children = prepared.get("bundle_children")
-        if isinstance(bundle_children, dict):
-            names.update(str(name) for name in bundle_children)
+def _missing_required_children(children: Mapping[str, bytes]) -> str | None:
+    names = set(children)
     for name in required_bundle_children():
         if name not in names:
             return _REASON_BUNDLE_MISSING
@@ -570,38 +1135,20 @@ def _utc_now() -> str:
     return stamp.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _child_bytes(value: object) -> bytes:
-    if isinstance(value, (bytes, bytearray)):
-        return bytes(value)
-    if isinstance(value, str):
-        return value.encode("utf-8")
-    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
-
-
-def _prepared_child_collision(prepared: object) -> str | None:
-    if not isinstance(prepared, dict):
-        return None
-    bundle_children = prepared.get("bundle_children")
-    if not isinstance(bundle_children, dict):
-        return None
-    for name in bundle_children:
-        if str(name) in _RUNNER_OWNED_CHILDREN:
-            return _REASON_CHILD_COLLISION
-    return None
-
-
 def _bundle_children(
-    prepared: object,
     protocol_raw: bytes,
     inventory_raw: bytes,
     reconciliation: ReconciliationResult,
 ) -> dict[str, bytes]:
     children: dict[str, bytes] = {}
-    if isinstance(prepared, dict):
-        bundle_children = prepared.get("bundle_children")
-        if isinstance(bundle_children, dict):
-            for name, value in bundle_children.items():
-                children[str(name)] = _child_bytes(value)
+    for name in required_bundle_children():
+        if name in _RUNNER_OWNED_CHILDREN:
+            continue
+        children[name] = json.dumps(
+            {"name": name, "schema_version": "campaign_execution_child_v1"},
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
     children[_PROTOCOL_CHILD] = protocol_raw
     children[_INVENTORY_CHILD] = inventory_raw
     children[_INVALID_CHILD] = invalid_and_missing_bytes(reconciliation)
@@ -618,7 +1165,7 @@ def _root_fields(
         statuses: list[dict[str, str]] = [
             {
                 "trial_id": trial.trial_id,
-                "status": "RECONCILED" if trial.complete else "INCOMPLETE",
+                "status": "EXECUTED" if trial.complete else "FAIL_CLOSED",
             }
             for trial in reconciliation.trials
         ]

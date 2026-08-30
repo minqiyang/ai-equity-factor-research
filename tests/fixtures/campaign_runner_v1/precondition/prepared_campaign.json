@@ -1,84 +1,150 @@
 {
-  "attempt_count": 1,
-  "bundle_children": {
-    "baseline_comparison.json": {"schema_version": "synthetic-baseline"},
-    "cost_sensitivity.json": {"schema_version": "synthetic-cost"},
-    "dataset_full_manifest.json": {"schema_version": "synthetic-full-manifest"},
-    "dataset_public_projection.json": {"schema_version": "synthetic-projection"},
-    "decile_returns.parquet": "PARQUET",
-    "factor_diagnostics.parquet": "PARQUET",
-    "review_record.json": {"schema_version": "synthetic-review"},
-    "strategy_returns.parquet": "PARQUET",
-    "yearly_robustness.json": {"schema_version": "synthetic-yearly"}
+  "anchors": {
+    "6c697374696e675f6c696e656167655f6b65795f76310000000004584e5953000000025330323031342d30312d303100": [
+      {
+        "adjusted_close": 80.0,
+        "alias_effective_from": "2014-01-01",
+        "alias_effective_to": null,
+        "lineage_resolution_evidence_id": "EV-0",
+        "resolved_listing_episode_id": "EP-0",
+        "resolved_listing_id": "LST-0",
+        "resolved_permanent_security_id": "SEC-0",
+        "session_date": "2020-01-02",
+        "source_exchange": "XNYS",
+        "source_ticker": "S0",
+        "transition_to_next": "TARGET_ALIAS"
+      },
+      {
+        "adjusted_close": 90.0,
+        "alias_effective_from": "2014-01-01",
+        "alias_effective_to": null,
+        "lineage_resolution_evidence_id": "EV-0",
+        "resolved_listing_episode_id": "EP-0",
+        "resolved_listing_id": "LST-0",
+        "resolved_permanent_security_id": "SEC-0",
+        "session_date": "2020-01-03",
+        "source_exchange": "XNYS",
+        "source_ticker": "S0",
+        "transition_to_next": "TARGET_ALIAS"
+      },
+      {
+        "adjusted_close": 100.0,
+        "alias_effective_from": "2014-01-01",
+        "alias_effective_to": null,
+        "lineage_resolution_evidence_id": "EV-0",
+        "resolved_listing_episode_id": "EP-0",
+        "resolved_listing_id": "LST-0",
+        "resolved_permanent_security_id": "SEC-0",
+        "session_date": "2020-01-06",
+        "source_exchange": "XNYS",
+        "source_ticker": "S0",
+        "transition_to_next": "TARGET_ALIAS"
+      }
+    ],
+    "6c697374696e675f6c696e656167655f6b65795f76310000000004584e5953000000025331323031342d30312d303100": [
+      {
+        "adjusted_close": 81.0,
+        "alias_effective_from": "2014-01-01",
+        "alias_effective_to": null,
+        "lineage_resolution_evidence_id": "EV-1",
+        "resolved_listing_episode_id": "EP-1",
+        "resolved_listing_id": "LST-1",
+        "resolved_permanent_security_id": "SEC-1",
+        "session_date": "2020-01-02",
+        "source_exchange": "XNYS",
+        "source_ticker": "S1",
+        "transition_to_next": "TARGET_ALIAS"
+      },
+      {
+        "adjusted_close": 91.0,
+        "alias_effective_from": "2014-01-01",
+        "alias_effective_to": null,
+        "lineage_resolution_evidence_id": "EV-1",
+        "resolved_listing_episode_id": "EP-1",
+        "resolved_listing_id": "LST-1",
+        "resolved_permanent_security_id": "SEC-1",
+        "session_date": "2020-01-03",
+        "source_exchange": "XNYS",
+        "source_ticker": "S1",
+        "transition_to_next": "TARGET_ALIAS"
+      },
+      {
+        "adjusted_close": 101.0,
+        "alias_effective_from": "2014-01-01",
+        "alias_effective_to": null,
+        "lineage_resolution_evidence_id": "EV-1",
+        "resolved_listing_episode_id": "EP-1",
+        "resolved_listing_id": "LST-1",
+        "resolved_permanent_security_id": "SEC-1",
+        "session_date": "2020-01-06",
+        "source_exchange": "XNYS",
+        "source_ticker": "S1",
+        "transition_to_next": "TARGET_ALIAS"
+      }
+    ]
   },
-  "diagnostic_payload": {
-    "active_return_10bps": [0.0, 0.0, 0.0],
-    "active_return_25bps": [0.0, 0.0, 0.0],
-    "bootstrap_support_all_three_factors": true,
-    "common_case_all_loyo_means_positive": [false, false, false],
-    "common_case_positive_year_fractions": [0.0, 0.0, 0.0],
-    "common_months": 60,
-    "hard_valid": true,
-    "holm_rejections": [false, false, false],
-    "invalid_primary_comparison_count": 0,
-    "invalid_secondary_comparison_count": 0,
-    "mean_rank_ics": [-0.01, -0.02, -0.03],
-    "prefrozen_coverage_met": true,
-    "primary_matched_benchmark_comparisons_valid": true,
-    "secondary_spy_comparisons_valid": true
+  "listings": {
+    "2020-01-06": [
+      {
+        "alias_chain": [
+          {
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "EV-0",
+            "resolved_listing_episode_id": "EP-0",
+            "resolved_listing_id": "LST-0",
+            "resolved_permanent_security_id": "SEC-0",
+            "source_exchange": "XNYS",
+            "source_ticker": "S0",
+            "transition_to_next": "TARGET_ALIAS"
+          }
+        ],
+        "in_universe_at_t": true,
+        "listing_key": "6c697374696e675f6c696e656167655f6b65795f76310000000004584e5953000000025330323031342d30312d303100",
+        "lookback_addressable_at_t": false,
+        "target_identity": {
+          "resolved_listing_episode_id": "EP-0",
+          "resolved_listing_id": "LST-0",
+          "resolved_permanent_security_id": "SEC-0"
+        },
+        "terminal_blocked_at_t": false
+      },
+      {
+        "alias_chain": [
+          {
+            "alias_effective_from": "2014-01-01",
+            "alias_effective_to": null,
+            "lineage_resolution_evidence_id": "EV-1",
+            "resolved_listing_episode_id": "EP-1",
+            "resolved_listing_id": "LST-1",
+            "resolved_permanent_security_id": "SEC-1",
+            "source_exchange": "XNYS",
+            "source_ticker": "S1",
+            "transition_to_next": "TARGET_ALIAS"
+          }
+        ],
+        "in_universe_at_t": true,
+        "listing_key": "6c697374696e675f6c696e656167655f6b65795f76310000000004584e5953000000025331323031342d30312d303100",
+        "lookback_addressable_at_t": false,
+        "target_identity": {
+          "resolved_listing_episode_id": "EP-1",
+          "resolved_listing_id": "LST-1",
+          "resolved_permanent_security_id": "SEC-1"
+        },
+        "terminal_blocked_at_t": false
+      }
+    ]
   },
-  "trial_outputs": {
-    "BASELINE_EQUAL_WEIGHT_UNIVERSE": {
-      "LOW_VOL_3M:continuous_daily_return": {"present": true, "reason": null, "valid": true},
-      "LOW_VOL_3M:episode_21_row_return": {"present": true, "reason": null, "valid": true},
-      "MOM_12_1:continuous_daily_return": {"present": true, "reason": null, "valid": true},
-      "MOM_12_1:episode_21_row_return": {"present": true, "reason": null, "valid": true},
-      "REV_1M:continuous_daily_return": {"present": true, "reason": null, "valid": true},
-      "REV_1M:episode_21_row_return": {"present": true, "reason": null, "valid": true}
+  "prices": {
+    "6c697374696e675f6c696e656167655f6b65795f76310000000004584e5953000000025330323031342d30312d303100": {
+      "2020-01-02": 80.0,
+      "2020-01-03": 90.0,
+      "2020-01-06": 100.0
     },
-    "BASELINE_RANDOM_RANK_TOP_DECILE": {
-      "LOW_VOL_3M:continuous_daily_return": {"present": true, "reason": null, "valid": true},
-      "LOW_VOL_3M:episode_21_row_return": {"present": true, "reason": null, "valid": true},
-      "MOM_12_1:continuous_daily_return": {"present": true, "reason": null, "valid": true},
-      "MOM_12_1:episode_21_row_return": {"present": true, "reason": null, "valid": true},
-      "REV_1M:continuous_daily_return": {"present": true, "reason": null, "valid": true},
-      "REV_1M:episode_21_row_return": {"present": true, "reason": null, "valid": true}
-    },
-    "DIAG_LOW_VOL_3M": {
-      "LOW_VOL_3M:monthly_rank_ic": {"present": true, "reason": null, "valid": true}
-    },
-    "DIAG_MOM_12_1": {
-      "MOM_12_1:monthly_rank_ic": {"present": true, "reason": null, "valid": true}
-    },
-    "DIAG_REV_1M": {
-      "REV_1M:monthly_rank_ic": {"present": true, "reason": null, "valid": true}
-    },
-    "STRAT_LOW_VOL_3M_0BPS": {
-      "LOW_VOL_3M:continuous_daily_return": {"present": true, "reason": null, "valid": true}
-    },
-    "STRAT_LOW_VOL_3M_10BPS": {
-      "LOW_VOL_3M:continuous_daily_return": {"present": true, "reason": null, "valid": true}
-    },
-    "STRAT_LOW_VOL_3M_25BPS": {
-      "LOW_VOL_3M:continuous_daily_return": {"present": true, "reason": null, "valid": true}
-    },
-    "STRAT_MOM_12_1_0BPS": {
-      "MOM_12_1:continuous_daily_return": {"present": true, "reason": null, "valid": true}
-    },
-    "STRAT_MOM_12_1_10BPS": {
-      "MOM_12_1:continuous_daily_return": {"present": true, "reason": null, "valid": true}
-    },
-    "STRAT_MOM_12_1_25BPS": {
-      "MOM_12_1:continuous_daily_return": {"present": true, "reason": null, "valid": true}
-    },
-    "STRAT_REV_1M_0BPS": {
-      "REV_1M:continuous_daily_return": {"present": true, "reason": null, "valid": true}
-    },
-    "STRAT_REV_1M_10BPS": {
-      "REV_1M:continuous_daily_return": {"present": true, "reason": null, "valid": true}
-    },
-    "STRAT_REV_1M_25BPS": {
-      "REV_1M:continuous_daily_return": {"present": true, "reason": null, "valid": true}
+    "6c697374696e675f6c696e656167655f6b65795f76310000000004584e5953000000025331323031342d30312d303100": {
+      "2020-01-02": 81.0,
+      "2020-01-03": 91.0,
+      "2020-01-06": 101.0
     }
   }
 }

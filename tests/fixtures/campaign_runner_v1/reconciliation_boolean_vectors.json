@@ -1,6 +1,6 @@
 {
   "inputs": {
-    "prepared_file": "precondition/prepared_campaign.json",
+    "prepared_file": "precondition/reconciled_payload.json",
     "boolean_mutations": [
       {
         "name": "mean_rank_ics",

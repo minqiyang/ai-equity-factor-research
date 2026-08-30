@@ -1,7 +1,7 @@
 {
   "inputs": {
     "inventory_file": "precondition/trial_inventory.json",
-    "prepared_file": "precondition/prepared_campaign.json"
+    "prepared_file": "precondition/reconciled_payload.json"
   },
   "expected": {
     "complete": true,

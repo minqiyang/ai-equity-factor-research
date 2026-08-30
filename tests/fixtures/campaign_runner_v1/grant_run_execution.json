@@ -4,12 +4,18 @@
     "grant_file": "precondition/grant_run_authorized.json",
     "inventory_file": "precondition/trial_inventory.json",
     "malformed_prepared": "{",
-    "missing_key_prepared": {"diagnostic_payload": {}},
+    "missing_key_prepared": {"anchors": {}, "prices": {}},
     "prepared_file": "precondition/prepared_campaign.json",
+    "result_bearing_prepared": {
+      "anchors": {},
+      "listings": {},
+      "prices": {},
+      "trial_outputs": {}
+    },
     "sentinel_file": "precondition/prepared_campaign_sentinel.txt",
     "v1_shape_file": "precondition/grant_v1_shape.json",
-    "wrong_type_prepared": {"diagnostic_payload": [], "trial_outputs": {}},
-    "nested_wrong_trial_id": "DIAG_MOM_12_1",
+    "wrong_type_prepared": {"anchors": {}, "listings": {}, "prices": []},
+    "nested_wrong_signal_date": "2020-01-06",
     "conflicting_attempt_count": 0,
     "mutated_artifact_id": "synthetic-stage2-grant-v2-mutated",
     "negative_execution_count": -1
@@ -33,14 +39,14 @@
     "run_record_keys": [
       "schema_version",
       "evidence_ceiling",
-      "trials_reconciled",
+      "trials_executed",
       "trial_ids",
       "bound_fields",
       "configuration_projection_sha256",
       "started_at_utc",
       "finished_at_utc"
     ],
-    "status": "RECONCILED_DIAGNOSTIC_ONLY",
+    "status": "EXECUTED_DIAGNOSTIC_ONLY",
     "trial_ids": [
       "BASELINE_EQUAL_WEIGHT_UNIVERSE",
       "BASELINE_RANDOM_RANK_TOP_DECILE",
@@ -57,13 +63,13 @@
       "STRAT_LOW_VOL_3M_10BPS",
       "STRAT_LOW_VOL_3M_25BPS"
     ],
-    "trials_reconciled": 14,
+    "trials_executed": 14,
     "attempt_consumed_reason": "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED",
     "malformed_reason": "PREPARED_CAMPAIGN_UNPARSEABLE",
     "schema_reason": "PREPARED_CAMPAIGN_SCHEMA_INVALID",
     "owner_mismatch_reason": "GRANT_OWNER_AUTHORIZATION_DIGEST_MISMATCH",
     "wrong_owner_digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
-    "execution_claim_key": "trials_executed",
+    "reconciled_claim_key": "trials_reconciled",
     "v1_shape_reason": "STAGE2_GRANT_SCHEMA_INVALID",
     "prepared_bytes_reason": "PREPARED_CAMPAIGN_BYTES_MISMATCH",
     "sentinel_reason": "PREPARED_CAMPAIGN_IS_SENTINEL",
@@ -77,8 +83,7 @@
     "alternate_locator_reason": "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED",
     "mutated_grant_reason": "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED",
     "negative_count_reason": "CAMPAIGN_ATTEMPT_STATE_INVALID",
-    "child_collision_reason": "PREPARED_CAMPAIGN_CHILD_COLLISION",
-    "colliding_child_body": {"trial_count": 0},
+    "result_bearing_reason": "PREPARED_CAMPAIGN_SCHEMA_INVALID",
     "invalid_child": "invalid_and_missing_summary.json",
     "runner_owned_children": [
       "eodhd_sp500_three_factor_diagnostic_v1.yaml",
@@ -107,6 +112,6 @@
     "campaign_artifact_write": true,
     "result_access_executable": true,
     "performance_access_executable": true,
-    "trial_execution_claim": true
+    "reconcile_precomputed_payload": true
   }
 }

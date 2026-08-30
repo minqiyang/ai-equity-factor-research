@@ -1,5 +1,21 @@
 # Engineering Log
 
+## 2026-08-30 - Track A PR 4 execute from an input-bearing panel
+
+- `run_campaign` admits only an input-bearing prepared campaign:
+  `prices`, `anchors`, and `listings`. Result-bearing keys such as
+  `trial_outputs`, `diagnostic_payload`, returns, factor, portfolio,
+  cumulative, and `bundle_children` refuse
+  `PREPARED_CAMPAIGN_SCHEMA_INVALID`.
+- Authorized work executes all 14 inventory trials once through existing
+  PR 3 eligibility, factor, return, baseline, path, and diagnostic
+  entry points, then reconciles those executed outputs and assembles the
+  bundle. Status is `EXECUTED_DIAGNOSTIC_ONLY` with `trials_executed`.
+- `RESULT_ACCESS` and `PERFORMANCE_ACCESS` remain unexecutable. Evidence
+  ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, identity reopen,
+  performance-informed selection, private control-tree write, B-8 bind,
+  or real 14-trial campaign run.
+
 ## 2026-08-30 - Track A PR 4 durable ledger, bundle preflight, digest recheck
 
 - Attempt consumption lives under the user data directory, not

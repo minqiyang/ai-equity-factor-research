@@ -130,11 +130,9 @@ def test_run_campaign_missing_output_does_not_emit_valid_null_bundle(
 ) -> None:
     fixture = load_runner_fixture("reconciliation_missing_output.json")
     prepared = json.loads(
-        fixture_file(fixture["inputs"]["prepared_file"]).read_text(encoding="utf-8")
+        fixture_file("precondition/prepared_campaign.json").read_text(encoding="utf-8")
     )
-    del prepared["trial_outputs"][fixture["inputs"]["missing_trial_id"]][
-        fixture["inputs"]["missing_name"]
-    ]
+    prepared["prices"] = {}
     target = tmp_path / "missing_output.json"
     target.write_text(json.dumps(prepared), encoding="utf-8")
     result = run_campaign(_authorized_config(prepared_campaign_file=str(target)))
@@ -248,7 +246,7 @@ def _binding_identity(path: str) -> str:
     )
 
 
-def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
+def test_exact_grant_v2_lists_reach_diagnostic_execution(
     tmp_path: Path,
 ) -> None:
     fixture = load_runner_fixture("grant_run_execution.json")
@@ -266,7 +264,6 @@ def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
     prepared = json.loads(
         fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
     )
-    prepared["attempt_count"] = inputs["conflicting_attempt_count"]
     prepared_path = tmp_path / "conflicting_prepared.json"
     prepared_path.write_text(json.dumps(prepared), encoding="utf-8")
     prepared_digest = sha256_hex(prepared_path.read_bytes())
@@ -300,10 +297,11 @@ def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
     assert result.bundle is not None
     assert result.run_record is not None
     assert list(result.run_record) == expected["run_record_keys"]
-    assert expected["execution_claim_key"] not in result.run_record
+    assert expected["reconciled_claim_key"] not in result.run_record
     assert result.run_record["evidence_ceiling"] == expected["evidence_ceiling"]
-    assert result.run_record["trials_reconciled"] == expected["trials_reconciled"]
+    assert result.run_record["trials_executed"] == expected["trials_executed"]
     assert result.run_record["trial_ids"] == expected["trial_ids"]
+    assert result.reconciliation.trial_count == expected["trials_executed"]
     assert result.bundle.detached_root is not None
     assert (
         result.bundle.detached_root["attempt_count"]
@@ -359,7 +357,7 @@ def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
     assert fixture["forbidden"]["campaign_artifact_write"]
     assert fixture["forbidden"]["result_access_executable"]
     assert fixture["forbidden"]["performance_access_executable"]
-    assert fixture["forbidden"]["trial_execution_claim"]
+    assert fixture["forbidden"]["reconcile_precomputed_payload"]
 
 
 def test_run_campaign_refuses_sentinel_and_prepared_byte_mismatch(
@@ -388,7 +386,7 @@ def test_run_campaign_refuses_sentinel_and_prepared_byte_mismatch(
     mutated = json.loads(
         fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
     )
-    mutated["attempt_count"] = expected["trials_reconciled"]
+    mutated["prices"] = {}
     mutated_path = tmp_path / "mutated_prepared.json"
     mutated_path.write_text(json.dumps(mutated), encoding="utf-8")
     mismatched = run_campaign(
@@ -494,7 +492,7 @@ def test_malformed_prepared_campaign_is_named_refusal(tmp_path: Path) -> None:
     nested = json.loads(
         fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
     )
-    nested["trial_outputs"][inputs["nested_wrong_trial_id"]] = []
+    nested["listings"][inputs["nested_wrong_signal_date"]] = ["not-a-listing"]
     nested_path = tmp_path / "nested.json"
     nested_path.write_text(json.dumps(nested), encoding="utf-8")
     nested_digest = sha256_hex(nested_path.read_bytes())
@@ -554,7 +552,6 @@ def test_two_process_replay_consumes_the_identity_ledger(
     prepared = json.loads(
         fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
     )
-    prepared["attempt_count"] = inputs["conflicting_attempt_count"]
     prepared_path = tmp_path / "two_process_prepared.json"
     prepared_path.write_text(json.dumps(prepared), encoding="utf-8")
     prepared_digest = sha256_hex(prepared_path.read_bytes())
@@ -612,42 +609,38 @@ def test_two_process_replay_consumes_the_identity_ledger(
     assert second_result["reason"] == expected["attempt_consumed_reason"]
 
 
-def test_prepared_runner_owned_child_names_are_refused(
+def test_result_bearing_prepared_campaign_is_refused(
     tmp_path: Path,
 ) -> None:
     fixture = load_runner_fixture("grant_run_execution.json")
     expected = fixture["expected"]
     inputs = fixture["inputs"]
-    base = json.loads(
-        fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
+    prepared_path = tmp_path / "result_bearing.json"
+    prepared_path.write_text(
+        json.dumps(inputs["result_bearing_prepared"]), encoding="utf-8"
     )
-    for name in expected["runner_owned_children"]:
-        prepared = json.loads(json.dumps(base))
-        prepared["bundle_children"][name] = expected["colliding_child_body"]
-        prepared_path = tmp_path / "colliding_prepared.json"
-        prepared_path.write_text(json.dumps(prepared), encoding="utf-8")
-        prepared_digest = sha256_hex(prepared_path.read_bytes())
-        binding_path = _write_binding(
-            tmp_path, "colliding_binding.json", prepared_digest
+    prepared_digest = sha256_hex(prepared_path.read_bytes())
+    binding_path = _write_binding(
+        tmp_path, "result_bearing_binding.json", prepared_digest
+    )
+    identity = _binding_identity(binding_path)
+    ledger = _seed_identity_ledger(identity)
+    result = run_campaign(
+        _config_with_grant(
+            inputs["grant_file"],
+            tmp_path,
+            prepared_campaign_file=str(prepared_path),
+            prepared_campaign_file_sha256=prepared_digest,
+            detached_binding_file=binding_path,
+            attempt_state_file=_copy_attempt_state(
+                tmp_path, identity, "attempt_result_bearing.json"
+            ),
         )
-        identity = _binding_identity(binding_path)
-        ledger = _seed_identity_ledger(identity)
-        result = run_campaign(
-            _config_with_grant(
-                inputs["grant_file"],
-                tmp_path,
-                prepared_campaign_file=str(prepared_path),
-                prepared_campaign_file_sha256=prepared_digest,
-                detached_binding_file=binding_path,
-                attempt_state_file=_copy_attempt_state(
-                    tmp_path, identity, "attempt_collision.json"
-                ),
-            )
-        )
-        assert result.status == "REFUSED", name
-        assert result.reason == expected["child_collision_reason"], name
-        leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
-        assert leftover["consumed"] is False, name
+    )
+    assert result.status == "REFUSED"
+    assert result.reason == expected["result_bearing_reason"]
+    leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
+    assert leftover["consumed"] is False
 
 
 def _reconcile_ready_config(
@@ -709,23 +702,20 @@ def test_tmp_environment_wipe_cannot_replay(tmp_path: Path) -> None:
     assert leftover["consumed"] is True
 
 
-def test_omitted_required_bundle_child_is_refused_before_consume(
-    tmp_path: Path,
-) -> None:
+def test_executed_bundle_contains_required_children(tmp_path: Path) -> None:
     fixture = load_runner_fixture("grant_run_execution.json")
     expected = fixture["expected"]
-    inputs = fixture["inputs"]
     prepared = json.loads(
-        fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
+        fixture_file(fixture["inputs"]["prepared_file"]).read_text(encoding="utf-8")
     )
-    del prepared["bundle_children"][expected["omitted_child"]]
-    config, ledger = _reconcile_ready_config(tmp_path, prepared, "omitted_child")
+    config, ledger = _reconcile_ready_config(tmp_path, prepared, "required_children")
     result = run_campaign(config)
-    assert result.status == "REFUSED"
-    assert result.reason == expected["omitted_child_reason"]
-    assert result.bundle is None
+    assert result.status == expected["status"]
+    assert result.bundle is not None
+    for name in expected["runner_owned_children"]:
+        assert name in result.bundle.child_digests
     leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
-    assert leftover["consumed"] is False
+    assert leftover["consumed"] is True
 
 
 def test_protocol_and_inventory_file_swap_is_refused(tmp_path: Path) -> None:
