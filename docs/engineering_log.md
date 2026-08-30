@@ -1,5 +1,21 @@
 # Engineering Log
 
+## 2026-08-30 - Track A PR 4 durable ledger, bundle preflight, digest recheck
+
+- Attempt consumption lives under the user data directory, not
+  `tempfile.gettempdir()`. A missing identity file refuses
+  `CAMPAIGN_ATTEMPT_STATE_ABSENT`; deleting a tmp ledger or planting a
+  fresh tmp file cannot replay.
+- Bundle completeness is checked before consume. Missing required
+  children refuse `BUNDLE_CHILD_MISSING`. Invalid assembly is a named
+  refusal, not `RECONCILED_DIAGNOSTIC_ONLY`.
+- Protocol and inventory bytes consumed after `authorize()` are
+  rehashed against the bound digests. A file swap refuses
+  `PROTOCOL_FREEZE_BYTES_MISMATCH` or `TRIAL_INVENTORY_BYTES_MISMATCH`
+  without spending the attempt.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, or 14-trial
+  run.
+
 ## 2026-08-29 - Track A PR 4 owner binding, cross-process cap, reserved children
 
 - The detached owner digest is authenticated against

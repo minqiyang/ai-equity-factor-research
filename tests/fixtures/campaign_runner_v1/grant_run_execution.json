@@ -86,7 +86,22 @@
       "invalid_and_missing_summary.json",
       "run_manifest.json"
     ],
-    "two_process_worker": "campaign_replay_worker.py"
+    "two_process_worker": "campaign_replay_worker.py",
+    "omitted_child": "dataset_full_manifest.json",
+    "omitted_child_reason": "BUNDLE_CHILD_MISSING",
+    "tmp_ledger_dirname": "campaign_attempt_ledger_v1",
+    "file_swap_cases": [
+      {
+        "config_field": "protocol_file",
+        "reason": "PROTOCOL_FREEZE_BYTES_MISMATCH",
+        "source": "precondition/protocol.yaml"
+      },
+      {
+        "config_field": "trial_inventory_file",
+        "reason": "TRIAL_INVENTORY_BYTES_MISMATCH",
+        "source": "precondition/trial_inventory.json"
+      }
+    ]
   },
   "forbidden": {
     "campaign_artifact_write": true,

@@ -11,13 +11,13 @@ import json
 import os
 from pathlib import Path
 import re
-import tempfile
 from types import MappingProxyType
 
 from campaign.bundle import (
     BundleAssembly,
     assemble_evidence_bundle,
     invalid_and_missing_bytes,
+    required_bundle_children,
 )
 from campaign.inference import HOLM_ALPHA, LONG_SEGMENT_BLOCK_LENGTH
 from campaign.precondition import (
@@ -67,8 +67,12 @@ _REASON_ATTEMPT_INVALID = "CAMPAIGN_ATTEMPT_STATE_INVALID"
 _REASON_ATTEMPT_CONSUMED = "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED"
 _REASON_ATTEMPT_LEDGER = "CAMPAIGN_ATTEMPT_LEDGER_MISMATCH"
 _REASON_CHILD_COLLISION = "PREPARED_CAMPAIGN_CHILD_COLLISION"
+_REASON_BUNDLE_MISSING = "BUNDLE_CHILD_MISSING"
+_REASON_PROTOCOL = "PROTOCOL_FREEZE_BYTES_MISMATCH"
+_REASON_INVENTORY = "TRIAL_INVENTORY_BYTES_MISMATCH"
 _ATTEMPT_SCHEMA = "campaign_attempt_state_v1"
 _ATTEMPT_LEDGER_DIRNAME = "campaign_attempt_ledger_v1"
+_ATTEMPT_LEDGER_ROOT = (".local", "share", "equity-factor-research")
 _ATTEMPT_KEYS = frozenset(
     {
         "schema_version",
@@ -308,8 +312,23 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     collision = _prepared_child_collision(prepared)
     if collision is not None:
         return _refused(authorization, collision)
-    inventory_raw = Path(config.trial_inventory_file).read_bytes()
-    protocol_raw = Path(config.protocol_file).read_bytes()
+    missing = _missing_required_children(prepared)
+    if missing is not None:
+        return _refused(authorization, missing)
+    protocol_raw = _bound_file_bytes(
+        config.protocol_file,
+        config.protocol_file_sha256,
+        _REASON_PROTOCOL,
+    )
+    if isinstance(protocol_raw, str):
+        return _refused(authorization, protocol_raw)
+    inventory_raw = _bound_file_bytes(
+        config.trial_inventory_file,
+        config.trial_inventory_file_sha256,
+        _REASON_INVENTORY,
+    )
+    if isinstance(inventory_raw, str):
+        return _refused(authorization, inventory_raw)
     reconciled = _reconcile_prepared(inventory_raw, prepared)
     if isinstance(reconciled, str):
         return _refused(authorization, reconciled)
@@ -321,9 +340,6 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     assert isinstance(block, dict)
     limit = block["execution_count_limit"]
     assert isinstance(limit, int)
-    consumed = _consume_attempt(limit, campaign_identity(binding))
-    if isinstance(consumed, str):
-        return _refused(authorization, consumed)
     started_at = _utc_now()
     trial_ids = tuple(str(trial["trial_id"]) for trial in inventory)
     bound_fields = {name: binding[name] for name in _BOUND_FIELDS}
@@ -353,8 +369,26 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     ).encode("utf-8")
     bundle = assemble_evidence_bundle(
         children,
-        _root_fields(config, inventory, reconciliation, consumed),
+        _root_fields(config, inventory, reconciliation, limit),
     )
+    if not bundle.valid:
+        reason = bundle.reason
+        if reason is None:
+            reason = _REASON_BUNDLE_MISSING
+        return _refused(authorization, reason)
+    consumed = _consume_attempt(limit, campaign_identity(binding))
+    if isinstance(consumed, str):
+        return _refused(authorization, consumed)
+    if consumed != limit:
+        bundle = assemble_evidence_bundle(
+            children,
+            _root_fields(config, inventory, reconciliation, consumed),
+        )
+        if not bundle.valid:
+            reason = bundle.reason
+            if reason is None:
+                reason = _REASON_BUNDLE_MISSING
+            return _refused(authorization, reason)
     return CampaignRun(
         _STATUS_RECONCILED,
         None,
@@ -444,35 +478,54 @@ def attempt_ledger_path(identity: str) -> Path:
 
     if not isinstance(identity, str) or _SHA256_RE.fullmatch(identity) is None:
         raise ValueError("identity must be a 64-hex digest")
-    return Path(tempfile.gettempdir()) / _ATTEMPT_LEDGER_DIRNAME / f"{identity}.json"
+    return Path.home().joinpath(
+        *_ATTEMPT_LEDGER_ROOT,
+        _ATTEMPT_LEDGER_DIRNAME,
+        f"{identity}.json",
+    )
+
+
+def _bound_file_bytes(locator: str, expected: str, reason: str) -> bytes | str:
+    try:
+        raw = Path(locator).read_bytes()
+    except OSError:
+        return reason
+    if hashlib.sha256(raw).hexdigest() != expected:
+        return reason
+    return raw
+
+
+def _missing_required_children(prepared: object) -> str | None:
+    names = set(_RUNNER_OWNED_CHILDREN)
+    if isinstance(prepared, dict):
+        bundle_children = prepared.get("bundle_children")
+        if isinstance(bundle_children, dict):
+            names.update(str(name) for name in bundle_children)
+    for name in required_bundle_children():
+        if name not in names:
+            return _REASON_BUNDLE_MISSING
+    return None
 
 
 def _consume_attempt(limit: int, identity: str) -> str | int:
     path = attempt_ledger_path(identity)
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o600)
+        if not path.is_file():
+            return _REASON_ATTEMPT_ABSENT
+        fd = os.open(path, os.O_RDWR)
     except OSError:
         return _REASON_ATTEMPT_ABSENT
     try:
         fcntl.flock(fd, fcntl.LOCK_EX)
         size = os.fstat(fd).st_size
         raw = os.read(fd, size) if size else b""
-        if not raw:
-            parsed: dict[str, object] = {
-                "schema_version": _ATTEMPT_SCHEMA,
-                "consumed": False,
-                "execution_count": 0,
-                "campaign_identity_sha256": identity,
-            }
-        else:
-            try:
-                loaded = json.loads(raw.decode("utf-8"))
-            except (UnicodeDecodeError, json.JSONDecodeError):
-                return _REASON_ATTEMPT_INVALID
-            if not isinstance(loaded, dict):
-                return _REASON_ATTEMPT_INVALID
-            parsed = loaded
+        try:
+            loaded = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            return _REASON_ATTEMPT_INVALID
+        if not isinstance(loaded, dict):
+            return _REASON_ATTEMPT_INVALID
+        parsed = loaded
         if set(parsed) != _ATTEMPT_KEYS:
             return _REASON_ATTEMPT_INVALID
         if parsed.get("schema_version") != _ATTEMPT_SCHEMA:

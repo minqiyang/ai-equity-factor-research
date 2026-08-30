@@ -6,8 +6,10 @@ import dataclasses
 import inspect
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
+import tempfile
 
 from campaign.bundle import invalid_and_missing_bytes
 from campaign.precondition import authorize, result_bearing_refusal_reason
@@ -646,3 +648,112 @@ def test_prepared_runner_owned_child_names_are_refused(
         assert result.reason == expected["child_collision_reason"], name
         leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
         assert leftover["consumed"] is False, name
+
+
+def _reconcile_ready_config(
+    tmp_path: Path,
+    prepared: dict[str, object],
+    name: str,
+) -> tuple[RunConfig, str]:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    inputs = fixture["inputs"]
+    prepared_path = tmp_path / f"{name}_prepared.json"
+    prepared_path.write_text(json.dumps(prepared), encoding="utf-8")
+    prepared_digest = sha256_hex(prepared_path.read_bytes())
+    binding_path = _write_binding(
+        tmp_path, f"{name}_binding.json", prepared_digest
+    )
+    identity = _binding_identity(binding_path)
+    ledger = _seed_identity_ledger(identity)
+    config = _config_with_grant(
+        inputs["grant_file"],
+        tmp_path,
+        prepared_campaign_file=str(prepared_path),
+        prepared_campaign_file_sha256=prepared_digest,
+        detached_binding_file=binding_path,
+        attempt_state_file=_copy_attempt_state(
+            tmp_path, identity, f"{name}_attempt.json"
+        ),
+    )
+    return config, ledger
+
+
+def test_tmp_environment_wipe_cannot_replay(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    expected = fixture["expected"]
+    inputs = fixture["inputs"]
+    prepared = json.loads(
+        fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
+    )
+    config, ledger = _reconcile_ready_config(tmp_path, prepared, "tmp_wipe")
+    first = run_campaign(config)
+    assert first.status == expected["status"]
+    identity = json.loads(Path(ledger).read_text(encoding="utf-8"))[
+        "campaign_identity_sha256"
+    ]
+    ephemeral = Path(tempfile.gettempdir()) / expected["tmp_ledger_dirname"]
+    if ephemeral.exists():
+        shutil.rmtree(ephemeral)
+    ephemeral.mkdir(parents=True)
+    fake = json.loads(
+        fixture_file("precondition/attempt_state.json").read_text(encoding="utf-8")
+    )
+    fake["campaign_identity_sha256"] = identity
+    (ephemeral / f"{identity}.json").write_text(
+        json.dumps(fake, sort_keys=True), encoding="utf-8"
+    )
+    second = run_campaign(config)
+    assert second.status == "REFUSED"
+    assert second.reason == expected["attempt_consumed_reason"]
+    leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
+    assert leftover["consumed"] is True
+
+
+def test_omitted_required_bundle_child_is_refused_before_consume(
+    tmp_path: Path,
+) -> None:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    expected = fixture["expected"]
+    inputs = fixture["inputs"]
+    prepared = json.loads(
+        fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
+    )
+    del prepared["bundle_children"][expected["omitted_child"]]
+    config, ledger = _reconcile_ready_config(tmp_path, prepared, "omitted_child")
+    result = run_campaign(config)
+    assert result.status == "REFUSED"
+    assert result.reason == expected["omitted_child_reason"]
+    assert result.bundle is None
+    leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
+    assert leftover["consumed"] is False
+
+
+def test_protocol_and_inventory_file_swap_is_refused(tmp_path: Path) -> None:
+    fixture = load_runner_fixture("grant_run_execution.json")
+    expected = fixture["expected"]
+    inputs = fixture["inputs"]
+    prepared = json.loads(
+        fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
+    )
+    for case in expected["file_swap_cases"]:
+        config, ledger = _reconcile_ready_config(
+            tmp_path, prepared, str(case["config_field"])
+        )
+        source = fixture_file(case["source"])
+        swapped = tmp_path / source.name
+        swapped.write_bytes(source.read_bytes() + b"\n")
+        result = run_campaign(
+            _config_with_grant(
+                inputs["grant_file"],
+                tmp_path,
+                prepared_campaign_file=config.prepared_campaign_file,
+                prepared_campaign_file_sha256=config.prepared_campaign_file_sha256,
+                detached_binding_file=config.detached_binding_file,
+                attempt_state_file=config.attempt_state_file,
+                **{case["config_field"]: str(swapped)},
+            )
+        )
+        assert result.status == "REFUSED", case
+        assert result.reason == case["reason"], case
+        leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
+        assert leftover["consumed"] is False, case
