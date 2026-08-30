@@ -95,6 +95,26 @@
       "start": "2019-01-01",
       "start_price": 50.0,
       "zero": 0.0
+    },
+    "mixed_eligible": {
+      "eligible_count": 100,
+      "ineligible_count": 1,
+      "session_count": 80,
+      "start": "2019-01-01"
+    },
+    "mid_month_injection": {
+      "injected_date": "2019-02-15",
+      "injected_execution": "2019-02-16",
+      "listing_count": 100,
+      "session_count": 120,
+      "start": "2019-01-01"
+    },
+    "warmup_missing_label": {
+      "horizon_rows": 21,
+      "listing_count": 100,
+      "session_count": 500,
+      "start": "2017-01-01",
+      "warmup_prefix": "2017-"
     }
   },
   "expected": {

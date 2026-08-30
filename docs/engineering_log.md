@@ -1,5 +1,16 @@
 # Engineering Log
 
+## 2026-08-30 - Track A PR 4 Rank IC, schedule, and coverage P1s
+
+- Rank IC cross-sections use eligible listings only; ineligible names are
+  omitted rather than appended as missing pairs.
+- Unscheduled listing dates are rejected before continuous resets. A
+  schema-valid non-month-end date is not an extra execution.
+- Coverage gates use primary evaluation dates. Pre-2018 missing labels are
+  warm-up only and do not force `INVALID_DIAGNOSTIC`.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No private control-tree
+  write, B-8 bind, or real 14-trial run.
+
 ## 2026-08-30 - Track A PR 4 cutoff and 2018 fold P1s
 
 - Accepted cutoff is the last session date, not the latest monthly signal.

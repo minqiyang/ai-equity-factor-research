@@ -881,7 +881,9 @@ def _monthly_rank_ics(
             )
             ret_value = None if held is None or not held.valid else held.value
             forwards.append((row.listing_key.hex(), ret_value, held is not None and held.valid))
-            if factor_value is None or ret_value is None:
+            if factor_value is None:
+                continue
+            if ret_value is None:
                 pairs.append((None, None))
             else:
                 pairs.append((factor_value, ret_value))
@@ -959,7 +961,7 @@ def _continuous_output(
     ordered_exec: list[str] = []
     for signal_date in panel.listings:
         row = _schedule_signal(schedule, signal_date)
-        if row is not None and not row.continuous_included:
+        if schedule is not None and (row is None or not row.continuous_included):
             continue
         window = _execution_window(
             schedule, panel.session_dates, signal_date, config.horizon_return_rows
@@ -1132,6 +1134,7 @@ def _execution_window(
             if row.execution_date is None or row.label_end_date is None:
                 return None
             return row.execution_date, row.label_end_date
+        return None
     try:
         index = session_dates.index(signal_date)
     except ValueError:
@@ -1387,7 +1390,10 @@ def _prefrozen_coverage(
 ) -> bool:
     if not frozen:
         return False
+    eval_dates = _evaluation_signal_dates(trace.schedule)
     for (factor_id, signal_date), frozen_dt in frozen.items():
+        if eval_dates and signal_date not in eval_dates:
+            continue
         if not isinstance(frozen_dt, FrozenDecisionTime):
             return False
         horizon = (

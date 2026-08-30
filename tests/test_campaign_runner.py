@@ -1326,3 +1326,129 @@ def test_primary_folds_start_in_evaluation_year(tmp_path: Path) -> None:
     yearly = _parse_child(result, "yearly_robustness.json")
     assert manifest["first_fold_year"] == cases["expected"]["first_fold_year"]
     assert cfg["warmup_year"] not in yearly["required_years"]
+
+
+def test_rank_ic_omits_ineligible_listings(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["mixed_eligible"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    listing_count = int(cfg["eligible_count"]) + int(cfg["ineligible_count"])
+    prepared = _synthetic_panel(
+        sessions,
+        listing_count,
+        _month_end_flags(sessions, int(cases["inputs"]["one"])),
+        "derived_large",
+        cases,
+    )
+    ineligible_hex = None
+    for rows in prepared["listings"].values():
+        rows[-1]["in_universe_at_t"] = False
+        ineligible_hex = rows[-1]["listing_key"]
+    result = _run_prepared(tmp_path, prepared, "mixed_eligible")
+    assert result.status == cases["inputs"]["executed_status"]
+    diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+    valid_months = [
+        month
+        for month in diagnostics["monthly_rank_ics"]
+        if month["valid"] is True
+    ]
+    assert valid_months
+    assert ineligible_hex is not None
+    for month in valid_months:
+        keys = [row["listing_key"] for row in month["forward_returns"]]
+        assert ineligible_hex in keys
+
+
+def test_unscheduled_listing_dates_are_not_continuous_resets(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["mid_month_injection"]
+    rebalance = cases["inputs"]["rebalance"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = {
+        str(row["signal_date"]): bool(row["in_universe"])
+        for row in rebalance["signals"]
+    }
+    control = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        flags,
+        "rebalance",
+        cases,
+    )
+    injected = json.loads(json.dumps(control))
+    template = next(iter(injected["listings"].values()))
+    injected["listings"][str(cfg["injected_date"])] = [
+        {**row, "in_universe_at_t": False} for row in template
+    ]
+    control_result = _run_prepared(tmp_path, control, "mid_month_control")
+    injected_result = _run_prepared(tmp_path, injected, "mid_month_injected")
+    assert control_result.status == cases["inputs"]["executed_status"]
+    assert injected_result.status == cases["inputs"]["executed_status"]
+    session = str(cfg["injected_execution"])
+    assert _turnover_on(cases, control_result, session) == _turnover_on(
+        cases, injected_result, session
+    )
+
+
+def test_warmup_missing_labels_do_not_invalidate_primary(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["warmup_missing_label"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = _month_end_flags(sessions, int(cases["inputs"]["one"]))
+    prepared = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        flags,
+        "derived_large",
+        cases,
+    )
+    warmup = next(
+        signal_date
+        for signal_date in flags
+        if signal_date.startswith(str(cfg["warmup_prefix"]))
+    )
+    label_end = sessions[
+        sessions.index(warmup) + int(cases["inputs"]["one"]) + int(cfg["horizon_rows"])
+    ]
+    hex_key = next(iter(prepared["prices"]))
+    del prepared["prices"][hex_key][label_end]
+    prepared["anchors"][hex_key] = [
+        record
+        for record in prepared["anchors"][hex_key]
+        if record["session_date"] != label_end
+    ]
+    result = _run_prepared(tmp_path, prepared, "warmup_missing_label")
+    assert result.status == cases["inputs"]["executed_status"]
+    assert result.reconciliation is not None
+    assert result.reconciliation.diagnostic_inputs is not None
+    assert result.reconciliation.diagnostic_inputs.prefrozen_coverage_met is True
+
+
+def _turnover_on(
+    cases: dict[str, object],
+    result: CampaignRun,
+    session: str,
+) -> float:
+    strategy = _parse_child(result, "strategy_returns.parquet")
+    rev = str(cases["inputs"]["rev_factor_id"])
+    ten = next(
+        row
+        for row in strategy["trials"]
+        if row["trial_id"] == cases["inputs"]["rev_ten_trial_id"]
+        and row["factor_id"] == rev
+    )
+    point = next(row for row in ten["points"] if row["session_date"] == session)
+    return float(point["turnover"])
