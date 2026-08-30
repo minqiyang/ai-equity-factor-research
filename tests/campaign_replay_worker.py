@@ -6,7 +6,11 @@ import json
 from pathlib import Path
 import sys
 
-from campaign.runner import RunConfig, run_campaign
+_SRC = Path(__file__).resolve().parents[1] / "src"
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
+from campaign.runner import RunConfig, run_campaign  # noqa: E402
 
 
 def main() -> None:
