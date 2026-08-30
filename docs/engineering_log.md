@@ -1,5 +1,12 @@
 # Engineering Log
 
+## 2026-08-30 - Track A PR 4 cutoff and 2018 fold P1s
+
+- Accepted cutoff is the last session date, not the latest monthly signal.
+- Primary evaluation folds start in 2018; earlier complete labels are warm-up
+  only and do not enter required years. Evidence ceiling remains
+  `DIAGNOSTIC_ONLY`.
+
 ## 2026-08-30 - Track A PR 4 execution P1 follow-up
 
 - The durable attempt is reserved before result-bearing trial execution.

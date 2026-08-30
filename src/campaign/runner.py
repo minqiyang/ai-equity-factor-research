@@ -111,6 +111,7 @@ _RANDOM_RANK_TRIAL = "BASELINE_RANDOM_RANK_TOP_DECILE"
 _EQUAL_WEIGHT_ROLE = "equal_weight_universe"
 _RANDOM_RANK_SCHEME = "random_rank_v1"
 _INITIAL_EQUITY = 1.0
+_FIRST_FOLD_YEAR = 2018
 _STRATEGY_PRIMARY = "STRATEGY_PRIMARY"
 _STRATEGY_STRESS = "STRATEGY_STRESS"
 _STRATEGY_PREFIX = "STRATEGY_"
@@ -1077,8 +1078,6 @@ def _campaign_schedule(
     if not panel.session_dates:
         return None
     cutoff = panel.session_dates[-1]
-    if panel.listings:
-        cutoff = max(panel.listings)
     try:
         return build_campaign_schedule(
             panel.session_dates,
@@ -1086,7 +1085,7 @@ def _campaign_schedule(
             config.horizon_return_rows,
             config.horizon_purge_signal_axis_rows,
             config.embargo_rows,
-            int(panel.session_dates[0][:4]),
+            _FIRST_FOLD_YEAR,
         )
     except (TypeError, ValueError):
         return None
@@ -1109,10 +1108,10 @@ def _required_years(schedule: CampaignSchedule | None) -> tuple[int, ...]:
         return ()
     years = []
     seen: set[int] = set()
-    for row in schedule.signals:
-        if not row.factor_label_complete:
+    for fold in schedule.folds:
+        if not fold.signal_dates:
             continue
-        year = int(row.signal_date[:4])
+        year = fold.fold_year
         if year in seen:
             continue
         seen.add(year)
@@ -1170,6 +1169,11 @@ def _diagnostic_payload_from_execution(
         ]
         means.append(sum(values) / len(values) if values else 0.0)
     common_dates = _common_valid_months(trace.monthly_ics)
+    eval_dates = _evaluation_signal_dates(trace.schedule)
+    if eval_dates:
+        common_dates = tuple(
+            signal_date for signal_date in common_dates if signal_date in eval_dates
+        )
     common_months = len(common_dates)
     p_values, bootstrap_support = _bootstrap_from_months(
         config, trace.monthly_ics, common_dates, trace.schedule
@@ -1212,6 +1216,17 @@ def _diagnostic_payload_from_execution(
 
 def _as_factor_vector(values: Sequence[object]) -> FactorVector[object]:
     return FactorVector(**dict(zip(FACTOR_ORDER, values, strict=True)))
+
+
+def _evaluation_signal_dates(
+    schedule: CampaignSchedule | None,
+) -> frozenset[str]:
+    if schedule is None:
+        return frozenset()
+    dates: list[str] = []
+    for fold in schedule.folds:
+        dates.extend(fold.signal_dates)
+    return frozenset(dates)
 
 
 def _common_valid_months(
@@ -1714,6 +1729,16 @@ def _bundle_children(
     listing_count = len(_all_listing_rows(trace.panel))
     artifacts = {
         "dataset_full_manifest.json": {
+            "accepted_cutoff": (
+                trace.schedule.accepted_cutoff
+                if trace.schedule is not None
+                else trace.panel.session_dates[-1]
+            ),
+            "first_fold_year": (
+                trace.schedule.first_fold_year
+                if trace.schedule is not None
+                else _FIRST_FOLD_YEAR
+            ),
             "listing_count": listing_count,
             "schema_version": "campaign_dataset_full_manifest_v1",
             "session_count": len(trace.panel.session_dates),

@@ -1124,7 +1124,12 @@ def test_boundary_signals_are_excluded_from_continuous_paths(
 ) -> None:
     cases = _p1_cases()
     cutoff = load_runner_fixture("session_month_cutoff.json")
-    sessions = tuple(cutoff["inputs"]["session_dates"])
+    bound = str(cutoff["inputs"]["accepted_cutoff"])
+    sessions = tuple(
+        session
+        for session in cutoff["inputs"]["session_dates"]
+        if session <= bound
+    )
     flags = {
         cutoff["expected"]["june_signal"]["signal_date"]: True,
         cutoff["expected"]["july_signal"]["signal_date"]: True,
@@ -1270,3 +1275,54 @@ def test_decile_artifact_contains_executed_fields(tmp_path: Path) -> None:
     for row in deciles["rows"]:
         for field in required:
             assert field in row
+
+
+def test_accepted_cutoff_is_last_session_not_latest_signal(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["mid_month_cutoff"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            {str(cfg["signal_date"]): True},
+            "execution_anchor",
+            cases,
+        ),
+        "mid_month_cutoff",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    manifest = _parse_child(result, "dataset_full_manifest.json")
+    assert manifest["accepted_cutoff"] == sessions[-1]
+    assert manifest["accepted_cutoff"] != cfg["signal_date"]
+
+
+def test_primary_folds_start_in_evaluation_year(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["warmup_folds"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            _month_end_flags(sessions, int(cases["inputs"]["one"])),
+            "monthly_ic",
+            cases,
+        ),
+        "warmup_folds",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    manifest = _parse_child(result, "dataset_full_manifest.json")
+    yearly = _parse_child(result, "yearly_robustness.json")
+    assert manifest["first_fold_year"] == cases["expected"]["first_fold_year"]
+    assert cfg["warmup_year"] not in yearly["required_years"]

@@ -36,6 +36,18 @@
       "session_count": 800,
       "start": "2019-01-01"
     },
+    "mid_month_cutoff": {
+      "listing_count": 2,
+      "session_count": 45,
+      "signal_date": "2020-06-30",
+      "start": "2020-06-01"
+    },
+    "warmup_folds": {
+      "listing_count": 12,
+      "session_count": 500,
+      "start": "2017-01-01",
+      "warmup_year": 2017
+    },
     "universe_factor_ids": ["MOM_12_1", "REV_1M", "LOW_VOL_3M"],
     "execution_anchor": {
       "end_price": 133.1,
@@ -87,6 +99,7 @@
   },
   "expected": {
     "evidence_ceiling": "DIAGNOSTIC_ONLY",
+    "first_fold_year": 2018,
     "invalid_state": "INVALID_DIAGNOSTIC"
   },
   "forbidden": {
