@@ -1,5 +1,17 @@
 # Engineering Log
 
+## 2026-08-30 - Track A PR 4 execution P1 follow-up
+
+- The durable attempt is reserved before result-bearing trial execution.
+- Equal-weight benchmark holdings are stored per factor. Continuous
+  resets use only `continuous_included` signals and charge cash-to-target
+  deployment at the first execution.
+- Held returns require exact start and end anchors. Invalid 25 bps
+  strategy paths fail hard validity. Bootstrap segments split on fold and
+  missing-month gaps. Robustness required years come from the schedule.
+- Decile children carry executed means, spread, and monotonicity.
+  Evidence ceiling remains `DIAGNOSTIC_ONLY`.
+
 ## 2026-08-30 - Track A PR 4 execution P1 remediation
 
 - Diagnostic classifier inputs are assembled from executed monthly Rank

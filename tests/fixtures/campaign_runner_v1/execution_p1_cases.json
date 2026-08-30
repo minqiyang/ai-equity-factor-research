@@ -11,10 +11,32 @@
     "ticker_prefix": "S",
     "ticker_width": 3,
     "artifact_schema": {
+      "decile": "campaign_decile_returns_v1",
       "diagnostics": "campaign_factor_diagnostics_v1",
       "review": "campaign_review_record_v1",
       "strategy": "campaign_strategy_returns_v1"
     },
+    "decile_fields": [
+      "factor_id",
+      "fully_monotone",
+      "means",
+      "monotonicity_share",
+      "reason",
+      "signal_date",
+      "spread",
+      "valid"
+    ],
+    "equal_weight_trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE",
+    "gap_year_prefix": "2020-",
+    "initial_turnover": 1.0,
+    "missing_year": 2020,
+    "rev_factor_id": "REV_1M",
+    "robustness_years": {
+      "listing_count": 12,
+      "session_count": 800,
+      "start": "2019-01-01"
+    },
+    "universe_factor_ids": ["MOM_12_1", "REV_1M", "LOW_VOL_3M"],
     "execution_anchor": {
       "end_price": 133.1,
       "execution_price": 110.0,

@@ -1017,9 +1017,19 @@ def test_continuous_paths_reset_at_each_execution(tmp_path: Path) -> None:
     result = _run_prepared(tmp_path, prepared, "rebalance")
     assert result.status == cases["inputs"]["executed_status"]
     costs = _parse_child(result, "cost_sensitivity.json")
-    by_trial = {row["trial_id"]: row for row in costs["trials"]}
-    zero = by_trial[str(cases["inputs"]["rev_zero_trial_id"])]["cost_impact_sum"]
-    ten = by_trial[str(cases["inputs"]["rev_ten_trial_id"])]["cost_impact_sum"]
+    rev = str(cases["inputs"]["rev_factor_id"])
+    zero = next(
+        row["cost_impact_sum"]
+        for row in costs["trials"]
+        if row["trial_id"] == cases["inputs"]["rev_zero_trial_id"]
+        and row["factor_id"] == rev
+    )
+    ten = next(
+        row["cost_impact_sum"]
+        for row in costs["trials"]
+        if row["trial_id"] == cases["inputs"]["rev_ten_trial_id"]
+        and row["factor_id"] == rev
+    )
     assert zero == 0.0
     assert ten > zero
 
@@ -1058,3 +1068,203 @@ def test_diagnostic_payload_is_derived_from_execution(tmp_path: Path) -> None:
         large_inputs.mean_rank_ics != small_inputs.mean_rank_ics
     )
     assert large.reconciliation.final_state != cases["expected"]["invalid_state"]
+
+
+def test_attempt_is_reserved_before_execution(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    prepared = json.loads(
+        fixture_file("precondition/prepared_campaign.json").read_text(encoding="utf-8")
+    )
+    config, _ledger = _reconcile_ready_config(tmp_path, prepared, "reserve_once")
+    first = run_campaign(config)
+    assert first.status == cases["inputs"]["executed_status"]
+    second = run_campaign(config)
+    assert second.status == "REFUSED"
+    assert second.reason == "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED"
+    assert second.reconciliation is None
+
+
+def test_benchmark_paths_are_retained_per_factor(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["rebalance"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = {
+        str(row["signal_date"]): bool(row["in_universe"])
+        for row in cfg["signals"]
+    }
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            flags,
+            "rebalance",
+            cases,
+        ),
+        "per_factor_benchmark",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    strategy = _parse_child(result, "strategy_returns.parquet")
+    baseline = [
+        row
+        for row in strategy["trials"]
+        if row["trial_id"] == cases["inputs"]["equal_weight_trial_id"]
+    ]
+    factor_ids = {row["factor_id"] for row in baseline}
+    assert factor_ids == set(cases["inputs"]["universe_factor_ids"])
+    by_factor = {row["factor_id"]: row["valid"] for row in baseline}
+    assert by_factor[str(cases["inputs"]["rev_factor_id"])] is True
+
+
+def test_boundary_signals_are_excluded_from_continuous_paths(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cutoff = load_runner_fixture("session_month_cutoff.json")
+    sessions = tuple(cutoff["inputs"]["session_dates"])
+    flags = {
+        cutoff["expected"]["june_signal"]["signal_date"]: True,
+        cutoff["expected"]["july_signal"]["signal_date"]: True,
+    }
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(sessions, int(cases["inputs"]["one"]), flags, "rebalance", cases),
+        "cutoff_boundary",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    strategy = _parse_child(result, "strategy_returns.parquet")
+    sessions_seen = {
+        point["session_date"]
+        for row in strategy["trials"]
+        for point in row["points"]
+    }
+    assert cutoff["expected"]["july_signal"]["execution_date"] not in sessions_seen
+
+
+def test_initial_deployment_charges_turnover(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["rebalance"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = {
+        str(row["signal_date"]): bool(row["in_universe"])
+        for row in cfg["signals"]
+    }
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            flags,
+            "rebalance",
+            cases,
+        ),
+        "initial_turn",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    strategy = _parse_child(result, "strategy_returns.parquet")
+    rev = str(cases["inputs"]["rev_factor_id"])
+    ten = next(
+        row
+        for row in strategy["trials"]
+        if row["trial_id"] == cases["inputs"]["rev_ten_trial_id"]
+        and row["factor_id"] == rev
+    )
+    first = ten["points"][0]
+    assert first["turnover"] == cases["inputs"]["initial_turnover"]
+    assert first["cost_impact"] > 0.0
+
+
+def test_held_returns_require_exact_boundary_anchors(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["execution_anchor"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    missing_sessions = (sessions[1], sessions[-1])
+    for missing in missing_sessions:
+        prepared = _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            {str(cfg["signal_date"]): True},
+            "execution_anchor",
+            cases,
+        )
+        hex_key = next(iter(prepared["prices"]))
+        del prepared["prices"][hex_key][missing]
+        prepared["anchors"][hex_key] = [
+            record
+            for record in prepared["anchors"][hex_key]
+            if record["session_date"] != missing
+        ]
+        result = _run_prepared(
+            tmp_path, prepared, f"missing-{missing}"
+        )
+        assert result.status == cases["inputs"]["executed_status"]
+        diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+        forwards = diagnostics["monthly_rank_ics"][0]["forward_returns"]
+        dropped = [row for row in forwards if row["listing_key"] == hex_key]
+        assert dropped
+        assert dropped[0]["valid"] is False
+
+
+def test_invalid_stress_paths_fail_hard_validity(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    prepared = json.loads(
+        fixture_file("precondition/prepared_campaign.json").read_text(encoding="utf-8")
+    )
+    result = _run_prepared(tmp_path, prepared, "stress_hard")
+    assert result.status == cases["inputs"]["executed_status"]
+    assert result.reconciliation is not None
+    assert result.reconciliation.diagnostic_inputs is not None
+    assert result.reconciliation.diagnostic_inputs.hard_valid is False
+    assert result.reconciliation.final_state == cases["expected"]["invalid_state"]
+
+
+def test_robustness_keeps_missing_scheduled_years(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["robustness_years"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = _month_end_flags(sessions, int(cases["inputs"]["one"]))
+    for signal_date in list(flags):
+        if signal_date.startswith(str(cases["inputs"]["gap_year_prefix"])):
+            flags[signal_date] = False
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            flags,
+            "monthly_ic",
+            cases,
+        ),
+        "missing_year",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    yearly = _parse_child(result, "yearly_robustness.json")
+    assert cases["inputs"]["missing_year"] in yearly["required_years"]
+
+
+def test_decile_artifact_contains_executed_fields(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    prepared = json.loads(
+        fixture_file("precondition/prepared_campaign.json").read_text(encoding="utf-8")
+    )
+    result = _run_prepared(tmp_path, prepared, "decile_rows")
+    assert result.status == cases["inputs"]["executed_status"]
+    deciles = _parse_child(result, "decile_returns.parquet")
+    assert deciles["schema_version"] == cases["inputs"]["artifact_schema"]["decile"]
+    assert deciles["rows"]
+    required = cases["inputs"]["decile_fields"]
+    for row in deciles["rows"]:
+        for field in required:
+            assert field in row

@@ -17,7 +17,11 @@ profitability, or trading readiness.
   returns, continuous paths, and bundle children are taken from that
   execution: monthly Rank IC, execution-anchored `e=t+1` through `e+21`
   labels, scheduled execution resets, and parseable executed artifacts.
-  Precomputed result-bearing payloads are refused. `RESULT_ACCESS` and
+  The one-run attempt is reserved before trial execution. Benchmark paths
+  are retained per factor, continuous resets omit cutoff-boundary signals,
+  initial deployment is charged, held returns require exact boundary
+  anchors, and invalid 25 bps paths fail hard validity. Precomputed
+  result-bearing payloads are refused. `RESULT_ACCESS` and
   `PERFORMANCE_ACCESS` stay unexecutable. This adds no private data, D8,
   A2, identity reopen, or real 14-trial run.
 
