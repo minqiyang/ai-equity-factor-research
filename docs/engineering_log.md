@@ -1,5 +1,54 @@
 # Engineering Log
 
+## 2026-08-30 - Track A PR 4 cutoff and 2018 fold P1s
+
+- Accepted cutoff is the last session date, not the latest monthly signal.
+- Primary evaluation folds start in 2018; earlier complete labels are warm-up
+  only and do not enter required years. Evidence ceiling remains
+  `DIAGNOSTIC_ONLY`.
+
+## 2026-08-30 - Track A PR 4 execution P1 follow-up
+
+- The durable attempt is reserved before result-bearing trial execution.
+- Equal-weight benchmark holdings are stored per factor. Continuous
+  resets use only `continuous_included` signals and charge cash-to-target
+  deployment at the first execution.
+- Held returns require exact start and end anchors. Invalid 25 bps
+  strategy paths fail hard validity. Bootstrap segments split on fold and
+  missing-month gaps. Robustness required years come from the schedule.
+- Decile children carry executed means, spread, and monotonicity.
+  Evidence ceiling remains `DIAGNOSTIC_ONLY`.
+
+## 2026-08-30 - Track A PR 4 execution P1 remediation
+
+- Diagnostic classifier inputs are assembled from executed monthly Rank
+  ICs, coverage, bootstrap/Holm when complete-case months exist, and
+  strategy-vs-baseline paths. Constant fail-closed payload flags are
+  gone.
+- Required bundle children carry executed JSON artifacts with explicit
+  schemas rather than two-field placeholders.
+- Forward returns and episode labels use execution close `e=t+1` through
+  `e+21`. Continuous paths reset at every scheduled execution.
+- Rank IC is one cross-section per signal month. Evidence ceiling remains
+  `DIAGNOSTIC_ONLY`. No private control-tree write, B-8 bind, or real
+  14-trial run.
+
+## 2026-08-30 - Track A PR 4 execute from an input-bearing panel
+
+- `run_campaign` admits only an input-bearing prepared campaign:
+  `prices`, `anchors`, and `listings`. Result-bearing keys such as
+  `trial_outputs`, `diagnostic_payload`, returns, factor, portfolio,
+  cumulative, and `bundle_children` refuse
+  `PREPARED_CAMPAIGN_SCHEMA_INVALID`.
+- Authorized work executes all 14 inventory trials once through existing
+  PR 3 eligibility, factor, return, baseline, path, and diagnostic
+  entry points, then reconciles those executed outputs and assembles the
+  bundle. Status is `EXECUTED_DIAGNOSTIC_ONLY` with `trials_executed`.
+- `RESULT_ACCESS` and `PERFORMANCE_ACCESS` remain unexecutable. Evidence
+  ceiling remains `DIAGNOSTIC_ONLY`. No D8, A2, identity reopen,
+  performance-informed selection, private control-tree write, B-8 bind,
+  or real 14-trial campaign run.
+
 ## 2026-08-30 - Track A PR 4 durable ledger, bundle preflight, digest recheck
 
 - Attempt consumption lives under the user data directory, not

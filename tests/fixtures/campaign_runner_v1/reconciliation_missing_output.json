@@ -3,7 +3,7 @@
     "inventory_file": "precondition/trial_inventory.json",
     "missing_name": "MOM_12_1:episode_21_row_return",
     "missing_trial_id": "BASELINE_EQUAL_WEIGHT_UNIVERSE",
-    "prepared_file": "precondition/prepared_campaign.json"
+    "prepared_file": "precondition/reconciled_payload.json"
   },
   "expected": {
     "complete": false,

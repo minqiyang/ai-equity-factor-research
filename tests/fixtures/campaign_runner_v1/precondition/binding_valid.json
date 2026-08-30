@@ -7,7 +7,7 @@
   "environment_id": "synthetic-environment",
   "environment_lock_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
   "owner_authorization_file_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-  "prepared_campaign_file_sha256": "9b8e39a8c3c10d6c403b13582165629b787ce0ff946b672674d8be113f2895f1",
+  "prepared_campaign_file_sha256": "813cb953388235884a1c6b68abfe2aa3396a9156ea2475bfd7245958ac44ee47",
   "protocol_file_sha256": "04661db15bc753b12f357b86d5f54e4098aeb611362e117dcaea8d816bed1232",
   "runner_code_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "schema_version": "campaign_detached_binding_v2",

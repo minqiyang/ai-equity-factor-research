@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+from datetime import date, timedelta
 import inspect
 import json
 from pathlib import Path
@@ -11,7 +12,7 @@ import subprocess
 import sys
 import tempfile
 
-from campaign.bundle import invalid_and_missing_bytes
+from campaign.bundle import invalid_and_missing_bytes, required_bundle_children
 from campaign.precondition import authorize, result_bearing_refusal_reason
 from campaign.runner import (
     CampaignRun,
@@ -23,7 +24,9 @@ from campaign.runner import (
 )
 from pit_manifest_validator_v1.canonical import sha256_hex
 from campaign_runner_v1_support import (
+    encode_runner_listing_key,
     fixture_file,
+    fixture_ticker,
     load_runner_fixture,
     make_run_config,
 )
@@ -130,11 +133,9 @@ def test_run_campaign_missing_output_does_not_emit_valid_null_bundle(
 ) -> None:
     fixture = load_runner_fixture("reconciliation_missing_output.json")
     prepared = json.loads(
-        fixture_file(fixture["inputs"]["prepared_file"]).read_text(encoding="utf-8")
+        fixture_file("precondition/prepared_campaign.json").read_text(encoding="utf-8")
     )
-    del prepared["trial_outputs"][fixture["inputs"]["missing_trial_id"]][
-        fixture["inputs"]["missing_name"]
-    ]
+    prepared["prices"] = {}
     target = tmp_path / "missing_output.json"
     target.write_text(json.dumps(prepared), encoding="utf-8")
     result = run_campaign(_authorized_config(prepared_campaign_file=str(target)))
@@ -248,7 +249,7 @@ def _binding_identity(path: str) -> str:
     )
 
 
-def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
+def test_exact_grant_v2_lists_reach_diagnostic_execution(
     tmp_path: Path,
 ) -> None:
     fixture = load_runner_fixture("grant_run_execution.json")
@@ -266,7 +267,6 @@ def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
     prepared = json.loads(
         fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
     )
-    prepared["attempt_count"] = inputs["conflicting_attempt_count"]
     prepared_path = tmp_path / "conflicting_prepared.json"
     prepared_path.write_text(json.dumps(prepared), encoding="utf-8")
     prepared_digest = sha256_hex(prepared_path.read_bytes())
@@ -300,10 +300,11 @@ def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
     assert result.bundle is not None
     assert result.run_record is not None
     assert list(result.run_record) == expected["run_record_keys"]
-    assert expected["execution_claim_key"] not in result.run_record
+    assert expected["reconciled_claim_key"] not in result.run_record
     assert result.run_record["evidence_ceiling"] == expected["evidence_ceiling"]
-    assert result.run_record["trials_reconciled"] == expected["trials_reconciled"]
+    assert result.run_record["trials_executed"] == expected["trials_executed"]
     assert result.run_record["trial_ids"] == expected["trial_ids"]
+    assert result.reconciliation.trial_count == expected["trials_executed"]
     assert result.bundle.detached_root is not None
     assert (
         result.bundle.detached_root["attempt_count"]
@@ -359,7 +360,7 @@ def test_exact_grant_v2_lists_reach_diagnostic_reconciliation(
     assert fixture["forbidden"]["campaign_artifact_write"]
     assert fixture["forbidden"]["result_access_executable"]
     assert fixture["forbidden"]["performance_access_executable"]
-    assert fixture["forbidden"]["trial_execution_claim"]
+    assert fixture["forbidden"]["reconcile_precomputed_payload"]
 
 
 def test_run_campaign_refuses_sentinel_and_prepared_byte_mismatch(
@@ -388,7 +389,7 @@ def test_run_campaign_refuses_sentinel_and_prepared_byte_mismatch(
     mutated = json.loads(
         fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
     )
-    mutated["attempt_count"] = expected["trials_reconciled"]
+    mutated["prices"] = {}
     mutated_path = tmp_path / "mutated_prepared.json"
     mutated_path.write_text(json.dumps(mutated), encoding="utf-8")
     mismatched = run_campaign(
@@ -494,7 +495,7 @@ def test_malformed_prepared_campaign_is_named_refusal(tmp_path: Path) -> None:
     nested = json.loads(
         fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
     )
-    nested["trial_outputs"][inputs["nested_wrong_trial_id"]] = []
+    nested["listings"][inputs["nested_wrong_signal_date"]] = ["not-a-listing"]
     nested_path = tmp_path / "nested.json"
     nested_path.write_text(json.dumps(nested), encoding="utf-8")
     nested_digest = sha256_hex(nested_path.read_bytes())
@@ -554,7 +555,6 @@ def test_two_process_replay_consumes_the_identity_ledger(
     prepared = json.loads(
         fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
     )
-    prepared["attempt_count"] = inputs["conflicting_attempt_count"]
     prepared_path = tmp_path / "two_process_prepared.json"
     prepared_path.write_text(json.dumps(prepared), encoding="utf-8")
     prepared_digest = sha256_hex(prepared_path.read_bytes())
@@ -612,42 +612,38 @@ def test_two_process_replay_consumes_the_identity_ledger(
     assert second_result["reason"] == expected["attempt_consumed_reason"]
 
 
-def test_prepared_runner_owned_child_names_are_refused(
+def test_result_bearing_prepared_campaign_is_refused(
     tmp_path: Path,
 ) -> None:
     fixture = load_runner_fixture("grant_run_execution.json")
     expected = fixture["expected"]
     inputs = fixture["inputs"]
-    base = json.loads(
-        fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
+    prepared_path = tmp_path / "result_bearing.json"
+    prepared_path.write_text(
+        json.dumps(inputs["result_bearing_prepared"]), encoding="utf-8"
     )
-    for name in expected["runner_owned_children"]:
-        prepared = json.loads(json.dumps(base))
-        prepared["bundle_children"][name] = expected["colliding_child_body"]
-        prepared_path = tmp_path / "colliding_prepared.json"
-        prepared_path.write_text(json.dumps(prepared), encoding="utf-8")
-        prepared_digest = sha256_hex(prepared_path.read_bytes())
-        binding_path = _write_binding(
-            tmp_path, "colliding_binding.json", prepared_digest
+    prepared_digest = sha256_hex(prepared_path.read_bytes())
+    binding_path = _write_binding(
+        tmp_path, "result_bearing_binding.json", prepared_digest
+    )
+    identity = _binding_identity(binding_path)
+    ledger = _seed_identity_ledger(identity)
+    result = run_campaign(
+        _config_with_grant(
+            inputs["grant_file"],
+            tmp_path,
+            prepared_campaign_file=str(prepared_path),
+            prepared_campaign_file_sha256=prepared_digest,
+            detached_binding_file=binding_path,
+            attempt_state_file=_copy_attempt_state(
+                tmp_path, identity, "attempt_result_bearing.json"
+            ),
         )
-        identity = _binding_identity(binding_path)
-        ledger = _seed_identity_ledger(identity)
-        result = run_campaign(
-            _config_with_grant(
-                inputs["grant_file"],
-                tmp_path,
-                prepared_campaign_file=str(prepared_path),
-                prepared_campaign_file_sha256=prepared_digest,
-                detached_binding_file=binding_path,
-                attempt_state_file=_copy_attempt_state(
-                    tmp_path, identity, "attempt_collision.json"
-                ),
-            )
-        )
-        assert result.status == "REFUSED", name
-        assert result.reason == expected["child_collision_reason"], name
-        leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
-        assert leftover["consumed"] is False, name
+    )
+    assert result.status == "REFUSED"
+    assert result.reason == expected["result_bearing_reason"]
+    leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
+    assert leftover["consumed"] is False
 
 
 def _reconcile_ready_config(
@@ -709,23 +705,20 @@ def test_tmp_environment_wipe_cannot_replay(tmp_path: Path) -> None:
     assert leftover["consumed"] is True
 
 
-def test_omitted_required_bundle_child_is_refused_before_consume(
-    tmp_path: Path,
-) -> None:
+def test_executed_bundle_contains_required_children(tmp_path: Path) -> None:
     fixture = load_runner_fixture("grant_run_execution.json")
     expected = fixture["expected"]
-    inputs = fixture["inputs"]
     prepared = json.loads(
-        fixture_file(inputs["prepared_file"]).read_text(encoding="utf-8")
+        fixture_file(fixture["inputs"]["prepared_file"]).read_text(encoding="utf-8")
     )
-    del prepared["bundle_children"][expected["omitted_child"]]
-    config, ledger = _reconcile_ready_config(tmp_path, prepared, "omitted_child")
+    config, ledger = _reconcile_ready_config(tmp_path, prepared, "required_children")
     result = run_campaign(config)
-    assert result.status == "REFUSED"
-    assert result.reason == expected["omitted_child_reason"]
-    assert result.bundle is None
+    assert result.status == expected["status"]
+    assert result.bundle is not None
+    for name in expected["runner_owned_children"]:
+        assert name in result.bundle.child_digests
     leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
-    assert leftover["consumed"] is False
+    assert leftover["consumed"] is True
 
 
 def test_protocol_and_inventory_file_swap_is_refused(tmp_path: Path) -> None:
@@ -757,3 +750,579 @@ def test_protocol_and_inventory_file_swap_is_refused(tmp_path: Path) -> None:
         assert result.reason == case["reason"], case
         leftover = json.loads(Path(ledger).read_text(encoding="utf-8"))
         assert leftover["consumed"] is False, case
+
+
+def _p1_cases() -> dict[str, object]:
+    return load_runner_fixture("execution_p1_cases.json")
+
+
+def _session_range(start: date, count: int) -> tuple[str, ...]:
+    return tuple((start + timedelta(days=index)).isoformat() for index in range(count))
+
+
+def _listing_index(spec: dict[str, object]) -> int:
+    identity = spec["identity"]
+    assert isinstance(identity, dict)
+    return int(str(identity["resolved_listing_id"]).split("-")[-1])
+
+
+def _synthetic_listing(index: int, cases: dict[str, object]) -> dict[str, object]:
+    inputs = cases["inputs"]
+    ticker = fixture_ticker(
+        str(inputs["ticker_prefix"]),
+        int(inputs["ticker_width"]),
+        index,
+    )
+    listing_key = encode_runner_listing_key(
+        str(inputs["exchange"]),
+        ticker,
+        str(inputs["alias_effective_from"]),
+        None,
+    )
+    identity = {
+        "resolved_listing_episode_id": f"EP-{index}",
+        "resolved_listing_id": f"LST-{index}",
+        "resolved_permanent_security_id": f"SEC-{index}",
+    }
+    alias = {
+        **identity,
+        "alias_effective_from": inputs["alias_effective_from"],
+        "alias_effective_to": None,
+        "lineage_resolution_evidence_id": f"EV-{index}",
+        "source_exchange": inputs["exchange"],
+        "source_ticker": ticker,
+        "transition_to_next": "TARGET_ALIAS",
+    }
+    return {
+        "alias": alias,
+        "hex_key": listing_key.hex(),
+        "identity": identity,
+        "listing_key": listing_key,
+    }
+
+
+def _price_for_case(
+    case_name: str,
+    cases: dict[str, object],
+    spec: dict[str, object],
+    session: str,
+    sessions: tuple[str, ...],
+) -> float:
+    inputs = cases["inputs"]
+    if case_name == "execution_anchor":
+        cfg = inputs["execution_anchor"]
+        if session == sessions[0]:
+            return float(cfg["start_price"])
+        if session == sessions[-1]:
+            return float(cfg["end_price"])
+        return float(cfg["execution_price"])
+    index = _listing_index(spec)
+    day = sessions.index(session)
+    if case_name == "monthly_ic":
+        cfg = inputs["monthly_ic"]
+        one = int(inputs["one"])
+        price = float(cfg["start_price"]) + index + float(cfg["slope"]) * (index + one) * day
+        if session >= str(cfg["first_signal"]) and session < str(cfg["second_signal"]):
+            if index >= int(cfg["split_index"]):
+                return price * float(cfg["early_high_mult"])
+            return price * float(cfg["early_low_mult"])
+        if session >= str(cfg["second_signal"]):
+            if index >= int(cfg["split_index"]):
+                return price * float(cfg["late_high_mult"])
+            return price * float(cfg["late_low_mult"])
+        return price
+    if case_name == "rebalance":
+        cfg = inputs["rebalance"]
+        return float(cfg["start_price"]) + index + day * float(cfg["day_weight"])
+    cfg = inputs["derived_large"]
+    remainder = index % int(cfg["parity_mod"])
+    parity = float(cfg["parity_boost"]) if remainder else float(cfg["zero"])
+    return float(cfg["start_price"]) + index + float(cfg["day_weight"]) * day + parity
+
+
+def _synthetic_panel(
+    sessions: tuple[str, ...],
+    listing_count: int,
+    signal_flags: dict[str, bool],
+    case_name: str,
+    cases: dict[str, object],
+) -> dict[str, object]:
+    listings_out: dict[str, list[dict[str, object]]] = {}
+    prices: dict[str, dict[str, float]] = {}
+    anchors: dict[str, list[dict[str, object]]] = {}
+    specs = [_synthetic_listing(index, cases) for index in range(listing_count)]
+    for spec in specs:
+        hex_key = str(spec["hex_key"])
+        alias = spec["alias"]
+        assert isinstance(alias, dict)
+        prices[hex_key] = {
+            session: _price_for_case(case_name, cases, spec, session, sessions)
+            for session in sessions
+        }
+        anchors[hex_key] = [
+            {
+                **alias,
+                "adjusted_close": prices[hex_key][session],
+                "session_date": session,
+            }
+            for session in sessions
+        ]
+    for signal_date, in_universe in signal_flags.items():
+        rows = []
+        for spec in specs:
+            rows.append(
+                {
+                    "alias_chain": [spec["alias"]],
+                    "in_universe_at_t": in_universe,
+                    "listing_key": spec["hex_key"],
+                    "lookback_addressable_at_t": True,
+                    "target_identity": spec["identity"],
+                    "terminal_blocked_at_t": False,
+                }
+            )
+        listings_out[signal_date] = rows
+    return {"anchors": anchors, "listings": listings_out, "prices": prices}
+
+
+def _run_prepared(tmp_path: Path, prepared: dict[str, object], name: str):
+    config, _ledger = _reconcile_ready_config(tmp_path, prepared, name)
+    return run_campaign(config)
+
+
+def _parse_child(result: CampaignRun, name: str) -> dict[str, object]:
+    assert result.artifacts is not None
+    payload = json.loads(result.artifacts[name].decode("utf-8"))
+    assert isinstance(payload, dict)
+    return payload
+
+
+def _month_end_flags(sessions: tuple[str, ...], one: int) -> dict[str, bool]:
+    flags: dict[str, bool] = {}
+    for index, session in enumerate(sessions):
+        nxt_index = index + one
+        if nxt_index >= len(sessions):
+            continue
+        if session[5:7] != sessions[nxt_index][5:7]:
+            flags[session] = True
+    return flags
+
+
+def test_executed_children_parse_with_required_schemas(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    inputs = cases["inputs"]
+    prepared = json.loads(
+        fixture_file("precondition/prepared_campaign.json").read_text(encoding="utf-8")
+    )
+    result = _run_prepared(tmp_path, prepared, "artifact_schema")
+    assert result.status == inputs["executed_status"]
+    assert result.artifacts is not None
+    placeholder = json.dumps(
+        {
+            "name": inputs["placeholder_child"],
+            "schema_version": inputs["placeholder_schema"],
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    assert result.artifacts[str(inputs["placeholder_child"])] != placeholder
+    schema = inputs["artifact_schema"]
+    diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+    assert diagnostics["schema_version"] == schema["diagnostics"]
+    assert "monthly_rank_ics" in diagnostics
+    strategy = _parse_child(result, "strategy_returns.parquet")
+    assert strategy["schema_version"] == schema["strategy"]
+    assert "trials" in strategy
+    review = _parse_child(result, "review_record.json")
+    assert review["schema_version"] == schema["review"]
+    assert review["evidence_ceiling"] == cases["expected"]["evidence_ceiling"]
+    for name in required_bundle_children():
+        assert name in result.artifacts
+
+
+def test_forward_returns_anchor_at_execution_close(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["execution_anchor"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    prepared = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        {str(cfg["signal_date"]): True},
+        "execution_anchor",
+        cases,
+    )
+    result = _run_prepared(tmp_path, prepared, "execution_anchor")
+    assert result.status == cases["inputs"]["executed_status"]
+    diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+    months = diagnostics["monthly_rank_ics"]
+    assert months
+    forwards = months[0]["forward_returns"]
+    assert months[0]["execution_date"] == sessions[1]
+    assert months[0]["label_end_date"] == sessions[-1]
+    values = [row["value"] for row in forwards if row["valid"]]
+    assert values
+    expected = float(cfg["expected_return"])
+    rel_tol = float(cfg["rel_tol"])
+    for value in values:
+        assert abs(float(value) - expected) < rel_tol
+
+
+def test_rank_ic_is_computed_per_signal_month(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["monthly_ic"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    first = str(cfg["first_signal"])
+    second = str(cfg["second_signal"])
+    prepared = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        {first: True, second: True},
+        "monthly_ic",
+        cases,
+    )
+    result = _run_prepared(tmp_path, prepared, "monthly_ic")
+    assert result.status == cases["inputs"]["executed_status"]
+    diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+    by_signal: dict[str, list[object]] = {}
+    for month in diagnostics["monthly_rank_ics"]:
+        by_signal.setdefault(month["signal_date"], []).append(month["value"])
+    assert first in by_signal
+    assert second in by_signal
+    assert by_signal[first] != by_signal[second]
+
+
+def test_continuous_paths_reset_at_each_execution(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["rebalance"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = {
+        str(row["signal_date"]): bool(row["in_universe"])
+        for row in cfg["signals"]
+    }
+    prepared = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        flags,
+        "rebalance",
+        cases,
+    )
+    result = _run_prepared(tmp_path, prepared, "rebalance")
+    assert result.status == cases["inputs"]["executed_status"]
+    costs = _parse_child(result, "cost_sensitivity.json")
+    rev = str(cases["inputs"]["rev_factor_id"])
+    zero = next(
+        row["cost_impact_sum"]
+        for row in costs["trials"]
+        if row["trial_id"] == cases["inputs"]["rev_zero_trial_id"]
+        and row["factor_id"] == rev
+    )
+    ten = next(
+        row["cost_impact_sum"]
+        for row in costs["trials"]
+        if row["trial_id"] == cases["inputs"]["rev_ten_trial_id"]
+        and row["factor_id"] == rev
+    )
+    assert zero == 0.0
+    assert ten > zero
+
+
+def test_diagnostic_payload_is_derived_from_execution(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    prepared = json.loads(
+        fixture_file("precondition/prepared_campaign.json").read_text(encoding="utf-8")
+    )
+    small = _run_prepared(tmp_path, prepared, "derived_small")
+    assert small.status == cases["inputs"]["executed_status"]
+    assert small.reconciliation is not None
+    assert small.reconciliation.diagnostic_inputs is not None
+    small_inputs = small.reconciliation.diagnostic_inputs
+    cfg = cases["inputs"]["derived_large"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    large = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            _month_end_flags(sessions, int(cases["inputs"]["one"])),
+            "derived_large",
+            cases,
+        ),
+        "derived_large",
+    )
+    assert large.status == cases["inputs"]["executed_status"]
+    assert large.reconciliation is not None
+    assert large.reconciliation.diagnostic_inputs is not None
+    large_inputs = large.reconciliation.diagnostic_inputs
+    assert large_inputs.common_months != small_inputs.common_months or (
+        large_inputs.mean_rank_ics != small_inputs.mean_rank_ics
+    )
+    assert large.reconciliation.final_state != cases["expected"]["invalid_state"]
+
+
+def test_attempt_is_reserved_before_execution(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    prepared = json.loads(
+        fixture_file("precondition/prepared_campaign.json").read_text(encoding="utf-8")
+    )
+    config, _ledger = _reconcile_ready_config(tmp_path, prepared, "reserve_once")
+    first = run_campaign(config)
+    assert first.status == cases["inputs"]["executed_status"]
+    second = run_campaign(config)
+    assert second.status == "REFUSED"
+    assert second.reason == "CAMPAIGN_ATTEMPT_ALREADY_CONSUMED"
+    assert second.reconciliation is None
+
+
+def test_benchmark_paths_are_retained_per_factor(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["rebalance"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = {
+        str(row["signal_date"]): bool(row["in_universe"])
+        for row in cfg["signals"]
+    }
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            flags,
+            "rebalance",
+            cases,
+        ),
+        "per_factor_benchmark",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    strategy = _parse_child(result, "strategy_returns.parquet")
+    baseline = [
+        row
+        for row in strategy["trials"]
+        if row["trial_id"] == cases["inputs"]["equal_weight_trial_id"]
+    ]
+    factor_ids = {row["factor_id"] for row in baseline}
+    assert factor_ids == set(cases["inputs"]["universe_factor_ids"])
+    by_factor = {row["factor_id"]: row["valid"] for row in baseline}
+    assert by_factor[str(cases["inputs"]["rev_factor_id"])] is True
+
+
+def test_boundary_signals_are_excluded_from_continuous_paths(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cutoff = load_runner_fixture("session_month_cutoff.json")
+    bound = str(cutoff["inputs"]["accepted_cutoff"])
+    sessions = tuple(
+        session
+        for session in cutoff["inputs"]["session_dates"]
+        if session <= bound
+    )
+    flags = {
+        cutoff["expected"]["june_signal"]["signal_date"]: True,
+        cutoff["expected"]["july_signal"]["signal_date"]: True,
+    }
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(sessions, int(cases["inputs"]["one"]), flags, "rebalance", cases),
+        "cutoff_boundary",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    strategy = _parse_child(result, "strategy_returns.parquet")
+    sessions_seen = {
+        point["session_date"]
+        for row in strategy["trials"]
+        for point in row["points"]
+    }
+    assert cutoff["expected"]["july_signal"]["execution_date"] not in sessions_seen
+
+
+def test_initial_deployment_charges_turnover(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["rebalance"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = {
+        str(row["signal_date"]): bool(row["in_universe"])
+        for row in cfg["signals"]
+    }
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            flags,
+            "rebalance",
+            cases,
+        ),
+        "initial_turn",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    strategy = _parse_child(result, "strategy_returns.parquet")
+    rev = str(cases["inputs"]["rev_factor_id"])
+    ten = next(
+        row
+        for row in strategy["trials"]
+        if row["trial_id"] == cases["inputs"]["rev_ten_trial_id"]
+        and row["factor_id"] == rev
+    )
+    first = ten["points"][0]
+    expected = float(cases["inputs"]["initial_turnover"])
+    rel_tol = float(cases["inputs"]["execution_anchor"]["rel_tol"])
+    assert abs(float(first["turnover"]) - expected) < rel_tol
+    assert first["cost_impact"] > 0.0
+
+
+def test_held_returns_require_exact_boundary_anchors(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["execution_anchor"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    missing_sessions = (sessions[1], sessions[-1])
+    for missing in missing_sessions:
+        prepared = _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            {str(cfg["signal_date"]): True},
+            "execution_anchor",
+            cases,
+        )
+        hex_key = next(iter(prepared["prices"]))
+        del prepared["prices"][hex_key][missing]
+        prepared["anchors"][hex_key] = [
+            record
+            for record in prepared["anchors"][hex_key]
+            if record["session_date"] != missing
+        ]
+        result = _run_prepared(
+            tmp_path, prepared, f"missing-{missing}"
+        )
+        assert result.status == cases["inputs"]["executed_status"]
+        diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+        forwards = diagnostics["monthly_rank_ics"][0]["forward_returns"]
+        dropped = [row for row in forwards if row["listing_key"] == hex_key]
+        assert dropped
+        assert dropped[0]["valid"] is False
+
+
+def test_invalid_stress_paths_fail_hard_validity(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    prepared = json.loads(
+        fixture_file("precondition/prepared_campaign.json").read_text(encoding="utf-8")
+    )
+    result = _run_prepared(tmp_path, prepared, "stress_hard")
+    assert result.status == cases["inputs"]["executed_status"]
+    assert result.reconciliation is not None
+    assert result.reconciliation.diagnostic_inputs is not None
+    assert result.reconciliation.diagnostic_inputs.hard_valid is False
+    assert result.reconciliation.final_state == cases["expected"]["invalid_state"]
+
+
+def test_robustness_keeps_missing_scheduled_years(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["robustness_years"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = _month_end_flags(sessions, int(cases["inputs"]["one"]))
+    for signal_date in list(flags):
+        if signal_date.startswith(str(cases["inputs"]["gap_year_prefix"])):
+            flags[signal_date] = False
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            flags,
+            "monthly_ic",
+            cases,
+        ),
+        "missing_year",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    yearly = _parse_child(result, "yearly_robustness.json")
+    assert cases["inputs"]["missing_year"] in yearly["required_years"]
+
+
+def test_decile_artifact_contains_executed_fields(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    prepared = json.loads(
+        fixture_file("precondition/prepared_campaign.json").read_text(encoding="utf-8")
+    )
+    result = _run_prepared(tmp_path, prepared, "decile_rows")
+    assert result.status == cases["inputs"]["executed_status"]
+    deciles = _parse_child(result, "decile_returns.parquet")
+    assert deciles["schema_version"] == cases["inputs"]["artifact_schema"]["decile"]
+    assert deciles["rows"]
+    required = cases["inputs"]["decile_fields"]
+    for row in deciles["rows"]:
+        for field in required:
+            assert field in row
+
+
+def test_accepted_cutoff_is_last_session_not_latest_signal(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["mid_month_cutoff"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            {str(cfg["signal_date"]): True},
+            "execution_anchor",
+            cases,
+        ),
+        "mid_month_cutoff",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    manifest = _parse_child(result, "dataset_full_manifest.json")
+    assert manifest["accepted_cutoff"] == sessions[-1]
+    assert manifest["accepted_cutoff"] != cfg["signal_date"]
+
+
+def test_primary_folds_start_in_evaluation_year(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["warmup_folds"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            _month_end_flags(sessions, int(cases["inputs"]["one"])),
+            "monthly_ic",
+            cases,
+        ),
+        "warmup_folds",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    manifest = _parse_child(result, "dataset_full_manifest.json")
+    yearly = _parse_child(result, "yearly_robustness.json")
+    assert manifest["first_fold_year"] == cases["expected"]["first_fold_year"]
+    assert cfg["warmup_year"] not in yearly["required_years"]

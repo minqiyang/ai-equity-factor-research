@@ -2,8 +2,8 @@
   "inputs": {
     "prepared_file": "precondition/prepared_campaign.json",
     "mutation": {
-      "path": ["diagnostic_payload", "holm_rejections"],
-      "value": [true, true, true]
+      "path": ["prices"],
+      "value": {}
     }
   },
   "expected": {
