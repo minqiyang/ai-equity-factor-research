@@ -13,12 +13,13 @@ profitability, or trading readiness.
   an input-bearing prepared campaign (`prices`, `anchors`, `listings`)
   under `DIAGNOSTIC_ONLY`. Authorized work returns
   `EXECUTED_DIAGNOSTIC_ONLY` with `trials_executed == 14` in inventory
-  order via existing PR 3 machinery. Precomputed result-bearing payloads
-  are refused and are not treated as trial execution. A grant may list
-  `FOURTEEN_TRIAL_RUN` in `now_eligible` only with a valid
-  run-authorization block and explicit forbiddance of `RESULT_ACCESS`
-  and `PERFORMANCE_ACCESS`. Those access stages stay unexecutable. This
-  adds no private data, D8, A2, identity reopen, or real 14-trial run.
+  order via existing PR 3 machinery. Diagnostic payload, Rank IC, forward
+  returns, continuous paths, and bundle children are taken from that
+  execution: monthly Rank IC, execution-anchored `e=t+1` through `e+21`
+  labels, scheduled execution resets, and parseable executed artifacts.
+  Precomputed result-bearing payloads are refused. `RESULT_ACCESS` and
+  `PERFORMANCE_ACCESS` stay unexecutable. This adds no private data, D8,
+  A2, identity reopen, or real 14-trial run.
 
 ### Fixed
 

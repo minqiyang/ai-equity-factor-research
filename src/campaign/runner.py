@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 import fcntl
@@ -24,14 +24,27 @@ from campaign.bundle import (
     invalid_and_missing_bytes,
     required_bundle_children,
 )
-from campaign.diagnostics import spearman_rank_ic
+from campaign.diagnostics import (
+    CommonCaseMonth,
+    common_case_robustness,
+    label_coverage,
+    spearman_rank_ic,
+    yearly_rank_ic_contributions,
+)
 from campaign.eligibility import (
     DecisionTimeListing,
     FrozenDecisionTime,
     build_frozen_decision_time,
 )
-from campaign.inference import FACTOR_ORDER, HOLM_ALPHA, LONG_SEGMENT_BLOCK_LENGTH
-from campaign.paths import advance_holdings, holding_interval
+from campaign.inference import (
+    FACTOR_ORDER,
+    FactorVector,
+    HOLM_ALPHA,
+    LONG_SEGMENT_BLOCK_LENGTH,
+    bootstrap_mean_rank_ic,
+    holm_adjust,
+)
+from campaign.paths import ContinuousHoldings, advance_holdings, holding_interval
 from campaign.precondition import (
     Authorization,
     authorize,
@@ -45,6 +58,7 @@ from campaign.reconciliation import (
 )
 from campaign.registry import factor_spec
 from campaign.returns import simple_adjusted_close_return
+from campaign.schedule import CampaignSchedule, build_campaign_schedule
 
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -96,6 +110,8 @@ _RANDOM_RANK_TRIAL = "BASELINE_RANDOM_RANK_TOP_DECILE"
 _EQUAL_WEIGHT_ROLE = "equal_weight_universe"
 _RANDOM_RANK_SCHEME = "random_rank_v1"
 _INITIAL_EQUITY = 1.0
+_STRATEGY_PRIMARY = "STRATEGY_PRIMARY"
+_STRATEGY_STRESS = "STRATEGY_STRESS"
 _ATTEMPT_SCHEMA = "campaign_attempt_state_v1"
 _ATTEMPT_LEDGER_DIRNAME = "campaign_attempt_ledger_v1"
 _ATTEMPT_LEDGER_ROOT = (".local", "share", "equity-factor-research")
@@ -282,6 +298,7 @@ class CampaignRun:
     reconciliation: ReconciliationResult | None
     bundle: BundleAssembly | None
     run_record: MappingProxyType[str, object] | None
+    artifacts: MappingProxyType[str, bytes] | None
 
 
 @dataclass(frozen=True)
@@ -300,6 +317,25 @@ class _PreparedPanel:
     anchors: MappingProxyType[bytes, tuple[MappingProxyType[str, object], ...]]
     listings: MappingProxyType[str, tuple[_ListingRow, ...]]
     session_dates: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class _MonthResult:
+    signal_date: str
+    execution_date: str | None
+    label_end_date: str | None
+    value: float | None
+    valid: bool
+    reason: str | None
+    forward_returns: tuple[tuple[str, float | None, bool], ...]
+
+
+@dataclass(frozen=True)
+class _ExecutionTrace:
+    schedule: CampaignSchedule | None
+    monthly_ics: MappingProxyType[str, tuple[_MonthResult, ...]]
+    holdings: MappingProxyType[str, ContinuousHoldings | None]
+    panel: _PreparedPanel
 
 
 def configuration_projection(config: RunConfig) -> dict[str, object]:
@@ -392,7 +428,7 @@ def run_campaign(config: RunConfig) -> CampaignRun:
     executed = _execute_prepared(config, inventory_raw, panel)
     if isinstance(executed, str):
         return _refused(authorization, executed)
-    inventory, reconciliation = executed
+    inventory, reconciliation, trace = executed
     binding = authorization.binding
     if binding is None:
         return _refused(authorization, "DETACHED_BINDING_ABSENT")
@@ -421,7 +457,9 @@ def run_campaign(config: RunConfig) -> CampaignRun:
         "started_at_utc": started_at,
         "finished_at_utc": finished_at,
     }
-    children = _bundle_children(protocol_raw, inventory_raw, reconciliation)
+    children = _bundle_children(
+        protocol_raw, inventory_raw, reconciliation, trace
+    )
     children[_RUN_MANIFEST_CHILD] = json.dumps(
         dict(run_record),
         sort_keys=True,
@@ -459,6 +497,7 @@ def run_campaign(config: RunConfig) -> CampaignRun:
         reconciliation,
         bundle,
         MappingProxyType(run_record),
+        MappingProxyType(children),
     )
 
 
@@ -467,6 +506,7 @@ def _refused(authorization: Authorization, reason: str | None) -> CampaignRun:
         _STATUS_REFUSED,
         reason,
         authorization,
+        None,
         None,
         None,
         None,
@@ -517,29 +557,47 @@ def _execute_prepared(
     config: RunConfig,
     inventory_raw: bytes,
     panel: _PreparedPanel,
-) -> tuple[tuple[object, ...], ReconciliationResult] | str:
+) -> tuple[tuple[object, ...], ReconciliationResult, _ExecutionTrace] | str:
     try:
         inventory = parse_trial_inventory(inventory_raw)
+        schedule = _campaign_schedule(config, panel)
         frozen = _freeze_panel(config, panel)
+        monthly_ics = {
+            factor_id: _monthly_rank_ics(config, factor_id, panel, frozen, schedule)
+            for factor_id in FACTOR_ORDER
+        }
         trial_outputs: dict[str, dict[str, dict[str, object]]] = {}
+        holdings: dict[str, ContinuousHoldings | None] = {}
         for trial in inventory:
             trial_id = trial.get("trial_id")
             if not isinstance(trial_id, str) or not trial_id:
                 return _REASON_PREPARED_SCHEMA
-            trial_outputs[trial_id] = _execute_trial(
+            outputs, path = _execute_trial(
                 config,
                 trial,
                 panel,
                 frozen,
+                schedule,
+                monthly_ics,
             )
+            trial_outputs[trial_id] = outputs
+            holdings[trial_id] = path
+        trace = _ExecutionTrace(
+            schedule=schedule,
+            monthly_ics=MappingProxyType(monthly_ics),
+            holdings=MappingProxyType(holdings),
+            panel=panel,
+        )
         reconciliation = reconcile_semantic_trials(
             inventory,
             trial_outputs,
-            _fail_closed_diagnostic_payload(),
+            _diagnostic_payload_from_execution(
+                config, inventory, trial_outputs, frozen, trace
+            ),
         )
     except (TypeError, ValueError, KeyError):
         return _REASON_PREPARED_SCHEMA
-    return inventory, reconciliation
+    return inventory, reconciliation, trace
 
 
 def _parse_prices(
@@ -745,11 +803,25 @@ def _execute_trial(
     trial: Mapping[str, object],
     panel: _PreparedPanel,
     frozen: Mapping[tuple[str, str], object],
-) -> dict[str, dict[str, object]]:
+    schedule: CampaignSchedule | None,
+    monthly_ics: Mapping[str, tuple[_MonthResult, ...]],
+) -> tuple[dict[str, dict[str, object]], ContinuousHoldings | None]:
     outputs: dict[str, dict[str, object]] = {}
+    path: ContinuousHoldings | None = None
     for name in required_output_names(trial):
-        outputs[name] = _execute_named_output(config, trial, name, panel, frozen)
-    return outputs
+        record, holdings = _execute_named_output(
+            config,
+            trial,
+            name,
+            panel,
+            frozen,
+            schedule,
+            monthly_ics,
+        )
+        outputs[name] = record
+        if holdings is not None:
+            path = holdings
+    return outputs, path
 
 
 def _execute_named_output(
@@ -758,55 +830,88 @@ def _execute_named_output(
     name: str,
     panel: _PreparedPanel,
     frozen: Mapping[tuple[str, str], object],
-) -> dict[str, object]:
+    schedule: CampaignSchedule | None,
+    monthly_ics: Mapping[str, tuple[_MonthResult, ...]],
+) -> tuple[dict[str, object], ContinuousHoldings | None]:
     factor_id, _, series = name.partition(":")
     if not factor_id or not series:
-        return _invalid_output(_REASON_OUTPUT_INVALID)
+        return _invalid_output(_REASON_OUTPUT_INVALID), None
     try:
         if series == _MONTHLY_RANK_IC:
-            return _rank_ic_output(config, factor_id, panel, frozen)
+            return _rank_ic_from_months(monthly_ics.get(factor_id, ())), None
         if series == _EPISODE:
-            return _episode_output(config, trial, factor_id, panel, frozen)
+            return (
+                _episode_output(
+                    config, trial, factor_id, panel, frozen, schedule
+                ),
+                None,
+            )
         if series == _CONTINUOUS:
-            return _continuous_output(config, trial, factor_id, panel, frozen)
+            return _continuous_output(
+                config, trial, factor_id, panel, frozen, schedule
+            )
     except (TypeError, ValueError, KeyError):
-        return _invalid_output(_REASON_OUTPUT_INVALID)
-    return _invalid_output(_REASON_OUTPUT_INVALID)
+        return _invalid_output(_REASON_OUTPUT_INVALID), None
+    return _invalid_output(_REASON_OUTPUT_INVALID), None
 
 
-def _rank_ic_output(
+def _monthly_rank_ics(
     config: RunConfig,
     factor_id: str,
     panel: _PreparedPanel,
     frozen: Mapping[tuple[str, str], object],
-) -> dict[str, object]:
-    pairs: list[tuple[object, object]] = []
+    schedule: CampaignSchedule | None,
+) -> tuple[_MonthResult, ...]:
+    months: list[_MonthResult] = []
     for signal_date, rows in panel.listings.items():
+        window = _execution_window(
+            schedule, panel.session_dates, signal_date, config.horizon_return_rows
+        )
+        execution_date = None if window is None else window[0]
+        label_end = None if window is None else window[1]
         frozen_dt = frozen.get((factor_id, signal_date))
         values = _eligible_values(frozen_dt)
-        horizon = _horizon_date(
-            panel.session_dates,
-            signal_date,
-            config.horizon_return_rows,
-        )
+        pairs: list[tuple[object, object]] = []
+        forwards: list[tuple[str, float | None, bool]] = []
         for row in rows:
             factor_value = values.get(row.listing_key)
-            if factor_value is None or horizon is None:
-                pairs.append((None, None))
-                continue
-            held = _held_return(panel, row, signal_date, horizon)
-            pairs.append(
-                (
-                    factor_value,
-                    None if held is None or not held.valid else held.value,
-                )
+            held = (
+                None
+                if window is None
+                else _held_return(panel, row, window[0], window[1])
             )
-    result = spearman_rank_ic(
-        pairs,
-        config.min_distinct_values,
-        config.min_distinct_values,
-    )
-    return _from_valid(result.valid, result.reason)
+            ret_value = None if held is None or not held.valid else held.value
+            forwards.append((row.listing_key.hex(), ret_value, held is not None and held.valid))
+            if factor_value is None or ret_value is None:
+                pairs.append((None, None))
+            else:
+                pairs.append((factor_value, ret_value))
+        result = spearman_rank_ic(
+            pairs,
+            config.min_distinct_values,
+            2,
+        )
+        months.append(
+            _MonthResult(
+                signal_date=signal_date,
+                execution_date=execution_date,
+                label_end_date=label_end,
+                value=result.value,
+                valid=result.valid,
+                reason=result.reason,
+                forward_returns=tuple(forwards),
+            )
+        )
+    return tuple(months)
+
+
+def _rank_ic_from_months(months: tuple[_MonthResult, ...]) -> dict[str, object]:
+    if not months:
+        return _invalid_output(_REASON_OUTPUT_INVALID)
+    invalid = next((month for month in months if not month.valid), None)
+    if invalid is not None:
+        return _from_valid(False, invalid.reason)
+    return _from_valid(True, None)
 
 
 def _episode_output(
@@ -815,23 +920,29 @@ def _episode_output(
     factor_id: str,
     panel: _PreparedPanel,
     frozen: Mapping[tuple[str, str], object],
+    schedule: CampaignSchedule | None,
 ) -> dict[str, object]:
-    frozen_dt, signal_date = _first_frozen(factor_id, panel, frozen)
-    weights = _trial_weights(config, trial, factor_id, frozen_dt, signal_date)
-    horizon = None if signal_date is None else _horizon_date(
-        panel.session_dates,
-        signal_date,
-        config.horizon_return_rows,
-    )
-    constituent: dict[bytes, object] = {}
-    if frozen_dt is not None and signal_date is not None and horizon is not None:
-        for row in panel.listings[signal_date]:
-            held = _held_return(panel, row, signal_date, horizon)
-            constituent[row.listing_key] = (
-                None if held is None or not held.valid else held.value
-            )
-    result = episode_gross_return(weights, constituent)
-    return _from_valid(result.valid, result.reason)
+    last: dict[str, object] | None = None
+    for signal_date, rows in panel.listings.items():
+        frozen_dt = frozen.get((factor_id, signal_date))
+        weights = _trial_weights(config, trial, factor_id, frozen_dt, signal_date)
+        window = _execution_window(
+            schedule, panel.session_dates, signal_date, config.horizon_return_rows
+        )
+        constituent: dict[bytes, object] = {}
+        if window is not None:
+            for row in rows:
+                held = _held_return(panel, row, window[0], window[1])
+                constituent[row.listing_key] = (
+                    None if held is None or not held.valid else held.value
+                )
+        result = episode_gross_return(weights, constituent)
+        last = _from_valid(result.valid, result.reason)
+        if not result.valid:
+            return last
+    if last is None:
+        return _invalid_output(_REASON_ZERO_TARGET)
+    return last
 
 
 def _continuous_output(
@@ -840,19 +951,48 @@ def _continuous_output(
     factor_id: str,
     panel: _PreparedPanel,
     frozen: Mapping[tuple[str, str], object],
-) -> dict[str, object]:
-    frozen_dt, signal_date = _first_frozen(factor_id, panel, frozen)
-    weights = _trial_weights(config, trial, factor_id, frozen_dt, signal_date)
-    if not weights:
-        return _invalid_output(_REASON_ZERO_TARGET)
+    schedule: CampaignSchedule | None,
+) -> tuple[dict[str, object], ContinuousHoldings | None]:
     cost = trial.get("cost_bps", 0)
     if isinstance(cost, bool) or not isinstance(cost, int):
         cost = 0
-    intervals = _holding_intervals(panel, signal_date)
+    resets: dict[str, Mapping[bytes, float]] = {}
+    ordered_exec: list[str] = []
+    for signal_date in panel.listings:
+        window = _execution_window(
+            schedule, panel.session_dates, signal_date, config.horizon_return_rows
+        )
+        if window is None:
+            continue
+        execution_date = window[0]
+        frozen_dt = frozen.get((factor_id, signal_date))
+        resets[execution_date] = _trial_weights(
+            config, trial, factor_id, frozen_dt, signal_date
+        )
+        ordered_exec.append(execution_date)
+    if not ordered_exec:
+        return _invalid_output(_REASON_ZERO_TARGET), None
+    first_exec = ordered_exec[0]
+    try:
+        start = panel.session_dates.index(first_exec)
+    except ValueError:
+        return _invalid_output(_REASON_HELD_MISSING), None
+    intervals = []
+    for index in range(start, len(panel.session_dates) - 1):
+        begin = panel.session_dates[index]
+        end = panel.session_dates[index + 1]
+        held = _held_map(panel, begin, end)
+        reset = resets.get(end)
+        intervals.append(holding_interval(end, held, reset))
     if not intervals:
-        return _invalid_output(_REASON_HELD_MISSING)
-    holdings = advance_holdings(weights, intervals, float(cost), _INITIAL_EQUITY)
-    return _from_valid(holdings.valid, holdings.reason)
+        return _invalid_output(_REASON_HELD_MISSING), None
+    holdings = advance_holdings(
+        resets[first_exec],
+        tuple(intervals),
+        float(cost),
+        _INITIAL_EQUITY,
+    )
+    return _from_valid(holdings.valid, holdings.reason), holdings
 
 
 def _trial_weights(
@@ -880,29 +1020,26 @@ def _trial_weights(
     return frozen_dt.long_only_target
 
 
-def _holding_intervals(
+def _held_map(
     panel: _PreparedPanel,
-    signal_date: str | None,
-) -> tuple[object, ...]:
-    if signal_date is None:
-        return ()
-    try:
-        start = panel.session_dates.index(signal_date)
-    except ValueError:
-        return ()
-    intervals = []
-    for index in range(start, len(panel.session_dates) - 1):
-        begin = panel.session_dates[index]
-        end = panel.session_dates[index + 1]
-        held: dict[bytes, object] = {}
-        rows = panel.listings.get(signal_date, ())
+    start_date: str,
+    end_date: str,
+) -> dict[bytes, object]:
+    held: dict[bytes, object] = {}
+    for row in _all_listing_rows(panel):
+        result = _held_return(panel, row, start_date, end_date)
+        held[row.listing_key] = (
+            None if result is None or not result.valid else result.value
+        )
+    return held
+
+
+def _all_listing_rows(panel: _PreparedPanel) -> tuple[_ListingRow, ...]:
+    seen: dict[bytes, _ListingRow] = {}
+    for rows in panel.listings.values():
         for row in rows:
-            result = _held_return(panel, row, begin, end)
-            held[row.listing_key] = (
-                None if result is None or not result.valid else result.value
-            )
-        intervals.append(holding_interval(end, held, None))
-    return tuple(intervals)
+            seen[row.listing_key] = row
+    return tuple(seen.values())
 
 
 def _held_return(
@@ -930,16 +1067,47 @@ def _held_return(
     )
 
 
-def _first_frozen(
-    factor_id: str,
+def _campaign_schedule(
+    config: RunConfig,
     panel: _PreparedPanel,
-    frozen: Mapping[tuple[str, str], object],
-) -> tuple[object | None, str | None]:
-    for signal_date in panel.listings:
-        item = frozen.get((factor_id, signal_date))
-        if item is not None:
-            return item, signal_date
-    return None, None
+) -> CampaignSchedule | None:
+    if not panel.session_dates:
+        return None
+    try:
+        return build_campaign_schedule(
+            panel.session_dates,
+            panel.session_dates[-1],
+            config.horizon_return_rows,
+            config.horizon_purge_signal_axis_rows,
+            config.embargo_rows,
+            int(panel.session_dates[0][:4]),
+        )
+    except (TypeError, ValueError):
+        return None
+
+
+def _execution_window(
+    schedule: CampaignSchedule | None,
+    session_dates: tuple[str, ...],
+    signal_date: str,
+    horizon_return_rows: int,
+) -> tuple[str, str] | None:
+    if schedule is not None:
+        for row in schedule.signals:
+            if row.signal_date != signal_date:
+                continue
+            if row.execution_date is None or row.label_end_date is None:
+                return None
+            return row.execution_date, row.label_end_date
+    try:
+        index = session_dates.index(signal_date)
+    except ValueError:
+        return None
+    start = index + 1
+    end = start + horizon_return_rows
+    if end >= len(session_dates):
+        return None
+    return session_dates[start], session_dates[end]
 
 
 def _eligible_values(frozen_dt: object) -> dict[bytes, float]:
@@ -952,40 +1120,240 @@ def _eligible_values(frozen_dt: object) -> dict[bytes, float]:
     return values
 
 
-def _horizon_date(
-    session_dates: tuple[str, ...],
-    signal_date: str,
-    rows: int,
-) -> str | None:
-    try:
-        index = session_dates.index(signal_date)
-    except ValueError:
-        return None
-    end = index + rows
-    if end >= len(session_dates):
-        return None
-    return session_dates[end]
-
-
-def _fail_closed_diagnostic_payload() -> dict[str, object]:
-    zeros = [0.0, 0.0, 0.0]
-    falses = [False, False, False]
+def _diagnostic_payload_from_execution(
+    config: RunConfig,
+    inventory: tuple[object, ...],
+    trial_outputs: Mapping[str, Mapping[str, Mapping[str, object]]],
+    frozen: Mapping[tuple[str, str], object],
+    trace: _ExecutionTrace,
+) -> dict[str, object]:
+    means: list[float] = []
+    for factor_id in FACTOR_ORDER:
+        values = [
+            month.value
+            for month in trace.monthly_ics.get(factor_id, ())
+            if month.valid and month.value is not None
+        ]
+        means.append(sum(values) / len(values) if values else 0.0)
+    common_dates = _common_valid_months(trace.monthly_ics)
+    common_months = len(common_dates)
+    p_values, bootstrap_support = _bootstrap_from_months(
+        config, trace.monthly_ics, common_dates
+    )
+    holm = holm_adjust(_as_factor_vector(p_values))
+    rejections = [
+        bool(getattr(holm.rejections, factor_id))
+        for factor_id in FACTOR_ORDER
+    ]
+    active_10, invalid_primary = _active_returns(inventory, trace, 10)
+    active_25, _invalid_stress = _active_returns(inventory, trace, 25)
+    coverage = _prefrozen_coverage(frozen, trace)
+    year_frac, loyo = _robustness_from_months(trace.monthly_ics, common_dates)
+    present_complete = all(
+        record.get("present") is True
+        for outputs in trial_outputs.values()
+        for record in outputs.values()
+    )
+    hard_valid = present_complete and invalid_primary == 0 and coverage
     return {
-        "hard_valid": False,
-        "prefrozen_coverage_met": False,
-        "common_months": 0,
-        "bootstrap_support_all_three_factors": False,
-        "primary_matched_benchmark_comparisons_valid": False,
+        "hard_valid": hard_valid,
+        "prefrozen_coverage_met": coverage,
+        "common_months": common_months,
+        "bootstrap_support_all_three_factors": bootstrap_support,
+        "primary_matched_benchmark_comparisons_valid": invalid_primary == 0,
         "secondary_spy_comparisons_valid": False,
-        "mean_rank_ics": zeros,
-        "holm_rejections": falses,
-        "active_return_10bps": zeros,
-        "active_return_25bps": zeros,
-        "common_case_positive_year_fractions": zeros,
-        "common_case_all_loyo_means_positive": falses,
-        "invalid_primary_comparison_count": 1,
+        "mean_rank_ics": means,
+        "holm_rejections": rejections,
+        "active_return_10bps": active_10,
+        "active_return_25bps": active_25,
+        "common_case_positive_year_fractions": year_frac,
+        "common_case_all_loyo_means_positive": loyo,
+        "invalid_primary_comparison_count": invalid_primary,
         "invalid_secondary_comparison_count": 1,
     }
+
+
+def _as_factor_vector(values: Sequence[object]) -> FactorVector[object]:
+    return FactorVector(**dict(zip(FACTOR_ORDER, values, strict=True)))
+
+
+def _common_valid_months(
+    monthly_ics: Mapping[str, tuple[_MonthResult, ...]],
+) -> tuple[str, ...]:
+    dates: dict[str, int] = {}
+    for factor_id in FACTOR_ORDER:
+        for month in monthly_ics.get(factor_id, ()):
+            if month.valid:
+                dates[month.signal_date] = dates.get(month.signal_date, 0) + 1
+    return tuple(
+        date for date, count in dates.items() if count == len(FACTOR_ORDER)
+    )
+
+
+def _bootstrap_from_months(
+    config: RunConfig,
+    monthly_ics: Mapping[str, tuple[_MonthResult, ...]],
+    common_dates: tuple[str, ...],
+) -> tuple[tuple[float, float, float], bool]:
+    if not common_dates:
+        return (1.0, 1.0, 1.0), False
+    by_factor = {
+        factor_id: {
+            month.signal_date: month.value
+            for month in monthly_ics.get(factor_id, ())
+            if month.valid and month.value is not None
+        }
+        for factor_id in FACTOR_ORDER
+    }
+    rows = []
+    for signal_date in common_dates:
+        row = tuple(by_factor[factor_id][signal_date] for factor_id in FACTOR_ORDER)
+        rows.append(row)
+    try:
+        boot = bootstrap_mean_rank_ic(
+            [tuple(rows)],
+            bootstrap_seed=config.bootstrap_seed,
+            replicates=config.bootstrap_replicates,
+        )
+    except (TypeError, ValueError):
+        return (1.0, 1.0, 1.0), False
+    p_values = tuple(
+        float(getattr(boot.one_sided_p_values, factor_id))
+        for factor_id in FACTOR_ORDER
+    )
+    return p_values, bool(boot.bootstrap_support_all_three_factors)
+
+
+def _active_returns(
+    inventory: tuple[object, ...],
+    trace: _ExecutionTrace,
+    cost_bps: int,
+) -> tuple[list[float], int]:
+    baseline: ContinuousHoldings | None = None
+    for trial in inventory:
+        if not isinstance(trial, Mapping):
+            continue
+        if trial.get("type") == _BASELINE_TYPE and trial.get("trial_id") == _EQUAL_WEIGHT_TRIAL:
+            held = trace.holdings.get(str(trial.get("trial_id")))
+            if isinstance(held, ContinuousHoldings):
+                baseline = held
+    values: list[float] = []
+    invalid = 0
+    for factor_id in FACTOR_ORDER:
+        path = None
+        for trial in inventory:
+            if not isinstance(trial, Mapping):
+                continue
+            if trial.get("factor_id") != factor_id:
+                continue
+            if trial.get("cost_bps") != cost_bps:
+                continue
+            path = trace.holdings.get(str(trial.get("trial_id")))
+            break
+        if path is None:
+            values.append(0.0)
+            continue
+        if (
+            not isinstance(path, ContinuousHoldings)
+            or not path.valid
+            or not path.points
+            or path.points[-1].equity is None
+        ):
+            values.append(0.0)
+            invalid += 1
+            continue
+        if (
+            not isinstance(baseline, ContinuousHoldings)
+            or not baseline.valid
+            or not baseline.points
+            or baseline.points[-1].equity is None
+        ):
+            values.append(0.0)
+            invalid += 1
+            continue
+        values.append(float(path.points[-1].equity) - float(baseline.points[-1].equity))
+    return values, invalid
+
+
+def _prefrozen_coverage(
+    frozen: Mapping[tuple[str, str], object],
+    trace: _ExecutionTrace,
+) -> bool:
+    if not frozen:
+        return False
+    for (factor_id, signal_date), frozen_dt in frozen.items():
+        if not isinstance(frozen_dt, FrozenDecisionTime):
+            return False
+        horizon = (
+            trace.schedule.horizon_return_rows
+            if trace.schedule is not None
+            else 21
+        )
+        window = _execution_window(
+            trace.schedule,
+            trace.panel.session_dates,
+            signal_date,
+            horizon,
+        )
+        if window is None:
+            continue
+        forwards: dict[bytes, object] = {}
+        for row in trace.panel.listings.get(signal_date, ()):
+            held = _held_return(trace.panel, row, window[0], window[1])
+            forwards[row.listing_key] = (
+                None if held is None or not held.valid else held.value
+            )
+        coverage = label_coverage(
+            tuple(item.listing_key for item in frozen_dt.ordered_eligible),
+            forwards,
+        )
+        if not coverage.all_eligible_labels_valid:
+            return False
+        del factor_id
+    return True
+
+
+def _robustness_from_months(
+    monthly_ics: Mapping[str, tuple[_MonthResult, ...]],
+    common_dates: tuple[str, ...],
+) -> tuple[list[float], list[bool]]:
+    if not common_dates:
+        return [0.0, 0.0, 0.0], [False, False, False]
+    records: list[CommonCaseMonth] = []
+    years: set[int] = set()
+    by_date = {
+        factor_id: {
+            month.signal_date: month.value
+            for month in monthly_ics.get(factor_id, ())
+            if month.valid and month.value is not None
+        }
+        for factor_id in FACTOR_ORDER
+    }
+    for signal_date in common_dates:
+        year = int(signal_date[:4])
+        years.add(year)
+        records.append(
+            CommonCaseMonth(
+                signal_year=year,
+                label_intersection_years=(year,),
+                rank_ics=tuple(
+                    float(by_date[factor_id][signal_date]) for factor_id in FACTOR_ORDER
+                ),
+            )
+        )
+    try:
+        robustness = common_case_robustness(records, tuple(sorted(years)))
+    except (TypeError, ValueError):
+        return [0.0, 0.0, 0.0], [False, False, False]
+    fractions = [
+        float(getattr(robustness, factor_id).positive_year_fraction)
+        for factor_id in FACTOR_ORDER
+    ]
+    loyo = [
+        bool(getattr(robustness, factor_id).all_leave_one_year_out_means_positive)
+        for factor_id in FACTOR_ORDER
+    ]
+    return fractions, loyo
 
 
 def _from_valid(valid: bool, reason: str | None) -> dict[str, object]:
@@ -1139,16 +1507,130 @@ def _bundle_children(
     protocol_raw: bytes,
     inventory_raw: bytes,
     reconciliation: ReconciliationResult,
+    trace: _ExecutionTrace,
 ) -> dict[str, bytes]:
-    children: dict[str, bytes] = {}
-    for name in required_bundle_children():
-        if name in _RUNNER_OWNED_CHILDREN:
+    monthly = []
+    for factor_id, months in trace.monthly_ics.items():
+        for month in months:
+            monthly.append(
+                {
+                    "execution_date": month.execution_date,
+                    "factor_id": factor_id,
+                    "forward_returns": [
+                        {
+                            "listing_key": key,
+                            "valid": valid,
+                            "value": value,
+                        }
+                        for key, value, valid in month.forward_returns
+                    ],
+                    "label_end_date": month.label_end_date,
+                    "reason": month.reason,
+                    "signal_date": month.signal_date,
+                    "valid": month.valid,
+                    "value": month.value,
+                }
+            )
+    yearly = yearly_rank_ic_contributions(
+        [
+            (int(month.signal_date[:4]), month.value)
+            for months in trace.monthly_ics.values()
+            for month in months
+            if month.valid and month.value is not None
+        ]
+    )
+    strategy_points = []
+    cost_rows = []
+    for trial_id, holdings in trace.holdings.items():
+        if not isinstance(holdings, ContinuousHoldings):
             continue
-        children[name] = json.dumps(
-            {"name": name, "schema_version": "campaign_execution_child_v1"},
-            sort_keys=True,
-            separators=(",", ":"),
-        ).encode("utf-8")
+        points = [
+            {
+                "cost_impact": point.cost_impact,
+                "net_return": point.net_return,
+                "session_date": point.session_date,
+                "turnover": point.turnover,
+                "valid": point.valid,
+            }
+            for point in holdings.points
+        ]
+        strategy_points.append(
+            {
+                "reason": holdings.reason,
+                "trial_id": trial_id,
+                "valid": holdings.valid,
+                "points": points,
+            }
+        )
+        cost_rows.append(
+            {
+                "cost_impact_sum": sum(
+                    point.cost_impact or 0.0 for point in holdings.points
+                ),
+                "trial_id": trial_id,
+                "valid": holdings.valid,
+            }
+        )
+    listing_count = len(_all_listing_rows(trace.panel))
+    artifacts = {
+        "dataset_full_manifest.json": {
+            "listing_count": listing_count,
+            "schema_version": "campaign_dataset_full_manifest_v1",
+            "session_count": len(trace.panel.session_dates),
+            "signal_count": len(trace.panel.listings),
+        },
+        "dataset_public_projection.json": {
+            "evidence_ceiling": _EVIDENCE_CEILING,
+            "schema_version": "campaign_dataset_public_projection_v1",
+            "signal_count": len(trace.panel.listings),
+            "trial_count": 14,
+        },
+        "factor_diagnostics.parquet": {
+            "monthly_rank_ics": monthly,
+            "schema_version": "campaign_factor_diagnostics_v1",
+        },
+        "decile_returns.parquet": {
+            "schema_version": "campaign_decile_returns_v1",
+            "signal_count": len(trace.panel.listings),
+        },
+        "strategy_returns.parquet": {
+            "schema_version": "campaign_strategy_returns_v1",
+            "trials": strategy_points,
+        },
+        "baseline_comparison.json": {
+            "invalid_primary_comparison_count": reconciliation.invalid_and_missing.get(
+                "invalid_primary_comparisons", 0
+            ),
+            "schema_version": "campaign_baseline_comparison_v1",
+        },
+        "cost_sensitivity.json": {
+            "schema_version": "campaign_cost_sensitivity_v1",
+            "trials": cost_rows,
+        },
+        "yearly_robustness.json": {
+            "schema_version": "campaign_yearly_robustness_v1",
+            "years": [
+                {
+                    "contribution": row.contribution,
+                    "count": row.count,
+                    "mean": row.mean,
+                    "year": row.year,
+                }
+                for row in yearly
+            ],
+        },
+        "review_record.json": {
+            "evidence_ceiling": _EVIDENCE_CEILING,
+            "final_state": reconciliation.final_state,
+            "schema_version": "campaign_review_record_v1",
+        },
+    }
+    children: dict[str, bytes] = {
+        name: json.dumps(payload, sort_keys=True, separators=(",", ":")).encode(
+            "utf-8"
+        )
+        for name, payload in artifacts.items()
+    }
     children[_PROTOCOL_CHILD] = protocol_raw
     children[_INVENTORY_CHILD] = inventory_raw
     children[_INVALID_CHILD] = invalid_and_missing_bytes(reconciliation)

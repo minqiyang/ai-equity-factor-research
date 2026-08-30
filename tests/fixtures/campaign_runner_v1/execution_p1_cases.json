@@ -1,0 +1,73 @@
+{
+  "inputs": {
+    "alias_effective_from": "2014-01-01",
+    "exchange": "XNYS",
+    "executed_status": "EXECUTED_DIAGNOSTIC_ONLY",
+    "one": 1,
+    "placeholder_child": "factor_diagnostics.parquet",
+    "placeholder_schema": "campaign_execution_child_v1",
+    "rev_zero_trial_id": "STRAT_REV_1M_0BPS",
+    "rev_ten_trial_id": "STRAT_REV_1M_10BPS",
+    "ticker_prefix": "S",
+    "ticker_width": 3,
+    "artifact_schema": {
+      "diagnostics": "campaign_factor_diagnostics_v1",
+      "review": "campaign_review_record_v1",
+      "strategy": "campaign_strategy_returns_v1"
+    },
+    "execution_anchor": {
+      "end_price": 133.1,
+      "execution_price": 110.0,
+      "expected_return": 0.21,
+      "listing_count": 2,
+      "rel_tol": 1e-9,
+      "session_count": 23,
+      "signal_date": "2020-01-31",
+      "start": "2020-01-31",
+      "start_price": 100.0
+    },
+    "monthly_ic": {
+      "early_high_mult": 1.4,
+      "early_low_mult": 0.9,
+      "first_signal": "2020-01-31",
+      "late_high_mult": 0.7,
+      "late_low_mult": 1.5,
+      "listing_count": 12,
+      "second_signal": "2020-02-29",
+      "session_count": 90,
+      "slope": 0.02,
+      "split_index": 6,
+      "start": "2020-01-01",
+      "start_price": 80.0
+    },
+    "rebalance": {
+      "day_weight": 0.01,
+      "listing_count": 100,
+      "session_count": 120,
+      "signals": [
+        {"in_universe": true, "signal_date": "2019-01-31"},
+        {"in_universe": false, "signal_date": "2019-02-28"},
+        {"in_universe": true, "signal_date": "2019-03-31"}
+      ],
+      "start": "2019-01-01",
+      "start_price": 100.0
+    },
+    "derived_large": {
+      "day_weight": 0.05,
+      "listing_count": 100,
+      "parity_boost": 0.2,
+      "parity_mod": 2,
+      "session_count": 300,
+      "start": "2019-01-01",
+      "start_price": 50.0,
+      "zero": 0.0
+    }
+  },
+  "expected": {
+    "evidence_ceiling": "DIAGNOSTIC_ONLY",
+    "invalid_state": "INVALID_DIAGNOSTIC"
+  },
+  "forbidden": {
+    "placeholder_child": true
+  }
+}

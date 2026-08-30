@@ -1,5 +1,19 @@
 # Engineering Log
 
+## 2026-08-30 - Track A PR 4 execution P1 remediation
+
+- Diagnostic classifier inputs are assembled from executed monthly Rank
+  ICs, coverage, bootstrap/Holm when complete-case months exist, and
+  strategy-vs-baseline paths. Constant fail-closed payload flags are
+  gone.
+- Required bundle children carry executed JSON artifacts with explicit
+  schemas rather than two-field placeholders.
+- Forward returns and episode labels use execution close `e=t+1` through
+  `e+21`. Continuous paths reset at every scheduled execution.
+- Rank IC is one cross-section per signal month. Evidence ceiling remains
+  `DIAGNOSTIC_ONLY`. No private control-tree write, B-8 bind, or real
+  14-trial run.
+
 ## 2026-08-30 - Track A PR 4 execute from an input-bearing panel
 
 - `run_campaign` admits only an input-bearing prepared campaign:
