@@ -102,6 +102,7 @@ _REASON_INVENTORY = "TRIAL_INVENTORY_BYTES_MISMATCH"
 _REASON_ZERO_TARGET = "ZERO_TARGET"
 _REASON_HELD_MISSING = "HELD_RETURN_MISSING"
 _REASON_OUTPUT_INVALID = "TRIAL_OUTPUT_INVALID"
+_REASON_LABEL_PURGED = "EVALUATION_FOLD_LABEL_PURGED"
 _CONTINUOUS = "continuous_daily_return"
 _MONTHLY_RANK_IC = "monthly_rank_ic"
 _EPISODE = "episode_21_row_return"
@@ -863,12 +864,27 @@ def _monthly_rank_ics(
     schedule: CampaignSchedule | None,
 ) -> tuple[_MonthResult, ...]:
     months: list[_MonthResult] = []
-    for signal_date, rows in _required_listing_items(panel, schedule):
+    eval_dates = _evaluation_signal_dates(schedule)
+    restrict = schedule is not None
+    for signal_date, rows in _continuous_listing_items(panel, schedule):
         window = _execution_window(
             schedule, panel.session_dates, signal_date, config.horizon_return_rows
         )
         execution_date = None if window is None else window[0]
         label_end = None if window is None else window[1]
+        if restrict and signal_date not in eval_dates:
+            months.append(
+                _MonthResult(
+                    signal_date=signal_date,
+                    execution_date=execution_date,
+                    label_end_date=label_end,
+                    value=None,
+                    valid=False,
+                    reason=_REASON_LABEL_PURGED,
+                    forward_returns=(),
+                )
+            )
+            continue
         frozen_dt = frozen.get((factor_id, signal_date))
         values = _eligible_values(frozen_dt)
         pairs: list[tuple[object, object]] = []
@@ -908,9 +924,12 @@ def _monthly_rank_ics(
 
 
 def _rank_ic_from_months(months: tuple[_MonthResult, ...]) -> dict[str, object]:
-    if not months:
+    scored = tuple(
+        month for month in months if month.reason != _REASON_LABEL_PURGED
+    )
+    if not scored:
         return _invalid_output(_REASON_OUTPUT_INVALID)
-    invalid = next((month for month in months if not month.valid), None)
+    invalid = next((month for month in scored if not month.valid), None)
     if invalid is not None:
         return _from_valid(False, invalid.reason)
     return _from_valid(True, None)

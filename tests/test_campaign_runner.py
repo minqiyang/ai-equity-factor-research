@@ -1620,6 +1620,16 @@ def test_continuous_resets_across_year_boundary(tmp_path: Path) -> None:
     expected = float(cases["inputs"]["initial_turnover"])
     rel_tol = float(cases["inputs"]["execution_anchor"]["rel_tol"])
     assert abs(turnover - expected) < rel_tol
+    diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+    december = str(cfg["december_signal"])
+    purged = [
+        month
+        for month in diagnostics["monthly_rank_ics"]
+        if month["signal_date"] == december
+    ]
+    assert purged
+    assert all(month["valid"] is False for month in purged)
+    assert all(month["reason"] == cfg["purged_reason"] for month in purged)
 
 
 def _turnover_on(
