@@ -8,8 +8,10 @@
   continuous resets, and held-return representatives. A schema-valid
   non-month-end date cannot overwrite scheduled lineage metadata or enter
   trial calculations.
-- Coverage gates and required Rank IC, episode, and continuous outputs use
-  primary evaluation dates. An empty 2018+ calendar returns no required rows
+- Coverage gates and required Rank IC and episode outputs use primary
+  evaluation dates. Continuous resets use primary-era scheduled rows with
+  `continuous_included`, including December signals whose labels end in
+  January. An empty 2018+ calendar returns no required Rank IC/episode rows
   rather than scoring warm-up as primary. Pre-2018 missing labels are
   warm-up only and do not fail coverage.
 - Evidence ceiling remains `DIAGNOSTIC_ONLY`. No private control-tree

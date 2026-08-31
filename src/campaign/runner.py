@@ -960,7 +960,7 @@ def _continuous_output(
         cost = 0
     resets: dict[str, Mapping[bytes, float]] = {}
     ordered_exec: list[str] = []
-    for signal_date, _rows in _required_listing_items(panel, schedule):
+    for signal_date, _rows in _continuous_listing_items(panel, schedule):
         row = _schedule_signal(schedule, signal_date)
         if row is not None and not row.continuous_included:
             continue
@@ -1122,6 +1122,21 @@ def _required_listing_items(
         (signal_date, rows)
         for signal_date, rows in items
         if signal_date in eval_dates
+    )
+
+
+def _continuous_listing_items(
+    panel: _PreparedPanel,
+    schedule: CampaignSchedule | None,
+) -> tuple[tuple[str, tuple[_ListingRow, ...]], ...]:
+    items = _scheduled_listing_items(panel, schedule)
+    if schedule is None:
+        return items
+    floor = schedule.first_fold_year
+    return tuple(
+        (signal_date, rows)
+        for signal_date, rows in items
+        if int(signal_date[:4]) >= floor
     )
 
 

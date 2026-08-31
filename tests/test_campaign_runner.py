@@ -1596,6 +1596,32 @@ def test_empty_primary_calendar_does_not_use_warmup_coverage(
     assert result.reconciliation.final_state == cases["expected"]["invalid_state"]
 
 
+def test_continuous_resets_across_year_boundary(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["year_boundary"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            _month_end_flags(sessions, int(cases["inputs"]["one"])),
+            "rebalance",
+            cases,
+        ),
+        "year_boundary",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    execution = str(cfg["january_execution"])
+    turnover = _turnover_on(cases, result, execution)
+    expected = float(cases["inputs"]["initial_turnover"])
+    rel_tol = float(cases["inputs"]["execution_anchor"]["rel_tol"])
+    assert abs(turnover - expected) < rel_tol
+
+
 def _turnover_on(
     cases: dict[str, object],
     result: CampaignRun,
