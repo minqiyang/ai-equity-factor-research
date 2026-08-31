@@ -904,6 +904,25 @@ def _monthly_rank_ics(
                 pairs.append((None, None))
             else:
                 pairs.append((factor_value, ret_value))
+        if (
+            isinstance(frozen_dt, FrozenDecisionTime)
+            and frozen_dt.invalid_factor_month
+        ):
+            trigger = next(
+                iter(frozen_dt.zero_target_triggers), _REASON_OUTPUT_INVALID
+            )
+            months.append(
+                _MonthResult(
+                    signal_date=signal_date,
+                    execution_date=execution_date,
+                    label_end_date=label_end,
+                    value=None,
+                    valid=False,
+                    reason=trigger,
+                    forward_returns=tuple(forwards),
+                )
+            )
+            continue
         result = spearman_rank_ic(
             pairs,
             config.min_distinct_values,

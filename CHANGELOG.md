@@ -28,7 +28,8 @@ profitability, or trading readiness.
 ### Fixed
 
 - Monthly Rank IC omits ineligible listings instead of appending missing
-  pairs that invalidate a month with eligible n>=100. Unscheduled listing
+  pairs that invalidate a month with eligible n>=100. A month with fewer
+  than 100 eligible names stays invalid. Unscheduled listing
   dates are skipped in Rank IC, episode, freeze, continuous resets, and
   held-return representatives. Unscheduled lineage metadata cannot overwrite
   scheduled listing keys. Required Rank IC and episode outputs use the

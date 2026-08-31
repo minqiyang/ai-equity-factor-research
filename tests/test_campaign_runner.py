@@ -1362,6 +1362,40 @@ def test_rank_ic_omits_ineligible_listings(tmp_path: Path) -> None:
         assert ineligible_hex in keys
 
 
+def test_below_floor_rank_ic_months_remain_invalid(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["below_floor_eligible"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    listing_count = int(cfg["eligible_count"]) + int(cfg["ineligible_count"])
+    prepared = _synthetic_panel(
+        sessions,
+        listing_count,
+        _month_end_flags(sessions, int(cases["inputs"]["one"])),
+        "derived_large",
+        cases,
+    )
+    ineligible = int(cfg["ineligible_count"])
+    for rows in prepared["listings"].values():
+        for row in rows[-ineligible:]:
+            row["in_universe_at_t"] = False
+    result = _run_prepared(tmp_path, prepared, "below_floor_eligible")
+    assert result.status == cases["inputs"]["executed_status"]
+    diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+    scored = [
+        month
+        for month in diagnostics["monthly_rank_ics"]
+        if month["reason"] != "EVALUATION_FOLD_LABEL_PURGED"
+    ]
+    assert scored
+    assert all(month["valid"] is False for month in scored)
+    assert any(
+        month["reason"] == cfg["invalid_reason"] for month in scored
+    )
+
+
 def test_unscheduled_listing_dates_are_not_continuous_resets(
     tmp_path: Path,
 ) -> None:

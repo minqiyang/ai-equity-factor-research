@@ -66,7 +66,7 @@
       "first_signal": "2020-01-31",
       "late_high_mult": 0.7,
       "late_low_mult": 1.5,
-      "listing_count": 12,
+      "listing_count": 100,
       "second_signal": "2020-02-29",
       "session_count": 90,
       "slope": 0.02,
@@ -99,6 +99,13 @@
     "mixed_eligible": {
       "eligible_count": 100,
       "ineligible_count": 1,
+      "session_count": 80,
+      "start": "2019-01-01"
+    },
+    "below_floor_eligible": {
+      "eligible_count": 99,
+      "ineligible_count": 2,
+      "invalid_reason": "ELIGIBLE_SECURITY_COUNT_BELOW_100_AT_T",
       "session_count": 80,
       "start": "2019-01-01"
     },

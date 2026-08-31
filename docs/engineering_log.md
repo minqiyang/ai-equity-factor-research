@@ -3,7 +3,8 @@
 ## 2026-08-30 - Track A PR 4 Rank IC, schedule, and coverage P1s
 
 - Rank IC cross-sections use eligible listings only; ineligible names are
-  omitted rather than appended as missing pairs.
+  omitted rather than appended as missing pairs. Months below the 100-name
+  floor remain invalid.
 - Unscheduled listing dates are skipped in Rank IC, episode, freeze,
   continuous resets, and held-return representatives. A schema-valid
   non-month-end date cannot overwrite scheduled lineage metadata or enter
