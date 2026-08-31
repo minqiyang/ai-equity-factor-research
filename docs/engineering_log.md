@@ -4,9 +4,10 @@
 
 - Rank IC cross-sections use eligible listings only; ineligible names are
   omitted rather than appended as missing pairs.
-- Unscheduled listing dates are skipped in Rank IC, episode, freeze, and
-  continuous resets. A schema-valid non-month-end date does not enter
-  trial calculations or required-output reconciliation.
+- Unscheduled listing dates are skipped in Rank IC, episode, freeze,
+  continuous resets, and held-return representatives. A schema-valid
+  non-month-end date cannot overwrite scheduled lineage metadata or enter
+  trial calculations.
 - Coverage gates use primary evaluation dates, including an empty 2018+
   calendar. Pre-2018 missing labels are warm-up only and do not force
   `INVALID_DIAGNOSTIC`.

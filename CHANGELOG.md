@@ -29,7 +29,9 @@ profitability, or trading readiness.
 
 - Monthly Rank IC omits ineligible listings instead of appending missing
   pairs that invalidate a month with eligible n>=100. Unscheduled listing
-  dates are skipped in Rank IC, episode, freeze, and continuous resets.
+  dates are skipped in Rank IC, episode, freeze, continuous resets, and
+  held-return representatives. Unscheduled lineage metadata cannot overwrite
+  scheduled listing keys.
   Coverage gates use primary evaluation dates, including when that calendar
   is empty, so pre-2018 warm-up missing labels do not force
   `INVALID_DIAGNOSTIC`. Evidence ceiling remains

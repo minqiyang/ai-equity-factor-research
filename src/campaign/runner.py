@@ -988,7 +988,7 @@ def _continuous_output(
     for index in range(start, len(panel.session_dates) - 1):
         begin = panel.session_dates[index]
         end = panel.session_dates[index + 1]
-        held = _held_map(panel, begin, end)
+        held = _held_map(panel, begin, end, schedule)
         reset = resets.get(end)
         intervals.append(holding_interval(end, held, reset))
     holdings = advance_holdings(
@@ -1029,17 +1029,21 @@ def _held_map(
     panel: _PreparedPanel,
     start_date: str,
     end_date: str,
+    schedule: CampaignSchedule | None,
 ) -> dict[bytes, object]:
     held: dict[bytes, object] = {}
-    for row in _all_listing_rows(panel):
+    for row in _all_listing_rows(panel, schedule):
         result = _held_return(panel, row, start_date, end_date)
         held[row.listing_key] = None if not result.valid else result.value
     return held
 
 
-def _all_listing_rows(panel: _PreparedPanel) -> tuple[_ListingRow, ...]:
+def _all_listing_rows(
+    panel: _PreparedPanel,
+    schedule: CampaignSchedule | None,
+) -> tuple[_ListingRow, ...]:
     seen: dict[bytes, _ListingRow] = {}
-    for rows in panel.listings.values():
+    for _signal_date, rows in _scheduled_listing_items(panel, schedule):
         for row in rows:
             seen[row.listing_key] = row
     return tuple(seen.values())
@@ -1634,7 +1638,9 @@ def _decile_rows(trace: _ExecutionTrace) -> list[dict[str, object]]:
         if trace.schedule is not None
         else _HORIZON_RETURN_ROWS
     )
-    rows_by_key = {row.listing_key: row for row in _all_listing_rows(trace.panel)}
+    rows_by_key = {
+        row.listing_key: row for row in _all_listing_rows(trace.panel, trace.schedule)
+    }
     rows: list[dict[str, object]] = []
     for (factor_id, signal_date), frozen_dt in trace.frozen.items():
         if not isinstance(frozen_dt, FrozenDecisionTime):
@@ -1746,7 +1752,7 @@ def _bundle_children(
                     "valid": holdings.valid,
                 }
             )
-    listing_count = len(_all_listing_rows(trace.panel))
+    listing_count = len(_all_listing_rows(trace.panel, None))
     artifacts = {
         "dataset_full_manifest.json": {
             "accepted_cutoff": (

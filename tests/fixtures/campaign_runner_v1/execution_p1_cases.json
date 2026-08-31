@@ -127,6 +127,7 @@
   "expected": {
     "evidence_ceiling": "DIAGNOSTIC_ONLY",
     "first_fold_year": 2018,
+    "inconclusive_state": "INCONCLUSIVE_DIAGNOSTIC",
     "invalid_state": "INVALID_DIAGNOSTIC"
   },
   "forbidden": {

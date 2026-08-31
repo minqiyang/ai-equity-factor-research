@@ -1442,6 +1442,66 @@ def test_eligible_unscheduled_dates_do_not_corrupt_required_outputs(
     )["rows"]
 
 
+def test_unscheduled_lineage_does_not_overwrite_held_returns(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["mid_month_injection"]
+    rebalance = cases["inputs"]["rebalance"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = {
+        str(row["signal_date"]): bool(row["in_universe"])
+        for row in rebalance["signals"]
+    }
+    control = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        flags,
+        "rebalance",
+        cases,
+    )
+    injected = json.loads(json.dumps(control))
+    template = next(iter(injected["listings"].values()))
+    mutated = []
+    for row in template:
+        identity = dict(row["target_identity"])
+        identity["resolved_permanent_security_id"] = (
+            f"OTHER-{identity['resolved_permanent_security_id']}"
+        )
+        alias = dict(row["alias_chain"][0])
+        alias["resolved_permanent_security_id"] = identity[
+            "resolved_permanent_security_id"
+        ]
+        mutated.append(
+            {
+                **row,
+                "alias_chain": [alias],
+                "in_universe_at_t": True,
+                "target_identity": identity,
+            }
+        )
+    injected["listings"][str(cfg["injected_date"])] = mutated
+    control_result = _run_prepared(tmp_path, control, "lineage_mid_control")
+    injected_result = _run_prepared(tmp_path, injected, "lineage_mid_injected")
+    assert control_result.status == cases["inputs"]["executed_status"]
+    assert injected_result.status == cases["inputs"]["executed_status"]
+    assert control_result.reconciliation is not None
+    assert injected_result.reconciliation is not None
+    assert control_result.reconciliation.final_state == cases["expected"][
+        "inconclusive_state"
+    ]
+    assert (
+        injected_result.reconciliation.final_state
+        == control_result.reconciliation.final_state
+    )
+    assert injected_result.reconciliation.final_state != cases["expected"][
+        "invalid_state"
+    ]
+
+
 def test_warmup_missing_labels_do_not_invalidate_primary(
     tmp_path: Path,
 ) -> None:
