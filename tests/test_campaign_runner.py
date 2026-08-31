@@ -1512,13 +1512,14 @@ def test_warmup_missing_labels_do_not_invalidate_primary(
         int(cfg["session_count"]),
     )
     flags = _month_end_flags(sessions, int(cases["inputs"]["one"]))
-    prepared = _synthetic_panel(
+    control = _synthetic_panel(
         sessions,
         int(cfg["listing_count"]),
         flags,
         "derived_large",
         cases,
     )
+    prepared = json.loads(json.dumps(control))
     warmup = next(
         signal_date
         for signal_date in flags
@@ -1534,11 +1535,19 @@ def test_warmup_missing_labels_do_not_invalidate_primary(
         for record in prepared["anchors"][hex_key]
         if record["session_date"] != label_end
     ]
+    control_result = _run_prepared(tmp_path, control, "warmup_control")
     result = _run_prepared(tmp_path, prepared, "warmup_missing_label")
     assert result.status == cases["inputs"]["executed_status"]
+    assert control_result.status == cases["inputs"]["executed_status"]
     assert result.reconciliation is not None
+    assert control_result.reconciliation is not None
     assert result.reconciliation.diagnostic_inputs is not None
     assert result.reconciliation.diagnostic_inputs.prefrozen_coverage_met is True
+    assert result.reconciliation.final_state != cases["expected"]["invalid_state"]
+    assert (
+        result.reconciliation.invalid_and_missing["invalid_required_outputs"]
+        == control_result.reconciliation.invalid_and_missing["invalid_required_outputs"]
+    )
 
 
 def test_empty_primary_calendar_does_not_use_warmup_coverage(

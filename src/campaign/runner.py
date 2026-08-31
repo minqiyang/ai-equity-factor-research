@@ -863,7 +863,7 @@ def _monthly_rank_ics(
     schedule: CampaignSchedule | None,
 ) -> tuple[_MonthResult, ...]:
     months: list[_MonthResult] = []
-    for signal_date, rows in _scheduled_listing_items(panel, schedule):
+    for signal_date, rows in _required_listing_items(panel, schedule):
         window = _execution_window(
             schedule, panel.session_dates, signal_date, config.horizon_return_rows
         )
@@ -925,7 +925,7 @@ def _episode_output(
     schedule: CampaignSchedule | None,
 ) -> dict[str, object]:
     last: dict[str, object] | None = None
-    for signal_date, rows in _scheduled_listing_items(panel, schedule):
+    for signal_date, rows in _required_listing_items(panel, schedule):
         frozen_dt = frozen.get((factor_id, signal_date))
         weights = _trial_weights(config, trial, factor_id, frozen_dt, signal_date)
         window = _execution_window(
@@ -960,7 +960,7 @@ def _continuous_output(
         cost = 0
     resets: dict[str, Mapping[bytes, float]] = {}
     ordered_exec: list[str] = []
-    for signal_date, _rows in _scheduled_listing_items(panel, schedule):
+    for signal_date, _rows in _required_listing_items(panel, schedule):
         row = _schedule_signal(schedule, signal_date)
         if row is not None and not row.continuous_included:
             continue
@@ -1108,6 +1108,21 @@ def _scheduled_listing_items(
             continue
         items.append((signal_date, rows))
     return tuple(items)
+
+
+def _required_listing_items(
+    panel: _PreparedPanel,
+    schedule: CampaignSchedule | None,
+) -> tuple[tuple[str, tuple[_ListingRow, ...]], ...]:
+    items = _scheduled_listing_items(panel, schedule)
+    eval_dates = _evaluation_signal_dates(schedule)
+    if not eval_dates:
+        return items
+    return tuple(
+        (signal_date, rows)
+        for signal_date, rows in items
+        if signal_date in eval_dates
+    )
 
 
 def _schedule_signal(

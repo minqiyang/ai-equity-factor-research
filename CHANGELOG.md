@@ -31,7 +31,9 @@ profitability, or trading readiness.
   pairs that invalidate a month with eligible n>=100. Unscheduled listing
   dates are skipped in Rank IC, episode, freeze, continuous resets, and
   held-return representatives. Unscheduled lineage metadata cannot overwrite
-  scheduled listing keys.
+  scheduled listing keys. Required Rank IC, episode, and continuous outputs
+  use the primary evaluation calendar, so a missing warm-up label does not
+  invalidate those outputs.
   Coverage gates use primary evaluation dates, including when that calendar
   is empty, so pre-2018 warm-up missing labels do not force
   `INVALID_DIAGNOSTIC`. Evidence ceiling remains

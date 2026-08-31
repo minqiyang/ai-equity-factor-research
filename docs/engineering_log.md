@@ -8,9 +8,10 @@
   continuous resets, and held-return representatives. A schema-valid
   non-month-end date cannot overwrite scheduled lineage metadata or enter
   trial calculations.
-- Coverage gates use primary evaluation dates, including an empty 2018+
-  calendar. Pre-2018 missing labels are warm-up only and do not force
-  `INVALID_DIAGNOSTIC`.
+- Coverage gates and required Rank IC, episode, and continuous outputs use
+  primary evaluation dates when that calendar is nonempty. Pre-2018 missing
+  labels are warm-up only and do not force `INVALID_DIAGNOSTIC` or extra
+  invalid required outputs.
 - Evidence ceiling remains `DIAGNOSTIC_ONLY`. No private control-tree
   write, B-8 bind, or real 14-trial run.
 
