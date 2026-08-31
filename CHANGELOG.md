@@ -33,11 +33,12 @@ profitability, or trading readiness.
   held-return representatives. Unscheduled lineage metadata cannot overwrite
   scheduled listing keys. Required Rank IC, episode, and continuous outputs
   use the primary evaluation calendar, so a missing warm-up label does not
-  invalidate those outputs.
+  invalidate those outputs. An empty 2018+ calendar returns no required rows
+  and cannot score warm-up as primary.
   Coverage gates use primary evaluation dates, including when that calendar
-  is empty, so pre-2018 warm-up missing labels do not force
-  `INVALID_DIAGNOSTIC`. Evidence ceiling remains
-  `DIAGNOSTIC_ONLY`. This adds no private data, D8, A2, or real 14-trial run.
+  is empty, so pre-2018 warm-up missing labels do not fail coverage.
+  Evidence ceiling remains `DIAGNOSTIC_ONLY`. This adds no private data,
+  D8, A2, or real 14-trial run.
 - Closed remaining Track A PR 3 exact-head findings: ledger schema tests
   still collapse independent fail-closed axes for speed, but only after an
   equivalence check proves every representative delegates to the same

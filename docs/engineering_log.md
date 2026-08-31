@@ -9,9 +9,9 @@
   non-month-end date cannot overwrite scheduled lineage metadata or enter
   trial calculations.
 - Coverage gates and required Rank IC, episode, and continuous outputs use
-  primary evaluation dates when that calendar is nonempty. Pre-2018 missing
-  labels are warm-up only and do not force `INVALID_DIAGNOSTIC` or extra
-  invalid required outputs.
+  primary evaluation dates. An empty 2018+ calendar returns no required rows
+  rather than scoring warm-up as primary. Pre-2018 missing labels are
+  warm-up only and do not fail coverage.
 - Evidence ceiling remains `DIAGNOSTIC_ONLY`. No private control-tree
   write, B-8 bind, or real 14-trial run.
 

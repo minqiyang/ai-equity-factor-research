@@ -1115,9 +1115,9 @@ def _required_listing_items(
     schedule: CampaignSchedule | None,
 ) -> tuple[tuple[str, tuple[_ListingRow, ...]], ...]:
     items = _scheduled_listing_items(panel, schedule)
-    eval_dates = _evaluation_signal_dates(schedule)
-    if not eval_dates:
+    if schedule is None:
         return items
+    eval_dates = _evaluation_signal_dates(schedule)
     return tuple(
         (signal_date, rows)
         for signal_date, rows in items

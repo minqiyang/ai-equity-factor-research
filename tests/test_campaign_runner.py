@@ -1592,7 +1592,8 @@ def test_empty_primary_calendar_does_not_use_warmup_coverage(
     assert result.reconciliation.diagnostic_inputs.prefrozen_coverage_met is True
     yearly = _parse_child(result, "yearly_robustness.json")
     assert cases["expected"]["first_fold_year"] not in yearly["required_years"]
-    assert result.reconciliation.final_state != cases["expected"]["invalid_state"]
+    assert result.reconciliation.invalid_and_missing["invalid_required_outputs"] > 0
+    assert result.reconciliation.final_state == cases["expected"]["invalid_state"]
 
 
 def _turnover_on(
