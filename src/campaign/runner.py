@@ -1259,6 +1259,12 @@ def _diagnostic_payload_from_execution(
         trace.monthly_ics, common_dates, trace.required_years
     )
     strategy_valid = _required_strategy_paths_valid(inventory, trial_outputs)
+    purged_months = sum(
+        1
+        for months in trace.monthly_ics.values()
+        for month in months
+        if month.reason == _REASON_LABEL_PURGED
+    )
     hard_valid = (
         strategy_valid
         and invalid_primary == 0
@@ -1280,6 +1286,7 @@ def _diagnostic_payload_from_execution(
         "common_case_all_loyo_means_positive": loyo,
         "invalid_primary_comparison_count": invalid_primary,
         "invalid_secondary_comparison_count": 1,
+        "purged_factor_month_count": purged_months,
     }
 
 

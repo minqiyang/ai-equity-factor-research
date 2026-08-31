@@ -1630,6 +1630,11 @@ def test_continuous_resets_across_year_boundary(tmp_path: Path) -> None:
     assert purged
     assert all(month["valid"] is False for month in purged)
     assert all(month["reason"] == cfg["purged_reason"] for month in purged)
+    assert len(purged) == int(cfg["purged_factor_month_count"])
+    summary = _parse_child(result, "invalid_and_missing_summary.json")
+    assert summary["summary"]["purged_factor_month_count"] == int(
+        cfg["purged_factor_month_count"]
+    )
 
 
 def _turnover_on(

@@ -36,8 +36,9 @@ profitability, or trading readiness.
   invalidate those outputs. Continuous resets use primary-era
   `continuous_included` rows, including a December signal whose label ends
   in January. Fold-purged December months are retained as invalid Rank IC
-  records rather than dropped. An empty 2018+ calendar returns no required
-  Rank IC/episode rows and cannot score warm-up as primary.
+  records and counted in `invalid_and_missing_summary.json`. An empty 2018+
+  calendar returns no required Rank IC/episode rows and cannot score
+  warm-up as primary.
   Coverage gates use primary evaluation dates, including when that calendar
   is empty, so pre-2018 warm-up missing labels do not fail coverage.
   Evidence ceiling remains `DIAGNOSTIC_ONLY`. This adds no private data,

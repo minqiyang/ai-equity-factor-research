@@ -180,6 +180,10 @@ def reconcile_semantic_trials(
                 diagnostic_payload.get("invalid_secondary_comparison_count"),
                 "invalid_secondary_comparison_count",
             ),
+            "purged_factor_month_count": _as_nonneg_int(
+                diagnostic_payload.get("purged_factor_month_count", 0),
+                "purged_factor_month_count",
+            ),
         }
     )
     inputs = assemble_diagnostic_inputs(diagnostic_payload, complete)
