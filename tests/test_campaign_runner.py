@@ -1481,6 +1481,51 @@ def test_warmup_missing_labels_do_not_invalidate_primary(
     assert result.reconciliation.diagnostic_inputs.prefrozen_coverage_met is True
 
 
+def test_empty_primary_calendar_does_not_use_warmup_coverage(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["empty_primary_calendar"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = _month_end_flags(sessions, int(cases["inputs"]["one"]))
+    prepared = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        flags,
+        "derived_large",
+        cases,
+    )
+    warmup = max(
+        signal_date
+        for signal_date in flags
+        if signal_date.startswith(str(cfg["warmup_prefix"]))
+    )
+    for signal_date, rows in prepared["listings"].items():
+        if signal_date != warmup:
+            rows[0]["in_universe_at_t"] = False
+    label_end = sessions[
+        sessions.index(warmup) + int(cases["inputs"]["one"]) + int(cfg["horizon_rows"])
+    ]
+    hex_key = next(iter(prepared["prices"]))
+    del prepared["prices"][hex_key][label_end]
+    prepared["anchors"][hex_key] = [
+        record
+        for record in prepared["anchors"][hex_key]
+        if record["session_date"] != label_end
+    ]
+    result = _run_prepared(tmp_path, prepared, "empty_primary_calendar")
+    assert result.status == cases["inputs"]["executed_status"]
+    assert result.reconciliation is not None
+    assert result.reconciliation.diagnostic_inputs is not None
+    assert result.reconciliation.diagnostic_inputs.prefrozen_coverage_met is True
+    yearly = _parse_child(result, "yearly_robustness.json")
+    assert cases["expected"]["first_fold_year"] not in yearly["required_years"]
+    assert result.reconciliation.final_state != cases["expected"]["invalid_state"]
+
+
 def _turnover_on(
     cases: dict[str, object],
     result: CampaignRun,

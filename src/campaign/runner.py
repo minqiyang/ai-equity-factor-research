@@ -1404,8 +1404,9 @@ def _prefrozen_coverage(
     if not frozen:
         return False
     eval_dates = _evaluation_signal_dates(trace.schedule)
+    restrict_to_primary = trace.schedule is not None
     for (factor_id, signal_date), frozen_dt in frozen.items():
-        if eval_dates and signal_date not in eval_dates:
+        if restrict_to_primary and signal_date not in eval_dates:
             continue
         if not isinstance(frozen_dt, FrozenDecisionTime):
             return False

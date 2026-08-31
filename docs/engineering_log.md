@@ -7,8 +7,9 @@
 - Unscheduled listing dates are skipped in Rank IC, episode, freeze, and
   continuous resets. A schema-valid non-month-end date does not enter
   trial calculations or required-output reconciliation.
-- Coverage gates use primary evaluation dates. Pre-2018 missing labels are
-  warm-up only and do not force `INVALID_DIAGNOSTIC`.
+- Coverage gates use primary evaluation dates, including an empty 2018+
+  calendar. Pre-2018 missing labels are warm-up only and do not force
+  `INVALID_DIAGNOSTIC`.
 - Evidence ceiling remains `DIAGNOSTIC_ONLY`. No private control-tree
   write, B-8 bind, or real 14-trial run.
 

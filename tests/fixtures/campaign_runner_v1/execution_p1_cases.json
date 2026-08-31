@@ -115,6 +115,13 @@
       "session_count": 500,
       "start": "2017-01-01",
       "warmup_prefix": "2017-"
+    },
+    "empty_primary_calendar": {
+      "horizon_rows": 21,
+      "listing_count": 101,
+      "session_count": 419,
+      "start": "2016-01-01",
+      "warmup_prefix": "2017-"
     }
   },
   "expected": {
