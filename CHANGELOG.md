@@ -9,6 +9,12 @@ profitability, or trading readiness.
 
 ### Changed
 
+- Campaign runner execution P1 tests shrink and merge expensive synthetic
+  14-trial panels. Rank IC omission now asserts eligible-cross-section IC
+  pairs rather than forward-return row presence. Timing, leakage, cost, and
+  ledger assertions remain. This adds no private data, D8, A2, identity
+  reopen, or real 14-trial run.
+
 - Track A PR 4 `run_campaign` now executes the 14 diagnostic trials from
   an input-bearing prepared campaign (`prices`, `anchors`, `listings`)
   under `DIAGNOSTIC_ONLY`. Authorized work returns
