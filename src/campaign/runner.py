@@ -866,13 +866,21 @@ def _monthly_rank_ics(
     months: list[_MonthResult] = []
     eval_dates = _evaluation_signal_dates(schedule)
     restrict = schedule is not None
-    for signal_date, rows in _continuous_listing_items(panel, schedule):
+    for signal_date in _primary_era_signal_dates(panel, schedule):
+        rows = panel.listings.get(signal_date, ())
         window = _execution_window(
             schedule, panel.session_dates, signal_date, config.horizon_return_rows
         )
         execution_date = None if window is None else window[0]
         label_end = None if window is None else window[1]
         if restrict and signal_date not in eval_dates:
+            listed = signal_date in panel.listings
+            schedule_row = _schedule_signal(schedule, signal_date)
+            fold_purged = (
+                schedule_row is not None and schedule_row.factor_label_complete
+            )
+            if not listed and not fold_purged:
+                continue
             months.append(
                 _MonthResult(
                     signal_date=signal_date,
@@ -1175,6 +1183,20 @@ def _continuous_listing_items(
         (signal_date, rows)
         for signal_date, rows in items
         if int(signal_date[:4]) >= floor
+    )
+
+
+def _primary_era_signal_dates(
+    panel: _PreparedPanel,
+    schedule: CampaignSchedule | None,
+) -> tuple[str, ...]:
+    if schedule is None:
+        return tuple(panel.listings)
+    floor = schedule.first_fold_year
+    return tuple(
+        row.signal_date
+        for row in schedule.signals
+        if int(row.signal_date[:4]) >= floor
     )
 
 
