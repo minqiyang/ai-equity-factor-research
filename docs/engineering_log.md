@@ -14,7 +14,8 @@
   `continuous_included`, including December signals whose labels end in
   January. Fold-purged December months are retained as invalid Rank IC
   records and counted in `invalid_and_missing_summary.json`, including when
-  the December listings key is omitted. An empty 2018+
+  the December listings key is omitted. Continuous resets still use that
+  scheduled January execution. An empty 2018+
   calendar returns no required Rank IC/episode rows rather than scoring
   warm-up as primary. Pre-2018 missing
   labels are warm-up only and do not fail coverage.

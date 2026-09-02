@@ -1704,6 +1704,17 @@ def test_omitted_scheduled_month_is_still_purged_and_counted(
     assert purged
     assert all(month["valid"] is False for month in purged)
     assert all(month["reason"] == cfg["purged_reason"] for month in purged)
+    execution = str(cfg["january_execution"])
+    strategy = _parse_child(result, "strategy_returns.parquet")
+    rev = str(cases["inputs"]["rev_factor_id"])
+    ten = next(
+        row
+        for row in strategy["trials"]
+        if row["trial_id"] == cases["inputs"]["rev_ten_trial_id"]
+        and row["factor_id"] == rev
+    )
+    sessions_seen = {point["session_date"] for point in ten["points"]}
+    assert execution in sessions_seen
 
 
 def _turnover_on(

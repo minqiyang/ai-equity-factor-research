@@ -1148,12 +1148,12 @@ def _scheduled_listing_items(
     panel: _PreparedPanel,
     schedule: CampaignSchedule | None,
 ) -> tuple[tuple[str, tuple[_ListingRow, ...]], ...]:
-    items: list[tuple[str, tuple[_ListingRow, ...]]] = []
-    for signal_date, rows in panel.listings.items():
-        if schedule is not None and _schedule_signal(schedule, signal_date) is None:
-            continue
-        items.append((signal_date, rows))
-    return tuple(items)
+    if schedule is None:
+        return tuple(panel.listings.items())
+    return tuple(
+        (row.signal_date, panel.listings.get(row.signal_date, ()))
+        for row in schedule.signals
+    )
 
 
 def _required_listing_items(
