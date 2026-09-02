@@ -102,6 +102,7 @@ _REASON_INVENTORY = "TRIAL_INVENTORY_BYTES_MISMATCH"
 _REASON_ZERO_TARGET = "ZERO_TARGET"
 _REASON_HELD_MISSING = "HELD_RETURN_MISSING"
 _REASON_OUTPUT_INVALID = "TRIAL_OUTPUT_INVALID"
+_REASON_LABEL_PURGED = "EVALUATION_FOLD_LABEL_PURGED"
 _CONTINUOUS = "continuous_daily_return"
 _MONTHLY_RANK_IC = "monthly_rank_ic"
 _EPISODE = "episode_21_row_return"
@@ -556,7 +557,7 @@ def _execute_prepared(
     try:
         inventory = parse_trial_inventory(inventory_raw)
         schedule = _campaign_schedule(config, panel)
-        frozen = _freeze_panel(config, panel)
+        frozen = _freeze_panel(config, panel, schedule)
         monthly_ics = {
             factor_id: _monthly_rank_ics(config, factor_id, panel, frozen, schedule)
             for factor_id in FACTOR_ORDER
@@ -718,9 +719,10 @@ def _session_dates(
 def _freeze_panel(
     config: RunConfig,
     panel: _PreparedPanel,
+    schedule: CampaignSchedule | None,
 ) -> dict[tuple[str, str], object]:
     frozen: dict[tuple[str, str], object] = {}
-    for signal_date, rows in panel.listings.items():
+    for signal_date, rows in _scheduled_listing_items(panel, schedule):
         for factor_id in FACTOR_ORDER:
             listings = tuple(
                 _decision_listing(panel, row, signal_date, factor_id) for row in rows
@@ -862,12 +864,28 @@ def _monthly_rank_ics(
     schedule: CampaignSchedule | None,
 ) -> tuple[_MonthResult, ...]:
     months: list[_MonthResult] = []
-    for signal_date, rows in panel.listings.items():
+    eval_dates = _evaluation_signal_dates(schedule)
+    restrict = schedule is not None
+    for signal_date in _primary_era_signal_dates(panel, schedule):
+        rows = panel.listings.get(signal_date, ())
         window = _execution_window(
             schedule, panel.session_dates, signal_date, config.horizon_return_rows
         )
         execution_date = None if window is None else window[0]
         label_end = None if window is None else window[1]
+        if restrict and signal_date not in eval_dates:
+            months.append(
+                _MonthResult(
+                    signal_date=signal_date,
+                    execution_date=execution_date,
+                    label_end_date=label_end,
+                    value=None,
+                    valid=False,
+                    reason=_REASON_LABEL_PURGED,
+                    forward_returns=(),
+                )
+            )
+            continue
         frozen_dt = frozen.get((factor_id, signal_date))
         values = _eligible_values(frozen_dt)
         pairs: list[tuple[object, object]] = []
@@ -881,10 +899,31 @@ def _monthly_rank_ics(
             )
             ret_value = None if held is None or not held.valid else held.value
             forwards.append((row.listing_key.hex(), ret_value, held is not None and held.valid))
-            if factor_value is None or ret_value is None:
+            if factor_value is None:
+                continue
+            if ret_value is None:
                 pairs.append((None, None))
             else:
                 pairs.append((factor_value, ret_value))
+        if (
+            isinstance(frozen_dt, FrozenDecisionTime)
+            and frozen_dt.invalid_factor_month
+        ):
+            trigger = next(
+                iter(frozen_dt.zero_target_triggers), _REASON_OUTPUT_INVALID
+            )
+            months.append(
+                _MonthResult(
+                    signal_date=signal_date,
+                    execution_date=execution_date,
+                    label_end_date=label_end,
+                    value=None,
+                    valid=False,
+                    reason=trigger,
+                    forward_returns=tuple(forwards),
+                )
+            )
+            continue
         result = spearman_rank_ic(
             pairs,
             config.min_distinct_values,
@@ -905,9 +944,12 @@ def _monthly_rank_ics(
 
 
 def _rank_ic_from_months(months: tuple[_MonthResult, ...]) -> dict[str, object]:
-    if not months:
+    scored = tuple(
+        month for month in months if month.reason != _REASON_LABEL_PURGED
+    )
+    if not scored:
         return _invalid_output(_REASON_OUTPUT_INVALID)
-    invalid = next((month for month in months if not month.valid), None)
+    invalid = next((month for month in scored if not month.valid), None)
     if invalid is not None:
         return _from_valid(False, invalid.reason)
     return _from_valid(True, None)
@@ -922,7 +964,7 @@ def _episode_output(
     schedule: CampaignSchedule | None,
 ) -> dict[str, object]:
     last: dict[str, object] | None = None
-    for signal_date, rows in panel.listings.items():
+    for signal_date, rows in _required_listing_items(panel, schedule):
         frozen_dt = frozen.get((factor_id, signal_date))
         weights = _trial_weights(config, trial, factor_id, frozen_dt, signal_date)
         window = _execution_window(
@@ -957,7 +999,7 @@ def _continuous_output(
         cost = 0
     resets: dict[str, Mapping[bytes, float]] = {}
     ordered_exec: list[str] = []
-    for signal_date in panel.listings:
+    for signal_date, _rows in _continuous_listing_items(panel, schedule):
         row = _schedule_signal(schedule, signal_date)
         if row is not None and not row.continuous_included:
             continue
@@ -985,7 +1027,7 @@ def _continuous_output(
     for index in range(start, len(panel.session_dates) - 1):
         begin = panel.session_dates[index]
         end = panel.session_dates[index + 1]
-        held = _held_map(panel, begin, end)
+        held = _held_map(panel, begin, end, schedule)
         reset = resets.get(end)
         intervals.append(holding_interval(end, held, reset))
     holdings = advance_holdings(
@@ -1026,17 +1068,21 @@ def _held_map(
     panel: _PreparedPanel,
     start_date: str,
     end_date: str,
+    schedule: CampaignSchedule | None,
 ) -> dict[bytes, object]:
     held: dict[bytes, object] = {}
-    for row in _all_listing_rows(panel):
+    for row in _all_listing_rows(panel, schedule):
         result = _held_return(panel, row, start_date, end_date)
         held[row.listing_key] = None if not result.valid else result.value
     return held
 
 
-def _all_listing_rows(panel: _PreparedPanel) -> tuple[_ListingRow, ...]:
+def _all_listing_rows(
+    panel: _PreparedPanel,
+    schedule: CampaignSchedule | None,
+) -> tuple[_ListingRow, ...]:
     seen: dict[bytes, _ListingRow] = {}
-    for rows in panel.listings.values():
+    for _signal_date, rows in _scheduled_listing_items(panel, schedule):
         for row in rows:
             seen[row.listing_key] = row
     return tuple(seen.values())
@@ -1091,6 +1137,62 @@ def _campaign_schedule(
         return None
 
 
+def _scheduled_listing_items(
+    panel: _PreparedPanel,
+    schedule: CampaignSchedule | None,
+) -> tuple[tuple[str, tuple[_ListingRow, ...]], ...]:
+    if schedule is None:
+        return tuple(panel.listings.items())
+    return tuple(
+        (row.signal_date, panel.listings.get(row.signal_date, ()))
+        for row in schedule.signals
+    )
+
+
+def _required_listing_items(
+    panel: _PreparedPanel,
+    schedule: CampaignSchedule | None,
+) -> tuple[tuple[str, tuple[_ListingRow, ...]], ...]:
+    items = _scheduled_listing_items(panel, schedule)
+    if schedule is None:
+        return items
+    eval_dates = _evaluation_signal_dates(schedule)
+    return tuple(
+        (signal_date, rows)
+        for signal_date, rows in items
+        if signal_date in eval_dates
+    )
+
+
+def _continuous_listing_items(
+    panel: _PreparedPanel,
+    schedule: CampaignSchedule | None,
+) -> tuple[tuple[str, tuple[_ListingRow, ...]], ...]:
+    items = _scheduled_listing_items(panel, schedule)
+    if schedule is None:
+        return items
+    floor = schedule.first_fold_year
+    return tuple(
+        (signal_date, rows)
+        for signal_date, rows in items
+        if int(signal_date[:4]) >= floor
+    )
+
+
+def _primary_era_signal_dates(
+    panel: _PreparedPanel,
+    schedule: CampaignSchedule | None,
+) -> tuple[str, ...]:
+    if schedule is None:
+        return tuple(panel.listings)
+    floor = schedule.first_fold_year
+    return tuple(
+        row.signal_date
+        for row in schedule.signals
+        if int(row.signal_date[:4]) >= floor
+    )
+
+
 def _schedule_signal(
     schedule: CampaignSchedule | None,
     signal_date: str,
@@ -1132,6 +1234,7 @@ def _execution_window(
             if row.execution_date is None or row.label_end_date is None:
                 return None
             return row.execution_date, row.label_end_date
+        return None
     try:
         index = session_dates.index(signal_date)
     except ValueError:
@@ -1190,6 +1293,12 @@ def _diagnostic_payload_from_execution(
         trace.monthly_ics, common_dates, trace.required_years
     )
     strategy_valid = _required_strategy_paths_valid(inventory, trial_outputs)
+    purged_months = sum(
+        1
+        for months in trace.monthly_ics.values()
+        for month in months
+        if month.reason == _REASON_LABEL_PURGED
+    )
     hard_valid = (
         strategy_valid
         and invalid_primary == 0
@@ -1211,6 +1320,7 @@ def _diagnostic_payload_from_execution(
         "common_case_all_loyo_means_positive": loyo,
         "invalid_primary_comparison_count": invalid_primary,
         "invalid_secondary_comparison_count": 1,
+        "purged_factor_month_count": purged_months,
     }
 
 
@@ -1387,7 +1497,11 @@ def _prefrozen_coverage(
 ) -> bool:
     if not frozen:
         return False
+    eval_dates = _evaluation_signal_dates(trace.schedule)
+    restrict_to_primary = trace.schedule is not None
     for (factor_id, signal_date), frozen_dt in frozen.items():
+        if restrict_to_primary and signal_date not in eval_dates:
+            continue
         if not isinstance(frozen_dt, FrozenDecisionTime):
             return False
         horizon = (
@@ -1614,7 +1728,9 @@ def _decile_rows(trace: _ExecutionTrace) -> list[dict[str, object]]:
         if trace.schedule is not None
         else _HORIZON_RETURN_ROWS
     )
-    rows_by_key = {row.listing_key: row for row in _all_listing_rows(trace.panel)}
+    rows_by_key = {
+        row.listing_key: row for row in _all_listing_rows(trace.panel, trace.schedule)
+    }
     rows: list[dict[str, object]] = []
     for (factor_id, signal_date), frozen_dt in trace.frozen.items():
         if not isinstance(frozen_dt, FrozenDecisionTime):
@@ -1726,7 +1842,7 @@ def _bundle_children(
                     "valid": holdings.valid,
                 }
             )
-    listing_count = len(_all_listing_rows(trace.panel))
+    listing_count = len(_all_listing_rows(trace.panel, None))
     artifacts = {
         "dataset_full_manifest.json": {
             "accepted_cutoff": (

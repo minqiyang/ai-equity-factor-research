@@ -27,6 +27,28 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Monthly Rank IC omits ineligible listings instead of appending missing
+  pairs that invalidate a month with eligible n>=100. A month with fewer
+  than 100 eligible names stays invalid. Unscheduled listing
+  dates are skipped in Rank IC, episode, freeze, continuous resets, and
+  held-return representatives. Unscheduled lineage metadata cannot overwrite
+  scheduled listing keys. Required Rank IC and episode outputs use the
+  primary evaluation calendar, so a missing warm-up label does not
+  invalidate those outputs. Continuous resets use primary-era
+  `continuous_included` rows, including a December signal whose label ends
+  in January. Fold-purged December months are retained as invalid Rank IC
+  records and counted in `invalid_and_missing_summary.json`, including when
+  the December listings key is omitted. A scheduled primary-era
+  cutoff-boundary month with an incomplete label is retained as
+  `EVALUATION_FOLD_LABEL_PURGED` when its listings key is omitted.
+  Continuous resets still use that
+  scheduled January execution. An empty 2018+
+  calendar returns no required Rank IC/episode rows and cannot score
+  warm-up as primary.
+  Coverage gates use primary evaluation dates, including when that calendar
+  is empty, so pre-2018 warm-up missing labels do not fail coverage.
+  Evidence ceiling remains `DIAGNOSTIC_ONLY`. This adds no private data,
+  D8, A2, or real 14-trial run.
 - Closed remaining Track A PR 3 exact-head findings: ledger schema tests
   still collapse independent fail-closed axes for speed, but only after an
   equivalence check proves every representative delegates to the same

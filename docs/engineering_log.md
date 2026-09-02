@@ -1,5 +1,30 @@
 # Engineering Log
 
+## 2026-08-30 - Track A PR 4 Rank IC, schedule, and coverage P1s
+
+- Rank IC cross-sections use eligible listings only; ineligible names are
+  omitted rather than appended as missing pairs. Months below the 100-name
+  floor remain invalid.
+- Unscheduled listing dates are skipped in Rank IC, episode, freeze,
+  continuous resets, and held-return representatives. A schema-valid
+  non-month-end date cannot overwrite scheduled lineage metadata or enter
+  trial calculations.
+- Coverage gates and required Rank IC and episode outputs use primary
+  evaluation dates. Continuous resets use primary-era scheduled rows with
+  `continuous_included`, including December signals whose labels end in
+  January. Fold-purged December months are retained as invalid Rank IC
+  records and counted in `invalid_and_missing_summary.json`, including when
+  the December listings key is omitted. A scheduled primary-era
+  cutoff-boundary month with an incomplete label is retained as
+  `EVALUATION_FOLD_LABEL_PURGED` when its listings key is omitted.
+  Continuous resets still use that
+  scheduled January execution. An empty 2018+
+  calendar returns no required Rank IC/episode rows rather than scoring
+  warm-up as primary. Pre-2018 missing
+  labels are warm-up only and do not fail coverage.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. No private control-tree
+  write, B-8 bind, or real 14-trial run.
+
 ## 2026-08-30 - Track A PR 4 cutoff and 2018 fold P1s
 
 - Accepted cutoff is the last session date, not the latest monthly signal.

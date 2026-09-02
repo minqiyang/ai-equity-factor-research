@@ -66,7 +66,7 @@
       "first_signal": "2020-01-31",
       "late_high_mult": 0.7,
       "late_low_mult": 1.5,
-      "listing_count": 12,
+      "listing_count": 100,
       "second_signal": "2020-02-29",
       "session_count": 90,
       "slope": 0.02,
@@ -95,11 +95,57 @@
       "start": "2019-01-01",
       "start_price": 50.0,
       "zero": 0.0
+    },
+    "mixed_eligible": {
+      "eligible_count": 100,
+      "ineligible_count": 1,
+      "session_count": 80,
+      "start": "2019-01-01"
+    },
+    "below_floor_eligible": {
+      "eligible_count": 99,
+      "ineligible_count": 2,
+      "invalid_reason": "ELIGIBLE_SECURITY_COUNT_BELOW_100_AT_T",
+      "session_count": 80,
+      "start": "2019-01-01"
+    },
+    "mid_month_injection": {
+      "injected_date": "2019-02-15",
+      "injected_execution": "2019-02-16",
+      "listing_count": 100,
+      "session_count": 120,
+      "start": "2019-01-01"
+    },
+    "warmup_missing_label": {
+      "horizon_rows": 21,
+      "listing_count": 100,
+      "session_count": 500,
+      "start": "2017-01-01",
+      "warmup_prefix": "2017-"
+    },
+    "empty_primary_calendar": {
+      "horizon_rows": 21,
+      "listing_count": 101,
+      "session_count": 419,
+      "start": "2016-01-01",
+      "warmup_prefix": "2017-"
+    },
+    "year_boundary": {
+      "december_signal": "2018-12-31",
+      "final_cutoff_signal": "2019-02-28",
+      "january_execution": "2019-01-01",
+      "listing_count": 100,
+      "december_purged_factor_month_count": 3,
+      "purged_factor_month_count": 6,
+      "purged_reason": "EVALUATION_FOLD_LABEL_PURGED",
+      "session_count": 90,
+      "start": "2018-12-01"
     }
   },
   "expected": {
     "evidence_ceiling": "DIAGNOSTIC_ONLY",
     "first_fold_year": 2018,
+    "inconclusive_state": "INCONCLUSIVE_DIAGNOSTIC",
     "invalid_state": "INVALID_DIAGNOSTIC"
   },
   "forbidden": {

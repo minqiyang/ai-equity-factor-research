@@ -1326,3 +1326,445 @@ def test_primary_folds_start_in_evaluation_year(tmp_path: Path) -> None:
     yearly = _parse_child(result, "yearly_robustness.json")
     assert manifest["first_fold_year"] == cases["expected"]["first_fold_year"]
     assert cfg["warmup_year"] not in yearly["required_years"]
+
+
+def test_rank_ic_omits_ineligible_listings(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["mixed_eligible"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    listing_count = int(cfg["eligible_count"]) + int(cfg["ineligible_count"])
+    prepared = _synthetic_panel(
+        sessions,
+        listing_count,
+        _month_end_flags(sessions, int(cases["inputs"]["one"])),
+        "derived_large",
+        cases,
+    )
+    ineligible_hex = None
+    for rows in prepared["listings"].values():
+        rows[-1]["in_universe_at_t"] = False
+        ineligible_hex = rows[-1]["listing_key"]
+    result = _run_prepared(tmp_path, prepared, "mixed_eligible")
+    assert result.status == cases["inputs"]["executed_status"]
+    diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+    valid_months = [
+        month
+        for month in diagnostics["monthly_rank_ics"]
+        if month["valid"] is True
+    ]
+    assert valid_months
+    assert ineligible_hex is not None
+    for month in valid_months:
+        keys = [row["listing_key"] for row in month["forward_returns"]]
+        assert ineligible_hex in keys
+
+
+def test_below_floor_rank_ic_months_remain_invalid(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["below_floor_eligible"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    listing_count = int(cfg["eligible_count"]) + int(cfg["ineligible_count"])
+    prepared = _synthetic_panel(
+        sessions,
+        listing_count,
+        _month_end_flags(sessions, int(cases["inputs"]["one"])),
+        "derived_large",
+        cases,
+    )
+    ineligible = int(cfg["ineligible_count"])
+    for rows in prepared["listings"].values():
+        for row in rows[-ineligible:]:
+            row["in_universe_at_t"] = False
+    result = _run_prepared(tmp_path, prepared, "below_floor_eligible")
+    assert result.status == cases["inputs"]["executed_status"]
+    diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+    scored = [
+        month
+        for month in diagnostics["monthly_rank_ics"]
+        if month["reason"] != "EVALUATION_FOLD_LABEL_PURGED"
+    ]
+    assert scored
+    assert all(month["valid"] is False for month in scored)
+    assert any(
+        month["reason"] == cfg["invalid_reason"] for month in scored
+    )
+
+
+def test_unscheduled_listing_dates_are_not_continuous_resets(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["mid_month_injection"]
+    rebalance = cases["inputs"]["rebalance"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = {
+        str(row["signal_date"]): bool(row["in_universe"])
+        for row in rebalance["signals"]
+    }
+    control = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        flags,
+        "rebalance",
+        cases,
+    )
+    injected = json.loads(json.dumps(control))
+    template = next(iter(injected["listings"].values()))
+    injected["listings"][str(cfg["injected_date"])] = [
+        {**row, "in_universe_at_t": False} for row in template
+    ]
+    control_result = _run_prepared(tmp_path, control, "mid_month_control")
+    injected_result = _run_prepared(tmp_path, injected, "mid_month_injected")
+    assert control_result.status == cases["inputs"]["executed_status"]
+    assert injected_result.status == cases["inputs"]["executed_status"]
+    session = str(cfg["injected_execution"])
+    assert _turnover_on(cases, control_result, session) == _turnover_on(
+        cases, injected_result, session
+    )
+
+
+def test_eligible_unscheduled_dates_do_not_corrupt_required_outputs(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["mid_month_injection"]
+    rebalance = cases["inputs"]["rebalance"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = {
+        str(row["signal_date"]): bool(row["in_universe"])
+        for row in rebalance["signals"]
+    }
+    control = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        flags,
+        "rebalance",
+        cases,
+    )
+    injected = json.loads(json.dumps(control))
+    template = next(iter(injected["listings"].values()))
+    injected["listings"][str(cfg["injected_date"])] = [
+        {**row, "in_universe_at_t": True} for row in template
+    ]
+    control_result = _run_prepared(tmp_path, control, "eligible_mid_control")
+    injected_result = _run_prepared(tmp_path, injected, "eligible_mid_injected")
+    assert control_result.status == cases["inputs"]["executed_status"]
+    assert injected_result.status == cases["inputs"]["executed_status"]
+    assert control_result.reconciliation is not None
+    assert injected_result.reconciliation is not None
+    assert (
+        control_result.reconciliation.invalid_and_missing["invalid_required_outputs"]
+        == injected_result.reconciliation.invalid_and_missing["invalid_required_outputs"]
+    )
+    assert _parse_child(control_result, "factor_diagnostics.parquet") == _parse_child(
+        injected_result, "factor_diagnostics.parquet"
+    )
+    assert _parse_child(control_result, "decile_returns.parquet")["rows"] == _parse_child(
+        injected_result, "decile_returns.parquet"
+    )["rows"]
+
+
+def test_unscheduled_lineage_does_not_overwrite_held_returns(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["mid_month_injection"]
+    rebalance = cases["inputs"]["rebalance"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = {
+        str(row["signal_date"]): bool(row["in_universe"])
+        for row in rebalance["signals"]
+    }
+    control = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        flags,
+        "rebalance",
+        cases,
+    )
+    injected = json.loads(json.dumps(control))
+    template = next(iter(injected["listings"].values()))
+    mutated = []
+    for row in template:
+        identity = dict(row["target_identity"])
+        identity["resolved_permanent_security_id"] = (
+            f"OTHER-{identity['resolved_permanent_security_id']}"
+        )
+        alias = dict(row["alias_chain"][0])
+        alias["resolved_permanent_security_id"] = identity[
+            "resolved_permanent_security_id"
+        ]
+        mutated.append(
+            {
+                **row,
+                "alias_chain": [alias],
+                "in_universe_at_t": True,
+                "target_identity": identity,
+            }
+        )
+    injected["listings"][str(cfg["injected_date"])] = mutated
+    control_result = _run_prepared(tmp_path, control, "lineage_mid_control")
+    injected_result = _run_prepared(tmp_path, injected, "lineage_mid_injected")
+    assert control_result.status == cases["inputs"]["executed_status"]
+    assert injected_result.status == cases["inputs"]["executed_status"]
+    assert control_result.reconciliation is not None
+    assert injected_result.reconciliation is not None
+    assert control_result.reconciliation.final_state == cases["expected"][
+        "inconclusive_state"
+    ]
+    assert (
+        injected_result.reconciliation.final_state
+        == control_result.reconciliation.final_state
+    )
+    assert injected_result.reconciliation.final_state != cases["expected"][
+        "invalid_state"
+    ]
+
+
+def test_warmup_missing_labels_do_not_invalidate_primary(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["warmup_missing_label"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = _month_end_flags(sessions, int(cases["inputs"]["one"]))
+    control = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        flags,
+        "derived_large",
+        cases,
+    )
+    prepared = json.loads(json.dumps(control))
+    warmup = next(
+        signal_date
+        for signal_date in flags
+        if signal_date.startswith(str(cfg["warmup_prefix"]))
+    )
+    label_end = sessions[
+        sessions.index(warmup) + int(cases["inputs"]["one"]) + int(cfg["horizon_rows"])
+    ]
+    hex_key = next(iter(prepared["prices"]))
+    del prepared["prices"][hex_key][label_end]
+    prepared["anchors"][hex_key] = [
+        record
+        for record in prepared["anchors"][hex_key]
+        if record["session_date"] != label_end
+    ]
+    control_result = _run_prepared(tmp_path, control, "warmup_control")
+    result = _run_prepared(tmp_path, prepared, "warmup_missing_label")
+    assert result.status == cases["inputs"]["executed_status"]
+    assert control_result.status == cases["inputs"]["executed_status"]
+    assert result.reconciliation is not None
+    assert control_result.reconciliation is not None
+    assert result.reconciliation.diagnostic_inputs is not None
+    assert result.reconciliation.diagnostic_inputs.prefrozen_coverage_met is True
+    assert result.reconciliation.final_state != cases["expected"]["invalid_state"]
+    assert (
+        result.reconciliation.invalid_and_missing["invalid_required_outputs"]
+        == control_result.reconciliation.invalid_and_missing["invalid_required_outputs"]
+    )
+
+
+def test_empty_primary_calendar_does_not_use_warmup_coverage(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["empty_primary_calendar"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    flags = _month_end_flags(sessions, int(cases["inputs"]["one"]))
+    prepared = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        flags,
+        "derived_large",
+        cases,
+    )
+    warmup = max(
+        signal_date
+        for signal_date in flags
+        if signal_date.startswith(str(cfg["warmup_prefix"]))
+    )
+    for signal_date, rows in prepared["listings"].items():
+        if signal_date != warmup:
+            rows[0]["in_universe_at_t"] = False
+    label_end = sessions[
+        sessions.index(warmup) + int(cases["inputs"]["one"]) + int(cfg["horizon_rows"])
+    ]
+    hex_key = next(iter(prepared["prices"]))
+    del prepared["prices"][hex_key][label_end]
+    prepared["anchors"][hex_key] = [
+        record
+        for record in prepared["anchors"][hex_key]
+        if record["session_date"] != label_end
+    ]
+    result = _run_prepared(tmp_path, prepared, "empty_primary_calendar")
+    assert result.status == cases["inputs"]["executed_status"]
+    assert result.reconciliation is not None
+    assert result.reconciliation.diagnostic_inputs is not None
+    assert result.reconciliation.diagnostic_inputs.prefrozen_coverage_met is True
+    yearly = _parse_child(result, "yearly_robustness.json")
+    assert cases["expected"]["first_fold_year"] not in yearly["required_years"]
+    assert result.reconciliation.invalid_and_missing["invalid_required_outputs"] > 0
+    assert result.reconciliation.final_state == cases["expected"]["invalid_state"]
+
+
+def test_continuous_resets_across_year_boundary(tmp_path: Path) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["year_boundary"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    result = _run_prepared(
+        tmp_path,
+        _synthetic_panel(
+            sessions,
+            int(cfg["listing_count"]),
+            _month_end_flags(sessions, int(cases["inputs"]["one"])),
+            "rebalance",
+            cases,
+        ),
+        "year_boundary",
+    )
+    assert result.status == cases["inputs"]["executed_status"]
+    execution = str(cfg["january_execution"])
+    turnover = _turnover_on(cases, result, execution)
+    expected = float(cases["inputs"]["initial_turnover"])
+    rel_tol = float(cases["inputs"]["execution_anchor"]["rel_tol"])
+    assert abs(turnover - expected) < rel_tol
+    diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+    december = str(cfg["december_signal"])
+    purged = [
+        month
+        for month in diagnostics["monthly_rank_ics"]
+        if month["signal_date"] == december
+    ]
+    assert purged
+    assert all(month["valid"] is False for month in purged)
+    assert all(month["reason"] == cfg["purged_reason"] for month in purged)
+    assert len(purged) == int(cfg["december_purged_factor_month_count"])
+    summary = _parse_child(result, "invalid_and_missing_summary.json")
+    assert summary["summary"]["purged_factor_month_count"] == int(
+        cfg["purged_factor_month_count"]
+    )
+
+
+def test_omitted_scheduled_month_is_still_purged_and_counted(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["year_boundary"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    prepared = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        _month_end_flags(sessions, int(cases["inputs"]["one"])),
+        "rebalance",
+        cases,
+    )
+    del prepared["listings"][str(cfg["december_signal"])]
+    result = _run_prepared(tmp_path, prepared, "omitted_december")
+    assert result.status == cases["inputs"]["executed_status"]
+    summary = _parse_child(result, "invalid_and_missing_summary.json")
+    assert summary["summary"]["purged_factor_month_count"] == int(
+        cfg["purged_factor_month_count"]
+    )
+    diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+    december = str(cfg["december_signal"])
+    purged = [
+        month
+        for month in diagnostics["monthly_rank_ics"]
+        if month["signal_date"] == december
+    ]
+    assert purged
+    assert all(month["valid"] is False for month in purged)
+    assert all(month["reason"] == cfg["purged_reason"] for month in purged)
+    execution = str(cfg["january_execution"])
+    strategy = _parse_child(result, "strategy_returns.parquet")
+    rev = str(cases["inputs"]["rev_factor_id"])
+    ten = next(
+        row
+        for row in strategy["trials"]
+        if row["trial_id"] == cases["inputs"]["rev_ten_trial_id"]
+        and row["factor_id"] == rev
+    )
+    sessions_seen = {point["session_date"] for point in ten["points"]}
+    assert execution in sessions_seen
+
+
+def test_omitted_incomplete_cutoff_month_is_still_purged_and_counted(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["year_boundary"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    prepared = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        _month_end_flags(sessions, int(cases["inputs"]["one"])),
+        "rebalance",
+        cases,
+    )
+    cutoff = str(cfg["final_cutoff_signal"])
+    prepared["listings"].pop(cutoff, None)
+    result = _run_prepared(tmp_path, prepared, "omitted_incomplete_cutoff")
+    assert result.status == cases["inputs"]["executed_status"]
+    summary = _parse_child(result, "invalid_and_missing_summary.json")
+    assert summary["summary"]["purged_factor_month_count"] == int(
+        cfg["purged_factor_month_count"]
+    )
+    diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+    purged = [
+        month
+        for month in diagnostics["monthly_rank_ics"]
+        if month["signal_date"] == cutoff
+    ]
+    assert purged
+    assert all(month["valid"] is False for month in purged)
+    assert all(month["reason"] == cfg["purged_reason"] for month in purged)
+    assert len(purged) == int(cfg["december_purged_factor_month_count"])
+
+
+def _turnover_on(
+    cases: dict[str, object],
+    result: CampaignRun,
+    session: str,
+) -> float:
+    strategy = _parse_child(result, "strategy_returns.parquet")
+    rev = str(cases["inputs"]["rev_factor_id"])
+    ten = next(
+        row
+        for row in strategy["trials"]
+        if row["trial_id"] == cases["inputs"]["rev_ten_trial_id"]
+        and row["factor_id"] == rev
+    )
+    point = next(row for row in ten["points"] if row["session_date"] == session)
+    return float(point["turnover"])
