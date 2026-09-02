@@ -1664,7 +1664,7 @@ def test_continuous_resets_across_year_boundary(tmp_path: Path) -> None:
     assert purged
     assert all(month["valid"] is False for month in purged)
     assert all(month["reason"] == cfg["purged_reason"] for month in purged)
-    assert len(purged) == int(cfg["purged_factor_month_count"])
+    assert len(purged) == int(cfg["december_purged_factor_month_count"])
     summary = _parse_child(result, "invalid_and_missing_summary.json")
     assert summary["summary"]["purged_factor_month_count"] == int(
         cfg["purged_factor_month_count"]
@@ -1715,6 +1715,42 @@ def test_omitted_scheduled_month_is_still_purged_and_counted(
     )
     sessions_seen = {point["session_date"] for point in ten["points"]}
     assert execution in sessions_seen
+
+
+def test_omitted_incomplete_cutoff_month_is_still_purged_and_counted(
+    tmp_path: Path,
+) -> None:
+    cases = _p1_cases()
+    cfg = cases["inputs"]["year_boundary"]
+    sessions = _session_range(
+        date.fromisoformat(str(cfg["start"])),
+        int(cfg["session_count"]),
+    )
+    prepared = _synthetic_panel(
+        sessions,
+        int(cfg["listing_count"]),
+        _month_end_flags(sessions, int(cases["inputs"]["one"])),
+        "rebalance",
+        cases,
+    )
+    cutoff = str(cfg["final_cutoff_signal"])
+    prepared["listings"].pop(cutoff, None)
+    result = _run_prepared(tmp_path, prepared, "omitted_incomplete_cutoff")
+    assert result.status == cases["inputs"]["executed_status"]
+    summary = _parse_child(result, "invalid_and_missing_summary.json")
+    assert summary["summary"]["purged_factor_month_count"] == int(
+        cfg["purged_factor_month_count"]
+    )
+    diagnostics = _parse_child(result, "factor_diagnostics.parquet")
+    purged = [
+        month
+        for month in diagnostics["monthly_rank_ics"]
+        if month["signal_date"] == cutoff
+    ]
+    assert purged
+    assert all(month["valid"] is False for month in purged)
+    assert all(month["reason"] == cfg["purged_reason"] for month in purged)
+    assert len(purged) == int(cfg["december_purged_factor_month_count"])
 
 
 def _turnover_on(

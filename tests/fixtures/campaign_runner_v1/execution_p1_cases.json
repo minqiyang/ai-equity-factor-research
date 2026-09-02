@@ -132,9 +132,11 @@
     },
     "year_boundary": {
       "december_signal": "2018-12-31",
+      "final_cutoff_signal": "2019-02-28",
       "january_execution": "2019-01-01",
       "listing_count": 100,
-      "purged_factor_month_count": 3,
+      "december_purged_factor_month_count": 3,
+      "purged_factor_month_count": 6,
       "purged_reason": "EVALUATION_FOLD_LABEL_PURGED",
       "session_count": 90,
       "start": "2018-12-01"

@@ -874,13 +874,6 @@ def _monthly_rank_ics(
         execution_date = None if window is None else window[0]
         label_end = None if window is None else window[1]
         if restrict and signal_date not in eval_dates:
-            listed = signal_date in panel.listings
-            schedule_row = _schedule_signal(schedule, signal_date)
-            fold_purged = (
-                schedule_row is not None and schedule_row.factor_label_complete
-            )
-            if not listed and not fold_purged:
-                continue
             months.append(
                 _MonthResult(
                     signal_date=signal_date,
