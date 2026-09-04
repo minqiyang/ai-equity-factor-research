@@ -1,6 +1,6 @@
 # Track A PR 2 Public Status
 
-Updated: 2026-08-25
+Updated: 2026-09-04
 
 Public-safe progress for Track A PR 2 and the diagnostic-track acceptance
 that unblocked PR 3. Machine-readable hashes and counts:
@@ -35,16 +35,25 @@ Safe decision fields:
   `d847c6305469b050f3d2e0426ff589cf422a2fa1f54044b9dcf037963567f992`.
   EXEC-2 fileset SHA
   `29aeec97ebc8146fccac1f575c1c098cbc9db2b106831a1b53d12e7ad2995c92`.
-  Protected main at acceptance
+  Protected main at G-2 acceptance
   `11a9cb8849b5239faa1081eda046d2254a12febc`. Stage 4 is not fully complete.
-  The 14-trial run has not executed.
+- The 14-trial run is REFUSED. Named reason:
+  `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`. Owner-stop SHA
+  `163b8f31d3568e460c074592c00376cf86d4f09371a6bb6a40f8d6cdd4548f5a`.
+  Freeze-record SHA
+  `c160a3b21f359dc96eda7f1f018e3315bae79f505078ca5199ed87a8204f0ccd`.
+  Protected main after PR #194:
+  `24bc794d0a6cbd6502a8db088008fa74acbe8752`. Evidence ceiling remains
+  `DIAGNOSTIC_ONLY`. No performance values are published. The 14-trial run
+  did not execute.
 
 ## Not in this repository
 
 Raw vendor rows, ticker lists, private filesystem paths, provider responses,
 the full private manifest, the freeze-record body, the evidence pack, the full
 decision record, the full acceptance-record body, the G-2 acceptance-file body,
-the frozen plan markdown body, and the EXEC-2 fileset body stay off GitHub.
+the frozen plan markdown body, the EXEC-2 fileset body, and the owner-stop
+body stay off GitHub.
 
 ## Closed owner gates (diagnostic track)
 
@@ -60,14 +69,15 @@ the frozen plan markdown body, and the EXEC-2 fileset body stay off GitHub.
 - D8 materialization
 - Result or performance access
 - Remaining Stage 4 detached pre-run binding after G-2
-- Fourteen-trial run
+- Fourteen-trial run (`REFUSED`,
+  `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`)
 - A2 exchange retrieval
 - Identity reopen
 - Raw private upload
 
 ## Next
 
-Remaining Stage 4 detached pre-run binding after G-2, then Track A PR 4
-evidence only after remaining binding verifies. Another machine can read this
-public status from GitHub; private control-tree bodies still require a
-private-channel transfer.
+Owner-stop remains in force. D8, A2, and identity reopen stay closed. Do not
+run the 14 trials. Another machine can read this public status from GitHub;
+private control-tree bodies still require a private-channel transfer. No
+performance values are published.

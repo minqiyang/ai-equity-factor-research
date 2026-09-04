@@ -1,5 +1,22 @@
 # Engineering Log
 
+## 2026-09-04 - Public-safe 14-trial identity fail-closed stop
+
+- Updated `docs/current_handoff.md` and `docs/current_roadmap.md` so a
+  GitHub clone sees the 14-trial run REFUSED, named reason
+  `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`, and evidence
+  ceiling `DIAGNOSTIC_ONLY`.
+- Refreshed `docs/track_a_pr2_public_status.md` and
+  `docs/track_a_pr2_public_status_v1.json` with owner-stop SHA
+  `163b8f31d3568e460c074592c00376cf86d4f09371a6bb6a40f8d6cdd4548f5a`,
+  freeze-record SHA
+  `c160a3b21f359dc96eda7f1f018e3315bae79f505078ca5199ed87a8204f0ccd`,
+  and protected main after PR #194
+  `24bc794d0a6cbd6502a8db088008fa74acbe8752`.
+- Recorded that D8, A2, and identity reopen stay closed, no performance
+  values are published, and the 14-trial run did not execute.
+- No runner, validator, private data, or result-bearing behavior changed.
+
 ## 2026-09-02 - Shrink campaign runner synthetic 14-trial panels
 
 - Execution P1 campaign runner tests now use shorter synthetic calendars

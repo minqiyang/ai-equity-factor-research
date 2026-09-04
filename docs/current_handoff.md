@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-08-25 after public-safe Stage 4 G-2 status publication.
+Updated: 2026-09-04 after public-safe identity fail-closed stop publication.
 
 Canonical responsibility: the latest recorded operational checkpoint, exact
 last-verified repository and PR facts, immediate blockers or owner decisions,
@@ -24,7 +24,7 @@ requirements.
 ## Latest Recorded Operational Checkpoint
 
 - Last externally verified protected baseline when this handoff was authored:
-  `11a9cb8849b5239faa1081eda046d2254a12febc`.
+  `24bc794d0a6cbd6502a8db088008fa74acbe8752`.
 - Historical CCA1 start baseline:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
 - PR #180 is merged. It records the long-term factor-to-portfolio direction
@@ -37,6 +37,8 @@ requirements.
   `4a67618a7571aaee8c49c1d100c6f12f36365b16`.
 - PR #188 refreshed README program status on the then-protected baseline.
 - PR #189 synced public handoff and roadmap after PR 3.
+- PR #190 recorded public-safe Stage 4 G-2 status by hash.
+- PR #194 is merged on protected main after pytest-runner-runtime.
 - PR #177 remains the accepted Track A PR 1 research baseline at merge
   `f50b6e77b0c3a0226e246459e2a394d1489210ac`, from final head
   `c04133315911c74c96e77984b5968792434aee8f`.
@@ -47,18 +49,21 @@ requirements.
   Its live PR and merge state must be checked separately after publication.
 - Raw private data, ticker lists, provider responses, and performance values
   remain outside the public repository.
-- Stage 4 G-2 binding is accepted by hash
-  `84f1ce471af19b4473a2a3bfa9ffb65b08927cc0218c55bd6922a7ddc5c30de0`.
-  The 14-trial run has not executed. Evidence ceiling remains
-  `DIAGNOSTIC_ONLY`.
+- The 14-trial run is REFUSED. Named reason:
+  `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`. Owner-stop SHA
+  `163b8f31d3568e460c074592c00376cf86d4f09371a6bb6a40f8d6cdd4548f5a`.
+  Freeze-record SHA
+  `c160a3b21f359dc96eda7f1f018e3315bae79f505078ca5199ed87a8204f0ccd`.
+  Evidence ceiling remains `DIAGNOSTIC_ONLY`.
 
 ## Recorded Delivery Scope
 
 - Refresh public handoff, roadmap, and PR 2 status so a GitHub clone sees
-  Stage 4 G-2 accepted by hash, the 14-trial run not executed, and
-  `DIAGNOSTIC_ONLY`.
-- Bind the G-2 acceptance file, frozen plan markdown, and EXEC-2 fileset by
-  hash only. Stage 4 is not fully complete beyond that G-2 binding.
+  the 14-trial run REFUSED, named reason
+  `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`, `DIAGNOSTIC_ONLY`,
+  and D8, A2, and identity reopen still closed.
+- Bind the owner-stop file and freeze record by hash only. Publish no
+  performance values, private paths, tickers, or prices.
 - The frozen campaign contract, preregistration, 14-trial inventory, and
   `DIAGNOSTIC_ONLY` ceiling remain in place.
 
@@ -67,23 +72,23 @@ requirements.
 Stage 1 is accepted. See `docs/current_roadmap.md` and
 `docs/track_a_pr2_public_status.md`. PR 2 public surfaces and campaign
 `DIAGNOSTIC_READY` hashes are recorded. Formal interpretation is not granted.
-PR 3 runner code is on protected main. Stage 4 G-2 binding is accepted by
-hash under `DIAGNOSTIC_ONLY`. The 14-trial run has not executed.
+PR 3 runner code is on protected main. The 14-trial run is REFUSED with
+reason `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL` under
+`DIAGNOSTIC_ONLY`. D8, A2, and identity reopen remain closed.
 
 ## Immediate Blockers Or Owner Decisions
 
-- Stage 4 is not fully complete beyond G-2 binding and still blocks the
-  14-trial run.
+- Fourteen-trial run REFUSED; named reason
+  `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`.
+- D8 materialization, result access, A2, and identity reopen stay closed.
 - Terminal-event policy is explicitly deferred.
-- D8 materialization, result access, A2, and purchases stay closed.
 - Private control-tree bodies remain off GitHub and need a private channel.
 
 ## Next Safe Action
 
-- Continue remaining Stage 4 detached pre-run binding under
-  `DIAGNOSTIC_ONLY`, or keep only public-safe documentation hygiene.
-- Do not run the 14 trials or enter D8 until remaining Stage 4 binding
-  verifies.
+- Keep D8, A2, and identity reopen closed. Do not run the 14 trials.
+- Public-safe documentation hygiene only until the owner reopens a named
+  gate. No performance values are published.
 
 ## Source Routing
 
