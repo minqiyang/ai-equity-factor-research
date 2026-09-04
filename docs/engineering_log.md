@@ -1,5 +1,16 @@
 # Engineering Log
 
+## 2026-09-04 - Live hosted-review check before merge
+
+- Owner correction: do not claim Codex (or any provider) is quota-limited
+  without a live probe in the same turn, and do not stop at the apology.
+- Incident: PR #194 had an explicit Codex usage-limit reply on 2026-09-02.
+  PR #195 was merged at 2026-09-04T03:23:16Z by treating that older message
+  as current. Codex posted a clean exact-head review on `ca3fce465c` at
+  2026-09-04T03:23:59Z. No new P1s. The merge process was wrong; the review
+  was not missing for lack of quota.
+- Rule recorded in `AGENTS.md` under Owner Corrections And Continuation.
+
 ## 2026-09-04 - Public-safe 14-trial identity fail-closed stop
 
 - Updated `docs/current_handoff.md` and `docs/current_roadmap.md` so a

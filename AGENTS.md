@@ -66,6 +66,25 @@ research-safety review standards.
   measurements. Close a section with what it records. Authority remains in
   this file rather than in a closing disclaimer.
 
+## Owner Corrections And Continuation
+
+When the owner points out an agent process failure, do not stop at the
+apology. Acknowledge the concrete failure, record a durable rule so it does
+not recur, then continue the still-authorized task unless the correction
+itself is a hold or unblock condition.
+
+- Record authority and process rules here. Record the incident in
+  `docs/engineering_log.md`.
+- Rank severity. Skipping a required live check is P1 process failure.
+- Before claiming a provider, model, quota, or hosted review is unavailable,
+  probe it live in that same turn. Do not reuse an older pull request's limit
+  message.
+- Before merge, wait for the actual exact-head hosted-review body (pass,
+  findings, or an explicit current limit). A silent wait that times out is
+  not evidence of unavailability.
+- A fallback (model, seat, or equivalent gate) is allowed only after that
+  live probe fails in the current turn.
+
 ## Review Priorities
 
 - Prioritize research-validity risk over style. A P1 requires concrete evidence
