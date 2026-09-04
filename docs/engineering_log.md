@@ -9,7 +9,8 @@
   as current. Codex posted a clean exact-head review on `ca3fce465c` at
   2026-09-04T03:23:59Z. No new P1s. The merge process was wrong; the review
   was not missing for lack of quota.
-- Rule recorded in `AGENTS.md` under Owner Corrections And Continuation.
+- Continuation invariant is in `AGENTS.md`. Same-turn live probe, merge wait,
+  and fallback rules are in `docs/codex_long_running_controller.md`.
 
 ## 2026-09-04 - Public-safe 14-trial identity fail-closed stop
 

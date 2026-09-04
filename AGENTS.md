@@ -73,17 +73,11 @@ apology. Acknowledge the concrete failure, record a durable rule so it does
 not recur, then continue the still-authorized task unless the correction
 itself is a hold or unblock condition.
 
-- Record authority and process rules here. Record the incident in
-  `docs/engineering_log.md`.
-- Rank severity. Skipping a required live check is P1 process failure.
-- Before claiming a provider, model, quota, or hosted review is unavailable,
-  probe it live in that same turn. Do not reuse an older pull request's limit
-  message.
-- Before merge, wait for the actual exact-head hosted-review body (pass,
-  findings, or an explicit current limit). A silent wait that times out is
-  not evidence of unavailability.
-- A fallback (model, seat, or equivalent gate) is allowed only after that
-  live probe fails in the current turn.
+- Record authority and research-safety invariants here. Record the incident
+  in `docs/engineering_log.md`. Operational GitHub review, quota, and merge-
+  wait steps live in `docs/codex_long_running_controller.md`.
+- Rank severity. Skipping a required live availability check is P1 process
+  failure.
 
 ## Review Priorities
 
