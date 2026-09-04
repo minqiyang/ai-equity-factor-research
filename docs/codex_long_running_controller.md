@@ -102,6 +102,14 @@ re-enter this gate before acting on a different PR or changed scope.
   actionable findings, no review thread remains unresolved, and all required
   checks and formal reviews pass. Pending, missing, or head-mismatched Codex
   review evidence is ineligible.
+- Before claiming Codex, another provider, a model, or a quota is unavailable,
+  probe it live in that same turn. Do not reuse an older pull request's limit
+  message.
+- Merge wait requires the actual exact-head hosted-review body: pass, findings,
+  or an explicit current limit. A silent wait that times out is not evidence of
+  unavailability.
+- A fallback seat, model, or equivalent hosted gate is allowed only after that
+  live probe fails in the current turn.
 - Technical eligibility alone never grants merge authority; full-lifecycle or
   explicit merge authorization must also be current for that same PR and scope.
 

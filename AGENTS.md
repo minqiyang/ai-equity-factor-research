@@ -66,6 +66,19 @@ research-safety review standards.
   measurements. Close a section with what it records. Authority remains in
   this file rather than in a closing disclaimer.
 
+## Owner Corrections And Continuation
+
+When the owner points out an agent process failure, do not stop at the
+apology. Acknowledge the concrete failure, record a durable rule so it does
+not recur, then continue the still-authorized task unless the correction
+itself is a hold or unblock condition.
+
+- Record authority and research-safety invariants here. Record the incident
+  in `docs/engineering_log.md`. Operational GitHub review, quota, and merge-
+  wait steps live in `docs/codex_long_running_controller.md`.
+- Rank severity. Skipping a required live availability check is P1 process
+  failure.
+
 ## Review Priorities
 
 - Prioritize research-validity risk over style. A P1 requires concrete evidence
