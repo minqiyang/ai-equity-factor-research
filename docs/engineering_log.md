@@ -1,5 +1,17 @@
 # Engineering Log
 
+## 2026-09-02 - Shrink campaign runner synthetic 14-trial panels
+
+- Execution P1 campaign runner tests now use shorter synthetic calendars
+  and merge shared 14-trial panel runs for scheduled costs, unscheduled
+  listing dates, and Rank IC eligibility.
+- `test_rank_ic_omits_ineligible_listings` compares mixed-eligible Rank IC
+  cross-sections to the eligible-only panel so ineligible names are omitted
+  from IC pairs rather than asserted present in `forward_returns`.
+- Timing, leakage, cost, and ledger assertions remain. Evidence ceiling
+  remains `DIAGNOSTIC_ONLY`. No private control-tree write, B-8 bind, or
+  real 14-trial run.
+
 ## 2026-08-30 - Track A PR 4 Rank IC, schedule, and coverage P1s
 
 - Rank IC cross-sections use eligible listings only; ineligible names are

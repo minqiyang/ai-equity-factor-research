@@ -32,9 +32,9 @@
     "missing_year": 2020,
     "rev_factor_id": "REV_1M",
     "robustness_years": {
-      "listing_count": 12,
-      "session_count": 800,
-      "start": "2019-01-01"
+      "listing_count": 2,
+      "session_count": 60,
+      "start": "2020-01-01"
     },
     "mid_month_cutoff": {
       "listing_count": 2,
@@ -43,9 +43,9 @@
       "start": "2020-06-01"
     },
     "warmup_folds": {
-      "listing_count": 12,
-      "session_count": 500,
-      "start": "2017-01-01",
+      "listing_count": 2,
+      "session_count": 120,
+      "start": "2017-12-01",
       "warmup_year": 2017
     },
     "universe_factor_ids": ["MOM_12_1", "REV_1M", "LOW_VOL_3M"],
@@ -77,7 +77,7 @@
     "rebalance": {
       "day_weight": 0.01,
       "listing_count": 100,
-      "session_count": 120,
+      "session_count": 100,
       "signals": [
         {"in_universe": true, "signal_date": "2019-01-31"},
         {"in_universe": false, "signal_date": "2019-02-28"},
@@ -91,7 +91,7 @@
       "listing_count": 100,
       "parity_boost": 0.2,
       "parity_mod": 2,
-      "session_count": 300,
+      "session_count": 90,
       "start": "2019-01-01",
       "start_price": 50.0,
       "zero": 0.0
@@ -99,35 +99,35 @@
     "mixed_eligible": {
       "eligible_count": 100,
       "ineligible_count": 1,
-      "session_count": 80,
+      "session_count": 60,
       "start": "2019-01-01"
     },
     "below_floor_eligible": {
       "eligible_count": 99,
       "ineligible_count": 2,
       "invalid_reason": "ELIGIBLE_SECURITY_COUNT_BELOW_100_AT_T",
-      "session_count": 80,
+      "session_count": 60,
       "start": "2019-01-01"
     },
     "mid_month_injection": {
       "injected_date": "2019-02-15",
       "injected_execution": "2019-02-16",
       "listing_count": 100,
-      "session_count": 120,
+      "session_count": 100,
       "start": "2019-01-01"
     },
     "warmup_missing_label": {
       "horizon_rows": 21,
       "listing_count": 100,
-      "session_count": 500,
-      "start": "2017-01-01",
+      "session_count": 150,
+      "start": "2017-12-01",
       "warmup_prefix": "2017-"
     },
     "empty_primary_calendar": {
       "horizon_rows": 21,
       "listing_count": 101,
-      "session_count": 419,
-      "start": "2016-01-01",
+      "session_count": 90,
+      "start": "2016-12-01",
       "warmup_prefix": "2017-"
     },
     "year_boundary": {
