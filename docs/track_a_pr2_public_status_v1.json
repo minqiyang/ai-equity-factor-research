@@ -1,6 +1,6 @@
 {
   "artifact_id": "track_a_pr2_public_status_v1",
-  "updated_utc": "2026-08-25",
+  "updated_utc": "2026-09-04",
   "operating_standard": {
     "name": "herdr_pi_coordinator_standard_v3.md",
     "sha256": "f3e3560c2fa0b67895b1f2aad96cc397728f6924c1fd551b8ea12dcdd2d7f594"
@@ -10,7 +10,7 @@
   "campaign_dataset_acceptance": "DIAGNOSTIC_READY",
   "formal_interpretation_acceptance": "NOT_GRANTED",
   "materialization": "NOT_ENTERED",
-  "protected_main_sha_at_update": "11a9cb8849b5239faa1081eda046d2254a12febc",
+  "protected_main_sha_at_update": "24bc794d0a6cbd6502a8db088008fa74acbe8752",
   "validator": {
     "package": "src/pit_manifest_validator_v1",
     "package_tree_sha256": "6b8573c4f7ed72be3866d61690648274bc431f013e8f284daaf35a399e6ffc3f",
@@ -57,7 +57,10 @@
     "materiality_proposal_sha256": "d52b1441f6f66f650da082f01d2f2060c304cb12c3eefcc83ce540291d81e6e5",
     "campaign_dataset_acceptance": "DIAGNOSTIC_READY",
     "formal_interpretation_acceptance": "NOT_GRANTED",
-    "publication_of_this_public_safe_set": "OWNER_AUTHORIZED_AND_MERGED"
+    "publication_of_this_public_safe_set": "OWNER_AUTHORIZED_AND_MERGED",
+    "d8_materialization": "CLOSED",
+    "a2_exchange_retrieval": "CLOSED",
+    "identity_reopen": "CLOSED"
   },
   "downstream_public_code": {
     "track_a_pr3_runner_merged": true,
@@ -65,8 +68,23 @@
     "track_a_pr3_merge_commit": "bcb169e80ccc1566321f08e201a808663366da15",
     "track_a_pr3_final_head": "4a67618a7571aaee8c49c1d100c6f12f36365b16",
     "fourteen_trial_run_executed": false,
+    "fourteen_trial_run_status": "REFUSED",
+    "fourteen_trial_run_refusal_reason": "ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL",
     "detached_pre_run_binding_complete": false,
     "stage4_g2_binding_accepted": true
+  },
+  "fourteen_trial_run": {
+    "status": "REFUSED",
+    "refusal_reason": "ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL",
+    "executed": false,
+    "owner_stop_sha256": "163b8f31d3568e460c074592c00376cf86d4f09371a6bb6a40f8d6cdd4548f5a",
+    "freeze_record_sha256": "c160a3b21f359dc96eda7f1f018e3315bae79f505078ca5199ed87a8204f0ccd",
+    "protected_main_sha": "24bc794d0a6cbd6502a8db088008fa74acbe8752",
+    "evidence_ceiling": "DIAGNOSTIC_ONLY",
+    "performance_values_in_this_file": false,
+    "d8_materialization": "CLOSED",
+    "a2_exchange_retrieval": "CLOSED",
+    "identity_reopen": "CLOSED"
   },
   "stage4_g2": {
     "binding_status": "ACCEPTED_BY_HASH",
@@ -76,6 +94,8 @@
     "exec2_fileset_sha256": "29aeec97ebc8146fccac1f575c1c098cbc9db2b106831a1b53d12e7ad2995c92",
     "protected_main_sha": "11a9cb8849b5239faa1081eda046d2254a12febc",
     "fourteen_trial_run_executed": false,
+    "fourteen_trial_run_status": "REFUSED",
+    "fourteen_trial_run_refusal_reason": "ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL",
     "evidence_ceiling": "DIAGNOSTIC_ONLY"
   },
   "counts": {
@@ -98,7 +118,9 @@
     "g2_acceptance_file_body",
     "frozen_plan_md_body",
     "exec2_fileset_body",
-    "private_program_control_tree"
+    "owner_stop_body",
+    "private_program_control_tree",
+    "performance_values"
   ],
-  "next_stage": "DETACHED_PRE_RUN_BINDING"
+  "next_stage": "IDENTITY_REOPEN_D8_A2_REMAIN_CLOSED"
 }

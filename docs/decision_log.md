@@ -15,6 +15,50 @@ investment performance.
 
 ---
 
+## 2026-09-04 - Public-Safe 14-Trial Identity Fail-Closed Stop
+
+Context:
+
+- Protected `main` is `24bc794d0a6cbd6502a8db088008fa74acbe8752` after
+  PR #194.
+- The 14-trial run is REFUSED with named reason
+  `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`.
+- Public docs still described the 14-trial run as not executed without the
+  named refusal.
+- The owner authorized public-safe stop status only: hashes, not bodies.
+
+Decision:
+
+- Record the 14-trial run as REFUSED on the public handoff, roadmap, README,
+  and PR 2 status surfaces.
+- Publish only the allowed hashes: owner-stop
+  `163b8f31d3568e460c074592c00376cf86d4f09371a6bb6a40f8d6cdd4548f5a`,
+  freeze record
+  `c160a3b21f359dc96eda7f1f018e3315bae79f505078ca5199ed87a8204f0ccd`,
+  and protected main `24bc794d0a6cbd6502a8db088008fa74acbe8752`.
+- Keep evidence ceiling `DIAGNOSTIC_ONLY`. Keep D8, A2, and identity reopen
+  closed. Publish no performance values.
+
+Rationale:
+
+- A GitHub clone should see the named fail-closed refusal rather than an
+  open 14-trial path.
+- Hash-only publication keeps private paths, ticker lists, performance
+  values, and raw rows off GitHub.
+
+Consequences:
+
+- Public resume surfaces bind the owner-stop by hash and do not claim a
+  14-trial run.
+- D8, result access, A2, and identity reopen remain closed.
+
+Follow-up:
+
+- Keep D8, A2, and identity reopen closed.
+- Do not run the 14 trials until the owner reopens a named gate.
+
+---
+
 ## 2026-08-25 - Public-Safe Stage 4 G-2 Status
 
 Context:
