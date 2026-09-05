@@ -15,6 +15,46 @@ investment performance.
 
 ---
 
+## 2026-09-05 - Transfer Owner-Accepted Astra R1 Recommendations Into Public-Safe Roadmap And Handoff
+
+Context:
+
+- Protected `main` is at `027e8ae` after PR #195 and PR #196.
+- The owner accepted Astra recommendations R1–R5 under `owner_astra_r1_r5_acceptance_v1`.
+- Public documentation (roadmap and handoff) requires alignment with owner-accepted Astra R1 conclusions.
+- Research safety invariants apply: no private paths, tickers, prices, or performance values.
+
+Decision:
+
+- Record that 14-trial remains REFUSED, reason ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL.
+- Record that terminal refusal is disposition, not PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
+- Record that synthetic Track B is separately eligible and not blocked by success-only Track A close.
+- Record that D8, A2, identity reopen, result/performance access stay closed.
+- Publish no private paths, tickers, prices, or performance values.
+- Do not claim v6 accepted or runtime delivered (v6 QA PASS; REVIEW FAIL; AUDIT FAIL; GROK_REVIEW FAIL; successor binding plan required; Path A is first runtime checkpoint only after accepted plan and design candidate).
+- Record that optional 37-event completion and factor-zoo stay off the critical path.
+- Record that first future empirical slice is later/planning; do not authorize data access here.
+
+Rationale:
+
+- Public roadmap and handoff documents must accurately reflect owner-accepted conclusions so reviewers and contributors understand that terminal refusal is a disposition branch and not PR 4 completion.
+- Decoupling synthetic Track B allows method development to proceed independently under planning authority without compromising frozen diagnostic gates.
+
+Consequences:
+
+- Public documentation reflects the owner-accepted Astra R1 conclusions.
+- 14-trial remains REFUSED; Stage 4 stays incomplete; evidence ceiling remains `DIAGNOSTIC_ONLY`.
+- D8, A2, identity reopen, result/performance access, and brokerage remain strictly closed.
+- No runtime delivery or v6 acceptance is claimed.
+- No private paths, tickers, prices, or performance values are published.
+
+Follow-up:
+
+- Advance synthetic Track B planning and successor plan review under planning authority.
+- Keep all data access and execution gates closed.
+
+---
+
 ## 2026-09-04 - Public-Safe 14-Trial Identity Fail-Closed Stop
 
 Context:

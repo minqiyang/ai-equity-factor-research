@@ -1,6 +1,6 @@
 # Current Roadmap
 
-Updated: 2026-09-04 after public-safe identity fail-closed stop publication.
+Updated: 2026-09-05 after owner-accepted Astra R1 terminal disposition and roadmap alignment.
 
 Canonical responsibility: program stage sequence, dependency order, gate and
 completion criteria, and coarse stage status.
@@ -16,7 +16,7 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 - Historical CCA1 start baseline:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
 - Last live-verified protected main when this roadmap was authored:
-  `24bc794d0a6cbd6502a8db088008fa74acbe8752`.
+  `027e8ae09f78b0930cf7a46261f092d232b032a1`.
 - PR #180 and PR #181 are merged. No pull request was open at the verified
   start of this work.
 - Track A PR 1 is complete through PR #177: the EODHD diagnostic scope,
@@ -32,9 +32,14 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 - Track A PR 2 public validator and status are on protected main through
   PR #186. Track A PR 3 runner code is on protected main through PR #187.
 - Stage 4 G-2 binding is accepted by hash. Stage 4 is not fully complete.
-  The 14-trial run is REFUSED for
-  `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`. Evidence ceiling
-  remains `DIAGNOSTIC_ONLY`. D8, A2, and identity reopen stay closed.
+  14-trial remains REFUSED, reason ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL.
+  Terminal refusal is disposition, not PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
+- Synthetic Track B is separately eligible and not blocked by success-only Track A close.
+- D8, A2, identity reopen, result/performance access stay closed.
+- No private paths, tickers, prices, or performance values.
+- Do not claim v6 accepted or runtime delivered.
+- Optional 37-event completion and factor-zoo stay off the critical path.
+- First future empirical slice is later/planning; do not authorize data access here.
 - The 2025-05-01 through 2026-05-31 interval remains permanently
   `historical_evaluation`, never a pristine holdout.
 
@@ -65,9 +70,9 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 | 1 | Private entitlement, retention, and publication gate | Accepted 2026-08-22 | Accepted private capability and written-term record exists; public-safe hashes are in `docs/stage1_accepted_public_record_v1.json`. |
 | 2 | Track A PR 2: dataset manifest and validation | Public validator on main; campaign `DIAGNOSTIC_READY`; formal interpretation not granted | Complete for the diagnostic track with validator, safe projection, freeze hashes, blinded `diagnostic_only` review, and `DIAGNOSTIC_READY` hashes. |
 | 3 | Track A PR 3: bounded diagnostic runner | Code on main via PR #187 | Complete when shippable runner code and synthetic golden fixtures satisfy the binding PR 3 acceptance criteria. Does not include a 14-trial run. |
-| 4 | Detached pre-run binding | G-2 accepted; 14-trial REFUSED | Complete only when exact code, configuration, environment, protocol, inventory, and accepted dataset identities are bound outside the repository. G-2 is accepted by hash; the 14-trial run is REFUSED for `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`. |
-| 5 | Track A PR 4: frozen diagnostic evidence | blocked; 14-trial REFUSED | Complete only after all 14 trials run once, every outcome is retained externally, and an approved safe aggregate projection is produced. The real 14-trial run is REFUSED and did not execute. |
-| 6 | Track B minimal formal evidence runtime | Deferred until Track A closes | Required before prospective performance access or formal promotion; not a Track A prerequisite. |
+| 4 | Detached pre-run binding | G-2 accepted; 14-trial remains REFUSED | Complete only when exact code, configuration, environment, protocol, inventory, and accepted dataset identities are bound outside the repository. G-2 is accepted by hash; 14-trial remains REFUSED, reason ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL. Terminal refusal is disposition, not PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY. |
+| 5 | Track A PR 4: frozen diagnostic evidence | Terminal disposition; 14-trial remains REFUSED | Terminal refusal is disposition, not PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY. The 14-trial run remains REFUSED and did not execute. |
+| 6 | Track B minimal formal evidence runtime | Separately eligible | Synthetic Track B is separately eligible and not blocked by success-only Track A close. Do not claim v6 accepted or runtime delivered; Path A is first runtime checkpoint only after accepted plan and design candidate. |
 
 ## Parallel Dataset-Independent Protocol-Core Lane
 
@@ -116,8 +121,9 @@ Stage 1 is accepted. Track A PR 2 public surfaces and campaign
 runner code is on protected main. Stage 4 G-2 binding is accepted by hash.
 The 14-trial run is REFUSED for
 `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`. Evidence ceiling
-remains `DIAGNOSTIC_ONLY`. The handoff owns the timestamped operational
-checkpoint.
+remains `DIAGNOSTIC_ONLY`. Terminal refusal is not PR 4 completion.
+Synthetic Track B is separately eligible. The handoff owns the timestamped
+operational checkpoint.
 
 This section defines dependency and completion state only. It grants no
 authority and adds no vendor, data, publication, or interpretation rule beyond
@@ -125,9 +131,11 @@ the linked canonical sources.
 
 ## Deferred And Out Of Scope
 
+Optional 37-event completion and factor-zoo stay off the critical path.
 Broad factor-zoo expansion, formal statistics, strategy promotion, independent
 cross-provider replication, LEAN parity, and completion of the remaining 26
-optional ledger event schemas are outside the active queue.
+optional ledger event schemas are outside the active queue. First future
+empirical slice is later/planning; do not authorize data access here.
 
 Authority and execution remain in [AGENTS.md](../AGENTS.md) and the
 [controller](codex_long_running_controller.md). The latest checkpoint is in
