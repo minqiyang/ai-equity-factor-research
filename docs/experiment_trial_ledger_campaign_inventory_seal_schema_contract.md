@@ -347,3 +347,73 @@ accepted on protected main, the next analysis covers the remaining 27
 incomplete events before the smallest next family is selected. A genuinely
 material architecture choice receives a concise owner memo and the bounded
 reminder policy; otherwise continuation remains automatic.
+
+## Track B v7 Design Candidate Extension
+
+Status: proposed owner-contract extension for `OD-TB-V7-SCHEMA`; design only.
+The accepted plan manifest is pinned in the linked v7 design and its fixture.
+The preceding contract remains the frozen baseline. This additive section
+specifies required resolved-byte paths and additional predicates for the
+single Track B design candidate. Existing payload fields, tuple identity,
+canonicalization, privacy rules and stronger role checks remain binding.
+These paths are proposed schema additions where the baseline states only
+semantic bindings; they are not claims about an inspected external catalog.
+An owner catalog lacking any required operand remains inadmissible until
+this design and its owner-schema mapping are approved. No request field
+can substitute for a missing resolved-byte operand.
+
+### Complete tuple paths
+
+Every field retains its exact baseline local type. Ordered tuples use the order
+below; nested objects compare all native keys and values. Acceptance, approval
+and authority resolution also includes the complete owning catalog/subject key.
+Identical IDs in different owner/schema streams do not merge those streams.
+
+| Tuple | Retained source paths (all fields) |
+| --- | --- |
+| `inventory_catalog_key` | `CAMPAIGN_INVENTORY_SEALED.payload.inventory_authority_id`, `CAMPAIGN_INVENTORY_SEALED.payload.inventory_authority_registry_sha256`, `CAMPAIGN_INVENTORY_SEALED.payload.inventory_authority_version`, `CAMPAIGN_INVENTORY_SEALED.payload.inventory_record_id`, `CAMPAIGN_INVENTORY_SEALED.payload.inventory_record_schema_version`, `CAMPAIGN_INVENTORY_SEALED.payload.inventory_record_version`, `CAMPAIGN_INVENTORY_SEALED.payload.inventory_record_canonicalization_id`, `CAMPAIGN_INVENTORY_SEALED.payload.sealed_trial_inventory_sha256` |
+| `inventory_acceptance` | `CAMPAIGN_INVENTORY_SEALED.payload.inventory_acceptance_decision_id`, `CAMPAIGN_INVENTORY_SEALED.payload.inventory_acceptance_generation`, `CAMPAIGN_INVENTORY_SEALED.payload.inventory_acceptance_schema_version`, `CAMPAIGN_INVENTORY_SEALED.payload.inventory_acceptance_record_sha256` |
+| `inventory_authority` | `CAMPAIGN_INVENTORY_SEALED.payload.seal_authority_id`, `CAMPAIGN_INVENTORY_SEALED.payload.seal_authority_generation`, `CAMPAIGN_INVENTORY_SEALED.payload.seal_authority_schema_version`, `CAMPAIGN_INVENTORY_SEALED.payload.seal_authority_record_sha256` |
+
+### Resolved role paths and content bindings
+
+Actor fields use the existing `actor_id` type and resolve to effective
+principals before comparison; aliases do not establish independence.
+`private_input_producer_actor_ids` is required, sorted-unique, with 0..4096
+`actor_id` values. Empty explicitly means no contributing private producer;
+omission is invalid. This is an owner-schema extension, not a bound inherited
+from campaign scope. Overflow blocks admission pending an owner decision.
+The full baseline record contents and canonical bytes remain required; these
+paths never replace complete records with partial hash manifests.
+
+| Principal | Exact source |
+| --- | --- |
+| `inventory_issuer` | `campaign_inventory_record_v1.issuer_actor_id` |
+| `inventory_reviewer` | `campaign_inventory_acceptance_v1.reviewer_actor_id` |
+| `seal_authority_issuer` | `campaign_inventory_seal_authority_v1.issuer_actor_id` |
+| `seal_actor` | `CAMPAIGN_INVENTORY_SEALED request.actor_id` |
+| `authorized_seal_actor` | `campaign_inventory_seal_authority_v1.authorized_actor_id` |
+| `private_input_producers` | `campaign_inventory_record_v1.private_input_producer_actor_ids` |
+
+Seal actor equals authorized seal actor; otherwise
+`CAMPAIGN_INVENTORY_SEALED_AUTHORITY_ACTOR_MISMATCH`. Independently prohibit
+reviewer=issuer, reviewer=seal-authority issuer, reviewer=seal actor and
+inventory issuer=seal actor, each mapping to
+`CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION`. Reviewer membership in the producer
+set maps separately to
+`CAMPAIGN_INVENTORY_SEALED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION`.
+The baseline prohibition against reviewer equality with any included trial's
+definition issuer also remains mandatory. Seal-authority issuer may equal its
+authorized seal actor when that authority explicitly binds the actor.
+
+Freeze source paths as `trials[].trial_id`, `trials[].trial_allocation_event_id`
+and `trials[].trial_allocation_event_sha256`, preserving the baseline 1..4096
+ordered all-and-only inventory and complete entry bodies. Revalidate every
+definition, family and sample; current inventory acceptance does not waive
+parent currentness. Bind campaign/allocation/scope and exact pre-seal head
+inside the writer lock. The complete inventory byte digest remains
+`sealed_trial_inventory_sha256`, never an `inventory_record_sha256` alias.
+
+The [v7 design](experiment_trial_ledger_track_b_v7_design.md) freezes the boundary predicates and refusal
+inventory. Its synthetic fixtures check design consistency; they do not
+demonstrate append, catalog, currentness, capability or SQLite execution.

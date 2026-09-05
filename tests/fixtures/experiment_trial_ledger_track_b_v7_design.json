@@ -1,0 +1,3171 @@
+{
+  "fixture_id": "experiment_trial_ledger_track_b_v7_design",
+  "status": "DESIGN_SPECIFICATION_ONLY_RUNTIME_NOT_EXECUTED",
+  "accepted_plan_manifest_sha256": "4b721dd2f4eb05702a91226697a1684cbbad033476793dec2d4b37b7d778b1b7",
+  "source_artifact_sha256": {
+    "track_b_plan_v7.json": "d08d10f912e05ed9e988352cb48628fd37353c27788b0e174752e6f3e5fd30ac",
+    "track_b_plan_v7.md": "3e5a96ae141a7cfdd092de92c2e8c0c8b0597fd544548c95724573ef9b842ac5"
+  },
+  "baseline_commit": "6060381f9d821a7f92eb90358413d1ffb189fba4",
+  "baseline_inputs": [
+    {
+      "path": "docs/eodhd_sp500_diagnostic_campaign_contract.md",
+      "role": "FILE_BYTES",
+      "sha256": "1b238448107e7e720319a3bc39a5d17c42f498fbf00d20fa2406e028e652376d"
+    },
+    {
+      "path": "docs/experiment_trial_ledger_contract.md",
+      "role": "FILE_BYTES",
+      "sha256": "0eadb2d3a53eb3bcf5ea67f63adaed5aaab490cf1c55ded739c2399982d7da53"
+    },
+    {
+      "path": "docs/experiment_trial_ledger_schema_registry_contract.md",
+      "role": "FILE_BYTES",
+      "sha256": "730cf01e8ae8a61839a5b995452b12546c9e8bbb9e0a19276a2eabfef1286e7f"
+    },
+    {
+      "path": "docs/experiment_trial_ledger_allocation_registration_schema_contract.md",
+      "role": "FILE_BYTES",
+      "sha256": "8b7daecf4e0ab9db595ddcedab3bbd8bce50d7d86b4b68d54c5ba5e5c664bc67"
+    },
+    {
+      "path": "docs/experiment_trial_ledger_trial_family_registration_schema_contract.md",
+      "role": "FILE_BYTES",
+      "sha256": "f5d45b1e183fdec8e94803fa4863d0c256925e09cf4c7c3413aac1ea8a9f2299"
+    },
+    {
+      "path": "docs/experiment_trial_ledger_sample_registration_schema_contract.md",
+      "role": "FILE_BYTES",
+      "sha256": "e0fc4c41015f3047fa5085e7552689d438c39f30658300af75f34d4b7005e753"
+    },
+    {
+      "path": "docs/experiment_trial_ledger_binding_schema_contract.md",
+      "role": "FILE_BYTES",
+      "sha256": "2bf5261bdecad7e8f9cb728d9fe2061f4a5062ec4e5aed08e2dc7f09a5efc5d9"
+    },
+    {
+      "path": "docs/experiment_trial_ledger_trial_allocation_schema_contract.md",
+      "role": "FILE_BYTES",
+      "sha256": "b6148c430b95670e3a6e667ab1f638cd4ce5d7eeda233288c8b620018924fb6c"
+    },
+    {
+      "path": "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md",
+      "role": "FILE_BYTES",
+      "sha256": "b25b82697c07af3e1c4ea44a03653d319bcbc4c5f611d95278a9041dc3cdc504"
+    },
+    {
+      "path": "docs/experiment_trial_ledger_attempt_allocation_schema_contract.md",
+      "role": "FILE_BYTES",
+      "sha256": "bcfb102225de23f0e39d42f3c3ce0b524a3beaac44e9e6f2ee396a72f2880de3"
+    },
+    {
+      "path": "docs/experiment_trial_ledger_attempt_start_schema_contract.md",
+      "role": "FILE_BYTES",
+      "sha256": "c790e5268ebdad7be1d44d5ea3a60b0275cf427bca231b4e8732693020c25960"
+    },
+    {
+      "path": "docs/research_program_charter.md",
+      "role": "FILE_BYTES",
+      "sha256": "c44b04c8332c893d4c66c53519f6715822510373a4a2a823a98208c85573c6e5"
+    },
+    {
+      "path": "docs/preregistrations/eodhd_sp500_three_factor_diagnostic_v1.yaml",
+      "role": "FILE_BYTES",
+      "sha256": "3d657636b79971443ef6b8a300c8bfeb600ca1cac831903daea4e95be95264e3"
+    },
+    {
+      "path": "src/ledger/schemas/experiment_trial_ledger_payload_schema_registry_v9.json",
+      "role": "FILE_BYTES",
+      "sha256": "865b882a4b905158adae8165ca1d4fa66299e2b2d9f889a1ed9f181a8a662525"
+    }
+  ],
+  "families": [
+    {
+      "id": "F1",
+      "wire_types": [
+        "LEDGER_EPOCH_CREATED"
+      ]
+    },
+    {
+      "id": "F2",
+      "wire_types": [
+        "CAMPAIGN_ALLOCATED",
+        "EXPERIMENT_ALLOCATED",
+        "TRIAL_FAMILY_REGISTERED",
+        "SAMPLE_REGISTERED",
+        "CAMPAIGN_ENTITY_BOUND",
+        "STAGE3_SAMPLE_REFERENCE_BOUND"
+      ]
+    },
+    {
+      "id": "F3",
+      "wire_types": [
+        "TRIAL_ALLOCATED"
+      ]
+    },
+    {
+      "id": "F4",
+      "wire_types": [
+        "CAMPAIGN_INVENTORY_SEALED",
+        "CAMPAIGN_AMENDMENT_PROPOSED",
+        "CAMPAIGN_INVENTORY_AMENDED"
+      ]
+    },
+    {
+      "id": "F5",
+      "wire_types": [
+        "ATTEMPT_ALLOCATED",
+        "ATTEMPT_STARTED",
+        "ATTEMPT_COMPLETED",
+        "ATTEMPT_FAILED",
+        "ATTEMPT_INVALID",
+        "ATTEMPT_ABORTED"
+      ]
+    },
+    {
+      "id": "F6",
+      "wire_types": [
+        "TRIAL_COMPLETED",
+        "TRIAL_FAILED",
+        "TRIAL_INVALID",
+        "TRIAL_ABORTED",
+        "TRIAL_EXCLUDED"
+      ]
+    },
+    {
+      "id": "F7",
+      "wire_types": [
+        "ARTIFACT_DISPOSITION_RECORDED"
+      ]
+    },
+    {
+      "id": "F8",
+      "wire_types": [
+        "ACCESS_INTENT",
+        "ACCESS_STARTED",
+        "ACCESS_COMPLETED",
+        "ACCESS_FAILED",
+        "ACCESS_ABORTED",
+        "ACCESS_CANCELLED"
+      ]
+    },
+    {
+      "id": "F9",
+      "wire_types": [
+        "EXPOSURE_DECISION"
+      ]
+    },
+    {
+      "id": "F10",
+      "wire_types": [
+        "CAMPAIGN_EVIDENCE_FROZEN",
+        "CHECKPOINT_REFERENCE_RECORDED",
+        "CAMPAIGN_ACCOUNTING_CLOSED"
+      ]
+    },
+    {
+      "id": "F11",
+      "wire_types": [
+        "REVIEW_DECIDED",
+        "PROMOTION_DECIDED",
+        "CAMPAIGN_ADJUDICATED"
+      ]
+    },
+    {
+      "id": "F12",
+      "wire_types": [
+        "EVENT_SUPERSEDED"
+      ]
+    }
+  ],
+  "wire_budget": {
+    "owner_limit": 14,
+    "selected_count": 14,
+    "selected_14": [
+      "LEDGER_EPOCH_CREATED",
+      "CAMPAIGN_ALLOCATED",
+      "EXPERIMENT_ALLOCATED",
+      "TRIAL_FAMILY_REGISTERED",
+      "SAMPLE_REGISTERED",
+      "CAMPAIGN_ENTITY_BOUND",
+      "STAGE3_SAMPLE_REFERENCE_BOUND",
+      "TRIAL_ALLOCATED",
+      "CAMPAIGN_INVENTORY_SEALED",
+      "ATTEMPT_ALLOCATED",
+      "ATTEMPT_STARTED",
+      "ACCESS_INTENT",
+      "ACCESS_STARTED",
+      "ACCESS_COMPLETED"
+    ],
+    "incomplete_count_after_track_b": 23,
+    "unselected_policy": "Reject all 23 unselected event types as WIRE_TYPE_NOT_SELECTED; extension requires explicit owner gate and new authorization. Retry relation is non-appendable."
+  },
+  "append_boundary_checks": {
+    "imports_rejected_predecessor_rules": false,
+    "family_sample_revalidation_boundaries": [
+      "CAMPAIGN_INVENTORY_SEALED",
+      "CAMPAIGN_ENTITY_BOUND",
+      "TRIAL_ALLOCATED",
+      "ATTEMPT_ALLOCATED",
+      "ATTEMPT_STARTED",
+      "ACCESS_INTENT",
+      "ACCESS_STARTED"
+    ],
+    "attempt_started_full_inherited_tuple_equality": true,
+    "readiness_must_equal_same_transaction_revalidated_tuples": [
+      "inventory_catalog_key",
+      "inventory_acceptance",
+      "seal_event_id_sha256",
+      "family_definition_and_acceptance",
+      "sample_record_acceptance_projection_publication_approval",
+      "trial_definition_acceptance_projection_allocation_authority",
+      "attempt_plan_catalog_key",
+      "attempt_plan_acceptance",
+      "attempt_allocation_authority",
+      "attempt_allocation_event",
+      "retained_source_event_id_hash"
+    ],
+    "inherited_tuple_mismatch_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+    "later_campaign_definition": "seq(target CAMPAIGN_ALLOCATED) strictly greater than seq(origin CAMPAIGN_ALLOCATED)",
+    "canonical_sample_lineage_id_field": "canonical_sample_lineage_id",
+    "sample_origin_validation_boundaries": [
+      "SAMPLE_REGISTERED",
+      "STAGE3_SAMPLE_REFERENCE_BOUND"
+    ],
+    "sample_bundle_boundaries": [
+      "SAMPLE_REGISTERED",
+      "STAGE3_SAMPLE_REFERENCE_BOUND",
+      "CAMPAIGN_INVENTORY_SEALED",
+      "CAMPAIGN_ENTITY_BOUND",
+      "TRIAL_ALLOCATED",
+      "ATTEMPT_ALLOCATED",
+      "ATTEMPT_STARTED",
+      "ACCESS_INTENT",
+      "ACCESS_STARTED"
+    ],
+    "readiness_equality_operands": [
+      {
+        "operand": "inventory_catalog_key",
+        "complete_fields": "Complete owner-typed 8-field inventory key, including sealed_trial_inventory_sha256",
+        "right_hand_source": "Current inventory re-resolved from retained seal"
+      },
+      {
+        "operand": "inventory_acceptance",
+        "complete_fields": "Complete owner-typed 4-field inventory acceptance",
+        "right_hand_source": "Sole-current inventory acceptance re-resolved from retained seal"
+      },
+      {
+        "operand": "seal_event_id_sha256",
+        "complete_fields": "event_id and event_sha256",
+        "right_hand_source": "Retained current inventory seal"
+      },
+      {
+        "operand": "family_definition_and_acceptance",
+        "complete_fields": "Complete 8-field definition key, 4-field acceptance, trial_family_id, for every inherited family",
+        "right_hand_source": "Same-transaction revalidate_family results"
+      },
+      {
+        "operand": "sample_record_acceptance_projection_publication_approval",
+        "complete_fields": "Complete 8-field record key, 4-field acceptance, 3-field projection, 4-field publication approval and sample_id, for every bound sample",
+        "right_hand_source": "Same-transaction revalidate_sample results"
+      },
+      {
+        "operand": "trial_definition_acceptance_projection_allocation_authority",
+        "complete_fields": "Complete 8-field definition key, 4-field acceptance, complete trial projection and approval, 4-field trial-allocation authority and trial_id",
+        "right_hand_source": "Same-transaction revalidate_trial_definition result"
+      },
+      {
+        "operand": "attempt_plan_catalog_key",
+        "complete_fields": "Complete owner-typed 8-field attempt-plan catalog key",
+        "right_hand_source": "Exact plan key re-resolved from retained ATTEMPT_ALLOCATED at step 3"
+      },
+      {
+        "operand": "attempt_plan_acceptance",
+        "complete_fields": "Complete owner-typed 4-field plan-acceptance tuple",
+        "right_hand_source": "Exact sole-current plan acceptance re-resolved from retained ATTEMPT_ALLOCATED at step 3"
+      },
+      {
+        "operand": "attempt_allocation_authority",
+        "complete_fields": "Complete owner-typed 4-field attempt-allocation generation-authority tuple",
+        "right_hand_source": "Exact sole-current allocation authority re-resolved from retained ATTEMPT_ALLOCATED at step 3"
+      },
+      {
+        "operand": "attempt_allocation_event",
+        "complete_fields": "event_id and event_sha256",
+        "right_hand_source": "Retained ATTEMPT_ALLOCATED event"
+      },
+      {
+        "operand": "retained_source_event_id_hash",
+        "complete_fields": "Every source event_id and event_sha256: family registration, sample origin, campaign binding, trial allocation, inventory seal and attempt allocation",
+        "right_hand_source": "Exact retained source events used by this transaction"
+      }
+    ],
+    "readiness_equality_policy": "Field-for-field equality of complete owner-typed tuples; no field subset, digest-only reduction, omitted/null member or extra/missing family/sample entry. Operational value equality is an additional check. Start-authority is a separate event-payload tuple, never a readiness nested field.",
+    "transaction_policy": "Every append uses BEGIN IMMEDIATE; fix as_of once after acquiring the writer lock; resolve and check currentness against one stable synthetic catalog snapshot; inspect committed state and append in that transaction; any refusal rolls back event, head, origin allocation and capability changes. Catalog mutations must serialize with this snapshot through commit.",
+    "stage3_sample_bundle": {
+      "boundary": "STAGE3_SAMPLE_REFERENCE_BOUND",
+      "resolve": [
+        "complete_stage3_sample_record",
+        "sample_acceptance",
+        "allowlisted_projection",
+        "publication_approval"
+      ],
+      "current_at_as_of": [
+        "sample_acceptance",
+        "publication_approval"
+      ],
+      "content_equal": [
+        "new_local_sample_id",
+        "campaign_scope_ids",
+        "canonical_sample_lineage_id",
+        "complete_record_lineage_fields",
+        "complete_record_overlap_fields",
+        "pinned_source_event_id_sha256"
+      ],
+      "roles": "Same sample reviewer/producer/envelope separation and private-input-producer exclusion as SAMPLE_REGISTERED",
+      "failure_policy": "Missing, stale, superseded, revoked, noncurrent or mismatched evidence refuses before append; no resolver-hit shortcut."
+    },
+    "killing_tests_v7": [
+      {
+        "id": "T-B-START-READY-INV-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate only the readiness inventory catalog key. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH"
+      },
+      {
+        "id": "T-B-START-READY-FAM-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate one readiness family tuple. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+        "required_independent_variants": [
+          "definition key",
+          "acceptance tuple"
+        ]
+      },
+      {
+        "id": "T-B-START-READY-SAMP-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate one readiness sample tuple. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+        "required_independent_variants": [
+          "record key",
+          "acceptance tuple",
+          "projection tuple"
+        ]
+      },
+      {
+        "id": "T-B-START-READY-DEF-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate only readiness trial-definition key. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH"
+      },
+      {
+        "id": "T-B-START-READY-ACC-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate one readiness acceptance tuple. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+        "required_independent_variants": [
+          "inventory acceptance only",
+          "trial-definition acceptance only"
+        ]
+      },
+      {
+        "id": "T-B-START-READY-PUB-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate only readiness sample publication-approval tuple. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH"
+      },
+      {
+        "id": "T-B-START-READY-AUTH-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate only readiness attempt-allocation authority tuple; never start-authority. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH"
+      },
+      {
+        "id": "T-B-START-READY-SRC-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate one readiness retained source event hash. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+        "required_independent_variants": [
+          "family registration",
+          "sample origin",
+          "trial allocation",
+          "inventory seal",
+          "campaign binding",
+          "attempt allocation"
+        ]
+      },
+      {
+        "id": "T-B-START-READY-PLAN-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate only readiness complete attempt-plan 8-field catalog key. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH"
+      },
+      {
+        "id": "T-B-START-READY-PLAN-ACC-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate only readiness complete plan-acceptance 4-field tuple. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH"
+      },
+      {
+        "id": "T-B-START-READY-SEAL-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate only readiness seal event id/hash. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH"
+      },
+      {
+        "id": "T-B-START-READY-ALLOCATION-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate only readiness attempt-allocation event id/hash. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH"
+      },
+      {
+        "id": "T-B-START-READY-TRIAL-AUTH-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate only readiness trial-allocation authority tuple. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH"
+      },
+      {
+        "id": "T-B-START-READY-TRIAL-PUB-TUPLE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Mutate only readiness trial projection or approval. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+        "required_independent_variants": [
+          "projection only",
+          "approval only"
+        ]
+      },
+      {
+        "id": "T-B-START-READY-SAMPLE-SET",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Omit or add an inherited sample in readiness. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+        "required_independent_variants": [
+          "missing sample",
+          "extra sample"
+        ]
+      },
+      {
+        "id": "T-B-START-READY-FAM-SET",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Omit or add an inherited family in readiness. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+        "required_independent_variants": [
+          "missing family",
+          "extra family"
+        ]
+      },
+      {
+        "id": "T-B-START-PLAN-STALE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Retained attempt plan acceptance is stale.",
+        "refusal": "ATTEMPT_STARTED_ACCEPTANCE_STALE"
+      },
+      {
+        "id": "T-B-START-AUTH-STALE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Event-payload start-authority is stale; inherited allocation authority remains valid.",
+        "refusal": "ATTEMPT_STARTED_START_AUTHORITY_STALE"
+      },
+      {
+        "id": "T-B-START-ALLOC-AUTH-STALE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Retained attempt-allocation authority is stale; event-payload start-authority remains valid.",
+        "refusal": "ATTEMPT_STARTED_ALLOCATION_AUTHORITY_STALE"
+      },
+      {
+        "id": "T-B-START-READY-STALE",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Readiness itself is stale or superseded.",
+        "refusal": "ATTEMPT_STARTED_READINESS_NOT_CURRENT",
+        "required_independent_variants": [
+          "stale readiness",
+          "superseded readiness"
+        ]
+      },
+      {
+        "id": "T-B-START-INHERITED-MISMATCH",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Change only one operational value across readiness and accepted plan/trial definition.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_VALUE_MISMATCH",
+        "required_independent_variants": [
+          "code",
+          "environment",
+          "input",
+          "retry",
+          "expected output"
+        ]
+      },
+      {
+        "id": "T-B-START-EXEC",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Start-authority binds a different executor than readiness.executor_actor_id.",
+        "refusal": "ATTEMPT_STARTED_EXECUTOR_MISMATCH"
+      },
+      {
+        "id": "T-B-BOUND-NOT-LATER",
+        "boundary": "CAMPAIGN_ENTITY_BOUND",
+        "fault": "External target campaign equals origin campaign.",
+        "refusal": "CAMPAIGN_ENTITY_BOUND_NOT_LATER_CAMPAIGN"
+      },
+      {
+        "id": "T-B-BOUND-EARLIER",
+        "boundary": "CAMPAIGN_ENTITY_BOUND",
+        "fault": "Distinct target campaign has a lower committed CAMPAIGN_ALLOCATED sequence.",
+        "refusal": "CAMPAIGN_ENTITY_BOUND_EARLIER_CAMPAIGN"
+      },
+      {
+        "id": "T-B-BOUND-SECOND-ORIGIN",
+        "boundary": "CAMPAIGN_ENTITY_BOUND",
+        "fault": "Try to allocate a new local sample_id through an external-reference bind.",
+        "refusal": "CAMPAIGN_ENTITY_BOUND_SECOND_ORIGIN"
+      },
+      {
+        "id": "T-B-BOUND-MIXED-PATH",
+        "boundary": "CAMPAIGN_ENTITY_BOUND",
+        "fault": "Target campaign already appears in origin direct scope; also request a binding.",
+        "refusal": "CAMPAIGN_ENTITY_BOUND_MIXED_PATH"
+      },
+      {
+        "id": "T-B-EXT-DRIFT",
+        "boundary": "CAMPAIGN_ENTITY_BOUND",
+        "fault": "Change the external record tuple from the retained origin.",
+        "refusal": "CAMPAIGN_ENTITY_BOUND_EXTERNAL_TUPLE_DRIFT"
+      },
+      {
+        "id": "T-B-STAGE3-DUP-TUPLE",
+        "boundary": "STAGE3_SAMPLE_REFERENCE_BOUND",
+        "fault": "Existing Stage 3 origin has the same authority/record identity tuple; propose a new local sample_id.",
+        "refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_RECORD_DUP"
+      },
+      {
+        "id": "T-B-STAGE3-DUP-LINEAGE-DIFF-TUPLE",
+        "boundary": "STAGE3_SAMPLE_REFERENCE_BOUND",
+        "fault": "Existing Stage 3 origin has same canonical lineage but different authority/record tuple; propose a new local sample_id.",
+        "refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_LINEAGE_DUP"
+      },
+      {
+        "id": "T-B-STAGE3-LOCAL-PATH",
+        "boundary": "STAGE3_SAMPLE_REFERENCE_BOUND",
+        "fault": "Commit local origin first; propose external origin for same lineage with a different tuple and sample_id.",
+        "refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_ORIGIN_PATH_CONFLICT"
+      },
+      {
+        "id": "T-B-LOCAL-AFTER-STAGE3-LINEAGE",
+        "boundary": "SAMPLE_REGISTERED",
+        "fault": "Commit Stage 3 origin first; propose local origin for same lineage with a different tuple and sample_id.",
+        "refusal": "SAMPLE_REGISTERED_ORIGIN_PATH_CONFLICT"
+      },
+      {
+        "id": "T-B-LOCAL-AFTER-STAGE3-TUPLE",
+        "boundary": "SAMPLE_REGISTERED",
+        "fault": "Commit Stage 3 origin first; propose local origin with identical authority/record identity tuple and a new sample_id.",
+        "refusal": "SAMPLE_REGISTERED_RECORD_DUP"
+      },
+      {
+        "id": "T-B-LOCAL-DUP-LINEAGE",
+        "boundary": "SAMPLE_REGISTERED",
+        "fault": "Existing local origin has same lineage but a different record tuple; propose another sample_id.",
+        "refusal": "SAMPLE_REGISTERED_LINEAGE_DUP"
+      },
+      {
+        "id": "T-B-LOCAL-DUP-TUPLE",
+        "boundary": "SAMPLE_REGISTERED",
+        "fault": "Existing local origin has identical authority/record identity tuple; propose another sample_id.",
+        "refusal": "SAMPLE_REGISTERED_RECORD_DUP"
+      },
+      {
+        "id": "T-B-STAGE3-CONTENT",
+        "boundary": "STAGE3_SAMPLE_REFERENCE_BOUND",
+        "fault": "Resolved complete record disagrees with requested local sample_id, campaign, lineage or overlap.",
+        "refusal": "RECORD_CONTENT_MISMATCH"
+      },
+      {
+        "id": "T-B-LOCAL-LINEAGE-MISSING",
+        "boundary": "SAMPLE_REGISTERED",
+        "fault": "Resolved local record lacks canonical_sample_lineage_id.",
+        "refusal": "SAMPLE_REGISTERED_LINEAGE_REQUIRED"
+      },
+      {
+        "id": "T-B-STAGE3-ROLE",
+        "boundary": "STAGE3_SAMPLE_REFERENCE_BOUND",
+        "fault": "One prohibited role equality or private-producer membership only.",
+        "refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_ROLE_COLLISION; private-producer variant uses STAGE3_SAMPLE_REFERENCE_BOUND_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION",
+        "required_independent_variants": [
+          "reviewer=producer",
+          "reviewer=envelope actor",
+          "producer=envelope actor",
+          "reviewer in private_input_producer_actor_ids"
+        ]
+      },
+      {
+        "id": "T-B-STAGE3-ACC-STALE",
+        "boundary": "STAGE3_SAMPLE_REFERENCE_BOUND",
+        "fault": "Pinned sample acceptance is stale at transaction as_of; all other evidence and roles valid.",
+        "refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_ACCEPTANCE_STALE"
+      },
+      {
+        "id": "T-B-STAGE3-ACC-SUPERSEDED",
+        "boundary": "STAGE3_SAMPLE_REFERENCE_BOUND",
+        "fault": "Pinned sample acceptance is superseded at transaction as_of; all other evidence and roles valid.",
+        "refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_ACCEPTANCE_SUPERSEDED"
+      },
+      {
+        "id": "T-B-STAGE3-PUB-STALE",
+        "boundary": "STAGE3_SAMPLE_REFERENCE_BOUND",
+        "fault": "Pinned publication approval is stale at transaction as_of; all other evidence and roles valid.",
+        "refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_PUBLICATION_APPROVAL_STALE"
+      },
+      {
+        "id": "T-B-STAGE3-PUB-SUPERSEDED",
+        "boundary": "STAGE3_SAMPLE_REFERENCE_BOUND",
+        "fault": "Pinned publication approval is superseded at transaction as_of; all other evidence and roles valid.",
+        "refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_PUBLICATION_APPROVAL_SUPERSEDED"
+      },
+      {
+        "id": "T-B-ORIGIN-CONCURRENT",
+        "boundary": "SAMPLE_REGISTERED + STAGE3_SAMPLE_REFERENCE_BOUND",
+        "fault": "Two connections race origin allocations for the same epoch lineage with different record tuples and sample_ids.",
+        "refusal": "Loser: {EVENT}_ORIGIN_PATH_CONFLICT; exactly one origin commits.",
+        "required_independent_variants": [
+          "local obtains writer lock first",
+          "Stage 3 obtains writer lock first"
+        ]
+      },
+      {
+        "id": "T-B-ORIGIN-CONCURRENT-SAME-PATH",
+        "boundary": "SAMPLE_REGISTERED or STAGE3_SAMPLE_REFERENCE_BOUND",
+        "fault": "Two connections race different sample_ids for one epoch lineage on the same path.",
+        "refusal": "Loser: {EVENT}_LINEAGE_DUP for different tuples, {EVENT}_RECORD_DUP for same tuple; exactly one origin commits.",
+        "required_independent_variants": [
+          "local/local different tuples",
+          "Stage3/Stage3 different tuples",
+          "local/local same tuple",
+          "Stage3/Stage3 same tuple"
+        ]
+      },
+      {
+        "id": "T-B-SEAL-PARENT-FAM-STALE",
+        "boundary": "CAMPAIGN_INVENTORY_SEALED",
+        "fault": "One sealed trial family acceptance is stale.",
+        "refusal": "CAMPAIGN_INVENTORY_SEALED_ACCEPTANCE_STALE"
+      },
+      {
+        "id": "T-B-SEAL-PARENT-SAMP-STALE",
+        "boundary": "CAMPAIGN_INVENTORY_SEALED",
+        "fault": "One sample acceptance in one sealed trial is stale.",
+        "refusal": "CAMPAIGN_INVENTORY_SEALED_ACCEPTANCE_STALE"
+      },
+      {
+        "id": "T-B-SEAL-PARENT-DEF-STALE",
+        "boundary": "CAMPAIGN_INVENTORY_SEALED",
+        "fault": "One sealed trial-definition acceptance is stale.",
+        "refusal": "CAMPAIGN_INVENTORY_SEALED_ACCEPTANCE_STALE"
+      },
+      {
+        "id": "T-B-SEAL-REVIEWER-ISSUER",
+        "boundary": "CAMPAIGN_INVENTORY_SEALED",
+        "fault": "Inventory acceptance reviewer equals inventory issuer; neither is a private-input producer.",
+        "refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION"
+      },
+      {
+        "id": "T-B-SEAL-REVIEWER-ACTOR",
+        "boundary": "CAMPAIGN_INVENTORY_SEALED",
+        "fault": "Inventory acceptance reviewer equals envelope seal actor; private-producer exclusion still passes.",
+        "refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION"
+      },
+      {
+        "id": "T-B-SEAL-REVIEWER-AUTHORITY",
+        "boundary": "CAMPAIGN_INVENTORY_SEALED",
+        "fault": "Inventory acceptance reviewer equals seal-authority issuer only.",
+        "refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION"
+      },
+      {
+        "id": "T-B-SEAL-REVIEWER-TRIAL-ISSUER",
+        "boundary": "CAMPAIGN_INVENTORY_SEALED",
+        "fault": "Inventory acceptance reviewer equals one included trial-definition issuer; all other roles remain valid.",
+        "refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION"
+      },
+      {
+        "id": "T-B-SEAL-ISSUER-ACTOR",
+        "boundary": "CAMPAIGN_INVENTORY_SEALED",
+        "fault": "Inventory issuer equals seal actor only.",
+        "refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION"
+      },
+      {
+        "id": "T-B-SEAL-AUTHORIZED-ACTOR",
+        "boundary": "CAMPAIGN_INVENTORY_SEALED",
+        "fault": "Envelope actor differs from resolved seal authority authorized_actor_id.",
+        "refusal": "CAMPAIGN_INVENTORY_SEALED_AUTHORITY_ACTOR_MISMATCH"
+      },
+      {
+        "id": "T-B-FAM-STALE-TRIAL",
+        "boundary": "TRIAL_ALLOCATED",
+        "fault": "Parent family acceptance is stale.",
+        "refusal": "TRIAL_ALLOCATED_ACCEPTANCE_STALE"
+      },
+      {
+        "id": "T-B-FAM-STALE-ATTEMPT",
+        "boundary": "ATTEMPT_ALLOCATED",
+        "fault": "Parent family acceptance is stale.",
+        "refusal": "ATTEMPT_ALLOCATED_ACCEPTANCE_STALE"
+      },
+      {
+        "id": "T-B-FAM-STALE-ACCESS",
+        "boundary": "ACCESS_INTENT",
+        "fault": "One affected trial family acceptance is stale.",
+        "refusal": "ACCESS_INTENT_ACCEPTANCE_STALE"
+      },
+      {
+        "id": "T-B-FAM-STALE-ACCESS-STARTED",
+        "boundary": "ACCESS_STARTED",
+        "fault": "One affected trial family acceptance becomes stale after intent.",
+        "refusal": "ACCESS_STARTED_ACCEPTANCE_STALE"
+      },
+      {
+        "id": "T-B-SAMP-PUB-BIND",
+        "boundary": "CAMPAIGN_ENTITY_BOUND",
+        "fault": "Sample publication approval is stale.",
+        "refusal": "CAMPAIGN_ENTITY_BOUND_PUBLICATION_APPROVAL_STALE"
+      },
+      {
+        "id": "T-B-SAMP-PUB-TRIAL",
+        "boundary": "TRIAL_ALLOCATED",
+        "fault": "One bound sample publication approval is stale.",
+        "refusal": "TRIAL_ALLOCATED_PUBLICATION_APPROVAL_STALE"
+      },
+      {
+        "id": "T-B-SAMP-PUB-ACCESS",
+        "boundary": "ACCESS_INTENT",
+        "fault": "Access sample publication approval is stale.",
+        "refusal": "ACCESS_INTENT_PUBLICATION_APPROVAL_STALE"
+      },
+      {
+        "id": "T-B-CONTENT-SCOPE",
+        "boundary": "TRIAL_ALLOCATED",
+        "fault": "Resolved definition bytes bind another campaign scope despite a resolver hit.",
+        "refusal": "RECORD_CONTENT_MISMATCH"
+      },
+      {
+        "id": "T-B-SEAL-STALE-ATT",
+        "boundary": "ATTEMPT_ALLOCATED",
+        "fault": "Referenced seal is not the current seal head.",
+        "refusal": "ATTEMPT_ALLOCATED_SEAL_NOT_CURRENT"
+      },
+      {
+        "id": "T-B-SEAL-STALE-ACC",
+        "boundary": "ACCESS_INTENT",
+        "fault": "Referenced seal is not the current seal head.",
+        "refusal": "ACCESS_INTENT_SEAL_NOT_CURRENT"
+      },
+      {
+        "id": "T-B-NOT-IN-SEAL",
+        "boundary": "ATTEMPT_ALLOCATED",
+        "fault": "Requested trial is absent from sealed_trial_ids.",
+        "refusal": "ATTEMPT_ALLOCATED_TRIAL_NOT_IN_SEAL"
+      },
+      {
+        "id": "T-B-PRIV-TRIAL",
+        "boundary": "TRIAL_ALLOCATED",
+        "fault": "Definition reviewer belongs to private_input_producer_actor_ids despite otherwise separated actors.",
+        "refusal": "TRIAL_ALLOCATED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION"
+      },
+      {
+        "id": "T-B-PRIV-INV",
+        "boundary": "CAMPAIGN_INVENTORY_SEALED",
+        "fault": "Inventory acceptance reviewer belongs to inventory private_input_producer_actor_ids despite otherwise separated actors.",
+        "refusal": "CAMPAIGN_INVENTORY_SEALED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION"
+      },
+      {
+        "id": "T-B-PRIV-PLAN",
+        "boundary": "ATTEMPT_ALLOCATED",
+        "fault": "Plan reviewer belongs to plan private_input_producer_actor_ids despite otherwise separated actors.",
+        "refusal": "ATTEMPT_ALLOCATED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION"
+      },
+      {
+        "id": "T-M3-5-START-ACTOR",
+        "boundary": "EXECUTE capability consume after ATTEMPT_STARTED",
+        "fault": "Use start-event actor as consumer when readiness executor is a different actor.",
+        "refusal": "CAPABILITY_CONSUMER_MISMATCH"
+      },
+      {
+        "id": "T-B-INGRESS-COMMIT-FIELDS",
+        "boundary": "ledger_operation_request_v1 ingress",
+        "fault": "Caller supplies a store-owned event field.",
+        "refusal": "OPERATION_REQUEST_COMMIT_FIELD_FORBIDDEN",
+        "required_independent_variants": [
+          "sequence",
+          "recorded_at",
+          "previous_event_sha256",
+          "operation_request_sha256"
+        ]
+      },
+      {
+        "id": "T-B-ACCESS-ATOMIC-ROLLBACK",
+        "boundary": "ACCESS_STARTED",
+        "fault": "Force event validation failure after tentative ACCESS consumption within the transaction.",
+        "refusal": "Injected append refusal; capability remains unconsumed, no event or head change."
+      },
+      {
+        "id": "T-B-ACCESS-EMPTY-TRIALS",
+        "boundary": "ACCESS_INTENT",
+        "fault": "Request affected_trial_ids is empty; current seal and all other evidence remain valid.",
+        "refusal": "ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY"
+      },
+      {
+        "id": "T-B-ACCESS-COMPLETED-BEFORE-START",
+        "boundary": "ACCESS_COMPLETED",
+        "fault": "started_at is earlier than retained ACCESS_STARTED.recorded_at; ended_at remains after started_at. Path A does not append this event.",
+        "refusal": "ACCESS_COMPLETED_STARTED_AT_BEFORE_START_COMMIT"
+      },
+      {
+        "id": "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+        "boundary": "ACCESS_INTENT, ACCESS_STARTED, ACCESS_COMPLETED",
+        "fault": "Request evidence_ref_ids is empty; all other evidence remains valid.",
+        "refusal": "{EVENT}_EVIDENCE_REF_SET_EMPTY",
+        "required_independent_variants": [
+          "ACCESS_INTENT",
+          "ACCESS_STARTED",
+          "ACCESS_COMPLETED"
+        ]
+      },
+      {
+        "id": "T-B-ACCESS-ROLE-COLLISION",
+        "boundary": "ACCESS_INTENT",
+        "fault": "One prohibited equality among the five pairwise-distinct resolved principals; all other evidence remains valid.",
+        "refusal": "ACCESS_INTENT_ROLE_COLLISION",
+        "required_independent_variants": [
+          "authorization issuer=intent-authority issuer",
+          "authorization issuer=accessor",
+          "authorization issuer=inventory issuer",
+          "authorization issuer=seal actor",
+          "intent-authority issuer=accessor",
+          "intent-authority issuer=inventory issuer",
+          "intent-authority issuer=seal actor",
+          "accessor=inventory issuer",
+          "accessor=seal actor",
+          "inventory issuer=seal actor"
+        ]
+      }
+    ]
+  },
+  "inventory_seal_roles": {
+    "principal_sources": {
+      "inventory_issuer": "resolved complete inventory record.issuer_actor_id",
+      "inventory_reviewer": "resolved inventory acceptance.reviewer_actor_id",
+      "seal_authority_issuer": "resolved seal-authority record.issuer_actor_id",
+      "seal_actor": "CAMPAIGN_INVENTORY_SEALED request.actor_id",
+      "authorized_seal_actor": "resolved seal-authority record.authorized_actor_id",
+      "private_input_producers": "resolved complete inventory record.private_input_producer_actor_ids",
+      "included_trial_definition_issuer": "resolved included trial-definition record.issuer_actor_id"
+    },
+    "required_equalities": [
+      [
+        "seal_actor",
+        "authorized_seal_actor"
+      ]
+    ],
+    "prohibited_equalities": [
+      [
+        "inventory_reviewer",
+        "inventory_issuer"
+      ],
+      [
+        "inventory_reviewer",
+        "seal_authority_issuer"
+      ],
+      [
+        "inventory_reviewer",
+        "seal_actor"
+      ],
+      [
+        "inventory_reviewer",
+        "included_trial_definition_issuer"
+      ],
+      [
+        "inventory_issuer",
+        "seal_actor"
+      ]
+    ],
+    "excluded_membership": {
+      "principal": "inventory_reviewer",
+      "set": "private_input_producers"
+    },
+    "boundary": "CAMPAIGN_INVENTORY_SEALED",
+    "source_policy": "These are v7 semantic field bindings on resolved bytes, not caller role labels. Design PR must freeze their owner-schema paths; missing/ambiguous paths block runtime admission. Seal-authority issuer and envelope actor may coincide if that authority explicitly binds the actor; no equality waives the listed prohibitions."
+  },
+  "origin_invariant": {
+    "scope": "One ledger epoch across all campaigns; never reset by a campaign, local sample ID, acceptance generation or projection change.",
+    "boundaries": [
+      "SAMPLE_REGISTERED",
+      "STAGE3_SAMPLE_REFERENCE_BOUND"
+    ],
+    "canonical_lineage_source": "Required safe_public_id canonical_sample_lineage_id from resolved complete sample-record bytes on BOTH local and Stage 3 paths; local schema must expose it before admission; never derive it from sample_id or trust request-only text.",
+    "record_identity_source": "Complete owner-typed authority/record identity tuple from resolved record key; compare every identity field. Mutable acceptance/publication generations are not record identity.",
+    "uniqueness_keys": [
+      [
+        "ledger_epoch_id",
+        "canonical_sample_lineage_id"
+      ],
+      [
+        "ledger_epoch_id",
+        "authority_record_identity_tuple"
+      ],
+      [
+        "ledger_epoch_id",
+        "sample_id"
+      ]
+    ],
+    "rules": [
+      "At most one origin allocation, representation path and local sample_id for each lineage and for each authority/record identity tuple.",
+      "At both origin boundaries search committed origins of both event types for tuple and lineage matches before insertion.",
+      "Same tuple independently forbids another identity, even if lineage claim differs. Different tuple does not permit another identity for the same lineage.",
+      "Existing local/external path cannot be replaced or supplemented through the other origin event; replay or same sample_id is not a new allocation.",
+      "Check and insertion share the writer-locked transaction; two competing connections cannot both commit.",
+      "CAMPAIGN_ENTITY_BOUND is a later reference to the existing sample_id and pinned origin; it creates no origin and does not reserve another lineage slot."
+    ],
+    "refusal_precedence": [
+      "SAMPLE_ID_ALREADY_ALLOCATED",
+      "{EVENT}_RECORD_DUP",
+      "{EVENT}_ORIGIN_PATH_CONFLICT (same lineage, different representation path)",
+      "{EVENT}_LINEAGE_DUP (same lineage, same representation path)"
+    ],
+    "later_reference_conditions": "Committed target campaign sequence strictly greater than origin campaign sequence; original tuple and source hashes unchanged; no direct-scope/binding mixture; current sample/family bundles."
+  },
+  "access_pack": {
+    "option": "TB-XPO-1",
+    "ACCESS_INTENT_payload_all_and_only": [
+      "campaign_scope_ids",
+      "inventory_seal_event_id",
+      "inventory_seal_event_sha256",
+      "sample_id",
+      "affected_trial_ids",
+      "purpose",
+      "intended_window_id",
+      "intended_field_class_ids",
+      "accessor_code_tree_sha256",
+      "accessor_environment_id",
+      "accessor_environment_lock_sha256",
+      "authorization_record_id",
+      "authorization_record_schema_version",
+      "authorization_record_sha256",
+      "intent_authority_generation",
+      "intent_authority_id",
+      "intent_authority_record_sha256",
+      "intent_authority_schema_version",
+      "access_capability_id",
+      "access_capability_record_canonicalization_id",
+      "access_capability_record_schema_version",
+      "access_capability_record_sha256",
+      "access_capability_record_version",
+      "evidence_ref_ids"
+    ],
+    "ACCESS_STARTED_payload_all_and_only": [
+      "campaign_scope_ids",
+      "access_intent_event_id",
+      "access_intent_event_sha256",
+      "access_capability_id",
+      "reader_code_tree_sha256",
+      "reader_environment_id",
+      "reader_environment_lock_sha256",
+      "start_authority_generation",
+      "start_authority_id",
+      "start_authority_record_sha256",
+      "start_authority_schema_version",
+      "sample_id",
+      "evidence_ref_ids"
+    ],
+    "ACCESS_COMPLETED_payload_all_and_only": [
+      "campaign_scope_ids",
+      "access_started_event_id",
+      "access_started_event_sha256",
+      "sample_id",
+      "actual_window_id",
+      "names_observed",
+      "protected_material_observed",
+      "reader_code_tree_sha256",
+      "reader_environment_id",
+      "reader_environment_lock_sha256",
+      "started_at",
+      "ended_at",
+      "backfilled",
+      "evidence_ref_ids"
+    ]
+  },
+  "positive_controls": [
+    "Path A first checkpoint through ACCESS_INTENT then ACCESS_STARTED with valid synthetic catalog; stop before ACCESS_COMPLETED because EXPOSURE_DECISION is not selected.",
+    "Path B starts exactly once when every readiness operand and operational value equals the same-transaction result.",
+    "Each origin path succeeds separately in a fresh epoch with current evidence and separated roles.",
+    "A legitimate later-campaign CAMPAIGN_ENTITY_BOUND reuses the existing sample_id without creating an origin.",
+    "Readiness executor, different from start-event actor, can consume matching EXECUTE capability after committed start."
+  ],
+  "negative_case_oracle": "Begin with a passing synthetic fixture for that boundary. Introduce only the stated fault, with all earlier gates valid. Require the named refusal and zero committed event/head/origin/capability changes except the winning concurrent append. Recompute fixture digests so schema/hash failure does not mask the intended predicate. For overlapping tuple and lineage guards, also assert each guard independently on the resolved bundle; removing one guard need not make the full append succeed when another mandatory guard still rejects it.",
+  "tuple_groups": {
+    "family_catalog_key": {
+      "owner": "docs/experiment_trial_ledger_trial_family_registration_schema_contract.md",
+      "source_event": "TRIAL_FAMILY_REGISTERED",
+      "fields": [
+        "family_authority_id",
+        "family_authority_version",
+        "family_authority_registry_sha256",
+        "family_definition_record_id",
+        "family_definition_record_version",
+        "family_definition_schema_version",
+        "family_definition_canonicalization_id",
+        "family_definition_record_sha256"
+      ]
+    },
+    "sample_catalog_key": {
+      "owner": "docs/experiment_trial_ledger_sample_registration_schema_contract.md",
+      "source_event": "SAMPLE_REGISTERED",
+      "fields": [
+        "sample_authority_id",
+        "sample_authority_version",
+        "sample_authority_registry_sha256",
+        "sample_record_id",
+        "sample_record_version",
+        "sample_record_schema_version",
+        "sample_record_canonicalization_id",
+        "sample_record_sha256"
+      ]
+    },
+    "trial_catalog_key": {
+      "owner": "docs/experiment_trial_ledger_trial_allocation_schema_contract.md",
+      "source_event": "TRIAL_ALLOCATED",
+      "fields": [
+        "trial_definition_authority_id",
+        "trial_definition_authority_registry_sha256",
+        "trial_definition_authority_version",
+        "trial_definition_record_id",
+        "trial_definition_record_schema_version",
+        "trial_definition_record_version",
+        "trial_definition_record_canonicalization_id",
+        "trial_definition_record_sha256"
+      ]
+    },
+    "inventory_catalog_key": {
+      "owner": "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md",
+      "source_event": "CAMPAIGN_INVENTORY_SEALED",
+      "fields": [
+        "inventory_authority_id",
+        "inventory_authority_registry_sha256",
+        "inventory_authority_version",
+        "inventory_record_id",
+        "inventory_record_schema_version",
+        "inventory_record_version",
+        "inventory_record_canonicalization_id",
+        "sealed_trial_inventory_sha256"
+      ]
+    },
+    "plan_catalog_key": {
+      "owner": "docs/experiment_trial_ledger_attempt_allocation_schema_contract.md",
+      "source_event": "ATTEMPT_ALLOCATED",
+      "fields": [
+        "attempt_plan_authority_id",
+        "attempt_plan_authority_registry_sha256",
+        "attempt_plan_authority_version",
+        "attempt_plan_record_id",
+        "attempt_plan_record_schema_version",
+        "attempt_plan_record_version",
+        "attempt_plan_record_canonicalization_id",
+        "attempt_plan_record_sha256"
+      ]
+    },
+    "readiness_catalog_key": {
+      "owner": "docs/experiment_trial_ledger_attempt_start_schema_contract.md",
+      "source_event": "ATTEMPT_STARTED",
+      "fields": [
+        "readiness_authority_id",
+        "readiness_authority_registry_sha256",
+        "readiness_authority_version",
+        "readiness_record_id",
+        "readiness_record_schema_version",
+        "readiness_record_version",
+        "readiness_record_canonicalization_id",
+        "readiness_record_sha256"
+      ]
+    },
+    "family_acceptance": {
+      "owner": "docs/experiment_trial_ledger_trial_family_registration_schema_contract.md",
+      "source_event": "TRIAL_FAMILY_REGISTERED",
+      "fields": [
+        "family_acceptance_decision_id",
+        "family_acceptance_generation",
+        "family_acceptance_schema_version",
+        "family_acceptance_record_sha256"
+      ]
+    },
+    "sample_acceptance": {
+      "owner": "docs/experiment_trial_ledger_sample_registration_schema_contract.md",
+      "source_event": "SAMPLE_REGISTERED",
+      "fields": [
+        "sample_acceptance_decision_id",
+        "sample_acceptance_generation",
+        "sample_acceptance_schema_version",
+        "sample_acceptance_record_sha256"
+      ]
+    },
+    "sample_projection": {
+      "owner": "docs/experiment_trial_ledger_sample_registration_schema_contract.md",
+      "source_event": "SAMPLE_REGISTERED",
+      "fields": [
+        "sample_public_projection_id",
+        "sample_public_projection_schema_version",
+        "sample_public_projection_sha256"
+      ]
+    },
+    "sample_publication_approval": {
+      "owner": "docs/experiment_trial_ledger_sample_registration_schema_contract.md",
+      "source_event": "SAMPLE_REGISTERED",
+      "fields": [
+        "sample_publication_approval_id",
+        "sample_publication_approval_generation",
+        "sample_publication_approval_schema_version",
+        "sample_publication_approval_record_sha256"
+      ]
+    },
+    "trial_acceptance": {
+      "owner": "docs/experiment_trial_ledger_trial_allocation_schema_contract.md",
+      "source_event": "TRIAL_ALLOCATED",
+      "fields": [
+        "trial_definition_acceptance_decision_id",
+        "trial_definition_acceptance_generation",
+        "trial_definition_acceptance_schema_version",
+        "trial_definition_acceptance_record_sha256"
+      ]
+    },
+    "trial_projection": {
+      "owner": "docs/experiment_trial_ledger_trial_allocation_schema_contract.md",
+      "source_event": "TRIAL_ALLOCATED",
+      "fields": [
+        "trial_definition_public_projection_id",
+        "trial_definition_public_projection_schema_version",
+        "trial_definition_public_projection_sha256"
+      ]
+    },
+    "trial_publication_approval": {
+      "owner": "docs/experiment_trial_ledger_trial_allocation_schema_contract.md",
+      "source_event": "TRIAL_ALLOCATED",
+      "fields": [
+        "trial_definition_publication_approval_id",
+        "trial_definition_publication_approval_generation",
+        "trial_definition_publication_approval_schema_version",
+        "trial_definition_publication_approval_record_sha256"
+      ]
+    },
+    "inventory_acceptance": {
+      "owner": "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md",
+      "source_event": "CAMPAIGN_INVENTORY_SEALED",
+      "fields": [
+        "inventory_acceptance_decision_id",
+        "inventory_acceptance_generation",
+        "inventory_acceptance_schema_version",
+        "inventory_acceptance_record_sha256"
+      ]
+    },
+    "plan_acceptance": {
+      "owner": "docs/experiment_trial_ledger_attempt_allocation_schema_contract.md",
+      "source_event": "ATTEMPT_ALLOCATED",
+      "fields": [
+        "attempt_plan_acceptance_decision_id",
+        "attempt_plan_acceptance_generation",
+        "attempt_plan_acceptance_schema_version",
+        "attempt_plan_acceptance_record_sha256"
+      ]
+    },
+    "trial_authority": {
+      "owner": "docs/experiment_trial_ledger_trial_allocation_schema_contract.md",
+      "source_event": "TRIAL_ALLOCATED",
+      "fields": [
+        "allocation_authority_id",
+        "allocation_authority_generation",
+        "allocation_authority_schema_version",
+        "allocation_authority_record_sha256"
+      ]
+    },
+    "inventory_authority": {
+      "owner": "docs/experiment_trial_ledger_campaign_inventory_seal_schema_contract.md",
+      "source_event": "CAMPAIGN_INVENTORY_SEALED",
+      "fields": [
+        "seal_authority_id",
+        "seal_authority_generation",
+        "seal_authority_schema_version",
+        "seal_authority_record_sha256"
+      ]
+    },
+    "plan_authority": {
+      "owner": "docs/experiment_trial_ledger_attempt_allocation_schema_contract.md",
+      "source_event": "ATTEMPT_ALLOCATED",
+      "fields": [
+        "allocation_authority_id",
+        "allocation_authority_generation",
+        "allocation_authority_schema_version",
+        "allocation_authority_record_sha256"
+      ]
+    },
+    "readiness_authority": {
+      "owner": "docs/experiment_trial_ledger_attempt_start_schema_contract.md",
+      "source_event": "ATTEMPT_STARTED",
+      "fields": [
+        "start_authority_id",
+        "start_authority_generation",
+        "start_authority_schema_version",
+        "start_authority_record_sha256"
+      ]
+    }
+  },
+  "readiness_paths": {
+    "inventory_catalog_key": [
+      {
+        "path": "inventory_catalog_key",
+        "tuple_group": "inventory_catalog_key"
+      }
+    ],
+    "inventory_acceptance": [
+      {
+        "path": "inventory_acceptance",
+        "tuple_group": "inventory_acceptance"
+      }
+    ],
+    "seal_event_id_sha256": [
+      {
+        "path": "seal_event_id_sha256",
+        "tuple_group": null
+      }
+    ],
+    "family_definition_and_acceptance": [
+      {
+        "path": "family_definition_and_acceptance[].definition",
+        "tuple_group": "family_catalog_key"
+      },
+      {
+        "path": "family_definition_and_acceptance[].acceptance",
+        "tuple_group": "family_acceptance"
+      }
+    ],
+    "sample_record_acceptance_projection_publication_approval": [
+      {
+        "path": "sample_record_acceptance_projection_publication_approval[].record",
+        "tuple_group": "sample_catalog_key"
+      },
+      {
+        "path": "sample_record_acceptance_projection_publication_approval[].acceptance",
+        "tuple_group": "sample_acceptance"
+      },
+      {
+        "path": "sample_record_acceptance_projection_publication_approval[].projection",
+        "tuple_group": "sample_projection"
+      },
+      {
+        "path": "sample_record_acceptance_projection_publication_approval[].publication_approval",
+        "tuple_group": "sample_publication_approval"
+      }
+    ],
+    "trial_definition_acceptance_projection_allocation_authority": [
+      {
+        "path": "trial_definition_acceptance_projection_allocation_authority.definition",
+        "tuple_group": "trial_catalog_key"
+      },
+      {
+        "path": "trial_definition_acceptance_projection_allocation_authority.acceptance",
+        "tuple_group": "trial_acceptance"
+      },
+      {
+        "path": "trial_definition_acceptance_projection_allocation_authority.projection",
+        "tuple_group": "trial_projection"
+      },
+      {
+        "path": "trial_definition_acceptance_projection_allocation_authority.publication_approval",
+        "tuple_group": "trial_publication_approval"
+      },
+      {
+        "path": "trial_definition_acceptance_projection_allocation_authority.allocation_authority",
+        "tuple_group": "trial_authority"
+      }
+    ],
+    "attempt_plan_catalog_key": [
+      {
+        "path": "attempt_plan_catalog_key",
+        "tuple_group": "plan_catalog_key"
+      }
+    ],
+    "attempt_plan_acceptance": [
+      {
+        "path": "attempt_plan_acceptance",
+        "tuple_group": "plan_acceptance"
+      }
+    ],
+    "attempt_allocation_authority": [
+      {
+        "path": "attempt_allocation_authority",
+        "tuple_group": "plan_authority"
+      }
+    ],
+    "attempt_allocation_event": [
+      {
+        "path": "attempt_allocation_event",
+        "tuple_group": null
+      }
+    ],
+    "retained_source_event_id_hash": [
+      {
+        "path": "retained_source_event_id_hash[].source",
+        "tuple_group": null
+      }
+    ]
+  },
+  "finding_test_coverage": {
+    "TB-AUDIT-V6-M1": [
+      "T-B-START-READY-PLAN-TUPLE",
+      "T-B-START-READY-PLAN-ACC-TUPLE",
+      "T-B-START-READY-AUTH-TUPLE"
+    ],
+    "TB-AUDIT-V6-M2": [
+      "T-B-SEAL-REVIEWER-ISSUER",
+      "T-B-SEAL-REVIEWER-ACTOR",
+      "T-B-PRIV-INV",
+      "T-B-SEAL-REVIEWER-TRIAL-ISSUER"
+    ],
+    "TB-AUDIT-V6-M3": [
+      "T-B-LOCAL-AFTER-STAGE3-LINEAGE",
+      "T-B-STAGE3-LOCAL-PATH",
+      "T-B-ORIGIN-CONCURRENT"
+    ],
+    "TB-AUDIT-V6-M4": [
+      "T-B-START-READY-INV-TUPLE",
+      "T-B-START-READY-FAM-TUPLE",
+      "T-B-START-READY-SAMP-TUPLE",
+      "T-B-START-READY-DEF-TUPLE",
+      "T-B-START-READY-ACC-TUPLE",
+      "T-B-START-READY-PUB-TUPLE",
+      "T-B-START-READY-AUTH-TUPLE",
+      "T-B-START-READY-SRC-TUPLE",
+      "T-B-START-READY-PLAN-TUPLE",
+      "T-B-START-READY-PLAN-ACC-TUPLE",
+      "T-B-START-READY-SEAL-TUPLE",
+      "T-B-START-READY-ALLOCATION-TUPLE",
+      "T-B-START-READY-TRIAL-AUTH-TUPLE",
+      "T-B-START-READY-TRIAL-PUB-TUPLE",
+      "T-B-START-READY-SAMPLE-SET",
+      "T-B-START-READY-FAM-SET",
+      "T-B-START-PLAN-STALE",
+      "T-B-START-AUTH-STALE",
+      "T-B-START-ALLOC-AUTH-STALE",
+      "T-B-START-READY-STALE",
+      "T-B-START-INHERITED-MISMATCH",
+      "T-B-START-EXEC",
+      "T-B-BOUND-NOT-LATER",
+      "T-B-BOUND-EARLIER",
+      "T-B-BOUND-SECOND-ORIGIN",
+      "T-B-BOUND-MIXED-PATH",
+      "T-B-EXT-DRIFT",
+      "T-B-STAGE3-DUP-TUPLE",
+      "T-B-STAGE3-DUP-LINEAGE-DIFF-TUPLE",
+      "T-B-STAGE3-LOCAL-PATH",
+      "T-B-LOCAL-AFTER-STAGE3-LINEAGE",
+      "T-B-LOCAL-AFTER-STAGE3-TUPLE",
+      "T-B-LOCAL-DUP-LINEAGE",
+      "T-B-LOCAL-DUP-TUPLE",
+      "T-B-STAGE3-CONTENT",
+      "T-B-LOCAL-LINEAGE-MISSING",
+      "T-B-STAGE3-ROLE",
+      "T-B-STAGE3-ACC-STALE",
+      "T-B-STAGE3-ACC-SUPERSEDED",
+      "T-B-STAGE3-PUB-STALE",
+      "T-B-STAGE3-PUB-SUPERSEDED",
+      "T-B-ORIGIN-CONCURRENT",
+      "T-B-ORIGIN-CONCURRENT-SAME-PATH",
+      "T-B-SEAL-PARENT-FAM-STALE",
+      "T-B-SEAL-PARENT-SAMP-STALE",
+      "T-B-SEAL-PARENT-DEF-STALE",
+      "T-B-SEAL-REVIEWER-ISSUER",
+      "T-B-SEAL-REVIEWER-ACTOR",
+      "T-B-SEAL-REVIEWER-AUTHORITY",
+      "T-B-SEAL-REVIEWER-TRIAL-ISSUER",
+      "T-B-SEAL-ISSUER-ACTOR",
+      "T-B-SEAL-AUTHORIZED-ACTOR",
+      "T-B-FAM-STALE-TRIAL",
+      "T-B-FAM-STALE-ATTEMPT",
+      "T-B-FAM-STALE-ACCESS",
+      "T-B-FAM-STALE-ACCESS-STARTED",
+      "T-B-SAMP-PUB-BIND",
+      "T-B-SAMP-PUB-TRIAL",
+      "T-B-SAMP-PUB-ACCESS",
+      "T-B-CONTENT-SCOPE",
+      "T-B-SEAL-STALE-ATT",
+      "T-B-SEAL-STALE-ACC",
+      "T-B-NOT-IN-SEAL",
+      "T-B-PRIV-TRIAL",
+      "T-B-PRIV-INV",
+      "T-B-PRIV-PLAN",
+      "T-M3-5-START-ACTOR",
+      "T-B-INGRESS-COMMIT-FIELDS",
+      "T-B-ACCESS-ATOMIC-ROLLBACK",
+      "T-B-ACCESS-EMPTY-TRIALS",
+      "T-B-ACCESS-COMPLETED-BEFORE-START",
+      "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+      "T-B-ACCESS-ROLE-COLLISION"
+    ],
+    "TB-GROK-V6-M2-READINESS": [
+      "T-B-START-READY-PLAN-TUPLE",
+      "T-B-START-READY-PLAN-ACC-TUPLE",
+      "T-B-START-READY-AUTH-TUPLE",
+      "T-B-START-AUTH-STALE"
+    ],
+    "TB-GROK-V6-M2-STAGE3-CURRENTNESS": [
+      "T-B-STAGE3-ACC-STALE",
+      "T-B-STAGE3-ACC-SUPERSEDED",
+      "T-B-STAGE3-PUB-STALE",
+      "T-B-STAGE3-PUB-SUPERSEDED"
+    ],
+    "TB-GROK-V6-M2-LINEAGE-REVERSE-PATH": [
+      "T-B-LOCAL-AFTER-STAGE3-LINEAGE",
+      "T-B-LOCAL-AFTER-STAGE3-TUPLE",
+      "T-B-STAGE3-DUP-TUPLE",
+      "T-B-STAGE3-DUP-LINEAGE-DIFF-TUPLE"
+    ],
+    "TB-GROK-V6-M2-SELF-CONTAINED": [
+      "T-B-START-READY-INV-TUPLE",
+      "T-B-START-READY-FAM-TUPLE",
+      "T-B-START-READY-SAMP-TUPLE",
+      "T-B-START-READY-DEF-TUPLE",
+      "T-B-START-READY-ACC-TUPLE",
+      "T-B-START-READY-PUB-TUPLE",
+      "T-B-START-READY-AUTH-TUPLE",
+      "T-B-START-READY-SRC-TUPLE",
+      "T-B-START-READY-PLAN-TUPLE",
+      "T-B-START-READY-PLAN-ACC-TUPLE",
+      "T-B-START-READY-SEAL-TUPLE",
+      "T-B-START-READY-ALLOCATION-TUPLE",
+      "T-B-START-READY-TRIAL-AUTH-TUPLE",
+      "T-B-START-READY-TRIAL-PUB-TUPLE",
+      "T-B-START-READY-SAMPLE-SET",
+      "T-B-START-READY-FAM-SET",
+      "T-B-START-PLAN-STALE",
+      "T-B-START-AUTH-STALE",
+      "T-B-START-ALLOC-AUTH-STALE",
+      "T-B-START-READY-STALE",
+      "T-B-START-INHERITED-MISMATCH",
+      "T-B-START-EXEC",
+      "T-B-BOUND-NOT-LATER",
+      "T-B-BOUND-EARLIER",
+      "T-B-BOUND-SECOND-ORIGIN",
+      "T-B-BOUND-MIXED-PATH",
+      "T-B-EXT-DRIFT",
+      "T-B-STAGE3-DUP-TUPLE",
+      "T-B-STAGE3-DUP-LINEAGE-DIFF-TUPLE",
+      "T-B-STAGE3-LOCAL-PATH",
+      "T-B-LOCAL-AFTER-STAGE3-LINEAGE",
+      "T-B-LOCAL-AFTER-STAGE3-TUPLE",
+      "T-B-LOCAL-DUP-LINEAGE",
+      "T-B-LOCAL-DUP-TUPLE",
+      "T-B-STAGE3-CONTENT",
+      "T-B-LOCAL-LINEAGE-MISSING",
+      "T-B-STAGE3-ROLE",
+      "T-B-STAGE3-ACC-STALE",
+      "T-B-STAGE3-ACC-SUPERSEDED",
+      "T-B-STAGE3-PUB-STALE",
+      "T-B-STAGE3-PUB-SUPERSEDED",
+      "T-B-ORIGIN-CONCURRENT",
+      "T-B-ORIGIN-CONCURRENT-SAME-PATH",
+      "T-B-SEAL-PARENT-FAM-STALE",
+      "T-B-SEAL-PARENT-SAMP-STALE",
+      "T-B-SEAL-PARENT-DEF-STALE",
+      "T-B-SEAL-REVIEWER-ISSUER",
+      "T-B-SEAL-REVIEWER-ACTOR",
+      "T-B-SEAL-REVIEWER-AUTHORITY",
+      "T-B-SEAL-REVIEWER-TRIAL-ISSUER",
+      "T-B-SEAL-ISSUER-ACTOR",
+      "T-B-SEAL-AUTHORIZED-ACTOR",
+      "T-B-FAM-STALE-TRIAL",
+      "T-B-FAM-STALE-ATTEMPT",
+      "T-B-FAM-STALE-ACCESS",
+      "T-B-FAM-STALE-ACCESS-STARTED",
+      "T-B-SAMP-PUB-BIND",
+      "T-B-SAMP-PUB-TRIAL",
+      "T-B-SAMP-PUB-ACCESS",
+      "T-B-CONTENT-SCOPE",
+      "T-B-SEAL-STALE-ATT",
+      "T-B-SEAL-STALE-ACC",
+      "T-B-NOT-IN-SEAL",
+      "T-B-PRIV-TRIAL",
+      "T-B-PRIV-INV",
+      "T-B-PRIV-PLAN",
+      "T-M3-5-START-ACTOR",
+      "T-B-INGRESS-COMMIT-FIELDS",
+      "T-B-ACCESS-ATOMIC-ROLLBACK",
+      "T-B-ACCESS-EMPTY-TRIALS",
+      "T-B-ACCESS-COMPLETED-BEFORE-START",
+      "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+      "T-B-ACCESS-ROLE-COLLISION"
+    ],
+    "TB-V6-M1": [
+      "T-B-START-READY-INV-TUPLE",
+      "T-B-START-READY-FAM-TUPLE",
+      "T-B-START-READY-SAMP-TUPLE",
+      "T-B-START-READY-DEF-TUPLE",
+      "T-B-START-READY-ACC-TUPLE",
+      "T-B-START-READY-PUB-TUPLE",
+      "T-B-START-READY-AUTH-TUPLE",
+      "T-B-START-READY-SRC-TUPLE",
+      "T-B-START-READY-PLAN-TUPLE",
+      "T-B-START-READY-PLAN-ACC-TUPLE",
+      "T-B-START-READY-SEAL-TUPLE",
+      "T-B-START-READY-ALLOCATION-TUPLE",
+      "T-B-START-READY-TRIAL-AUTH-TUPLE",
+      "T-B-START-READY-TRIAL-PUB-TUPLE",
+      "T-B-START-READY-SAMPLE-SET",
+      "T-B-START-READY-FAM-SET",
+      "T-B-START-PLAN-STALE",
+      "T-B-START-AUTH-STALE",
+      "T-B-START-ALLOC-AUTH-STALE",
+      "T-B-START-READY-STALE",
+      "T-B-START-INHERITED-MISMATCH",
+      "T-B-START-EXEC",
+      "T-B-BOUND-NOT-LATER",
+      "T-B-BOUND-EARLIER",
+      "T-B-BOUND-SECOND-ORIGIN",
+      "T-B-BOUND-MIXED-PATH",
+      "T-B-EXT-DRIFT",
+      "T-B-STAGE3-DUP-TUPLE",
+      "T-B-STAGE3-DUP-LINEAGE-DIFF-TUPLE",
+      "T-B-STAGE3-LOCAL-PATH",
+      "T-B-LOCAL-AFTER-STAGE3-LINEAGE",
+      "T-B-LOCAL-AFTER-STAGE3-TUPLE",
+      "T-B-LOCAL-DUP-LINEAGE",
+      "T-B-LOCAL-DUP-TUPLE",
+      "T-B-STAGE3-CONTENT",
+      "T-B-LOCAL-LINEAGE-MISSING",
+      "T-B-STAGE3-ROLE",
+      "T-B-STAGE3-ACC-STALE",
+      "T-B-STAGE3-ACC-SUPERSEDED",
+      "T-B-STAGE3-PUB-STALE",
+      "T-B-STAGE3-PUB-SUPERSEDED",
+      "T-B-ORIGIN-CONCURRENT",
+      "T-B-ORIGIN-CONCURRENT-SAME-PATH",
+      "T-B-SEAL-PARENT-FAM-STALE",
+      "T-B-SEAL-PARENT-SAMP-STALE",
+      "T-B-SEAL-PARENT-DEF-STALE",
+      "T-B-SEAL-REVIEWER-ISSUER",
+      "T-B-SEAL-REVIEWER-ACTOR",
+      "T-B-SEAL-REVIEWER-AUTHORITY",
+      "T-B-SEAL-REVIEWER-TRIAL-ISSUER",
+      "T-B-SEAL-ISSUER-ACTOR",
+      "T-B-SEAL-AUTHORIZED-ACTOR",
+      "T-B-FAM-STALE-TRIAL",
+      "T-B-FAM-STALE-ATTEMPT",
+      "T-B-FAM-STALE-ACCESS",
+      "T-B-FAM-STALE-ACCESS-STARTED",
+      "T-B-SAMP-PUB-BIND",
+      "T-B-SAMP-PUB-TRIAL",
+      "T-B-SAMP-PUB-ACCESS",
+      "T-B-CONTENT-SCOPE",
+      "T-B-SEAL-STALE-ATT",
+      "T-B-SEAL-STALE-ACC",
+      "T-B-NOT-IN-SEAL",
+      "T-B-PRIV-TRIAL",
+      "T-B-PRIV-INV",
+      "T-B-PRIV-PLAN",
+      "T-M3-5-START-ACTOR",
+      "T-B-INGRESS-COMMIT-FIELDS",
+      "T-B-ACCESS-ATOMIC-ROLLBACK",
+      "T-B-ACCESS-EMPTY-TRIALS",
+      "T-B-ACCESS-COMPLETED-BEFORE-START",
+      "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+      "T-B-ACCESS-ROLE-COLLISION"
+    ]
+  },
+  "required_scenarios": [
+    {
+      "test_id": "T-B-START-READY-INV-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-FAM-TUPLE",
+      "variant": "definition key",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-FAM-TUPLE",
+      "variant": "acceptance tuple",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SAMP-TUPLE",
+      "variant": "record key",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SAMP-TUPLE",
+      "variant": "acceptance tuple",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SAMP-TUPLE",
+      "variant": "projection tuple",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-DEF-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-ACC-TUPLE",
+      "variant": "inventory acceptance only",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-ACC-TUPLE",
+      "variant": "trial-definition acceptance only",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-PUB-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-AUTH-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SRC-TUPLE",
+      "variant": "family registration",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SRC-TUPLE",
+      "variant": "sample origin",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SRC-TUPLE",
+      "variant": "trial allocation",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SRC-TUPLE",
+      "variant": "inventory seal",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SRC-TUPLE",
+      "variant": "campaign binding",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SRC-TUPLE",
+      "variant": "attempt allocation",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-PLAN-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-PLAN-ACC-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SEAL-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-ALLOCATION-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-TRIAL-AUTH-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-TRIAL-PUB-TUPLE",
+      "variant": "projection only",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-TRIAL-PUB-TUPLE",
+      "variant": "approval only",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SAMPLE-SET",
+      "variant": "missing sample",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SAMPLE-SET",
+      "variant": "extra sample",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-FAM-SET",
+      "variant": "missing family",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-FAM-SET",
+      "variant": "extra family",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-PLAN-STALE",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_ACCEPTANCE_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-AUTH-STALE",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_START_AUTHORITY_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-ALLOC-AUTH-STALE",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_ALLOCATION_AUTHORITY_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-STALE",
+      "variant": "stale readiness",
+      "expected_refusal": "ATTEMPT_STARTED_READINESS_NOT_CURRENT",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-STALE",
+      "variant": "superseded readiness",
+      "expected_refusal": "ATTEMPT_STARTED_READINESS_NOT_CURRENT",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-INHERITED-MISMATCH",
+      "variant": "code",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_VALUE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-INHERITED-MISMATCH",
+      "variant": "environment",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_VALUE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-INHERITED-MISMATCH",
+      "variant": "input",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_VALUE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-INHERITED-MISMATCH",
+      "variant": "retry",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_VALUE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-INHERITED-MISMATCH",
+      "variant": "expected output",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_VALUE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-EXEC",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_STARTED_EXECUTOR_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-BOUND-NOT-LATER",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_ENTITY_BOUND_NOT_LATER_CAMPAIGN",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-BOUND-EARLIER",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_ENTITY_BOUND_EARLIER_CAMPAIGN",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-BOUND-SECOND-ORIGIN",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_ENTITY_BOUND_SECOND_ORIGIN",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-BOUND-MIXED-PATH",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_ENTITY_BOUND_MIXED_PATH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-EXT-DRIFT",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_ENTITY_BOUND_EXTERNAL_TUPLE_DRIFT",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-STAGE3-DUP-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_RECORD_DUP",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-STAGE3-DUP-LINEAGE-DIFF-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_LINEAGE_DUP",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-STAGE3-LOCAL-PATH",
+      "variant": "single fault",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_ORIGIN_PATH_CONFLICT",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-LOCAL-AFTER-STAGE3-LINEAGE",
+      "variant": "single fault",
+      "expected_refusal": "SAMPLE_REGISTERED_ORIGIN_PATH_CONFLICT",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-LOCAL-AFTER-STAGE3-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "SAMPLE_REGISTERED_RECORD_DUP",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-LOCAL-DUP-LINEAGE",
+      "variant": "single fault",
+      "expected_refusal": "SAMPLE_REGISTERED_LINEAGE_DUP",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-LOCAL-DUP-TUPLE",
+      "variant": "single fault",
+      "expected_refusal": "SAMPLE_REGISTERED_RECORD_DUP",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-STAGE3-CONTENT",
+      "variant": "single fault",
+      "expected_refusal": "RECORD_CONTENT_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-LOCAL-LINEAGE-MISSING",
+      "variant": "single fault",
+      "expected_refusal": "SAMPLE_REGISTERED_LINEAGE_REQUIRED",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-STAGE3-ROLE",
+      "variant": "reviewer=producer",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-STAGE3-ROLE",
+      "variant": "reviewer=envelope actor",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-STAGE3-ROLE",
+      "variant": "producer=envelope actor",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-STAGE3-ROLE",
+      "variant": "reviewer in private_input_producer_actor_ids",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-STAGE3-ACC-STALE",
+      "variant": "single fault",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_ACCEPTANCE_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-STAGE3-ACC-SUPERSEDED",
+      "variant": "single fault",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_ACCEPTANCE_SUPERSEDED",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-STAGE3-PUB-STALE",
+      "variant": "single fault",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_PUBLICATION_APPROVAL_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-STAGE3-PUB-SUPERSEDED",
+      "variant": "single fault",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_PUBLICATION_APPROVAL_SUPERSEDED",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ORIGIN-CONCURRENT",
+      "variant": "local obtains writer lock first",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_ORIGIN_PATH_CONFLICT",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "winner only",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ORIGIN-CONCURRENT",
+      "variant": "Stage 3 obtains writer lock first",
+      "expected_refusal": "SAMPLE_REGISTERED_ORIGIN_PATH_CONFLICT",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "winner only",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ORIGIN-CONCURRENT-SAME-PATH",
+      "variant": "local/local different tuples",
+      "expected_refusal": "SAMPLE_REGISTERED_LINEAGE_DUP",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "winner only",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ORIGIN-CONCURRENT-SAME-PATH",
+      "variant": "Stage3/Stage3 different tuples",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_LINEAGE_DUP",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "winner only",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ORIGIN-CONCURRENT-SAME-PATH",
+      "variant": "local/local same tuple",
+      "expected_refusal": "SAMPLE_REGISTERED_RECORD_DUP",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "winner only",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ORIGIN-CONCURRENT-SAME-PATH",
+      "variant": "Stage3/Stage3 same tuple",
+      "expected_refusal": "STAGE3_SAMPLE_REFERENCE_BOUND_RECORD_DUP",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "winner only",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SEAL-PARENT-FAM-STALE",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_INVENTORY_SEALED_ACCEPTANCE_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SEAL-PARENT-SAMP-STALE",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_INVENTORY_SEALED_ACCEPTANCE_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SEAL-PARENT-DEF-STALE",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_INVENTORY_SEALED_ACCEPTANCE_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SEAL-REVIEWER-ISSUER",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SEAL-REVIEWER-ACTOR",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SEAL-REVIEWER-AUTHORITY",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SEAL-REVIEWER-TRIAL-ISSUER",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SEAL-ISSUER-ACTOR",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SEAL-AUTHORIZED-ACTOR",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_INVENTORY_SEALED_AUTHORITY_ACTOR_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-FAM-STALE-TRIAL",
+      "variant": "single fault",
+      "expected_refusal": "TRIAL_ALLOCATED_ACCEPTANCE_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-FAM-STALE-ATTEMPT",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_ALLOCATED_ACCEPTANCE_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-FAM-STALE-ACCESS",
+      "variant": "single fault",
+      "expected_refusal": "ACCESS_INTENT_ACCEPTANCE_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-FAM-STALE-ACCESS-STARTED",
+      "variant": "single fault",
+      "expected_refusal": "ACCESS_STARTED_ACCEPTANCE_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SAMP-PUB-BIND",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_ENTITY_BOUND_PUBLICATION_APPROVAL_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SAMP-PUB-TRIAL",
+      "variant": "single fault",
+      "expected_refusal": "TRIAL_ALLOCATED_PUBLICATION_APPROVAL_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SAMP-PUB-ACCESS",
+      "variant": "single fault",
+      "expected_refusal": "ACCESS_INTENT_PUBLICATION_APPROVAL_STALE",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-CONTENT-SCOPE",
+      "variant": "single fault",
+      "expected_refusal": "RECORD_CONTENT_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SEAL-STALE-ATT",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_ALLOCATED_SEAL_NOT_CURRENT",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-SEAL-STALE-ACC",
+      "variant": "single fault",
+      "expected_refusal": "ACCESS_INTENT_SEAL_NOT_CURRENT",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-NOT-IN-SEAL",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_ALLOCATED_TRIAL_NOT_IN_SEAL",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-PRIV-TRIAL",
+      "variant": "single fault",
+      "expected_refusal": "TRIAL_ALLOCATED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-PRIV-INV",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_INVENTORY_SEALED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-PRIV-PLAN",
+      "variant": "single fault",
+      "expected_refusal": "ATTEMPT_ALLOCATED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-M3-5-START-ACTOR",
+      "variant": "single fault",
+      "expected_refusal": "CAPABILITY_CONSUMER_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-INGRESS-COMMIT-FIELDS",
+      "variant": "sequence",
+      "expected_refusal": "OPERATION_REQUEST_COMMIT_FIELD_FORBIDDEN",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-INGRESS-COMMIT-FIELDS",
+      "variant": "recorded_at",
+      "expected_refusal": "OPERATION_REQUEST_COMMIT_FIELD_FORBIDDEN",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-INGRESS-COMMIT-FIELDS",
+      "variant": "previous_event_sha256",
+      "expected_refusal": "OPERATION_REQUEST_COMMIT_FIELD_FORBIDDEN",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-INGRESS-COMMIT-FIELDS",
+      "variant": "operation_request_sha256",
+      "expected_refusal": "OPERATION_REQUEST_COMMIT_FIELD_FORBIDDEN",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ATOMIC-ROLLBACK",
+      "variant": "single fault",
+      "expected_refusal": "INJECTED_APPEND_REFUSAL",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-EMPTY-TRIALS",
+      "variant": "single fault",
+      "expected_refusal": "ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-COMPLETED-BEFORE-START",
+      "variant": "single fault",
+      "expected_refusal": "ACCESS_COMPLETED_STARTED_AT_BEFORE_START_COMMIT",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+      "variant": "ACCESS_INTENT",
+      "expected_refusal": "ACCESS_INTENT_EVIDENCE_REF_SET_EMPTY",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+      "variant": "ACCESS_STARTED",
+      "expected_refusal": "ACCESS_STARTED_EVIDENCE_REF_SET_EMPTY",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+      "variant": "ACCESS_COMPLETED",
+      "expected_refusal": "ACCESS_COMPLETED_EVIDENCE_REF_SET_EMPTY",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "authorization issuer=intent-authority issuer",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "authorization issuer=accessor",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "authorization issuer=inventory issuer",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "authorization issuer=seal actor",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "intent-authority issuer=accessor",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "intent-authority issuer=inventory issuer",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "intent-authority issuer=seal actor",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "accessor=inventory issuer",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "accessor=seal actor",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "inventory issuer=seal actor",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    }
+  ],
+  "native_tuple_specimens": {
+    "family_catalog_key": {
+      "family_authority_id": "synthetic_family_authority_id",
+      "family_authority_version": 1,
+      "family_authority_registry_sha256": "5adfa9a7d464faab09fc85cff30ddd4cd6e78bfce8d15e5bb2e2bb7b71f99850",
+      "family_definition_record_id": "synthetic_family_definition_record_id",
+      "family_definition_record_version": 1,
+      "family_definition_schema_version": "trial_family_definition_v1",
+      "family_definition_canonicalization_id": "pit_canonical_json_v1",
+      "family_definition_record_sha256": "b97e296d751ef2998937d60f7e4f6052a5d3c0ef618790761f129a8cf2515bc7"
+    },
+    "sample_catalog_key": {
+      "sample_authority_id": "synthetic_sample_authority_id",
+      "sample_authority_version": 1,
+      "sample_authority_registry_sha256": "ece8fb0971e245f4c014deed1bf3c2fad03bf05fd08c4510e9b272cd1d548182",
+      "sample_record_id": "synthetic_sample_record_id",
+      "sample_record_version": 1,
+      "sample_record_schema_version": "stage3_sample_record_v1",
+      "sample_record_canonicalization_id": "pit_canonical_json_v1",
+      "sample_record_sha256": "17ebcc327ceafc912cf1c4514a8b440ead09a12efc5fc3fdc99a35b9e256a9dc"
+    },
+    "trial_catalog_key": {
+      "trial_definition_authority_id": "synthetic_trial_definition_authority_id",
+      "trial_definition_authority_registry_sha256": "c2ddab1b8a781b272d2bc0e30596950c376bf7263e2642e0c4a621425016fae0",
+      "trial_definition_authority_version": 1,
+      "trial_definition_record_id": "synthetic_trial_definition_record_id",
+      "trial_definition_record_schema_version": "trial_definition_record_v1",
+      "trial_definition_record_version": 1,
+      "trial_definition_record_canonicalization_id": "pit_canonical_json_v1",
+      "trial_definition_record_sha256": "8f029d1b2931f677cc5724e74af09e30337a93bc9ef2049d0d5c9694250f9bf1"
+    },
+    "inventory_catalog_key": {
+      "inventory_authority_id": "synthetic_inventory_authority_id",
+      "inventory_authority_registry_sha256": "edb9eea2dd427be1f61e389df0033cb2c4613c2eae5cf1698f58388880c36552",
+      "inventory_authority_version": 1,
+      "inventory_record_id": "synthetic_inventory_record_id",
+      "inventory_record_schema_version": "campaign_inventory_record_v1",
+      "inventory_record_version": 1,
+      "inventory_record_canonicalization_id": "pit_canonical_json_v1",
+      "sealed_trial_inventory_sha256": "6e37dd82d22fc743ae7c286d74024226e797d79804537b217ccb5839db72d4da"
+    },
+    "plan_catalog_key": {
+      "attempt_plan_authority_id": "synthetic_attempt_plan_authority_id",
+      "attempt_plan_authority_registry_sha256": "c45a6cf2d90ec3844d1f3b46795e526e1ece338f419c7f00b02506cba2066fcc",
+      "attempt_plan_authority_version": 1,
+      "attempt_plan_record_id": "synthetic_attempt_plan_record_id",
+      "attempt_plan_record_schema_version": "attempt_plan_record_v1",
+      "attempt_plan_record_version": 1,
+      "attempt_plan_record_canonicalization_id": "pit_canonical_json_v1",
+      "attempt_plan_record_sha256": "0a8aac4b078793963d0d2cb5f956fb7b9c3c2fc4a16928a1b92c3fa4c85508e9"
+    },
+    "readiness_catalog_key": {
+      "readiness_authority_id": "synthetic_readiness_authority_id",
+      "readiness_authority_registry_sha256": "146ab9b3f8653b3a9536bb45897b38d037c278f6f99bb2833dcd9030a2309c42",
+      "readiness_authority_version": 1,
+      "readiness_record_id": "synthetic_readiness_record_id",
+      "readiness_record_schema_version": "attempt_start_readiness_record_v1",
+      "readiness_record_version": 1,
+      "readiness_record_canonicalization_id": "pit_canonical_json_v1",
+      "readiness_record_sha256": "bcc934620ac0014836f1e213df1ecf251d7b142e1723c7f241abdfadad9ff405"
+    },
+    "family_acceptance": {
+      "family_acceptance_decision_id": "synthetic_family_acceptance_decision_id",
+      "family_acceptance_generation": 1,
+      "family_acceptance_schema_version": "trial_family_definition_acceptance_v1",
+      "family_acceptance_record_sha256": "d0db21dd7781e3e5fde24fad6d15f29709e4a81442e81a54fd982f57fe2e734b"
+    },
+    "sample_acceptance": {
+      "sample_acceptance_decision_id": "synthetic_sample_acceptance_decision_id",
+      "sample_acceptance_generation": 1,
+      "sample_acceptance_schema_version": "stage3_sample_acceptance_v1",
+      "sample_acceptance_record_sha256": "77879445dd5d6650a94cb25f3e210f41a18442e14f95065a2a83bb78b5470523"
+    },
+    "sample_projection": {
+      "sample_public_projection_id": "synthetic_sample_public_projection_id",
+      "sample_public_projection_schema_version": "public_redacted_projection_v1",
+      "sample_public_projection_sha256": "28ae0b7d17a272f4e2e84bc2c05da21f69c399a1253f902dd7885f08d1481f77"
+    },
+    "sample_publication_approval": {
+      "sample_publication_approval_id": "synthetic_sample_publication_approval_id",
+      "sample_publication_approval_generation": 1,
+      "sample_publication_approval_schema_version": "sample_public_projection_approval_v1",
+      "sample_publication_approval_record_sha256": "577c25fe16d7398718816099fcbeac50d78d648185e40b535c3651911edab873"
+    },
+    "trial_acceptance": {
+      "trial_definition_acceptance_decision_id": "synthetic_trial_definition_acceptance_decision_id",
+      "trial_definition_acceptance_generation": 1,
+      "trial_definition_acceptance_schema_version": "trial_definition_acceptance_v1",
+      "trial_definition_acceptance_record_sha256": "a41a932cd36865ec2fb0e3836abc7b9e747f82669dadec2c8b2ad4cae683313a"
+    },
+    "trial_projection": {
+      "trial_definition_public_projection_id": "synthetic_trial_definition_public_projection_id",
+      "trial_definition_public_projection_schema_version": "public_redacted_projection_v1",
+      "trial_definition_public_projection_sha256": "91285abb926b266088695c35265653ed481aea9b0115992408fbed6921c3e75e"
+    },
+    "trial_publication_approval": {
+      "trial_definition_publication_approval_id": "synthetic_trial_definition_publication_approval_id",
+      "trial_definition_publication_approval_generation": 1,
+      "trial_definition_publication_approval_schema_version": "trial_definition_public_projection_approval_v1",
+      "trial_definition_publication_approval_record_sha256": "05dafe3845da0130811064a2ebec8368502b7e0feb3564ae44d050abef3a56ba"
+    },
+    "inventory_acceptance": {
+      "inventory_acceptance_decision_id": "synthetic_inventory_acceptance_decision_id",
+      "inventory_acceptance_generation": 1,
+      "inventory_acceptance_schema_version": "campaign_inventory_acceptance_v1",
+      "inventory_acceptance_record_sha256": "d1b729e0f44e51087013885fba5308032efe6efe81b1a58e22c6ec0083321674"
+    },
+    "plan_acceptance": {
+      "attempt_plan_acceptance_decision_id": "synthetic_attempt_plan_acceptance_decision_id",
+      "attempt_plan_acceptance_generation": 1,
+      "attempt_plan_acceptance_schema_version": "attempt_plan_acceptance_v1",
+      "attempt_plan_acceptance_record_sha256": "74192705bf56c6334e7f26a0d417477c499e24272876c3b783ed40d31fa9f195"
+    },
+    "trial_authority": {
+      "allocation_authority_id": "synthetic_allocation_authority_id",
+      "allocation_authority_generation": 1,
+      "allocation_authority_schema_version": "trial_allocation_authority_v1",
+      "allocation_authority_record_sha256": "25530a7a884d815d71c3042c32fb2ad41833022405f4ab06ee26c57e97e73fad"
+    },
+    "inventory_authority": {
+      "seal_authority_id": "synthetic_seal_authority_id",
+      "seal_authority_generation": 1,
+      "seal_authority_schema_version": "campaign_inventory_seal_authority_v1",
+      "seal_authority_record_sha256": "5953a004593096b51b2a041b55051ea4e4db9b61ddc1887c35d939eda30e336e"
+    },
+    "plan_authority": {
+      "allocation_authority_id": "synthetic_allocation_authority_id",
+      "allocation_authority_generation": 1,
+      "allocation_authority_schema_version": "attempt_allocation_authority_v1",
+      "allocation_authority_record_sha256": "25530a7a884d815d71c3042c32fb2ad41833022405f4ab06ee26c57e97e73fad"
+    },
+    "readiness_authority": {
+      "start_authority_id": "synthetic_start_authority_id",
+      "start_authority_generation": 1,
+      "start_authority_schema_version": "attempt_start_authority_v1",
+      "start_authority_record_sha256": "f3419412fb36a74faf824643f50e73dc13776649d9a62d7209db0c8243746feb"
+    }
+  },
+  "readiness_operand_specimen": {
+    "kind": "OPERAND_ONLY_NOT_COMPLETE_READINESS_OR_PASSING_RUNTIME_BUNDLE",
+    "same_transaction_expected": {
+      "inventory_catalog_key": {
+        "inventory_authority_id": "synthetic_inventory_authority_id",
+        "inventory_authority_registry_sha256": "edb9eea2dd427be1f61e389df0033cb2c4613c2eae5cf1698f58388880c36552",
+        "inventory_authority_version": 1,
+        "inventory_record_id": "synthetic_inventory_record_id",
+        "inventory_record_schema_version": "campaign_inventory_record_v1",
+        "inventory_record_version": 1,
+        "inventory_record_canonicalization_id": "pit_canonical_json_v1",
+        "sealed_trial_inventory_sha256": "6e37dd82d22fc743ae7c286d74024226e797d79804537b217ccb5839db72d4da"
+      },
+      "inventory_acceptance": {
+        "inventory_acceptance_decision_id": "synthetic_inventory_acceptance_decision_id",
+        "inventory_acceptance_generation": 1,
+        "inventory_acceptance_schema_version": "campaign_inventory_acceptance_v1",
+        "inventory_acceptance_record_sha256": "d1b729e0f44e51087013885fba5308032efe6efe81b1a58e22c6ec0083321674"
+      },
+      "seal_event_id_sha256": {
+        "event_id": "evt_11111111111111111111111111111111",
+        "event_sha256": "3fd327c0548a06c97fa0335e796b9b8f7de52812a9fde0a31ce9b8edda78b5a4"
+      },
+      "family_definition_and_acceptance": [
+        {
+          "trial_family_id": "fam_11111111111111111111111111111111",
+          "definition": {
+            "family_authority_id": "synthetic_family_authority_id",
+            "family_authority_version": 1,
+            "family_authority_registry_sha256": "5adfa9a7d464faab09fc85cff30ddd4cd6e78bfce8d15e5bb2e2bb7b71f99850",
+            "family_definition_record_id": "synthetic_family_definition_record_id",
+            "family_definition_record_version": 1,
+            "family_definition_schema_version": "trial_family_definition_v1",
+            "family_definition_canonicalization_id": "pit_canonical_json_v1",
+            "family_definition_record_sha256": "b97e296d751ef2998937d60f7e4f6052a5d3c0ef618790761f129a8cf2515bc7"
+          },
+          "acceptance": {
+            "family_acceptance_decision_id": "synthetic_family_acceptance_decision_id",
+            "family_acceptance_generation": 1,
+            "family_acceptance_schema_version": "trial_family_definition_acceptance_v1",
+            "family_acceptance_record_sha256": "d0db21dd7781e3e5fde24fad6d15f29709e4a81442e81a54fd982f57fe2e734b"
+          }
+        }
+      ],
+      "sample_record_acceptance_projection_publication_approval": [
+        {
+          "sample_id": "smp_11111111111111111111111111111111",
+          "record": {
+            "sample_authority_id": "synthetic_sample_authority_id",
+            "sample_authority_version": 1,
+            "sample_authority_registry_sha256": "ece8fb0971e245f4c014deed1bf3c2fad03bf05fd08c4510e9b272cd1d548182",
+            "sample_record_id": "synthetic_sample_record_id",
+            "sample_record_version": 1,
+            "sample_record_schema_version": "stage3_sample_record_v1",
+            "sample_record_canonicalization_id": "pit_canonical_json_v1",
+            "sample_record_sha256": "17ebcc327ceafc912cf1c4514a8b440ead09a12efc5fc3fdc99a35b9e256a9dc"
+          },
+          "acceptance": {
+            "sample_acceptance_decision_id": "synthetic_sample_acceptance_decision_id",
+            "sample_acceptance_generation": 1,
+            "sample_acceptance_schema_version": "stage3_sample_acceptance_v1",
+            "sample_acceptance_record_sha256": "77879445dd5d6650a94cb25f3e210f41a18442e14f95065a2a83bb78b5470523"
+          },
+          "projection": {
+            "sample_public_projection_id": "synthetic_sample_public_projection_id",
+            "sample_public_projection_schema_version": "public_redacted_projection_v1",
+            "sample_public_projection_sha256": "28ae0b7d17a272f4e2e84bc2c05da21f69c399a1253f902dd7885f08d1481f77"
+          },
+          "publication_approval": {
+            "sample_publication_approval_id": "synthetic_sample_publication_approval_id",
+            "sample_publication_approval_generation": 1,
+            "sample_publication_approval_schema_version": "sample_public_projection_approval_v1",
+            "sample_publication_approval_record_sha256": "577c25fe16d7398718816099fcbeac50d78d648185e40b535c3651911edab873"
+          }
+        }
+      ],
+      "trial_definition_acceptance_projection_allocation_authority": {
+        "trial_id": "trl_11111111111111111111111111111111",
+        "definition": {
+          "trial_definition_authority_id": "synthetic_trial_definition_authority_id",
+          "trial_definition_authority_registry_sha256": "c2ddab1b8a781b272d2bc0e30596950c376bf7263e2642e0c4a621425016fae0",
+          "trial_definition_authority_version": 1,
+          "trial_definition_record_id": "synthetic_trial_definition_record_id",
+          "trial_definition_record_schema_version": "trial_definition_record_v1",
+          "trial_definition_record_version": 1,
+          "trial_definition_record_canonicalization_id": "pit_canonical_json_v1",
+          "trial_definition_record_sha256": "8f029d1b2931f677cc5724e74af09e30337a93bc9ef2049d0d5c9694250f9bf1"
+        },
+        "acceptance": {
+          "trial_definition_acceptance_decision_id": "synthetic_trial_definition_acceptance_decision_id",
+          "trial_definition_acceptance_generation": 1,
+          "trial_definition_acceptance_schema_version": "trial_definition_acceptance_v1",
+          "trial_definition_acceptance_record_sha256": "a41a932cd36865ec2fb0e3836abc7b9e747f82669dadec2c8b2ad4cae683313a"
+        },
+        "projection": {
+          "trial_definition_public_projection_id": "synthetic_trial_definition_public_projection_id",
+          "trial_definition_public_projection_schema_version": "public_redacted_projection_v1",
+          "trial_definition_public_projection_sha256": "91285abb926b266088695c35265653ed481aea9b0115992408fbed6921c3e75e"
+        },
+        "publication_approval": {
+          "trial_definition_publication_approval_id": "synthetic_trial_definition_publication_approval_id",
+          "trial_definition_publication_approval_generation": 1,
+          "trial_definition_publication_approval_schema_version": "trial_definition_public_projection_approval_v1",
+          "trial_definition_publication_approval_record_sha256": "05dafe3845da0130811064a2ebec8368502b7e0feb3564ae44d050abef3a56ba"
+        },
+        "allocation_authority": {
+          "allocation_authority_id": "synthetic_allocation_authority_id",
+          "allocation_authority_generation": 1,
+          "allocation_authority_schema_version": "trial_allocation_authority_v1",
+          "allocation_authority_record_sha256": "25530a7a884d815d71c3042c32fb2ad41833022405f4ab06ee26c57e97e73fad"
+        }
+      },
+      "attempt_plan_catalog_key": {
+        "attempt_plan_authority_id": "synthetic_attempt_plan_authority_id",
+        "attempt_plan_authority_registry_sha256": "c45a6cf2d90ec3844d1f3b46795e526e1ece338f419c7f00b02506cba2066fcc",
+        "attempt_plan_authority_version": 1,
+        "attempt_plan_record_id": "synthetic_attempt_plan_record_id",
+        "attempt_plan_record_schema_version": "attempt_plan_record_v1",
+        "attempt_plan_record_version": 1,
+        "attempt_plan_record_canonicalization_id": "pit_canonical_json_v1",
+        "attempt_plan_record_sha256": "0a8aac4b078793963d0d2cb5f956fb7b9c3c2fc4a16928a1b92c3fa4c85508e9"
+      },
+      "attempt_plan_acceptance": {
+        "attempt_plan_acceptance_decision_id": "synthetic_attempt_plan_acceptance_decision_id",
+        "attempt_plan_acceptance_generation": 1,
+        "attempt_plan_acceptance_schema_version": "attempt_plan_acceptance_v1",
+        "attempt_plan_acceptance_record_sha256": "74192705bf56c6334e7f26a0d417477c499e24272876c3b783ed40d31fa9f195"
+      },
+      "attempt_allocation_authority": {
+        "allocation_authority_id": "synthetic_allocation_authority_id",
+        "allocation_authority_generation": 1,
+        "allocation_authority_schema_version": "attempt_allocation_authority_v1",
+        "allocation_authority_record_sha256": "25530a7a884d815d71c3042c32fb2ad41833022405f4ab06ee26c57e97e73fad"
+      },
+      "attempt_allocation_event": {
+        "event_id": "evt_11111111111111111111111111111111",
+        "event_sha256": "3fd327c0548a06c97fa0335e796b9b8f7de52812a9fde0a31ce9b8edda78b5a4"
+      },
+      "retained_source_event_id_hash": [
+        {
+          "subject_type": "trial_family",
+          "subject_id": "fam_11111111111111111111111111111111",
+          "event_type": "TRIAL_FAMILY_REGISTERED",
+          "source": {
+            "event_id": "evt_11111111111111111111111111111111",
+            "event_sha256": "7a05a78d47bcc3c1b227c08381438494788793406acfdc0451917788c1b3173b"
+          }
+        },
+        {
+          "subject_type": "sample",
+          "subject_id": "smp_22222222222222222222222222222222",
+          "event_type": "SAMPLE_REGISTERED",
+          "source": {
+            "event_id": "evt_22222222222222222222222222222222",
+            "event_sha256": "4de788113729dea78050226f128510ad3a3ff7c2a99ffc6758dcf11b0953db6a"
+          }
+        },
+        {
+          "subject_type": "trial",
+          "subject_id": "trl_33333333333333333333333333333333",
+          "event_type": "TRIAL_ALLOCATED",
+          "source": {
+            "event_id": "evt_33333333333333333333333333333333",
+            "event_sha256": "8ad831059ceb665db8557451194393369e5081f5c2dd150c4585afcf4c916c7a"
+          }
+        },
+        {
+          "subject_type": "campaign",
+          "subject_id": "cmp_44444444444444444444444444444444",
+          "event_type": "CAMPAIGN_INVENTORY_SEALED",
+          "source": {
+            "event_id": "evt_44444444444444444444444444444444",
+            "event_sha256": "830d013bd8fc69096b51b01fa50719ee46b61f00b7a9dddab7e2b89a0c6fd077"
+          }
+        },
+        {
+          "subject_type": "attempt",
+          "subject_id": "att_55555555555555555555555555555555",
+          "event_type": "ATTEMPT_ALLOCATED",
+          "source": {
+            "event_id": "evt_55555555555555555555555555555555",
+            "event_sha256": "ff058499de7fabaa3d004dafa46615b648d7b3ef56296b0f21c40d3be6723e00"
+          }
+        }
+      ]
+    },
+    "readiness_operands": {
+      "inventory_catalog_key": {
+        "inventory_authority_id": "synthetic_inventory_authority_id",
+        "inventory_authority_registry_sha256": "edb9eea2dd427be1f61e389df0033cb2c4613c2eae5cf1698f58388880c36552",
+        "inventory_authority_version": 1,
+        "inventory_record_id": "synthetic_inventory_record_id",
+        "inventory_record_schema_version": "campaign_inventory_record_v1",
+        "inventory_record_version": 1,
+        "inventory_record_canonicalization_id": "pit_canonical_json_v1",
+        "sealed_trial_inventory_sha256": "6e37dd82d22fc743ae7c286d74024226e797d79804537b217ccb5839db72d4da"
+      },
+      "inventory_acceptance": {
+        "inventory_acceptance_decision_id": "synthetic_inventory_acceptance_decision_id",
+        "inventory_acceptance_generation": 1,
+        "inventory_acceptance_schema_version": "campaign_inventory_acceptance_v1",
+        "inventory_acceptance_record_sha256": "d1b729e0f44e51087013885fba5308032efe6efe81b1a58e22c6ec0083321674"
+      },
+      "seal_event_id_sha256": {
+        "event_id": "evt_11111111111111111111111111111111",
+        "event_sha256": "3fd327c0548a06c97fa0335e796b9b8f7de52812a9fde0a31ce9b8edda78b5a4"
+      },
+      "family_definition_and_acceptance": [
+        {
+          "trial_family_id": "fam_11111111111111111111111111111111",
+          "definition": {
+            "family_authority_id": "synthetic_family_authority_id",
+            "family_authority_version": 1,
+            "family_authority_registry_sha256": "5adfa9a7d464faab09fc85cff30ddd4cd6e78bfce8d15e5bb2e2bb7b71f99850",
+            "family_definition_record_id": "synthetic_family_definition_record_id",
+            "family_definition_record_version": 1,
+            "family_definition_schema_version": "trial_family_definition_v1",
+            "family_definition_canonicalization_id": "pit_canonical_json_v1",
+            "family_definition_record_sha256": "b97e296d751ef2998937d60f7e4f6052a5d3c0ef618790761f129a8cf2515bc7"
+          },
+          "acceptance": {
+            "family_acceptance_decision_id": "synthetic_family_acceptance_decision_id",
+            "family_acceptance_generation": 1,
+            "family_acceptance_schema_version": "trial_family_definition_acceptance_v1",
+            "family_acceptance_record_sha256": "d0db21dd7781e3e5fde24fad6d15f29709e4a81442e81a54fd982f57fe2e734b"
+          }
+        }
+      ],
+      "sample_record_acceptance_projection_publication_approval": [
+        {
+          "sample_id": "smp_11111111111111111111111111111111",
+          "record": {
+            "sample_authority_id": "synthetic_sample_authority_id",
+            "sample_authority_version": 1,
+            "sample_authority_registry_sha256": "ece8fb0971e245f4c014deed1bf3c2fad03bf05fd08c4510e9b272cd1d548182",
+            "sample_record_id": "synthetic_sample_record_id",
+            "sample_record_version": 1,
+            "sample_record_schema_version": "stage3_sample_record_v1",
+            "sample_record_canonicalization_id": "pit_canonical_json_v1",
+            "sample_record_sha256": "17ebcc327ceafc912cf1c4514a8b440ead09a12efc5fc3fdc99a35b9e256a9dc"
+          },
+          "acceptance": {
+            "sample_acceptance_decision_id": "synthetic_sample_acceptance_decision_id",
+            "sample_acceptance_generation": 1,
+            "sample_acceptance_schema_version": "stage3_sample_acceptance_v1",
+            "sample_acceptance_record_sha256": "77879445dd5d6650a94cb25f3e210f41a18442e14f95065a2a83bb78b5470523"
+          },
+          "projection": {
+            "sample_public_projection_id": "synthetic_sample_public_projection_id",
+            "sample_public_projection_schema_version": "public_redacted_projection_v1",
+            "sample_public_projection_sha256": "28ae0b7d17a272f4e2e84bc2c05da21f69c399a1253f902dd7885f08d1481f77"
+          },
+          "publication_approval": {
+            "sample_publication_approval_id": "synthetic_sample_publication_approval_id",
+            "sample_publication_approval_generation": 1,
+            "sample_publication_approval_schema_version": "sample_public_projection_approval_v1",
+            "sample_publication_approval_record_sha256": "577c25fe16d7398718816099fcbeac50d78d648185e40b535c3651911edab873"
+          }
+        }
+      ],
+      "trial_definition_acceptance_projection_allocation_authority": {
+        "trial_id": "trl_11111111111111111111111111111111",
+        "definition": {
+          "trial_definition_authority_id": "synthetic_trial_definition_authority_id",
+          "trial_definition_authority_registry_sha256": "c2ddab1b8a781b272d2bc0e30596950c376bf7263e2642e0c4a621425016fae0",
+          "trial_definition_authority_version": 1,
+          "trial_definition_record_id": "synthetic_trial_definition_record_id",
+          "trial_definition_record_schema_version": "trial_definition_record_v1",
+          "trial_definition_record_version": 1,
+          "trial_definition_record_canonicalization_id": "pit_canonical_json_v1",
+          "trial_definition_record_sha256": "8f029d1b2931f677cc5724e74af09e30337a93bc9ef2049d0d5c9694250f9bf1"
+        },
+        "acceptance": {
+          "trial_definition_acceptance_decision_id": "synthetic_trial_definition_acceptance_decision_id",
+          "trial_definition_acceptance_generation": 1,
+          "trial_definition_acceptance_schema_version": "trial_definition_acceptance_v1",
+          "trial_definition_acceptance_record_sha256": "a41a932cd36865ec2fb0e3836abc7b9e747f82669dadec2c8b2ad4cae683313a"
+        },
+        "projection": {
+          "trial_definition_public_projection_id": "synthetic_trial_definition_public_projection_id",
+          "trial_definition_public_projection_schema_version": "public_redacted_projection_v1",
+          "trial_definition_public_projection_sha256": "91285abb926b266088695c35265653ed481aea9b0115992408fbed6921c3e75e"
+        },
+        "publication_approval": {
+          "trial_definition_publication_approval_id": "synthetic_trial_definition_publication_approval_id",
+          "trial_definition_publication_approval_generation": 1,
+          "trial_definition_publication_approval_schema_version": "trial_definition_public_projection_approval_v1",
+          "trial_definition_publication_approval_record_sha256": "05dafe3845da0130811064a2ebec8368502b7e0feb3564ae44d050abef3a56ba"
+        },
+        "allocation_authority": {
+          "allocation_authority_id": "synthetic_allocation_authority_id",
+          "allocation_authority_generation": 1,
+          "allocation_authority_schema_version": "trial_allocation_authority_v1",
+          "allocation_authority_record_sha256": "25530a7a884d815d71c3042c32fb2ad41833022405f4ab06ee26c57e97e73fad"
+        }
+      },
+      "attempt_plan_catalog_key": {
+        "attempt_plan_authority_id": "synthetic_attempt_plan_authority_id",
+        "attempt_plan_authority_registry_sha256": "c45a6cf2d90ec3844d1f3b46795e526e1ece338f419c7f00b02506cba2066fcc",
+        "attempt_plan_authority_version": 1,
+        "attempt_plan_record_id": "synthetic_attempt_plan_record_id",
+        "attempt_plan_record_schema_version": "attempt_plan_record_v1",
+        "attempt_plan_record_version": 1,
+        "attempt_plan_record_canonicalization_id": "pit_canonical_json_v1",
+        "attempt_plan_record_sha256": "0a8aac4b078793963d0d2cb5f956fb7b9c3c2fc4a16928a1b92c3fa4c85508e9"
+      },
+      "attempt_plan_acceptance": {
+        "attempt_plan_acceptance_decision_id": "synthetic_attempt_plan_acceptance_decision_id",
+        "attempt_plan_acceptance_generation": 1,
+        "attempt_plan_acceptance_schema_version": "attempt_plan_acceptance_v1",
+        "attempt_plan_acceptance_record_sha256": "74192705bf56c6334e7f26a0d417477c499e24272876c3b783ed40d31fa9f195"
+      },
+      "attempt_allocation_authority": {
+        "allocation_authority_id": "synthetic_allocation_authority_id",
+        "allocation_authority_generation": 1,
+        "allocation_authority_schema_version": "attempt_allocation_authority_v1",
+        "allocation_authority_record_sha256": "25530a7a884d815d71c3042c32fb2ad41833022405f4ab06ee26c57e97e73fad"
+      },
+      "attempt_allocation_event": {
+        "event_id": "evt_11111111111111111111111111111111",
+        "event_sha256": "3fd327c0548a06c97fa0335e796b9b8f7de52812a9fde0a31ce9b8edda78b5a4"
+      },
+      "retained_source_event_id_hash": [
+        {
+          "subject_type": "trial_family",
+          "subject_id": "fam_11111111111111111111111111111111",
+          "event_type": "TRIAL_FAMILY_REGISTERED",
+          "source": {
+            "event_id": "evt_11111111111111111111111111111111",
+            "event_sha256": "7a05a78d47bcc3c1b227c08381438494788793406acfdc0451917788c1b3173b"
+          }
+        },
+        {
+          "subject_type": "sample",
+          "subject_id": "smp_22222222222222222222222222222222",
+          "event_type": "SAMPLE_REGISTERED",
+          "source": {
+            "event_id": "evt_22222222222222222222222222222222",
+            "event_sha256": "4de788113729dea78050226f128510ad3a3ff7c2a99ffc6758dcf11b0953db6a"
+          }
+        },
+        {
+          "subject_type": "trial",
+          "subject_id": "trl_33333333333333333333333333333333",
+          "event_type": "TRIAL_ALLOCATED",
+          "source": {
+            "event_id": "evt_33333333333333333333333333333333",
+            "event_sha256": "8ad831059ceb665db8557451194393369e5081f5c2dd150c4585afcf4c916c7a"
+          }
+        },
+        {
+          "subject_type": "campaign",
+          "subject_id": "cmp_44444444444444444444444444444444",
+          "event_type": "CAMPAIGN_INVENTORY_SEALED",
+          "source": {
+            "event_id": "evt_44444444444444444444444444444444",
+            "event_sha256": "830d013bd8fc69096b51b01fa50719ee46b61f00b7a9dddab7e2b89a0c6fd077"
+          }
+        },
+        {
+          "subject_type": "attempt",
+          "subject_id": "att_55555555555555555555555555555555",
+          "event_type": "ATTEMPT_ALLOCATED",
+          "source": {
+            "event_id": "evt_55555555555555555555555555555555",
+            "event_sha256": "ff058499de7fabaa3d004dafa46615b648d7b3ef56296b0f21c40d3be6723e00"
+          }
+        }
+      ]
+    }
+  },
+  "inventory_role_specimen": {
+    "campaign_inventory_record_v1": {
+      "issuer_actor_id": "act_11111111111111111111111111111111",
+      "private_input_producer_actor_ids": [
+        "act_55555555555555555555555555555555"
+      ]
+    },
+    "campaign_inventory_acceptance_v1": {
+      "reviewer_actor_id": "act_22222222222222222222222222222222"
+    },
+    "campaign_inventory_seal_authority_v1": {
+      "issuer_actor_id": "act_33333333333333333333333333333333",
+      "authorized_actor_id": "act_44444444444444444444444444444444"
+    },
+    "request": {
+      "actor_id": "act_44444444444444444444444444444444"
+    },
+    "included_trial_definition": {
+      "issuer_actor_id": "act_66666666666666666666666666666666"
+    }
+  },
+  "sample_origin_specimens": [
+    {
+      "representation_path": "SAMPLE_REGISTERED",
+      "ledger_id": "ldg_11111111111111111111111111111111",
+      "sample_id": "smp_11111111111111111111111111111111",
+      "canonical_sample_lineage_id": "synthetic_shared_lineage",
+      "native_record_identity": {
+        "sample_authority_id": "synthetic_sample_authority_id",
+        "sample_authority_version": 1,
+        "sample_authority_registry_sha256": "ece8fb0971e245f4c014deed1bf3c2fad03bf05fd08c4510e9b272cd1d548182",
+        "sample_record_id": "synthetic_sample_record_id",
+        "sample_record_version": 1,
+        "sample_record_schema_version": "stage3_sample_record_v1",
+        "sample_record_canonicalization_id": "pit_canonical_json_v1",
+        "sample_record_sha256": "17ebcc327ceafc912cf1c4514a8b440ead09a12efc5fc3fdc99a35b9e256a9dc"
+      }
+    },
+    {
+      "representation_path": "STAGE3_SAMPLE_REFERENCE_BOUND",
+      "ledger_id": "ldg_11111111111111111111111111111111",
+      "sample_id": "smp_22222222222222222222222222222222",
+      "canonical_sample_lineage_id": "synthetic_shared_lineage",
+      "native_record_identity": {
+        "sample_authority_id": "synthetic_sample_authority_id",
+        "sample_authority_version": 1,
+        "sample_authority_registry_sha256": "ece8fb0971e245f4c014deed1bf3c2fad03bf05fd08c4510e9b272cd1d548182",
+        "sample_record_id": "synthetic_sample_record_id",
+        "sample_record_version": 1,
+        "sample_record_schema_version": "stage3_sample_record_v1",
+        "sample_record_canonicalization_id": "pit_canonical_json_v1",
+        "sample_record_sha256": "17ebcc327ceafc912cf1c4514a8b440ead09a12efc5fc3fdc99a35b9e256a9dc"
+      }
+    }
+  ],
+  "external_reference_readiness_specimen": {
+    "kind": "EXTERNAL_REFERENCE_RETAINED_SOURCE_OPERAND_ONLY",
+    "retained_source_event_id_hash": [
+      {
+        "subject_type": "trial_family",
+        "subject_id": "fam_11111111111111111111111111111111",
+        "event_type": "TRIAL_FAMILY_REGISTERED",
+        "source": {
+          "event_id": "evt_11111111111111111111111111111111",
+          "event_sha256": "7a05a78d47bcc3c1b227c08381438494788793406acfdc0451917788c1b3173b"
+        }
+      },
+      {
+        "subject_type": "sample",
+        "subject_id": "smp_11111111111111111111111111111111",
+        "event_type": "STAGE3_SAMPLE_REFERENCE_BOUND",
+        "source": {
+          "event_id": "evt_22222222222222222222222222222222",
+          "event_sha256": "4de788113729dea78050226f128510ad3a3ff7c2a99ffc6758dcf11b0953db6a"
+        }
+      },
+      {
+        "subject_type": "sample",
+        "subject_id": "smp_11111111111111111111111111111111",
+        "event_type": "CAMPAIGN_ENTITY_BOUND",
+        "source": {
+          "event_id": "evt_66666666666666666666666666666666",
+          "event_sha256": "b549b4806b4942eff2f411579b2e95e1619abd0c7554cc03a1d0a0f07d1947f0"
+        }
+      },
+      {
+        "subject_type": "trial",
+        "subject_id": "trl_33333333333333333333333333333333",
+        "event_type": "TRIAL_ALLOCATED",
+        "source": {
+          "event_id": "evt_33333333333333333333333333333333",
+          "event_sha256": "8ad831059ceb665db8557451194393369e5081f5c2dd150c4585afcf4c916c7a"
+        }
+      },
+      {
+        "subject_type": "campaign",
+        "subject_id": "cmp_44444444444444444444444444444444",
+        "event_type": "CAMPAIGN_INVENTORY_SEALED",
+        "source": {
+          "event_id": "evt_44444444444444444444444444444444",
+          "event_sha256": "830d013bd8fc69096b51b01fa50719ee46b61f00b7a9dddab7e2b89a0c6fd077"
+        }
+      },
+      {
+        "subject_type": "attempt",
+        "subject_id": "att_55555555555555555555555555555555",
+        "event_type": "ATTEMPT_ALLOCATED",
+        "source": {
+          "event_id": "evt_55555555555555555555555555555555",
+          "event_sha256": "ff058499de7fabaa3d004dafa46615b648d7b3ef56296b0f21c40d3be6723e00"
+        }
+      }
+    ]
+  },
+  "access_evidence_ref_specimen": {
+    "ACCESS_INTENT": {
+      "evidence_ref_ids": [
+        "synthetic_intent_evidence_ref"
+      ]
+    },
+    "ACCESS_STARTED": {
+      "evidence_ref_ids": [
+        "synthetic_intent_evidence_ref",
+        "synthetic_start_evidence_ref"
+      ]
+    },
+    "ACCESS_COMPLETED": {
+      "evidence_ref_ids": [
+        "synthetic_completed_evidence_ref",
+        "synthetic_intent_evidence_ref",
+        "synthetic_start_evidence_ref"
+      ]
+    }
+  },
+  "specimen_limit": "Operands and role excerpts only; synthetic hashes bind named fixture strings, not complete external record bytes. No specimen is a passing runtime catalog.",
+  "access_field_types": {
+    "ACCESS_INTENT": {
+      "campaign_scope_ids": "sorted-unique campaign_id array; exactly 1",
+      "inventory_seal_event_id": "event_id",
+      "inventory_seal_event_sha256": "sha256",
+      "sample_id": "sample_id",
+      "affected_trial_ids": "sorted-unique trial_id array; 1..4096; nonempty subset of current sealed set",
+      "purpose": "closed enum: validation, evaluation; design is forbidden",
+      "intended_window_id": "existing safe_public_id",
+      "intended_field_class_ids": "sorted-unique safe_public_id array; 1..4096",
+      "accessor_code_tree_sha256": "sha256",
+      "accessor_environment_id": "existing safe_public_id",
+      "accessor_environment_lock_sha256": "sha256",
+      "authorization_record_id": "existing safe_public_id",
+      "authorization_record_schema_version": "literal sample_access_authorization_v1",
+      "authorization_record_sha256": "sha256",
+      "intent_authority_generation": "I-JSON safe integer, minimum 1; Boolean excluded",
+      "intent_authority_id": "existing safe_public_id",
+      "intent_authority_record_sha256": "sha256",
+      "intent_authority_schema_version": "literal sample_access_intent_authority_v1",
+      "access_capability_id": "existing cap_<32 lowercase hexadecimal digits> namespace",
+      "access_capability_record_canonicalization_id": "literal pit_canonical_json_v1",
+      "access_capability_record_schema_version": "literal sample_access_capability_record_v1",
+      "access_capability_record_sha256": "sha256",
+      "access_capability_record_version": "I-JSON safe integer, minimum 1; Boolean excluded",
+      "evidence_ref_ids": "sorted-unique safe_public_id array; 1..4096"
+    },
+    "ACCESS_STARTED": {
+      "campaign_scope_ids": "sorted-unique campaign_id array; exactly 1",
+      "access_intent_event_id": "event_id",
+      "access_intent_event_sha256": "sha256",
+      "access_capability_id": "existing cap_<32 lowercase hexadecimal digits> namespace",
+      "reader_code_tree_sha256": "sha256",
+      "reader_environment_id": "existing safe_public_id",
+      "reader_environment_lock_sha256": "sha256",
+      "start_authority_generation": "I-JSON safe integer, minimum 1; Boolean excluded",
+      "start_authority_id": "existing safe_public_id",
+      "start_authority_record_sha256": "sha256",
+      "start_authority_schema_version": "literal sample_access_start_authority_v1",
+      "sample_id": "sample_id",
+      "evidence_ref_ids": "sorted-unique safe_public_id array; 1..4096"
+    },
+    "ACCESS_COMPLETED": {
+      "campaign_scope_ids": "sorted-unique campaign_id array; exactly 1",
+      "access_started_event_id": "event_id",
+      "access_started_event_sha256": "sha256",
+      "sample_id": "sample_id",
+      "actual_window_id": "existing safe_public_id",
+      "names_observed": "sorted-unique safe_public_id array; 0..4096",
+      "protected_material_observed": "closed enum: NONE, SOME, UNKNOWN",
+      "reader_code_tree_sha256": "sha256",
+      "reader_environment_id": "existing safe_public_id",
+      "reader_environment_lock_sha256": "sha256",
+      "started_at": "existing timestamp",
+      "ended_at": "existing timestamp",
+      "backfilled": "Boolean",
+      "evidence_ref_ids": "sorted-unique safe_public_id array; 1..4096"
+    }
+  }
+}

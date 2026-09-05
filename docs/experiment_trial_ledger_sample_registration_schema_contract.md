@@ -396,3 +396,81 @@ immutable release, and resolves cross-campaign external-origin reuse by
 referencing the exact first `STAGE3_SAMPLE_REFERENCE_BOUND` event rather than
 allocating another sample identity. The exact successor authority is
 `docs/experiment_trial_ledger_binding_schema_contract.md`.
+
+## Track B v7 Design Candidate Extension
+
+Status: proposed owner-contract extension for `OD-TB-V7-SCHEMA`; design only.
+The accepted plan manifest is pinned in the linked v7 design and its fixture.
+The preceding contract remains the frozen baseline. This additive section
+specifies required resolved-byte paths and additional predicates for the
+single Track B design candidate. Existing payload fields, tuple identity,
+canonicalization, privacy rules and stronger role checks remain binding.
+These paths are proposed schema additions where the baseline states only
+semantic bindings; they are not claims about an inspected external catalog.
+An owner catalog lacking any required operand remains inadmissible until
+this design and its owner-schema mapping are approved. No request field
+can substitute for a missing resolved-byte operand.
+
+### Complete tuple paths
+
+Every field retains its exact baseline local type. Ordered tuples use the order
+below; nested objects compare all native keys and values. Acceptance, approval
+and authority resolution also includes the complete owning catalog/subject key.
+Identical IDs in different owner/schema streams do not merge those streams.
+
+| Tuple | Retained source paths (all fields) |
+| --- | --- |
+| `sample_catalog_key` | `SAMPLE_REGISTERED.payload.sample_authority_id`, `SAMPLE_REGISTERED.payload.sample_authority_version`, `SAMPLE_REGISTERED.payload.sample_authority_registry_sha256`, `SAMPLE_REGISTERED.payload.sample_record_id`, `SAMPLE_REGISTERED.payload.sample_record_version`, `SAMPLE_REGISTERED.payload.sample_record_schema_version`, `SAMPLE_REGISTERED.payload.sample_record_canonicalization_id`, `SAMPLE_REGISTERED.payload.sample_record_sha256` |
+| `sample_acceptance` | `SAMPLE_REGISTERED.payload.sample_acceptance_decision_id`, `SAMPLE_REGISTERED.payload.sample_acceptance_generation`, `SAMPLE_REGISTERED.payload.sample_acceptance_schema_version`, `SAMPLE_REGISTERED.payload.sample_acceptance_record_sha256` |
+| `sample_projection` | `SAMPLE_REGISTERED.payload.sample_public_projection_id`, `SAMPLE_REGISTERED.payload.sample_public_projection_schema_version`, `SAMPLE_REGISTERED.payload.sample_public_projection_sha256` |
+| `sample_publication_approval` | `SAMPLE_REGISTERED.payload.sample_publication_approval_id`, `SAMPLE_REGISTERED.payload.sample_publication_approval_generation`, `SAMPLE_REGISTERED.payload.sample_publication_approval_schema_version`, `SAMPLE_REGISTERED.payload.sample_publication_approval_record_sha256` |
+
+### Resolved role paths and content bindings
+
+Actor fields use the existing `actor_id` type and resolve to effective
+principals before comparison; aliases do not establish independence.
+`private_input_producer_actor_ids` is required, sorted-unique, with 0..4096
+`actor_id` values. Empty explicitly means no contributing private producer;
+omission is invalid. This is an owner-schema extension, not a bound inherited
+from campaign scope. Overflow blocks admission pending an owner decision.
+The full baseline record contents and canonical bytes remain required; these
+paths never replace complete records with partial hash manifests.
+
+| Complete record | Required path | Type / binding |
+| --- | --- | --- |
+| `stage3_sample_record_v1` | `producer_actor_id` | `actor_id`; sample producer |
+| `stage3_sample_record_v1` | `private_input_producer_actor_ids` | Producer set above |
+| `stage3_sample_record_v1` | `canonical_sample_lineage_id` | Existing `safe_public_id`; BOTH paths |
+| `stage3_sample_record_v1` | `sample_id` | Existing typed ID; equals origin subject |
+| `stage3_sample_record_v1` | `campaign_scope_ids` | Exact origin scope; sorted-unique campaign IDs, 0..32 local, exactly 1 Stage 3 |
+| `stage3_sample_acceptance_v1` | `producer_actor_id` | Equals complete-record producer |
+| `stage3_sample_acceptance_v1` | `reviewer_actor_id` | Independent `actor_id` |
+
+Both paths already use `stage3_sample_record_v1`; no separate local type or
+generic external key is introduced. The complete record exposes the seven
+nondigest native `sample_catalog_key` fields at its root. Its canonical byte
+digest supplies `sample_record_sha256`, without embedding a self-hash. The
+comparable authority/record identity is the complete native eight-field key
+above on both paths. Acceptance/publication generations are excluded. The
+additional lineage key prevents reallocation when record/catalog versions or
+digests change. `ledger_epoch_id` in v7 denotes the existing `ledger_id`.
+
+Lineage is resolved from complete bytes, never added to the origin event payload,
+derived from sample ID, or accepted from request-only text. All baseline
+manifest/window/classification/sealing/access-policy/overlap fields remain
+required by the complete owner catalog schema. Resolve and compare those full
+bytes and their accepted content; unresolved schema does not permit a partial
+substitute. Missing local lineage maps to `SAMPLE_REGISTERED_LINEAGE_REQUIRED`.
+Missing Stage 3 lineage or another identity operand maps to
+`STAGE3_SAMPLE_REFERENCE_BOUND_RECORD_INCOMPLETE` or
+`SAMPLE_REGISTERED_RECORD_INCOMPLETE` respectively.
+
+Producer, reviewer and origin request actor are pairwise distinct. Reviewer
+membership in the producer set has its separate boundary-qualified refusal.
+Both origins apply v7 section 6.4's epoch-wide predicate and refusal precedence,
+with current acceptance, projection and publication approval at one `as_of`.
+Later references reuse the retained origin without another lineage reservation.
+
+The [v7 design](experiment_trial_ledger_track_b_v7_design.md) freezes the boundary predicates and refusal
+inventory. Its synthetic fixtures check design consistency; they do not
+demonstrate append, catalog, currentness, capability or SQLite execution.

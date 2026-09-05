@@ -380,3 +380,105 @@ without inventing private result fields. Keep `ACCESS_INTENT` as a separate
 higher-risk protected-access capability root and the campaign amendment pair
 as an optional inventory branch. Surface only a genuine owner-methodology
 choice under the bounded reminder policy.
+
+## Track B v7 Design Candidate Extension
+
+Status: proposed owner-contract extension for `OD-TB-V7-SCHEMA`; design only.
+The accepted plan manifest is pinned in the linked v7 design and its fixture.
+The preceding contract remains the frozen baseline. This additive section
+specifies required resolved-byte paths and additional predicates for the
+single Track B design candidate. Existing payload fields, tuple identity,
+canonicalization, privacy rules and stronger role checks remain binding.
+These paths are proposed schema additions where the baseline states only
+semantic bindings; they are not claims about an inspected external catalog.
+An owner catalog lacking any required operand remains inadmissible until
+this design and its owner-schema mapping are approved. No request field
+can substitute for a missing resolved-byte operand.
+
+### Complete tuple paths
+
+Every field retains its exact baseline local type. Ordered tuples use the order
+below; nested objects compare all native keys and values. Acceptance, approval
+and authority resolution also includes the complete owning catalog/subject key.
+Identical IDs in different owner/schema streams do not merge those streams.
+
+| Tuple | Retained source paths (all fields) |
+| --- | --- |
+| `readiness_catalog_key` | `ATTEMPT_STARTED.payload.readiness_authority_id`, `ATTEMPT_STARTED.payload.readiness_authority_registry_sha256`, `ATTEMPT_STARTED.payload.readiness_authority_version`, `ATTEMPT_STARTED.payload.readiness_record_id`, `ATTEMPT_STARTED.payload.readiness_record_schema_version`, `ATTEMPT_STARTED.payload.readiness_record_version`, `ATTEMPT_STARTED.payload.readiness_record_canonicalization_id`, `ATTEMPT_STARTED.payload.readiness_record_sha256` |
+| `readiness_authority` | `ATTEMPT_STARTED.payload.start_authority_id`, `ATTEMPT_STARTED.payload.start_authority_generation`, `ATTEMPT_STARTED.payload.start_authority_schema_version`, `ATTEMPT_STARTED.payload.start_authority_record_sha256` |
+
+### Resolved role paths and content bindings
+
+Actor fields use the existing `actor_id` type and resolve to effective
+principals before comparison; aliases do not establish independence.
+`private_input_producer_actor_ids` is required, sorted-unique, with 0..4096
+`actor_id` values. Empty explicitly means no contributing private producer;
+omission is invalid. This is an owner-schema extension, not a bound inherited
+from campaign scope. Overflow blocks admission pending an owner decision.
+The full baseline record contents and canonical bytes remain required; these
+paths never replace complete records with partial hash manifests.
+### Exact readiness operands
+
+These required root paths extend `attempt_start_readiness_record_v1`. Nested
+tuple objects contain all-and-only the native field names below. No generic
+external key or catalog is introduced. Event pairs contain exactly `event_id`
+and `event_sha256` with their existing types. Missing/null operands or missing/
+extra tuple fields map to `ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH` after valid
+readiness-wrapper resolution.
+
+| Required readiness path | Complete native fields |
+| --- | --- |
+| `inventory_catalog_key` | `inventory_authority_id`, `inventory_authority_registry_sha256`, `inventory_authority_version`, `inventory_record_id`, `inventory_record_schema_version`, `inventory_record_version`, `inventory_record_canonicalization_id`, `sealed_trial_inventory_sha256` |
+| `inventory_acceptance` | `inventory_acceptance_decision_id`, `inventory_acceptance_generation`, `inventory_acceptance_schema_version`, `inventory_acceptance_record_sha256` |
+| `seal_event_id_sha256` | `event_id`, `event_sha256` |
+| `family_definition_and_acceptance[].definition` | `family_authority_id`, `family_authority_version`, `family_authority_registry_sha256`, `family_definition_record_id`, `family_definition_record_version`, `family_definition_schema_version`, `family_definition_canonicalization_id`, `family_definition_record_sha256` |
+| `family_definition_and_acceptance[].acceptance` | `family_acceptance_decision_id`, `family_acceptance_generation`, `family_acceptance_schema_version`, `family_acceptance_record_sha256` |
+| `sample_record_acceptance_projection_publication_approval[].record` | `sample_authority_id`, `sample_authority_version`, `sample_authority_registry_sha256`, `sample_record_id`, `sample_record_version`, `sample_record_schema_version`, `sample_record_canonicalization_id`, `sample_record_sha256` |
+| `sample_record_acceptance_projection_publication_approval[].acceptance` | `sample_acceptance_decision_id`, `sample_acceptance_generation`, `sample_acceptance_schema_version`, `sample_acceptance_record_sha256` |
+| `sample_record_acceptance_projection_publication_approval[].projection` | `sample_public_projection_id`, `sample_public_projection_schema_version`, `sample_public_projection_sha256` |
+| `sample_record_acceptance_projection_publication_approval[].publication_approval` | `sample_publication_approval_id`, `sample_publication_approval_generation`, `sample_publication_approval_schema_version`, `sample_publication_approval_record_sha256` |
+| `trial_definition_acceptance_projection_allocation_authority.definition` | `trial_definition_authority_id`, `trial_definition_authority_registry_sha256`, `trial_definition_authority_version`, `trial_definition_record_id`, `trial_definition_record_schema_version`, `trial_definition_record_version`, `trial_definition_record_canonicalization_id`, `trial_definition_record_sha256` |
+| `trial_definition_acceptance_projection_allocation_authority.acceptance` | `trial_definition_acceptance_decision_id`, `trial_definition_acceptance_generation`, `trial_definition_acceptance_schema_version`, `trial_definition_acceptance_record_sha256` |
+| `trial_definition_acceptance_projection_allocation_authority.projection` | `trial_definition_public_projection_id`, `trial_definition_public_projection_schema_version`, `trial_definition_public_projection_sha256` |
+| `trial_definition_acceptance_projection_allocation_authority.publication_approval` | `trial_definition_publication_approval_id`, `trial_definition_publication_approval_generation`, `trial_definition_publication_approval_schema_version`, `trial_definition_publication_approval_record_sha256` |
+| `trial_definition_acceptance_projection_allocation_authority.allocation_authority` | `allocation_authority_id`, `allocation_authority_generation`, `allocation_authority_schema_version`, `allocation_authority_record_sha256` |
+| `attempt_plan_catalog_key` | `attempt_plan_authority_id`, `attempt_plan_authority_registry_sha256`, `attempt_plan_authority_version`, `attempt_plan_record_id`, `attempt_plan_record_schema_version`, `attempt_plan_record_version`, `attempt_plan_record_canonicalization_id`, `attempt_plan_record_sha256` |
+| `attempt_plan_acceptance` | `attempt_plan_acceptance_decision_id`, `attempt_plan_acceptance_generation`, `attempt_plan_acceptance_schema_version`, `attempt_plan_acceptance_record_sha256` |
+| `attempt_allocation_authority` | `allocation_authority_id`, `allocation_authority_generation`, `allocation_authority_schema_version`, `allocation_authority_record_sha256` |
+| `attempt_allocation_event` | `event_id`, `event_sha256` |
+| `retained_source_event_id_hash[].source` | `event_id`, `event_sha256` |
+
+Family entries also require `trial_family_id`, sample entries `sample_id`, and
+the trial entry `trial_id`, using existing typed IDs, never `fam_id`, `smp_id`
+or `trl_id` aliases. Arrays are sorted-unique by typed ID and match the exact
+same-transaction inherited sets. Sample cardinality is 0..32; family cardinality
+is 1..4096, an explicit owner extension. Overflow blocks rather than truncates.
+Each retained-source entry has exactly `subject_type`, `subject_id`,
+`event_type`, `source`. Allowed combinations are the baseline family
+registration, local/external sample origin, campaign binding, trial allocation,
+inventory seal and attempt allocation. The set is all-and-only the retained
+source events used in revalidation, sorted-unique by `source.event_id`, 1..16384.
+
+The right-hand operands are exactly v7 section 6.2's same-transaction results.
+Plan, plan acceptance and allocation authority are distinct comparisons. The
+event's start-authority resolves separately and is not nested in readiness.
+Missing/extra families or samples use the inherited-tuple refusal.
+
+Required readiness role paths are `issuer_actor_id`, `reviewer_actor_id`,
+`executor_actor_id`, `private_input_producer_actor_ids`. Required
+`attempt_start_authority_v1` paths are `issuer_actor_id`, `authorized_actor_id`
+and `executor_actor_id`. Authorized actor equals start request actor; authority
+executor equals readiness executor, else `ATTEMPT_STARTED_EXECUTOR_MISMATCH`.
+All baseline readiness independence checks remain, including plan/trial
+reviewers and prior allocation actor. Operational equality uses the trial
+owner's six exact root paths.
+
+The capability record's required `executor_actor_id` equals resolved readiness
+executor and never defaults to start-event actor. All other complete capability
+contents remain required. After committed start, EXECUTE consumption verifies
+executor, trial/attempt, code and environment. Wrong consumer maps to
+`CAPABILITY_CONSUMER_MISMATCH`. No production authentication is supplied here.
+
+The [v7 design](experiment_trial_ledger_track_b_v7_design.md) freezes the boundary predicates and refusal
+inventory. Its synthetic fixtures check design consistency; they do not
+demonstrate append, catalog, currentness, capability or SQLite execution.

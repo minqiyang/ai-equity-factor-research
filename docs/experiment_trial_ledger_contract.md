@@ -1141,3 +1141,124 @@ storage in tests until the private location is approved, add no heavyweight
 dependency without a separate decision, and preserve every failure. Formal
 interpretation remains blocked by Stage 4b, Stage 5, and all later applicable
 gates.
+
+## Track B v7 Design Candidate Extension
+
+Status: proposed owner-contract extension for `OD-TB-V7-SCHEMA`; design only.
+The accepted plan manifest is pinned in the linked v7 design and its fixture.
+The preceding contract remains the frozen baseline. This additive section
+specifies required resolved-byte paths and additional predicates for the
+single Track B design candidate. Existing payload fields, tuple identity,
+canonicalization, privacy rules and stronger role checks remain binding.
+These paths are proposed schema additions where the baseline states only
+semantic bindings; they are not claims about an inspected external catalog.
+An owner catalog lacking any required operand remains inadmissible until
+this design and its owner-schema mapping are approved. No request field
+can substitute for a missing resolved-byte operand.
+
+### Ingress, transaction and scoped currentness
+
+Retain the exact `ledger_operation_request_v1` key list above. Caller-supplied
+`sequence`, `recorded_at`, `previous_event_sha256` or
+`operation_request_sha256` refuse `OPERATION_REQUEST_COMMIT_FIELD_FORBIDDEN`.
+The future store uses `BEGIN IMMEDIATE`, fixes `as_of = Clock.now_utc()` once
+after lock acquisition and keeps one catalog snapshot stable through commit.
+Catalog mutations serialize against this transaction. It resolves complete
+pinned bytes, checks content and sole-current evidence, inspects committed
+parents/heads, constructs the store-owned envelope, validates raw event bytes
+and inserts in the same transaction. Any refusal rolls back event, head, origin
+and capability state. Contending writers re-read state after taking the lock.
+
+Sole-current means exactly one accepted, valid, active, unrevoked and
+unsuperseded generation at `as_of` in the owning authority/entity/schema stream.
+Retrieval alone does not establish currentness. Existing owner evidence is
+required; caller role/currentness labels cannot replace it. Missing/ambiguous
+owner evidence blocks admission. Generation comparisons do not cross owner
+streams even when a local entity or authority ID matches another stream.
+
+### ACCESS resolved tuples and role paths
+
+The schema-registry owner extension freezes payload field types. The exact
+authorization tuple is `authorization_record_id`,
+`authorization_record_schema_version`, `authorization_record_sha256`.
+The intent-authority tuple is `intent_authority_id`,
+`intent_authority_generation`, `intent_authority_schema_version`,
+`intent_authority_record_sha256`. The start-authority tuple is
+`start_authority_id`, `start_authority_generation`,
+`start_authority_schema_version`, `start_authority_record_sha256`.
+The capability tuple is `access_capability_id`,
+`access_capability_record_version`, `access_capability_record_schema_version`,
+`access_capability_record_canonicalization_id`, `access_capability_record_sha256`.
+Their resolver scope includes ledger, sample, campaign and exact consuming
+intent/operation. These are distinct typed owner tuples, never shortened hashes.
+
+| Principal | Required resolved path |
+| --- | --- |
+| Authorization issuer | `sample_access_authorization_v1.issuer_actor_id` |
+| Intent authority issuer | `sample_access_intent_authority_v1.issuer_actor_id` |
+| Accessor | `sample_access_authorization_v1.accessor_actor_id` |
+| Inventory issuer | `campaign_inventory_record_v1.issuer_actor_id` |
+| Seal actor | Retained seal event `actor_id` |
+| Intent actor | `sample_access_intent_authority_v1.authorized_actor_id`, equals request actor |
+| Start actor | `sample_access_start_authority_v1.authorized_actor_id`, equals request actor |
+| Intended capability consumer | `sample_access_capability_record_v1.accessor_actor_id`, equals authorization accessor |
+
+All role values use existing `actor_id`. The first five principals are pairwise
+distinct at intent; a prohibited equality refuses `ACCESS_INTENT_ROLE_COLLISION`.
+Accessor comes from resolved authorization, not the intent
+actor. The full authorization binds sample/campaign, a nonempty affected trial set,
+purpose, window, field classes and accessor code/environment exactly to the
+intent. Empty `affected_trial_ids` refuses
+`ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY`. Intent, start and completion payloads each include nonempty typed
+`evidence_ref_ids` that resolve as immutable safe evidence references; empty
+arrays refuse `{EVENT}_EVIDENCE_REF_SET_EMPTY`. Unknown extra payload fields
+remain rejected.
+Intent authority additionally binds authorized actor and operation. Start
+authority binds retained intent ID/hash, authorized actor, accessor, sample,
+campaign and exact reader. When ACCESS_COMPLETED is later enabled,
+`ACCESS_STARTED.recorded_at <= started_at <= ended_at`. Path A does not append
+ACCESS_COMPLETED. Authorization and both authorities require current
+activation/revocation/supersession evidence at the consuming boundary. The
+three-field authorization key does not silently gain a generation field;
+currentness is resolved from its owner stream.
+
+The complete ACCESS capability binds its ID, ledger/sample/campaign, exact
+intent operation, accessor actor, code/environment/window/classes, activation/
+expiry and one-use state. It is minted atomically with intent and consumed in
+the same transaction as ACCESS_STARTED. Start failure leaves it unconsumed and
+the event/head unchanged. EXECUTE instead becomes consumable only after
+ATTEMPT_STARTED commits, by the resolved readiness executor. Neither identity
+nor a schema-shaped capability record is production authentication.
+
+### Boundary-qualified refusal ownership
+
+The full v7 test table and structured `required_scenarios` freeze every named
+counterexample refusal, with each independent variant materialized separately.
+The injected ACCESS rollback fixture uses `INJECTED_APPEND_REFUSAL` solely as a
+test injection; it is not a new public runtime wire type or schema refusal.
+For sample/family/trial/inventory/plan acceptance at each consuming event,
+expired/not-yet-active evidence maps to `{EVENT}_ACCEPTANCE_STALE`, superseded
+to `_ACCEPTANCE_SUPERSEDED`, revoked to `_ACCEPTANCE_REVOKED`, and absent,
+ambiguous or nonaccepted evidence to `_ACCEPTANCE_NOT_CURRENT`.
+Publication approval uses the corresponding `{EVENT}_PUBLICATION_APPROVAL_*`
+suffixes. Where multiple currentness faults coexist, deterministic precedence
+is revoked, superseded, stale, then not-current. Each killing fixture isolates
+one fault with all earlier gates valid. No precedence weakens another guard.
+
+Missing complete bytes/required actor or identity fields map to
+`{EVENT}_RECORD_INCOMPLETE`, except the specific local lineage refusal.
+Resolved subject/scope/source mismatch maps to `RECORD_CONTENT_MISMATCH`.
+Role equalities map to `{EVENT}_ROLE_COLLISION`; producer membership separately
+maps to `{EVENT}_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION`. An authority that does
+not bind its request actor maps to `{EVENT}_AUTHORITY_ACTOR_MISMATCH`.
+Readiness currentness maps to `ATTEMPT_STARTED_READINESS_NOT_CURRENT`;
+inherited allocation authority staleness and event start-authority staleness
+remain the distinct exact codes in the v7 table. Generic missing/noncurrent
+authorization or authority maps to `{EVENT}_AUTHORIZATION_NOT_CURRENT` or
+`{EVENT}_AUTHORITY_NOT_CURRENT` respectively, unless a more specific v7 code
+applies. This section and the corresponding owner extensions own these design
+mappings. Packaged schema-validator behavior remains unchanged.
+
+The [v7 design](experiment_trial_ledger_track_b_v7_design.md) freezes the boundary predicates and refusal
+inventory. Its synthetic fixtures check design consistency; they do not
+demonstrate append, catalog, currentness, capability or SQLite execution.

@@ -1,5 +1,68 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 design P2-FIX5 exact-head remediations
+
+- PR #198 head `c332ef02945efaa52e5b10f8c79c21da45e7353c` had two remaining
+  P2s. `T-B-ACCESS-ROLE-COLLISION` isolates each prohibited equality among
+  the five ACCESS_INTENT principals. `T-B-START-READY-FAM-SET` adds missing
+  and extra family variants mapped to
+  `ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH`.
+- Unchanged: `evidence_ref_ids` `1..4096`, `T-B-SEAL-REVIEWER-TRIAL-ISSUER`,
+  and the `operation_request_sha256` ingress variant. No SQLite runtime or
+  14-trial run.
+
+## 2026-09-05 - Track B v7 design P2-FIX4 exact-head remediation
+
+- PR #198 head `b3bc1df8b05495ad29c441e58ce068b4fd45fee0` had one remaining
+  P2: `T-B-INGRESS-COMMIT-FIELDS` now includes independent variant
+  `operation_request_sha256`, refusing
+  `OPERATION_REQUEST_COMMIT_FIELD_FORBIDDEN`.
+- Evidence_ref_ids remains `1..4096`. `T-B-SEAL-REVIEWER-TRIAL-ISSUER`
+  is unchanged. The 14-wire budget is unchanged. No SQLite runtime or
+  14-trial run.
+
+## 2026-09-05 - Track B v7 design P1-FIX3 exact-head remediations
+
+- PR #198 head `e1c2953ac951b64f8fa4580e653ea42530695398` had one P1 and
+  two P2s from exact-head Codex review. Design-only remediations:
+  `evidence_ref_ids` is `1..4096` on ACCESS_INTENT, ACCESS_STARTED and
+  ACCESS_COMPLETED, with empty-array refusals
+  `{EVENT}_EVIDENCE_REF_SET_EMPTY`. External-reference readiness origin is
+  `STAGE3_SAMPLE_REFERENCE_BOUND`. Isolated seal case
+  `T-B-SEAL-REVIEWER-TRIAL-ISSUER` requires
+  `CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION` when the inventory reviewer
+  equals an included trial-definition issuer.
+- The 14-wire budget is unchanged. No SQLite runtime, 14-trial run, D8,
+  identity, or result access.
+
+## 2026-09-05 - Track B v7 design P1-FIX2 exact-head remediations
+
+- PR #198 head `ca4153880e31d79b2c6141f95c6c8fd7dbb007fe` had two P1s and
+  two P2s from exact-head Codex review. Design-only remediations:
+  ACCESS_INTENT and ACCESS_STARTED now bind typed `evidence_ref_ids`;
+  ACCESS_COMPLETED, when later enabled, requires
+  `ACCESS_STARTED.recorded_at <= started_at <= ended_at` and has killing
+  test `T-B-ACCESS-COMPLETED-BEFORE-START`. Path A still stops after
+  ACCESS_STARTED. Readiness retained-source set lists campaign binding and
+  attempt allocation, with an external-reference specimen. Readiness entry
+  IDs are owner-native `trial_family_id`/`sample_id`/`trial_id`.
+- The 14-wire budget is unchanged. No SQLite runtime, 14-trial run, D8,
+  identity, or result access.
+
+## 2026-09-05 - Track B v7 design P1 exact-head remediations
+
+- PR #198 head `1cc68fbec1241e70161b24b371648670b523f672` had two P1s and
+  two P2s from exact-head Codex review. Design-only remediations: Path A
+  first checkpoint now stops after ACCESS_STARTED and does not claim
+  terminal ACCESS_COMPLETED, because EXPOSURE_DECISION is not selected;
+  the 14-wire budget is unchanged. ACCESS_INTENT requires a nonempty
+  sealed affected-trial set and refuses empty set as
+  `ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY`. The three previously empty
+  finding-coverage lists now carry the complete 68-test union. Public
+  design Markdown/JSON hashes are committed in
+  `docs/experiment_trial_ledger_track_b_v7_design.artifacts.sha256`.
+- No SQLite runtime, 14-trial run, D8, identity, or result access.
+
 ## 2026-09-04 - Live hosted-review check before merge
 
 - Owner correction: do not claim Codex (or any provider) is quota-limited
