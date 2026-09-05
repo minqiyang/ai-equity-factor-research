@@ -22,6 +22,7 @@ DIGEST_C = "33" * 32
 DIGEST_D = "44" * 32
 DIGEST_E = "55" * 32
 STAMP = "2026-09-05T12:00:00Z"
+DEFAULT_CAPABILITY_EXPIRY = "2099-01-01T00:00:00Z"
 WINDOW = "synthetic-window"
 FIELD_CLASS = "synthetic-field-class"
 ENVIRONMENT = "synthetic-accessor-environment"
@@ -196,6 +197,9 @@ def build_path_a_catalog(
             "campaign_scope_ids": campaign_scope,
         },
         version=1,
+        authority_id="family-authority-1",
+        registry_sha256=AUTHORITY_REGISTRY,
+        authority_version=1,
         stream_key="family_definition:family-definition-1",
     )
     records["family_acceptance"] = add_record(
@@ -247,22 +251,34 @@ def build_path_a_catalog(
         generation=1,
         stream_key="sample_acceptance:sample-1",
     )
+    sample_record = records["sample_record"]
     records["sample_projection"] = add_record(
         catalog,
         kind="sample_projection",
         record_id="sample-projection-1",
         schema_version="public_redacted_projection_v1",
         sha256="",
-        body={"sample_id": ids.sample},
+        body={
+            "sample_id": ids.sample,
+            "sample_record_id": sample_record.record_id,
+            "sample_record_sha256": sample_record.sha256,
+        },
         stream_key="sample_projection:sample-1",
     )
+    projection = records["sample_projection"]
     records["sample_publication_approval"] = add_record(
         catalog,
         kind="sample_publication_approval",
         record_id="sample-publication-approval-1",
         schema_version="sample_public_projection_approval_v1",
         sha256="",
-        body={"sample_id": ids.sample},
+        body={
+            "sample_id": ids.sample,
+            "sample_public_projection_id": projection.record_id,
+            "sample_public_projection_schema_version": projection.schema_version,
+            "sample_public_projection_sha256": projection.sha256,
+            "outcome": "approved",
+        },
         generation=1,
         stream_key="sample_publication_approval:sample-1",
     )
@@ -292,6 +308,7 @@ def build_path_a_catalog(
             "private_input_producer_actor_ids": trial_producers or [],
             "trial_id": ids.trial,
             "trial_family_id": ids.family,
+            "experiment_id": ids.experiment,
             "campaign_scope_ids": definition_scope,
             "sample_bindings": sample_bindings,
             "code_identity": {
@@ -307,6 +324,9 @@ def build_path_a_catalog(
             "expected_output_inventory_sha256": EXPECTED_OUTPUT,
         },
         version=1,
+        authority_id="trial-definition-authority-1",
+        registry_sha256=AUTHORITY_REGISTRY,
+        authority_version=1,
         stream_key="trial_definition:trial-definition-1",
     )
     records["trial_acceptance"] = add_record(
@@ -347,6 +367,11 @@ def build_path_a_catalog(
         body={
             "issuer_actor_id": ids.trial_issuer,
             "authorized_actor_id": ids.trial_actor,
+            "operation": "TRIAL_ALLOCATED",
+            "campaign_id": ids.campaign,
+            "trial_id": ids.trial,
+            "trial_definition_record_id": "trial-definition-1",
+            "trial_definition_record_sha256": records["trial_definition"].sha256,
         },
         generation=1,
         stream_key="trial_allocation_authority:trial-1",
@@ -372,6 +397,9 @@ def build_path_a_catalog(
         sha256="",
         body=inventory_body,
         version=1,
+        authority_id="inventory-authority-1",
+        registry_sha256=AUTHORITY_REGISTRY,
+        authority_version=1,
         stream_key="inventory_record:inventory-record-1",
     )
     records["inventory_acceptance"] = add_record(
@@ -603,6 +631,9 @@ def bind_sample_source(
     for binding in records["trial_definition"].body["sample_bindings"]:
         binding["source_event_sha256"] = sample_event_sha256
     records["trial_definition"].sha256 = digest_json(records["trial_definition"].body)
+    authority = records["trial_allocation_authority"]
+    authority.body["trial_definition_record_sha256"] = records["trial_definition"].sha256
+    authority.sha256 = digest_json(authority.body)
 
 
 def trial_request(ids: PathAIds, records: dict[str, CatalogRecord]) -> dict[str, Any]:
@@ -735,7 +766,13 @@ def seal_request(
     )
 
 
-def access_capability_record(ids: PathAIds, accessor: str) -> dict[str, Any]:
+def access_capability_record(
+    ids: PathAIds,
+    accessor: str,
+    *,
+    activation: str = STAMP,
+    expiry: str = DEFAULT_CAPABILITY_EXPIRY,
+) -> dict[str, Any]:
     return {
         "schema_version": "sample_access_capability_record_v1",
         "canonicalization_id": "pit_canonical_json_v1",
@@ -752,6 +789,8 @@ def access_capability_record(ids: PathAIds, accessor: str) -> dict[str, Any]:
         "accessor_environment_lock_sha256": ENV_LOCK,
         "intended_window_id": WINDOW,
         "intended_field_class_ids": [FIELD_CLASS],
+        "activation": activation,
+        "expiry": expiry,
         "one_use": True,
     }
 
@@ -765,11 +804,17 @@ def intent_request(
     affected_trial_ids: list[str] | None = None,
     evidence_ref_ids: list[str] | None = None,
     accessor: str | None = None,
+    activation: str = STAMP,
+    expiry: str = DEFAULT_CAPABILITY_EXPIRY,
 ) -> dict[str, Any]:
     authorization = records["access_authorization"]
     intent_authority = records["intent_authority"]
     accessor = accessor or ids.accessor
-    capability_sha256 = digest_json(access_capability_record(ids, accessor))
+    capability_sha256 = digest_json(
+        access_capability_record(
+            ids, accessor, activation=activation, expiry=expiry
+        )
+    )
     return request(
         event_type="ACCESS_INTENT",
         event_id=ids.intent_event,

@@ -13,7 +13,12 @@ profitability, or trading readiness.
   catalog evidence through commit, SAMPLE_REGISTERED requires current
   projection, ACCESS authorities bind operation/sample/campaign and
   capability accessor, and trial allocation resolves projection and
-  family identity. Exact replay returns `event_sha256`. DIAGNOSTIC_ONLY.
+  family identity. Exact replay returns `event_sha256`. Trial definitions
+  bind experiment and complete code identity; publication approval binds
+  sample/projection; allocation authority binds operation/campaign/trial/
+  definition; seal revalidates allocation authority; resolvers compare
+  schema/owner/canonicalization; ACCESS capabilities include activation
+  and expiry. DIAGNOSTIC_ONLY.
 
 ### Added
 

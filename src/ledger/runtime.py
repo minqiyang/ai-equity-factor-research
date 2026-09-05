@@ -77,6 +77,7 @@ OPERATION_REQUEST_KEYS = (
     "payload",
 )
 REGISTRY_VERSION = "0.10.0"
+DEFAULT_CAPABILITY_EXPIRY = "2099-01-01T00:00:00Z"
 _SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS events (
     sequence INTEGER PRIMARY KEY,
@@ -223,6 +224,8 @@ class SyntheticCatalog:
     records: list[CatalogRecord] = field(default_factory=list)
     evidence_refs: set[str] = field(default_factory=set)
     proven_digests: set[str] = field(default_factory=set)
+    capability_activation: str | None = None
+    capability_expiry: str | None = None
     _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def add(self, record: CatalogRecord) -> CatalogRecord:
@@ -240,6 +243,8 @@ class SyntheticCatalog:
         frozen.records = deepcopy(self.records)
         frozen.evidence_refs = set(self.evidence_refs)
         frozen.proven_digests = set(self.proven_digests)
+        frozen.capability_activation = self.capability_activation
+        frozen.capability_expiry = self.capability_expiry
         return frozen
 
     def get(
@@ -256,14 +261,14 @@ class SyntheticCatalog:
             for item in self.records
             if item.kind == kind
             and item.record_id == record_id
-            and item.sha256 == sha256
             and (generation is None or item.generation == generation)
             and (version is None or item.version == version)
         ]
         if len(matches) != 1:
             return None
         item = matches[0]
-        if item.sha256 != digest_json(item.body):
+        body_digest = digest_json(item.body)
+        if item.sha256 != body_digest or body_digest != sha256:
             _fail(
                 "RECORD_CONTENT_MISMATCH",
                 "catalog digest does not match record bytes",
@@ -744,6 +749,25 @@ class LedgerStore:
         )
         if projection.body.get("sample_id") != sample_id:
             _fail("RECORD_CONTENT_MISMATCH", "sample projection sample_id mismatch")
+        if (
+            projection.body.get("sample_record_id") != payload["sample_record_id"]
+            or projection.body.get("sample_record_sha256") != payload["sample_record_sha256"]
+        ):
+            _fail("RECORD_CONTENT_MISMATCH", "sample projection record binding mismatch")
+        if (
+            approval.body.get("sample_id") != sample_id
+            or approval.body.get("sample_public_projection_id")
+            != payload["sample_public_projection_id"]
+            or approval.body.get("sample_public_projection_schema_version")
+            != payload["sample_public_projection_schema_version"]
+            or approval.body.get("sample_public_projection_sha256")
+            != payload["sample_public_projection_sha256"]
+            or approval.body.get("outcome") != "approved"
+        ):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "publication approval does not bind this sample projection",
+            )
         self._assert_content_scope(
             record.body,
             sample_id,
@@ -810,6 +834,11 @@ class LedgerStore:
         relation = payload.get("relation") or {}
         if relation.get("relation_kind") != "original":
             _fail("RECORD_CONTENT_MISMATCH", "Path A allocates original trials only")
+        if payload["code_identity"] != definition.body.get("code_identity"):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "payload code_identity does not match trial definition",
+            )
         self._prove_code_digest(payload["code_identity"])
         issuer = definition.body["issuer_actor_id"]
         acceptance = self._resolve_trial_acceptance(payload)
@@ -838,6 +867,19 @@ class LedgerStore:
             _fail(
                 "TRIAL_ALLOCATED_AUTHORITY_ACTOR_MISMATCH",
                 "allocation actor is not the authorized actor",
+            )
+        if (
+            authority.body.get("operation") != "TRIAL_ALLOCATED"
+            or authority.body.get("campaign_id") != campaign_id
+            or authority.body.get("trial_id") != trial_id
+            or authority.body.get("trial_definition_record_id")
+            != payload["trial_definition_record_id"]
+            or authority.body.get("trial_definition_record_sha256")
+            != payload["trial_definition_record_sha256"]
+        ):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "allocation authority does not bind this trial allocation",
             )
 
     def _check_seal(self, request: dict[str, Any], as_of: str) -> None:
@@ -1104,6 +1146,23 @@ class LedgerStore:
                 "RECORD_CONTENT_MISMATCH",
                 "start authority accessor does not match ACCESS capability accessor",
             )
+        activation = record.get("activation")
+        expiry = record.get("expiry")
+        if not isinstance(activation, str) or not isinstance(expiry, str):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "ACCESS capability is missing activation or expiry",
+            )
+        if as_of < activation:
+            _fail(
+                "ACCESS_STARTED_CAPABILITY_NOT_ACTIVE",
+                "ACCESS capability is not yet active",
+            )
+        if as_of >= expiry:
+            _fail(
+                "ACCESS_STARTED_CAPABILITY_EXPIRED",
+                "ACCESS capability has expired",
+            )
 
     def _mint_access_capability(self, event: dict[str, Any], event_sha256: str) -> None:
         payload = event["payload"]
@@ -1125,6 +1184,12 @@ class LedgerStore:
             "accessor_environment_lock_sha256": payload["accessor_environment_lock_sha256"],
             "intended_window_id": payload["intended_window_id"],
             "intended_field_class_ids": payload["intended_field_class_ids"],
+            "activation": (
+                self._active_catalog.capability_activation or event["recorded_at"]
+            ),
+            "expiry": (
+                self._active_catalog.capability_expiry or DEFAULT_CAPABILITY_EXPIRY
+            ),
             "one_use": True,
         }
         record_sha256 = digest_json(record)
@@ -1299,6 +1364,25 @@ class LedgerStore:
         )
         if projection.body.get("sample_id") != sample_event["subject_id"]:
             _fail("RECORD_CONTENT_MISMATCH", "sample projection sample_id mismatch")
+        if (
+            projection.body.get("sample_record_id") != payload["sample_record_id"]
+            or projection.body.get("sample_record_sha256") != payload["sample_record_sha256"]
+        ):
+            _fail("RECORD_CONTENT_MISMATCH", "sample projection record binding mismatch")
+        if (
+            approval.body.get("sample_id") != sample_event["subject_id"]
+            or approval.body.get("sample_public_projection_id")
+            != payload["sample_public_projection_id"]
+            or approval.body.get("sample_public_projection_schema_version")
+            != payload["sample_public_projection_schema_version"]
+            or approval.body.get("sample_public_projection_sha256")
+            != payload["sample_public_projection_sha256"]
+            or approval.body.get("outcome") != "approved"
+        ):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "publication approval does not bind this sample projection",
+            )
         self._assert_content_scope(
             record.body,
             sample_event["subject_id"],
@@ -1332,6 +1416,8 @@ class LedgerStore:
             _fail("RECORD_CONTENT_MISMATCH", "trial definition trial_id mismatch")
         if body.get("trial_family_id") != payload.get("trial_family_id"):
             _fail("RECORD_CONTENT_MISMATCH", "trial definition trial_family_id mismatch")
+        if body.get("experiment_id") != payload.get("experiment_id"):
+            _fail("RECORD_CONTENT_MISMATCH", "trial definition experiment_id mismatch")
         if projection.body.get("trial_id") != trial_id:
             _fail("RECORD_CONTENT_MISMATCH", "trial projection trial_id mismatch")
         scope = body.get("campaign_scope_ids")
@@ -1360,6 +1446,8 @@ class LedgerStore:
         self._require_current(
             approval, as_of, event_type=event_type, kind="publication_approval"
         )
+        authority = self._resolve_trial_allocation_authority(payload)
+        self._require_current(authority, as_of, event_type=event_type, kind="authority")
         del projection
         for binding in definition.body.get("sample_bindings") or []:
             sample_event = self._require_event(
@@ -1472,12 +1560,19 @@ class LedgerStore:
         version: int | None = None,
         event_type: str,
         incomplete_kind: str,
+        expected: dict[str, object] | None = None,
     ) -> CatalogRecord:
         record = self._active_catalog.get(
             kind, record_id, sha256, generation=generation, version=version
         )
         if record is None:
             _fail(f"{event_type}_RECORD_INCOMPLETE", f"missing {incomplete_kind}")
+        for attr, value in (expected or {}).items():
+            if getattr(record, attr) != value:
+                _fail(
+                    "RECORD_CONTENT_MISMATCH",
+                    f"{incomplete_kind} resolver tuple mismatch on {attr}",
+                )
         return record
 
     def _resolve_family_definition(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1488,6 +1583,13 @@ class LedgerStore:
             version=payload["family_definition_record_version"],
             event_type="TRIAL_FAMILY_REGISTERED",
             incomplete_kind="family_definition",
+            expected={
+                "schema_version": payload["family_definition_schema_version"],
+                "canonicalization_id": payload["family_definition_canonicalization_id"],
+                "authority_id": payload["family_authority_id"],
+                "authority_version": payload["family_authority_version"],
+                "registry_sha256": payload["family_authority_registry_sha256"],
+            },
         )
 
     def _resolve_family_acceptance(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1498,6 +1600,9 @@ class LedgerStore:
             generation=payload["family_acceptance_generation"],
             event_type="TRIAL_FAMILY_REGISTERED",
             incomplete_kind="family_acceptance",
+            expected={
+                "schema_version": payload["family_acceptance_schema_version"],
+            },
         )
 
     def _sample_resolver_key(self, payload: dict[str, Any]) -> tuple[object, ...]:
@@ -1548,6 +1653,9 @@ class LedgerStore:
             generation=payload["sample_acceptance_generation"],
             event_type="SAMPLE_REGISTERED",
             incomplete_kind="sample_acceptance",
+            expected={
+                "schema_version": payload["sample_acceptance_schema_version"],
+            },
         )
 
     def _resolve_sample_projection(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1557,6 +1665,10 @@ class LedgerStore:
             payload["sample_public_projection_sha256"],
             event_type="SAMPLE_REGISTERED",
             incomplete_kind="sample_projection",
+            expected={
+                "schema_version": payload["sample_public_projection_schema_version"],
+                "canonicalization_id": "pit_canonical_json_v1",
+            },
         )
 
     def _resolve_sample_publication_approval(
@@ -1569,6 +1681,9 @@ class LedgerStore:
             generation=payload["sample_publication_approval_generation"],
             event_type="SAMPLE_REGISTERED",
             incomplete_kind="sample_publication_approval",
+            expected={
+                "schema_version": payload["sample_publication_approval_schema_version"],
+            },
         )
 
     def _resolve_trial_definition(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1579,6 +1694,15 @@ class LedgerStore:
             version=payload["trial_definition_record_version"],
             event_type="TRIAL_ALLOCATED",
             incomplete_kind="trial_definition",
+            expected={
+                "schema_version": payload["trial_definition_record_schema_version"],
+                "canonicalization_id": payload[
+                    "trial_definition_record_canonicalization_id"
+                ],
+                "authority_id": payload["trial_definition_authority_id"],
+                "authority_version": payload["trial_definition_authority_version"],
+                "registry_sha256": payload["trial_definition_authority_registry_sha256"],
+            },
         )
 
     def _resolve_trial_acceptance(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1589,6 +1713,9 @@ class LedgerStore:
             generation=payload["trial_definition_acceptance_generation"],
             event_type="TRIAL_ALLOCATED",
             incomplete_kind="trial_acceptance",
+            expected={
+                "schema_version": payload["trial_definition_acceptance_schema_version"],
+            },
         )
 
     def _resolve_trial_projection(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1598,6 +1725,12 @@ class LedgerStore:
             payload["trial_definition_public_projection_sha256"],
             event_type="TRIAL_ALLOCATED",
             incomplete_kind="trial_projection",
+            expected={
+                "schema_version": payload[
+                    "trial_definition_public_projection_schema_version"
+                ],
+                "canonicalization_id": "pit_canonical_json_v1",
+            },
         )
 
     def _resolve_trial_publication_approval(
@@ -1610,6 +1743,11 @@ class LedgerStore:
             generation=payload["trial_definition_publication_approval_generation"],
             event_type="TRIAL_ALLOCATED",
             incomplete_kind="trial_publication_approval",
+            expected={
+                "schema_version": payload[
+                    "trial_definition_publication_approval_schema_version"
+                ],
+            },
         )
 
     def _resolve_trial_allocation_authority(
@@ -1622,6 +1760,9 @@ class LedgerStore:
             generation=payload["allocation_authority_generation"],
             event_type="TRIAL_ALLOCATED",
             incomplete_kind="trial_allocation_authority",
+            expected={
+                "schema_version": payload["allocation_authority_schema_version"],
+            },
         )
 
     def _resolve_inventory_record(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1632,6 +1773,13 @@ class LedgerStore:
             version=payload["inventory_record_version"],
             event_type="CAMPAIGN_INVENTORY_SEALED",
             incomplete_kind="inventory_record",
+            expected={
+                "schema_version": payload["inventory_record_schema_version"],
+                "canonicalization_id": payload["inventory_record_canonicalization_id"],
+                "authority_id": payload["inventory_authority_id"],
+                "authority_version": payload["inventory_authority_version"],
+                "registry_sha256": payload["inventory_authority_registry_sha256"],
+            },
         )
 
     def _resolve_inventory_acceptance(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1642,6 +1790,9 @@ class LedgerStore:
             generation=payload["inventory_acceptance_generation"],
             event_type="CAMPAIGN_INVENTORY_SEALED",
             incomplete_kind="inventory_acceptance",
+            expected={
+                "schema_version": payload["inventory_acceptance_schema_version"],
+            },
         )
 
     def _resolve_seal_authority(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1652,6 +1803,9 @@ class LedgerStore:
             generation=payload["seal_authority_generation"],
             event_type="CAMPAIGN_INVENTORY_SEALED",
             incomplete_kind="seal_authority",
+            expected={
+                "schema_version": payload["seal_authority_schema_version"],
+            },
         )
 
     def _resolve_access_authorization(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1661,6 +1815,9 @@ class LedgerStore:
             payload["authorization_record_sha256"],
             event_type="ACCESS_INTENT",
             incomplete_kind="access_authorization",
+            expected={
+                "schema_version": payload["authorization_record_schema_version"],
+            },
         )
 
     def _resolve_intent_authority(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1671,6 +1828,9 @@ class LedgerStore:
             generation=payload["intent_authority_generation"],
             event_type="ACCESS_INTENT",
             incomplete_kind="intent_authority",
+            expected={
+                "schema_version": payload["intent_authority_schema_version"],
+            },
         )
 
     def _resolve_start_authority(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1681,6 +1841,9 @@ class LedgerStore:
             generation=payload["start_authority_generation"],
             event_type="ACCESS_STARTED",
             incomplete_kind="start_authority",
+            expected={
+                "schema_version": payload["start_authority_schema_version"],
+            },
         )
 
     @staticmethod

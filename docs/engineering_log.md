@@ -1,5 +1,18 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 Path A exact-head P1-FIX2 remediations
+
+- PR #199 head `86a7ca5331b6b2d174cbfe72f9c295ba3ec54cde` still had live
+  catalog/authority P1s plus new identity, code, approval, resolver-tuple,
+  seal-authority, and ACCESS capability-bound findings. Runtime remediations:
+  catalog `get` recomputes body digest; trial definition binds experiment
+  and complete `code_identity`; publication approval binds sample/projection;
+  allocation authority binds operation/campaign/trial/definition; seal
+  revalidates allocation authority; resolvers compare schema/owner/
+  canonicalization; ACCESS capabilities carry activation/expiry.
+- Killing tests cover each listed P1. No 14-trial, D8, identity reopen, or
+  real data.
+
 ## 2026-09-05 - Track B v7 Path A exact-head P1 remediations
 
 - PR #199 head `d6e1f58dea03d5edcef8203d8e1de41a5f27137e` had eight P1s and

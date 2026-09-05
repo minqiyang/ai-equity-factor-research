@@ -17,6 +17,7 @@ from ledger.runtime import (
 )
 from ledger.schema_registry import load_registry_release
 from ledger_path_a_support import (
+    DEFAULT_CAPABILITY_EXPIRY,
     STAMP,
     bind_inventory_trial,
     bind_parent_digests,
@@ -854,6 +855,230 @@ def test_sample_resolver_key_is_compared_not_overwritten(tmp_path: Path) -> None
     req["payload"]["sample_authority_id"] = "caller-claimed-authority"
     _assert_code("RECORD_CONTENT_MISMATCH", lambda: store.append(req))
     assert records["sample_record"].authority_id == "sample-authority-1"
+
+
+def _trial_through_sample(tmp_path, catalog_ids=None, **catalog_kwargs):
+    ids, catalog, records = build_path_a_catalog(catalog_ids, **catalog_kwargs)
+    store = _store(tmp_path, catalog)
+    store.append(epoch_request(ids))
+    campaign = store.append(campaign_request(ids))
+    experiment = store.append(experiment_request(ids))
+    family = store.append(family_request(ids, records))
+    sample = store.append(sample_request(ids, records))
+    bind_sample_source(records, sample["event_sha256"])
+    trial_req = trial_request(ids, records)
+    bind_parent_digests(
+        trial_req,
+        campaign_sha256=campaign["event_sha256"],
+        experiment_sha256=experiment["event_sha256"],
+        family_sha256=family["event_sha256"],
+    )
+    return ids, catalog, records, store, trial_req, campaign, experiment, family, sample
+
+
+def test_trial_definition_must_bind_requested_experiment(tmp_path: Path) -> None:
+    ids, catalog, records, store, trial_req, *_ = _trial_through_sample(tmp_path)
+    records["trial_definition"].body.pop("experiment_id")
+    _refresh(records["trial_definition"])
+    trial_req["payload"]["trial_definition_record_sha256"] = records[
+        "trial_definition"
+    ].sha256
+    records["trial_allocation_authority"].body[
+        "trial_definition_record_sha256"
+    ] = records["trial_definition"].sha256
+    _refresh(records["trial_allocation_authority"])
+    trial_req["payload"]["allocation_authority_record_sha256"] = records[
+        "trial_allocation_authority"
+    ].sha256
+    _assert_code("RECORD_CONTENT_MISMATCH", lambda: store.append(trial_req))
+
+    ids2, catalog2, records2, store2, trial_req2, *_ = _trial_through_sample(
+        tmp_path / "exp-mismatch"
+    )
+    records2["trial_definition"].body["experiment_id"] = typed_id("exp", 99)
+    _refresh(records2["trial_definition"])
+    trial_req2["payload"]["trial_definition_record_sha256"] = records2[
+        "trial_definition"
+    ].sha256
+    records2["trial_allocation_authority"].body[
+        "trial_definition_record_sha256"
+    ] = records2["trial_definition"].sha256
+    _refresh(records2["trial_allocation_authority"])
+    trial_req2["payload"]["allocation_authority_record_sha256"] = records2[
+        "trial_allocation_authority"
+    ].sha256
+    _assert_code("RECORD_CONTENT_MISMATCH", lambda: store2.append(trial_req2))
+
+
+def test_trial_code_identity_must_match_definition(tmp_path: Path) -> None:
+    _ids, _catalog, _records, store, trial_req, *_ = _trial_through_sample(tmp_path)
+    trial_req["payload"]["code_identity"] = dict(trial_req["payload"]["code_identity"])
+    trial_req["payload"]["code_identity"]["code_commit_id"] = "othercommit12"
+    _assert_code("RECORD_CONTENT_MISMATCH", lambda: store.append(trial_req))
+
+
+def test_publication_approval_must_bind_sample_projection(tmp_path: Path) -> None:
+    ids, catalog, records = build_path_a_catalog()
+    records["sample_publication_approval"].body["sample_id"] = typed_id("smp", 99)
+    _refresh(records["sample_publication_approval"])
+    store = _store(tmp_path, catalog)
+    store.append(epoch_request(ids))
+    store.append(campaign_request(ids))
+    store.append(experiment_request(ids))
+    store.append(family_request(ids, records))
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store.append(sample_request(ids, records)),
+    )
+
+    ids2, catalog2, records2 = build_path_a_catalog()
+    records2["sample_publication_approval"].body[
+        "sample_public_projection_id"
+    ] = "other-projection"
+    _refresh(records2["sample_publication_approval"])
+    store2 = _store(tmp_path / "proj-id", catalog2)
+    store2.append(epoch_request(ids2))
+    store2.append(campaign_request(ids2))
+    store2.append(experiment_request(ids2))
+    store2.append(family_request(ids2, records2))
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store2.append(sample_request(ids2, records2)),
+    )
+
+
+def test_allocation_authority_must_bind_operation_campaign_trial_definition(
+    tmp_path: Path,
+) -> None:
+    cases = [
+        ("operation", "ACCESS_INTENT"),
+        ("campaign_id", typed_id("cmp", 99)),
+        ("trial_id", typed_id("trl", 99)),
+        ("trial_definition_record_id", "other-definition"),
+    ]
+    for field, value in cases:
+        ids, catalog, records, store, trial_req, *_ = _trial_through_sample(
+            tmp_path / field
+        )
+        records["trial_allocation_authority"].body[field] = value
+        _refresh(records["trial_allocation_authority"])
+        trial_req["payload"]["allocation_authority_record_sha256"] = records[
+            "trial_allocation_authority"
+        ].sha256
+        _assert_code("RECORD_CONTENT_MISMATCH", lambda trial_req=trial_req, store=store: store.append(trial_req))
+
+
+def test_seal_revalidates_allocation_authority(tmp_path: Path) -> None:
+    ids, catalog, records = build_path_a_catalog()
+    store = _store(tmp_path, catalog)
+    committed = _append_through_trial(store, ids, records)
+    records["trial_allocation_authority"].status = "revoked"
+    bind_inventory_trial(records, committed["trial"]["event_sha256"])
+    seal_req = seal_request(
+        ids,
+        records,
+        predecessor_sequence=committed["trial"]["sequence"],
+        predecessor_sha256=committed["trial"]["event_sha256"],
+    )
+    seal_req["payload"]["campaign_allocation_event_sha256"] = committed["campaign"][
+        "event_sha256"
+    ]
+    _assert_code(
+        "CAMPAIGN_INVENTORY_SEALED_AUTHORITY_REVOKED",
+        lambda: store.append(seal_req),
+    )
+
+
+def test_resolver_compares_schema_owner_and_canonicalization(tmp_path: Path) -> None:
+    ids, catalog, records, store, trial_req, *_ = _trial_through_sample(tmp_path)
+    records["trial_projection"].schema_version = "other_projection_v1"
+    _assert_code("RECORD_CONTENT_MISMATCH", lambda: store.append(trial_req))
+
+    ids2, catalog2, records2 = build_path_a_catalog()
+    records2["family_definition"].authority_id = "other-family-authority"
+    store2 = _store(tmp_path / "owner", catalog2)
+    store2.append(epoch_request(ids2))
+    store2.append(campaign_request(ids2))
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store2.append(family_request(ids2, records2)),
+    )
+
+    ids3, catalog3, records3 = build_path_a_catalog()
+    records3["family_definition"].canonicalization_id = "other_canonicalization_v1"
+    store3 = _store(tmp_path / "canon", catalog3)
+    store3.append(epoch_request(ids3))
+    store3.append(campaign_request(ids3))
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store3.append(family_request(ids3, records3)),
+    )
+
+
+def test_trial_projection_nonexistent_and_mismatched(tmp_path: Path) -> None:
+    ids, catalog, records, store, trial_req, *_ = _trial_through_sample(tmp_path)
+    trial_req["payload"]["trial_definition_public_projection_id"] = "missing-projection"
+    _assert_code(
+        "TRIAL_ALLOCATED_RECORD_INCOMPLETE",
+        lambda: store.append(trial_req),
+    )
+
+    ids2, catalog2, records2, store2, trial_req2, *_ = _trial_through_sample(
+        tmp_path / "proj-mismatch"
+    )
+    records2["trial_projection"].body["trial_id"] = typed_id("trl", 99)
+    _refresh(records2["trial_projection"])
+    trial_req2["payload"]["trial_definition_public_projection_sha256"] = records2[
+        "trial_projection"
+    ].sha256
+    _assert_code("RECORD_CONTENT_MISMATCH", lambda: store2.append(trial_req2))
+
+
+def test_access_capability_activation_and_expiry(tmp_path: Path) -> None:
+    ids, catalog, records = build_path_a_catalog()
+    catalog.capability_activation = "2026-09-06T00:00:00Z"
+    store = _store(tmp_path, catalog)
+    committed = _append_through_seal(store, ids, records)
+    intent = store.append(
+        intent_request(
+            ids,
+            records,
+            seal_event_id=committed["seal"]["event_id"],
+            seal_event_sha256=committed["seal"]["event_sha256"],
+            activation="2026-09-06T00:00:00Z",
+        )
+    )
+    bind_start_authority_intent(records, intent["event_sha256"])
+    _assert_code(
+        "ACCESS_STARTED_CAPABILITY_NOT_ACTIVE",
+        lambda: store.append(
+            started_request(
+                ids, records, intent_event_sha256=intent["event_sha256"]
+            )
+        ),
+    )
+
+    ids2, catalog2, records2 = build_path_a_catalog()
+    store2 = _store(tmp_path / "expired", catalog2)
+    committed2 = _append_through_seal(store2, ids2, records2)
+    intent2 = store2.append(
+        intent_request(
+            ids2,
+            records2,
+            seal_event_id=committed2["seal"]["event_id"],
+            seal_event_sha256=committed2["seal"]["event_sha256"],
+        )
+    )
+    bind_start_authority_intent(records2, intent2["event_sha256"])
+    store2.clock.stamp = DEFAULT_CAPABILITY_EXPIRY
+    _assert_code(
+        "ACCESS_STARTED_CAPABILITY_EXPIRED",
+        lambda: store2.append(
+            started_request(
+                ids2, records2, intent_event_sha256=intent2["event_sha256"]
+            )
+        ),
+    )
 
 
 def test_path_a_does_not_claim_terminal_access_or_profitability() -> None:
