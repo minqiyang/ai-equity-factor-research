@@ -119,15 +119,11 @@ Track A PR 3 must satisfy all of the following:
 Stage 1 is accepted. Track A PR 2 public surfaces and campaign
 `DIAGNOSTIC_READY` hashes are recorded under `DIAGNOSTIC_ONLY`. Track A PR 3
 runner code is on protected main. Stage 4 G-2 binding is accepted by hash.
-14-trial remains REFUSED, reason ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL.
-Terminal refusal is disposition, not PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
-Synthetic Track B is separately eligible and not blocked by success-only Track A close.
-D8, A2, identity reopen, result/performance access stay closed.
-No private paths, tickers, prices, or performance values.
-Do not claim v6 accepted or runtime delivered.
-Optional 37-event completion and factor-zoo stay off the critical path.
-First future empirical slice is later/planning; do not authorize data access here.
-The handoff owns the timestamped operational checkpoint.
+The 14-trial run is REFUSED for
+`ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`. Evidence ceiling
+remains `DIAGNOSTIC_ONLY`. Terminal refusal is not PR 4 completion.
+Synthetic Track B is separately eligible. The handoff owns the timestamped
+operational checkpoint.
 
 This section defines dependency and completion state only. It grants no
 authority and adds no vendor, data, publication, or interpretation rule beyond

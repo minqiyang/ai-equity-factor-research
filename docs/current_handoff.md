@@ -24,18 +24,22 @@ requirements.
 ## Latest Recorded Operational Checkpoint
 
 - Last externally verified protected baseline when this handoff was authored:
-  `027e8ae09f78b0930cf7a46261f092d232b032a1` after PR #195 and PR #196.
+  `027e8ae09f78b0930cf7a46261f092d232b032a1`.
 - Historical CCA1 start baseline:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
-- PR #195 published 14-trial identity fail-closed status; PR #196 aligned review checks.
-- 14-trial remains REFUSED, reason ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL.
-- Terminal refusal is disposition, not PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
-- Synthetic Track B is separately eligible and not blocked by success-only Track A close.
-- D8, A2, identity reopen, result/performance access stay closed.
-- No private paths, tickers, prices, or performance values.
-- Do not claim v6 accepted or runtime delivered.
-- Optional 37-event completion and factor-zoo stay off the critical path.
-- First future empirical slice is later/planning; do not authorize data access here.
+- PR #180 is merged. It records the long-term factor-to-portfolio direction
+  and leaves the frozen Track A campaign in place.
+- PR #181 is merged at `12e280d9afa2f23aa2850b13a08f7e8447c4b89e`.
+- PR #195 and PR #196 are merged on that protected baseline.
+- No pull request was open at the verified start of this work.
+- This publication began from a clean `main` checkout at the baseline above.
+  Its live PR and merge state must be checked separately after publication.
+- The 14-trial run is REFUSED. Named reason:
+  `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`.
+- Terminal refusal is disposition, not PR 4 completion; Stage 4 incomplete;
+  evidence ceiling remains `DIAGNOSTIC_ONLY`.
+- Synthetic Track B is separately eligible and not blocked by success-only
+  Track A close. Do not claim v6 accepted or runtime delivered.
 - Raw private data, ticker lists, provider responses, and performance values
   remain outside the public repository.
 
