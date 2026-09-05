@@ -12,6 +12,7 @@ from ledger.runtime import (
     LedgerRuntimeError,
     LedgerStore,
     SELECTED_14,
+    digest_json,
     open_path_a_store,
 )
 from ledger.schema_registry import load_registry_release
@@ -172,6 +173,7 @@ def test_path_a_happy_path_stops_before_access_completed(tmp_path: Path) -> None
     )
     assert replayed["event_id"] == committed["started"]["event_id"]
     assert replayed["sequence"] == committed["started"]["sequence"]
+    assert replayed["event_sha256"] == committed["started"]["event_sha256"]
     assert len(store.events()) == 9
 
 
@@ -243,6 +245,7 @@ def test_ingress_commit_fields_are_forbidden(tmp_path: Path, field: str) -> None
 def test_sample_lineage_required(tmp_path: Path) -> None:
     ids, catalog, records = build_path_a_catalog(sample_lineage="")
     records["sample_record"].body.pop("canonical_sample_lineage_id")
+    records["sample_record"].sha256 = digest_json(records["sample_record"].body)
     store = _store(tmp_path, catalog)
     store.append(epoch_request(ids))
     store.append(campaign_request(ids))
@@ -266,33 +269,34 @@ def test_local_lineage_and_record_duplicates(tmp_path: Path) -> None:
     duplicate_id["event_id"] = typed_id("evt", 70)
     duplicate_id["operation_id"] = typed_id("opn", 70)
     duplicate_id["subject_id"] = typed_id("smp", 70)
-    records["sample_record"].body["sample_id"] = typed_id("smp", 70)
     _assert_code(
         "SAMPLE_REGISTERED_RECORD_DUP",
         lambda: store.append(duplicate_id),
     )
-    records["sample_record"].body["sample_id"] = ids.sample
     other_tuple = sample_request(ids, records)
     other_tuple["event_id"] = typed_id("evt", 71)
     other_tuple["operation_id"] = typed_id("opn", 71)
     other_tuple["subject_id"] = typed_id("smp", 71)
-    other_tuple["payload"]["sample_record_id"] = "sample-record-other"
-    other_tuple["payload"]["sample_record_sha256"] = "77" * 32
-    catalog.add(CatalogRecord(
+    other_body = {
+        **records["sample_record"].body,
+        "sample_id": typed_id("smp", 71),
+        "canonical_sample_lineage_id": "synthetic-canonical-lineage",
+    }
+    other_record = catalog.add(CatalogRecord(
         kind="sample_record",
         record_id="sample-record-other",
         schema_version="stage3_sample_record_v1",
-        sha256="77" * 32,
-        body={
-            **records["sample_record"].body,
-            "sample_id": typed_id("smp", 71),
-            "canonical_sample_lineage_id": "synthetic-canonical-lineage",
-        },
+        sha256="",
+        body=other_body,
         version=1,
         authority_id="sample-authority-other",
         registry_sha256="88" * 32,
         authority_version=1,
     ))
+    other_tuple["payload"]["sample_record_id"] = other_record.record_id
+    other_tuple["payload"]["sample_record_sha256"] = other_record.sha256
+    other_tuple["payload"]["sample_authority_id"] = "sample-authority-other"
+    other_tuple["payload"]["sample_authority_registry_sha256"] = "88" * 32
     _assert_code(
         "SAMPLE_REGISTERED_LINEAGE_DUP",
         lambda: store.append(other_tuple),
@@ -550,8 +554,6 @@ def test_access_intent_role_collisions(tmp_path: Path) -> None:
             )
             continue
         committed = _append_through_seal(store, catalog_ids, records)
-        if field == "accessor":
-            records["access_authorization"].body["accessor_actor_id"] = value
         intent_req = intent_request(
             catalog_ids,
             records,
@@ -626,6 +628,232 @@ def test_access_started_empty_evidence_stale_family_and_atomic_rollback(
     _assert_code("INJECTED_APPEND_REFUSAL", lambda: injected.append(start_req))
     assert injected.capability(ids2.capability)["consumed"] is False
     assert [event["event_type"] for event in injected.events()][-1] == "ACCESS_INTENT"
+
+
+def _refresh(record: CatalogRecord) -> None:
+    record.sha256 = digest_json(record.body)
+
+
+def test_catalog_get_refuses_body_digest_mismatch(tmp_path: Path) -> None:
+    ids, catalog, records = build_path_a_catalog()
+    records["sample_record"].body["canonical_overlap_id"] = "mutated-overlap"
+    store = _store(tmp_path, catalog)
+    store.append(epoch_request(ids))
+    store.append(campaign_request(ids))
+    store.append(experiment_request(ids))
+    store.append(family_request(ids, records))
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store.append(sample_request(ids, records)),
+    )
+
+
+def test_catalog_snapshot_ignores_mutation_between_currentness_and_commit(
+    tmp_path: Path,
+) -> None:
+    ids, catalog, records = build_path_a_catalog()
+
+    def mutate_live_evidence() -> None:
+        records["sample_acceptance"].status = "revoked"
+        records["sample_acceptance"].valid_until = STAMP
+
+    store = _store(tmp_path, catalog)
+    store.append(epoch_request(ids))
+    store.append(campaign_request(ids))
+    store.append(experiment_request(ids))
+    store.append(family_request(ids, records))
+    store.inject_catalog_mutation = mutate_live_evidence
+    sample = store.append(sample_request(ids, records))
+    assert sample["event_type"] == "SAMPLE_REGISTERED"
+    assert records["sample_acceptance"].status == "revoked"
+
+
+def test_sample_projection_must_be_current_and_content_bound(tmp_path: Path) -> None:
+    ids, catalog, records = build_path_a_catalog()
+    records["sample_projection"].valid_until = STAMP
+    store = _store(tmp_path, catalog)
+    store.append(epoch_request(ids))
+    store.append(campaign_request(ids))
+    store.append(experiment_request(ids))
+    store.append(family_request(ids, records))
+    _assert_code(
+        "SAMPLE_REGISTERED_PROJECTION_STALE",
+        lambda: store.append(sample_request(ids, records)),
+    )
+
+    ids2, catalog2, records2 = build_path_a_catalog()
+    records2["sample_projection"].status = "revoked"
+    store2 = _store(tmp_path / "revoked", catalog2)
+    store2.append(epoch_request(ids2))
+    store2.append(campaign_request(ids2))
+    store2.append(experiment_request(ids2))
+    store2.append(family_request(ids2, records2))
+    _assert_code(
+        "SAMPLE_REGISTERED_PROJECTION_REVOKED",
+        lambda: store2.append(sample_request(ids2, records2)),
+    )
+
+    ids3, catalog3, records3 = build_path_a_catalog()
+    records3["sample_projection"].status = "superseded"
+    store3 = _store(tmp_path / "superseded", catalog3)
+    store3.append(epoch_request(ids3))
+    store3.append(campaign_request(ids3))
+    store3.append(experiment_request(ids3))
+    store3.append(family_request(ids3, records3))
+    _assert_code(
+        "SAMPLE_REGISTERED_PROJECTION_SUPERSEDED",
+        lambda: store3.append(sample_request(ids3, records3)),
+    )
+
+    ids4, catalog4, records4 = build_path_a_catalog()
+    records4["sample_projection"].body["sample_id"] = typed_id("smp", 99)
+    _refresh(records4["sample_projection"])
+    store4 = _store(tmp_path / "proj-scope", catalog4)
+    store4.append(epoch_request(ids4))
+    store4.append(campaign_request(ids4))
+    store4.append(experiment_request(ids4))
+    store4.append(family_request(ids4, records4))
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store4.append(sample_request(ids4, records4)),
+    )
+
+
+def test_intent_authority_binds_operation_sample_and_campaign(tmp_path: Path) -> None:
+    ids, catalog, records = build_path_a_catalog()
+    store = _store(tmp_path, catalog)
+    committed = _append_through_seal(store, ids, records)
+    records["intent_authority"].body["operation"] = "ACCESS_STARTED"
+    _refresh(records["intent_authority"])
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store.append(
+            intent_request(
+                ids,
+                records,
+                seal_event_id=committed["seal"]["event_id"],
+                seal_event_sha256=committed["seal"]["event_sha256"],
+            )
+        ),
+    )
+
+    ids2, catalog2, records2 = build_path_a_catalog()
+    store2 = _store(tmp_path / "intent-sample", catalog2)
+    committed2 = _append_through_seal(store2, ids2, records2)
+    records2["intent_authority"].body["sample_id"] = typed_id("smp", 99)
+    _refresh(records2["intent_authority"])
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store2.append(
+            intent_request(
+                ids2,
+                records2,
+                seal_event_id=committed2["seal"]["event_id"],
+                seal_event_sha256=committed2["seal"]["event_sha256"],
+            )
+        ),
+    )
+
+    ids3, catalog3, records3 = build_path_a_catalog()
+    store3 = _store(tmp_path / "intent-campaign", catalog3)
+    committed3 = _append_through_seal(store3, ids3, records3)
+    records3["intent_authority"].body["campaign_id"] = typed_id("cmp", 99)
+    _refresh(records3["intent_authority"])
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store3.append(
+            intent_request(
+                ids3,
+                records3,
+                seal_event_id=committed3["seal"]["event_id"],
+                seal_event_sha256=committed3["seal"]["event_sha256"],
+            )
+        ),
+    )
+
+
+def test_start_authority_accessor_must_equal_capability_accessor(tmp_path: Path) -> None:
+    ids, catalog, records = build_path_a_catalog()
+    store = _store(tmp_path, catalog)
+    committed = _append_through_seal(store, ids, records)
+    intent = store.append(
+        intent_request(
+            ids,
+            records,
+            seal_event_id=committed["seal"]["event_id"],
+            seal_event_sha256=committed["seal"]["event_sha256"],
+        )
+    )
+    bind_start_authority_intent(records, intent["event_sha256"])
+    records["start_authority"].body["accessor_actor_id"] = ids.intent_actor
+    _refresh(records["start_authority"])
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store.append(
+            started_request(
+                ids,
+                records,
+                intent_event_sha256=intent["event_sha256"],
+            )
+        ),
+    )
+
+
+def test_trial_projection_must_resolve_before_commit(tmp_path: Path) -> None:
+    ids, catalog, records = build_path_a_catalog()
+    store = _store(tmp_path, catalog)
+    store.append(epoch_request(ids))
+    campaign = store.append(campaign_request(ids))
+    experiment = store.append(experiment_request(ids))
+    family = store.append(family_request(ids, records))
+    sample = store.append(sample_request(ids, records))
+    bind_sample_source(records, sample["event_sha256"])
+    records["trial_projection"].valid_until = STAMP
+    trial_req = trial_request(ids, records)
+    bind_parent_digests(
+        trial_req,
+        campaign_sha256=campaign["event_sha256"],
+        experiment_sha256=experiment["event_sha256"],
+        family_sha256=family["event_sha256"],
+    )
+    _assert_code(
+        "TRIAL_ALLOCATED_PROJECTION_STALE",
+        lambda: store.append(trial_req),
+    )
+
+
+def test_trial_definition_must_bind_requested_family(tmp_path: Path) -> None:
+    ids, catalog, records = build_path_a_catalog()
+    store = _store(tmp_path, catalog)
+    store.append(epoch_request(ids))
+    campaign = store.append(campaign_request(ids))
+    experiment = store.append(experiment_request(ids))
+    family = store.append(family_request(ids, records))
+    sample = store.append(sample_request(ids, records))
+    bind_sample_source(records, sample["event_sha256"])
+    records["trial_definition"].body["trial_family_id"] = typed_id("fam", 99)
+    _refresh(records["trial_definition"])
+    trial_req = trial_request(ids, records)
+    bind_parent_digests(
+        trial_req,
+        campaign_sha256=campaign["event_sha256"],
+        experiment_sha256=experiment["event_sha256"],
+        family_sha256=family["event_sha256"],
+    )
+    _assert_code("RECORD_CONTENT_MISMATCH", lambda: store.append(trial_req))
+
+
+def test_sample_resolver_key_is_compared_not_overwritten(tmp_path: Path) -> None:
+    ids, catalog, records = build_path_a_catalog()
+    store = _store(tmp_path, catalog)
+    store.append(epoch_request(ids))
+    store.append(campaign_request(ids))
+    store.append(experiment_request(ids))
+    store.append(family_request(ids, records))
+    req = sample_request(ids, records)
+    req["payload"]["sample_authority_id"] = "caller-claimed-authority"
+    _assert_code("RECORD_CONTENT_MISMATCH", lambda: store.append(req))
+    assert records["sample_record"].authority_id == "sample-authority-1"
 
 
 def test_path_a_does_not_claim_terminal_access_or_profitability() -> None:

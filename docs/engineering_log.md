@@ -1,5 +1,20 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 Path A exact-head P1 remediations
+
+- PR #199 head `d6e1f58dea03d5edcef8203d8e1de41a5f27137e` had eight P1s and
+  one P2 from exact-head Codex review. Runtime remediations only: catalog
+  `get` refuses body/digest mismatch; each append snapshots the synthetic
+  catalog under the writer lock through commit; SAMPLE_REGISTERED requires
+  current content-bound projection; ACCESS intent authority binds operation,
+  sample, and campaign; ACCESS_STARTED start-authority accessor must equal
+  the capability accessor; trial allocation resolves the public projection
+  tuple; trial definition binds requested `trial_family_id`; sample resolver
+  compares the eight-field authority key and does not overwrite catalog
+  metadata. Exact replay now returns `event_sha256`.
+- Killing tests cover each P1. No 14-trial, D8, identity, real data, or
+  Path B expansion.
+
 ## 2026-09-05 - Track B v7 Path A first checkpoint
 
 - Implemented the accepted Track B v7 Path A runtime in this worktree on

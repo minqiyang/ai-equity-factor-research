@@ -7,6 +7,14 @@ profitability, or trading readiness.
 
 ## Unreleased
 
+### Fixed
+
+- Path A catalog `get` refuses body/digest mismatch, appends snapshot
+  catalog evidence through commit, SAMPLE_REGISTERED requires current
+  projection, ACCESS authorities bind operation/sample/campaign and
+  capability accessor, and trial allocation resolves projection and
+  family identity. Exact replay returns `event_sha256`. DIAGNOSTIC_ONLY.
+
 ### Added
 
 - Track B v7 Path A first checkpoint: stdlib sqlite3 ledger runtime with a

@@ -6,12 +6,14 @@ Evidence ceiling is DIAGNOSTIC_ONLY. Path A stops before ACCESS_COMPLETED.
 
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import hashlib
 import json
 import sqlite3
 from pathlib import Path
+import threading
 from typing import Any, Callable
 
 from ledger.schema_registry import (
@@ -221,14 +223,24 @@ class SyntheticCatalog:
     records: list[CatalogRecord] = field(default_factory=list)
     evidence_refs: set[str] = field(default_factory=set)
     proven_digests: set[str] = field(default_factory=set)
+    _lock: threading.RLock = field(default_factory=threading.RLock)
 
     def add(self, record: CatalogRecord) -> CatalogRecord:
-        if not record.sha256:
-            record.sha256 = digest_json(record.body)
-        if not record.stream_key:
-            record.stream_key = f"{record.kind}:{record.record_id}"
-        self.records.append(record)
-        return record
+        with self._lock:
+            if not record.sha256:
+                record.sha256 = digest_json(record.body)
+            if not record.stream_key:
+                record.stream_key = f"{record.kind}:{record.record_id}"
+            self.records.append(record)
+            return record
+
+    def snapshot(self) -> SyntheticCatalog:
+        """Return a stable copy of catalog bytes for one append transaction."""
+        frozen = SyntheticCatalog()
+        frozen.records = deepcopy(self.records)
+        frozen.evidence_refs = set(self.evidence_refs)
+        frozen.proven_digests = set(self.proven_digests)
+        return frozen
 
     def get(
         self,
@@ -250,7 +262,13 @@ class SyntheticCatalog:
         ]
         if len(matches) != 1:
             return None
-        return matches[0]
+        item = matches[0]
+        if item.sha256 != digest_json(item.body):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "catalog digest does not match record bytes",
+            )
+        return item
 
     def stream(self, stream_key: str) -> list[CatalogRecord]:
         return [item for item in self.records if item.stream_key == stream_key]
@@ -266,11 +284,14 @@ class LedgerStore:
         *,
         clock: Clock | None = None,
         inject_access_started_failure: bool = False,
+        inject_catalog_mutation: Callable[[], None] | None = None,
     ) -> None:
         self.database_path = Path(database_path).expanduser()
         self.catalog = catalog
+        self._tx_catalog: SyntheticCatalog | None = None
         self.clock = clock or Clock()
         self.inject_access_started_failure = inject_access_started_failure
+        self.inject_catalog_mutation = inject_catalog_mutation
         self.registry = load_registry_release(REGISTRY_VERSION)
         self._assert_path_outside_repository(self.database_path)
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
@@ -356,14 +377,19 @@ class LedgerStore:
             )
 
         self._conn.execute("BEGIN IMMEDIATE")
+        self.catalog._lock.acquire()
         try:
             as_of = self.clock.now_utc()
+            self._tx_catalog = self.catalog.snapshot()
             result = self._append_locked(raw_request, event_type, as_of)
             self._conn.execute("COMMIT")
             return result
         except Exception:
             self._conn.execute("ROLLBACK")
             raise
+        finally:
+            self._tx_catalog = None
+            self.catalog._lock.release()
 
     def _append_locked(
         self,
@@ -393,6 +419,12 @@ class LedgerStore:
             extra_insert = self._consume_access_capability
         return self._commit_event(request, as_of, extra_insert=extra_insert)
 
+    @property
+    def _active_catalog(self) -> SyntheticCatalog:
+        if self._tx_catalog is not None:
+            return self._tx_catalog
+        return self.catalog
+
     def _replay_if_duplicate(self, request: dict[str, Any]) -> dict[str, Any] | None:
         operation_id = request.get("operation_id")
         event_id = request.get("event_id")
@@ -400,19 +432,21 @@ class LedgerStore:
             _fail("INVALID_OPERATION_REQUEST", "operation_id and event_id are required")
         request_digest = digest_json(self._operation_request_object(request))
         row = self._conn.execute(
-            "SELECT event_json, operation_request_sha256, event_id FROM events "
-            "WHERE operation_id = ? OR event_id = ?",
+            "SELECT event_json, operation_request_sha256, event_id, event_sha256 "
+            "FROM events WHERE operation_id = ? OR event_id = ?",
             (operation_id, event_id),
         ).fetchone()
         if row is None:
             return None
-        event_json, stored_digest, stored_event_id = row
+        event_json, stored_digest, stored_event_id, event_sha256 = row
         if stored_digest != request_digest or stored_event_id != event_id:
             _fail(
                 "OPERATION_REQUEST_CONFLICT",
                 "operation or event identity reused with different request bytes",
             )
-        return json.loads(event_json)
+        event = json.loads(event_json)
+        event["event_sha256"] = event_sha256
+        return event
 
     def _operation_request_object(self, request: dict[str, Any]) -> dict[str, Any]:
         missing = [key for key in OPERATION_REQUEST_KEYS if key not in request]
@@ -440,6 +474,8 @@ class LedgerStore:
         *,
         extra_insert: Callable[[dict[str, Any], str], None] | None = None,
     ) -> dict[str, Any]:
+        if self.inject_catalog_mutation is not None:
+            self.inject_catalog_mutation()
         ledger_id = request["ledger_id"]
         head = self._stream_head(ledger_id)
         if request["event_type"] == "LEDGER_EPOCH_CREATED":
@@ -689,11 +725,25 @@ class LedgerStore:
             acceptance, as_of, event_type="SAMPLE_REGISTERED", kind="acceptance"
         )
         self._require_current(
+            projection,
+            as_of,
+            event_type="SAMPLE_REGISTERED",
+            kind="projection",
+        )
+        self._require_current(
             approval,
             as_of,
             event_type="SAMPLE_REGISTERED",
             kind="publication_approval",
         )
+        self._check_origin_uniqueness(
+            "SAMPLE_REGISTERED",
+            sample_id,
+            record,
+            payload,
+        )
+        if projection.body.get("sample_id") != sample_id:
+            _fail("RECORD_CONTENT_MISMATCH", "sample projection sample_id mismatch")
         self._assert_content_scope(
             record.body,
             sample_id,
@@ -719,13 +769,6 @@ class LedgerStore:
         )
         for campaign_id in payload.get("campaign_scope_ids") or []:
             self._entity(campaign_id, "campaign")
-        self._check_origin_uniqueness(
-            "SAMPLE_REGISTERED",
-            sample_id,
-            record,
-            payload,
-        )
-        del projection
 
     def _check_trial(self, request: dict[str, Any], as_of: str) -> None:
         self._require_epoch(request)
@@ -959,10 +1002,20 @@ class LedgerStore:
             != payload["accessor_environment_lock_sha256"]
         ):
             _fail("RECORD_CONTENT_MISMATCH", "authorization does not bind this intent")
-        if intent_authority.body.get("authorized_actor_id") != request["actor_id"]:
+        intent_body = intent_authority.body
+        if intent_body.get("authorized_actor_id") != request["actor_id"]:
             _fail(
                 "ACCESS_INTENT_AUTHORITY_ACTOR_MISMATCH",
                 "intent actor is not the authorized actor",
+            )
+        if (
+            intent_body.get("operation") != "ACCESS_INTENT"
+            or intent_body.get("sample_id") != sample_id
+            or intent_body.get("campaign_id") != campaign_id
+        ):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "intent authority does not bind operation, sample, and campaign",
             )
         seal_event = self._require_event(seal["event_id"], seal["event_sha256"])
         inventory = self._resolve_inventory_record(seal_event["payload"])
@@ -1046,6 +1099,11 @@ class LedgerStore:
             != payload["reader_environment_lock_sha256"]
         ):
             _fail("RECORD_CONTENT_MISMATCH", "reader does not match ACCESS capability")
+        if body.get("accessor_actor_id") != record.get("accessor_actor_id"):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "start authority accessor does not match ACCESS capability accessor",
+            )
 
     def _mint_access_capability(self, event: dict[str, Any], event_sha256: str) -> None:
         payload = event["payload"]
@@ -1230,11 +1288,17 @@ class LedgerStore:
         payload = sample_event["payload"]
         record = self._resolve_sample_record(payload)
         acceptance = self._resolve_sample_acceptance(payload)
+        projection = self._resolve_sample_projection(payload)
         approval = self._resolve_sample_publication_approval(payload)
         self._require_current(acceptance, as_of, event_type=event_type, kind="acceptance")
         self._require_current(
+            projection, as_of, event_type=event_type, kind="projection"
+        )
+        self._require_current(
             approval, as_of, event_type=event_type, kind="publication_approval"
         )
+        if projection.body.get("sample_id") != sample_event["subject_id"]:
+            _fail("RECORD_CONTENT_MISMATCH", "sample projection sample_id mismatch")
         self._assert_content_scope(
             record.body,
             sample_event["subject_id"],
@@ -1252,9 +1316,13 @@ class LedgerStore:
     ) -> CatalogRecord:
         definition = self._resolve_trial_definition(payload)
         acceptance = self._resolve_trial_acceptance(payload)
+        projection = self._resolve_trial_projection(payload)
         approval = self._resolve_trial_publication_approval(payload)
         self._require_current(
             acceptance, as_of, event_type="TRIAL_ALLOCATED", kind="acceptance"
+        )
+        self._require_current(
+            projection, as_of, event_type="TRIAL_ALLOCATED", kind="projection"
         )
         self._require_current(
             approval, as_of, event_type="TRIAL_ALLOCATED", kind="publication_approval"
@@ -1262,6 +1330,10 @@ class LedgerStore:
         body = definition.body
         if body.get("trial_id") != trial_id:
             _fail("RECORD_CONTENT_MISMATCH", "trial definition trial_id mismatch")
+        if body.get("trial_family_id") != payload.get("trial_family_id"):
+            _fail("RECORD_CONTENT_MISMATCH", "trial definition trial_family_id mismatch")
+        if projection.body.get("trial_id") != trial_id:
+            _fail("RECORD_CONTENT_MISMATCH", "trial projection trial_id mismatch")
         scope = body.get("campaign_scope_ids")
         if scope != [campaign_id] and scope != payload.get("campaign_scope_ids"):
             _fail("RECORD_CONTENT_MISMATCH", "resolved definition binds another campaign")
@@ -1279,11 +1351,16 @@ class LedgerStore:
         self._revalidate_family(family_event, as_of, event_type)
         definition = self._resolve_trial_definition(payload)
         acceptance = self._resolve_trial_acceptance(payload)
+        projection = self._resolve_trial_projection(payload)
         approval = self._resolve_trial_publication_approval(payload)
         self._require_current(acceptance, as_of, event_type=event_type, kind="acceptance")
         self._require_current(
+            projection, as_of, event_type=event_type, kind="projection"
+        )
+        self._require_current(
             approval, as_of, event_type=event_type, kind="publication_approval"
         )
+        del projection
         for binding in definition.body.get("sample_bindings") or []:
             sample_event = self._require_event(
                 binding["source_event_id"],
@@ -1302,14 +1379,14 @@ class LedgerStore:
         else:
             _fail("RECORD_CONTENT_MISMATCH", "unknown code identity kind")
             return
-        if digest not in self.catalog.proven_digests:
+        if digest not in self._active_catalog.proven_digests:
             _fail("RECORD_CONTENT_MISMATCH", "code content digest is not proven")
 
     def _require_evidence_refs(self, refs: list[Any], event_type: str) -> None:
         if not refs:
             _fail(f"{event_type}_EVIDENCE_REF_SET_EMPTY", "evidence_ref_ids is empty")
         for ref in refs:
-            if ref not in self.catalog.evidence_refs:
+            if ref not in self._active_catalog.evidence_refs:
                 _fail("RECORD_CONTENT_MISMATCH", f"unknown evidence_ref_id {ref}")
 
     def _require_current(
@@ -1324,6 +1401,8 @@ class LedgerStore:
             prefix = f"{event_type}_ACCEPTANCE"
         elif kind == "publication_approval":
             prefix = f"{event_type}_PUBLICATION_APPROVAL"
+        elif kind == "projection":
+            prefix = f"{event_type}_PROJECTION"
         elif kind == "authorization":
             prefix = f"{event_type}_AUTHORIZATION"
         else:
@@ -1338,14 +1417,14 @@ class LedgerStore:
             _fail(f"{prefix}_NOT_CURRENT", f"{kind} is not current")
         current = [
             item
-            for item in self.catalog.stream(record.stream_key)
+            for item in self._active_catalog.stream(record.stream_key)
             if item.status == "accepted"
             and not (item.status == "revoked" or item.status == "superseded")
             and item.active_at(as_of)
         ]
         accepted_current = [
             item
-            for item in self.catalog.stream(record.stream_key)
+            for item in self._active_catalog.stream(record.stream_key)
             if item.status == "accepted" and item.active_at(as_of)
         ]
         if len(accepted_current) != 1 or accepted_current[0].sha256 != record.sha256:
@@ -1394,7 +1473,7 @@ class LedgerStore:
         event_type: str,
         incomplete_kind: str,
     ) -> CatalogRecord:
-        record = self.catalog.get(
+        record = self._active_catalog.get(
             kind, record_id, sha256, generation=generation, version=version
         )
         if record is None:
@@ -1421,6 +1500,30 @@ class LedgerStore:
             incomplete_kind="family_acceptance",
         )
 
+    def _sample_resolver_key(self, payload: dict[str, Any]) -> tuple[object, ...]:
+        return (
+            payload["sample_authority_id"],
+            payload["sample_authority_version"],
+            payload["sample_authority_registry_sha256"],
+            payload["sample_record_id"],
+            payload["sample_record_version"],
+            payload["sample_record_schema_version"],
+            payload["sample_record_canonicalization_id"],
+            payload["sample_record_sha256"],
+        )
+
+    def _record_resolver_key(self, record: CatalogRecord) -> tuple[object, ...]:
+        return (
+            record.authority_id,
+            record.authority_version,
+            record.registry_sha256,
+            record.record_id,
+            record.version,
+            record.schema_version,
+            record.canonicalization_id,
+            record.sha256,
+        )
+
     def _resolve_sample_record(self, payload: dict[str, Any]) -> CatalogRecord:
         record = self._resolve_or_fail(
             "sample_record",
@@ -1430,10 +1533,11 @@ class LedgerStore:
             event_type="SAMPLE_REGISTERED",
             incomplete_kind="sample_record",
         )
-        record.authority_id = payload["sample_authority_id"]
-        record.authority_version = payload["sample_authority_version"]
-        record.registry_sha256 = payload["sample_authority_registry_sha256"]
-        record.canonicalization_id = payload["sample_record_canonicalization_id"]
+        if self._record_resolver_key(record) != self._sample_resolver_key(payload):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "sample authority resolver key does not match catalog record",
+            )
         return record
 
     def _resolve_sample_acceptance(self, payload: dict[str, Any]) -> CatalogRecord:
@@ -1485,6 +1589,15 @@ class LedgerStore:
             generation=payload["trial_definition_acceptance_generation"],
             event_type="TRIAL_ALLOCATED",
             incomplete_kind="trial_acceptance",
+        )
+
+    def _resolve_trial_projection(self, payload: dict[str, Any]) -> CatalogRecord:
+        return self._resolve_or_fail(
+            "trial_projection",
+            payload["trial_definition_public_projection_id"],
+            payload["trial_definition_public_projection_sha256"],
+            event_type="TRIAL_ALLOCATED",
+            incomplete_kind="trial_projection",
         )
 
     def _resolve_trial_publication_approval(
@@ -1587,6 +1700,7 @@ def open_path_a_store(
     *,
     clock: Clock | None = None,
     inject_access_started_failure: bool = False,
+    inject_catalog_mutation: Callable[[], None] | None = None,
 ) -> LedgerStore:
     """Open a Path A ledger at a caller-supplied path outside the repository."""
     return LedgerStore(
@@ -1594,4 +1708,5 @@ def open_path_a_store(
         catalog,
         clock=clock,
         inject_access_started_failure=inject_access_started_failure,
+        inject_catalog_mutation=inject_catalog_mutation,
     )
