@@ -671,6 +671,12 @@
         "refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION"
       },
       {
+        "id": "T-B-SEAL-REVIEWER-TRIAL-ISSUER",
+        "boundary": "CAMPAIGN_INVENTORY_SEALED",
+        "fault": "Inventory acceptance reviewer equals one included trial-definition issuer; all other roles remain valid.",
+        "refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION"
+      },
+      {
         "id": "T-B-SEAL-ISSUER-ACTOR",
         "boundary": "CAMPAIGN_INVENTORY_SEALED",
         "fault": "Inventory issuer equals seal actor only.",
@@ -800,6 +806,17 @@
         "boundary": "ACCESS_COMPLETED",
         "fault": "started_at is earlier than retained ACCESS_STARTED.recorded_at; ended_at remains after started_at. Path A does not append this event.",
         "refusal": "ACCESS_COMPLETED_STARTED_AT_BEFORE_START_COMMIT"
+      },
+      {
+        "id": "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+        "boundary": "ACCESS_INTENT, ACCESS_STARTED, ACCESS_COMPLETED",
+        "fault": "Request evidence_ref_ids is empty; all other evidence remains valid.",
+        "refusal": "{EVENT}_EVIDENCE_REF_SET_EMPTY",
+        "required_independent_variants": [
+          "ACCESS_INTENT",
+          "ACCESS_STARTED",
+          "ACCESS_COMPLETED"
+        ]
       }
     ]
   },
@@ -810,7 +827,8 @@
       "seal_authority_issuer": "resolved seal-authority record.issuer_actor_id",
       "seal_actor": "CAMPAIGN_INVENTORY_SEALED request.actor_id",
       "authorized_seal_actor": "resolved seal-authority record.authorized_actor_id",
-      "private_input_producers": "resolved complete inventory record.private_input_producer_actor_ids"
+      "private_input_producers": "resolved complete inventory record.private_input_producer_actor_ids",
+      "included_trial_definition_issuer": "resolved included trial-definition record.issuer_actor_id"
     },
     "required_equalities": [
       [
@@ -832,6 +850,10 @@
         "seal_actor"
       ],
       [
+        "inventory_reviewer",
+        "included_trial_definition_issuer"
+      ],
+      [
         "inventory_issuer",
         "seal_actor"
       ]
@@ -841,7 +863,7 @@
       "set": "private_input_producers"
     },
     "boundary": "CAMPAIGN_INVENTORY_SEALED",
-    "source_policy": "These are v7 semantic field bindings on resolved bytes, not caller role labels. Design PR must freeze their owner-schema paths; missing/ambiguous paths block runtime admission. Seal-authority issuer and envelope actor may coincide if that authority explicitly binds the actor; no equality waives the four prohibitions."
+    "source_policy": "These are v7 semantic field bindings on resolved bytes, not caller role labels. Design PR must freeze their owner-schema paths; missing/ambiguous paths block runtime admission. Seal-authority issuer and envelope actor may coincide if that authority explicitly binds the actor; no equality waives the listed prohibitions."
   },
   "origin_invariant": {
     "scope": "One ledger epoch across all campaigns; never reset by a campaign, local sample ID, acceptance generation or projection change.",
@@ -1272,7 +1294,8 @@
     "TB-AUDIT-V6-M2": [
       "T-B-SEAL-REVIEWER-ISSUER",
       "T-B-SEAL-REVIEWER-ACTOR",
-      "T-B-PRIV-INV"
+      "T-B-PRIV-INV",
+      "T-B-SEAL-REVIEWER-TRIAL-ISSUER"
     ],
     "TB-AUDIT-V6-M3": [
       "T-B-LOCAL-AFTER-STAGE3-LINEAGE",
@@ -1328,6 +1351,7 @@
       "T-B-SEAL-REVIEWER-ISSUER",
       "T-B-SEAL-REVIEWER-ACTOR",
       "T-B-SEAL-REVIEWER-AUTHORITY",
+      "T-B-SEAL-REVIEWER-TRIAL-ISSUER",
       "T-B-SEAL-ISSUER-ACTOR",
       "T-B-SEAL-AUTHORIZED-ACTOR",
       "T-B-FAM-STALE-TRIAL",
@@ -1348,7 +1372,8 @@
       "T-B-INGRESS-COMMIT-FIELDS",
       "T-B-ACCESS-ATOMIC-ROLLBACK",
       "T-B-ACCESS-EMPTY-TRIALS",
-      "T-B-ACCESS-COMPLETED-BEFORE-START"
+      "T-B-ACCESS-COMPLETED-BEFORE-START",
+      "T-B-ACCESS-EMPTY-EVIDENCE-REFS"
     ],
     "TB-GROK-V6-M2-READINESS": [
       "T-B-START-READY-PLAN-TUPLE",
@@ -1417,6 +1442,7 @@
       "T-B-SEAL-REVIEWER-ISSUER",
       "T-B-SEAL-REVIEWER-ACTOR",
       "T-B-SEAL-REVIEWER-AUTHORITY",
+      "T-B-SEAL-REVIEWER-TRIAL-ISSUER",
       "T-B-SEAL-ISSUER-ACTOR",
       "T-B-SEAL-AUTHORIZED-ACTOR",
       "T-B-FAM-STALE-TRIAL",
@@ -1437,7 +1463,8 @@
       "T-B-INGRESS-COMMIT-FIELDS",
       "T-B-ACCESS-ATOMIC-ROLLBACK",
       "T-B-ACCESS-EMPTY-TRIALS",
-      "T-B-ACCESS-COMPLETED-BEFORE-START"
+      "T-B-ACCESS-COMPLETED-BEFORE-START",
+      "T-B-ACCESS-EMPTY-EVIDENCE-REFS"
     ],
     "TB-V6-M1": [
       "T-B-START-READY-INV-TUPLE",
@@ -1488,6 +1515,7 @@
       "T-B-SEAL-REVIEWER-ISSUER",
       "T-B-SEAL-REVIEWER-ACTOR",
       "T-B-SEAL-REVIEWER-AUTHORITY",
+      "T-B-SEAL-REVIEWER-TRIAL-ISSUER",
       "T-B-SEAL-ISSUER-ACTOR",
       "T-B-SEAL-AUTHORIZED-ACTOR",
       "T-B-FAM-STALE-TRIAL",
@@ -1508,7 +1536,8 @@
       "T-B-INGRESS-COMMIT-FIELDS",
       "T-B-ACCESS-ATOMIC-ROLLBACK",
       "T-B-ACCESS-EMPTY-TRIALS",
-      "T-B-ACCESS-COMPLETED-BEFORE-START"
+      "T-B-ACCESS-COMPLETED-BEFORE-START",
+      "T-B-ACCESS-EMPTY-EVIDENCE-REFS"
     ]
   },
   "required_scenarios": [
@@ -2081,6 +2110,14 @@
       "runtime_status": "NOT_EXECUTED"
     },
     {
+      "test_id": "T-B-SEAL-REVIEWER-TRIAL-ISSUER",
+      "variant": "single fault",
+      "expected_refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
       "test_id": "T-B-SEAL-ISSUER-ACTOR",
       "variant": "single fault",
       "expected_refusal": "CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION",
@@ -2260,6 +2297,30 @@
       "test_id": "T-B-ACCESS-COMPLETED-BEFORE-START",
       "variant": "single fault",
       "expected_refusal": "ACCESS_COMPLETED_STARTED_AT_BEFORE_START_COMMIT",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+      "variant": "ACCESS_INTENT",
+      "expected_refusal": "ACCESS_INTENT_EVIDENCE_REF_SET_EMPTY",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+      "variant": "ACCESS_STARTED",
+      "expected_refusal": "ACCESS_STARTED_EVIDENCE_REF_SET_EMPTY",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+      "variant": "ACCESS_COMPLETED",
+      "expected_refusal": "ACCESS_COMPLETED_EVIDENCE_REF_SET_EMPTY",
       "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
       "expected_committed_changes": "none",
       "runtime_status": "NOT_EXECUTED"
@@ -2790,6 +2851,9 @@
     },
     "request": {
       "actor_id": "act_44444444444444444444444444444444"
+    },
+    "included_trial_definition": {
+      "issuer_actor_id": "act_66666666666666666666666666666666"
     }
   },
   "sample_origin_specimens": [
@@ -2841,7 +2905,7 @@
       {
         "subject_type": "sample",
         "subject_id": "smp_11111111111111111111111111111111",
-        "event_type": "SAMPLE_REGISTERED",
+        "event_type": "STAGE3_SAMPLE_REFERENCE_BOUND",
         "source": {
           "event_id": "evt_22222222222222222222222222222222",
           "event_sha256": "4de788113729dea78050226f128510ad3a3ff7c2a99ffc6758dcf11b0953db6a"
@@ -2896,6 +2960,13 @@
         "synthetic_intent_evidence_ref",
         "synthetic_start_evidence_ref"
       ]
+    },
+    "ACCESS_COMPLETED": {
+      "evidence_ref_ids": [
+        "synthetic_completed_evidence_ref",
+        "synthetic_intent_evidence_ref",
+        "synthetic_start_evidence_ref"
+      ]
     }
   },
   "specimen_limit": "Operands and role excerpts only; synthetic hashes bind named fixture strings, not complete external record bytes. No specimen is a passing runtime catalog.",
@@ -2924,7 +2995,7 @@
       "access_capability_record_schema_version": "literal sample_access_capability_record_v1",
       "access_capability_record_sha256": "sha256",
       "access_capability_record_version": "I-JSON safe integer, minimum 1; Boolean excluded",
-      "evidence_ref_ids": "sorted-unique safe_public_id array; 0..4096"
+      "evidence_ref_ids": "sorted-unique safe_public_id array; 1..4096"
     },
     "ACCESS_STARTED": {
       "campaign_scope_ids": "sorted-unique campaign_id array; exactly 1",
@@ -2939,7 +3010,7 @@
       "start_authority_record_sha256": "sha256",
       "start_authority_schema_version": "literal sample_access_start_authority_v1",
       "sample_id": "sample_id",
-      "evidence_ref_ids": "sorted-unique safe_public_id array; 0..4096"
+      "evidence_ref_ids": "sorted-unique safe_public_id array; 1..4096"
     },
     "ACCESS_COMPLETED": {
       "campaign_scope_ids": "sorted-unique campaign_id array; exactly 1",
@@ -2955,7 +3026,7 @@
       "started_at": "existing timestamp",
       "ended_at": "existing timestamp",
       "backfilled": "Boolean",
-      "evidence_ref_ids": "sorted-unique safe_public_id array; 0..4096"
+      "evidence_ref_ids": "sorted-unique safe_public_id array; 1..4096"
     }
   }
 }

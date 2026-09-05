@@ -20,7 +20,7 @@ DESIGN_DELIVERABLES = (
     "tests/fixtures/experiment_trial_ledger_track_b_v7_design.json",
 )
 DESIGN_ARTIFACTS_MANIFEST_SHA256 = (
-    "07f5531cb3fe2f814dbfb503a3a6498631cb617f3479b1b23b44a7bdb031e4ba"
+    "c60c075375a9a13a6076e01dede0c4489e3750ced15a47d8799d44068f7fb845"
 )
 
 
@@ -66,7 +66,7 @@ def test_plan_manifest_and_all_baseline_owner_bytes_remain_pinned():
 def test_exact_v7_required_test_content_and_bidirectional_markdown_mirror():
     tests = read_fixture()["append_boundary_checks"]["killing_tests_v7"]
     assert canonical_digest(tests) == (
-        "a6eb9e909b94bb88c464f360147b88e2ac8f91867450f1c3f700f81cca889d43"
+        "a6f024eac9a7863a9941745eca0c4b5c58890e1d71178ba70d2489fdcd41a064"
     )
     rows = []
     for line in DESIGN.read_text().splitlines():
@@ -80,7 +80,7 @@ def test_exact_v7_required_test_content_and_bidirectional_markdown_mirror():
                 case["required_independent_variants"]
             ) + "."
         expected.append([case["id"], case["boundary"], fault, case["refusal"]])
-    assert len(rows) == len(tests) == len({case["id"] for case in tests}) == 69
+    assert len(rows) == len(tests) == len({case["id"] for case in tests}) == 71
     assert rows == expected
 
 
@@ -95,7 +95,7 @@ def test_all_variants_are_separate_scenarios_with_concrete_refusal_codes():
     scenarios = fixture["required_scenarios"]
     actual = Counter((s["test_id"], s["variant"]) for s in scenarios)
     assert actual == required
-    assert len(scenarios) == len(required) == 94
+    assert len(scenarios) == len(required) == 98
     for scenario in scenarios:
         assert re.fullmatch(r"[A-Z][A-Z0-9_]+", scenario["expected_refusal"])
         assert scenario["runtime_status"] == "NOT_EXECUTED"
@@ -253,6 +253,7 @@ def test_seal_role_and_both_origin_specimens_use_the_frozen_paths():
         "seal_authority_issuer": role["campaign_inventory_seal_authority_v1"]["issuer_actor_id"],
         "seal_actor": role["request"]["actor_id"],
         "authorized_seal_actor": role["campaign_inventory_seal_authority_v1"]["authorized_actor_id"],
+        "included_trial_definition_issuer": role["included_trial_definition"]["issuer_actor_id"],
     }
     rules = fixture["inventory_seal_roles"]
     for left, right in rules["required_equalities"]:
@@ -282,7 +283,8 @@ def test_external_reference_readiness_retains_binding_and_attempt_sources():
     types = [row["event_type"] for row in rows]
     assert "CAMPAIGN_ENTITY_BOUND" in types
     assert "ATTEMPT_ALLOCATED" in types
-    assert "SAMPLE_REGISTERED" in types
+    assert "STAGE3_SAMPLE_REFERENCE_BOUND" in types
+    assert "SAMPLE_REGISTERED" not in types
     for row in rows:
         assert set(row["source"]) == {"event_id", "event_sha256"}
         assert row["source"]["event_id"]
@@ -292,12 +294,12 @@ def test_external_reference_readiness_retains_binding_and_attempt_sources():
 def test_access_intent_and_start_bind_resolvable_evidence_refs():
     fixture = read_fixture()
     specimen = fixture["access_evidence_ref_specimen"]
-    for event in ("ACCESS_INTENT", "ACCESS_STARTED"):
+    for event in ("ACCESS_INTENT", "ACCESS_STARTED", "ACCESS_COMPLETED"):
         fields = fixture["access_pack"][event + "_payload_all_and_only"]
         types = fixture["access_field_types"][event]
         assert "evidence_ref_ids" in fields
         assert types["evidence_ref_ids"] == (
-            "sorted-unique safe_public_id array; 0..4096"
+            "sorted-unique safe_public_id array; 1..4096"
         )
         assert "unknown_field" not in fields
         refs = specimen[event]["evidence_ref_ids"]
@@ -307,7 +309,8 @@ def test_access_intent_and_start_bind_resolvable_evidence_refs():
             assert SAFE_PUBLIC_ID.fullmatch(ref)
     started = specimen["ACCESS_STARTED"]["evidence_ref_ids"]
     intended = specimen["ACCESS_INTENT"]["evidence_ref_ids"]
-    assert set(intended) <= set(started)
+    completed = specimen["ACCESS_COMPLETED"]["evidence_ref_ids"]
+    assert set(intended) <= set(started) <= set(completed)
 
 
 @pytest.mark.parametrize("event", ["ACCESS_INTENT", "ACCESS_STARTED", "ACCESS_COMPLETED"])

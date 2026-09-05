@@ -170,13 +170,15 @@ nonempty subset of the sealed set; empty set refuses
 and the access sample. Resolve the three-field authorization and intent authority
 and check currentness. Purpose cannot be `design`. Authorization issuer,
 intent-authority issuer, accessor, inventory issuer and seal actor are pairwise
-distinct. Bind typed `evidence_ref_ids` that resolve as immutable safe evidence
-references; unknown extra payload fields remain rejected.
+distinct. Bind nonempty typed `evidence_ref_ids` that resolve as immutable safe
+evidence references; empty arrays refuse `{EVENT}_EVIDENCE_REF_SET_EMPTY`.
+Unknown extra payload fields remain rejected.
 
 `ACCESS_STARTED`: intent digest matches, each affected trial's family and the
 sample revalidate, seal head remains current, start authority is current and bound
-to this intent/actor/scope. Consume ACCESS in the append transaction. Bind typed
-`evidence_ref_ids` that resolve; unknown extra payload fields remain rejected.
+to this intent/actor/scope. Consume ACCESS in the append transaction. Bind nonempty
+typed `evidence_ref_ids` that resolve; empty arrays refuse
+`{EVENT}_EVIDENCE_REF_SET_EMPTY`. Unknown extra payload fields remain rejected.
 `ACCESS_COMPLETED`: retained start exists; reader code/environment equal the
 consumed ACCESS capability's intended reader;
 `ACCESS_STARTED.recorded_at <= started_at <= ended_at`. Path A first checkpoint
@@ -221,6 +223,7 @@ in the design PR. Principals come from resolved bytes, never caller role labels:
 | `seal_actor` | `CAMPAIGN_INVENTORY_SEALED request.actor_id` |
 | `authorized_seal_actor` | `resolved seal-authority record.authorized_actor_id` |
 | `private_input_producers` | `resolved complete inventory record.private_input_producer_actor_ids` |
+| `included_trial_definition_issuer` | `resolved included trial-definition record.issuer_actor_id` |
 
 Require `seal_actor == authorized_seal_actor`. Prohibit these equalities separately:
 
@@ -229,6 +232,7 @@ Require `seal_actor == authorized_seal_actor`. Prohibit these equalities separat
 | `inventory_reviewer` | `inventory_issuer` |
 | `inventory_reviewer` | `seal_authority_issuer` |
 | `inventory_reviewer` | `seal_actor` |
+| `inventory_reviewer` | `included_trial_definition_issuer` |
 | `inventory_issuer` | `seal_actor` |
 
 A prohibited equality refuses `CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION`; an
@@ -412,6 +416,7 @@ mappings to freeze in the one design PR.
 | T-B-SEAL-REVIEWER-ISSUER | CAMPAIGN_INVENTORY_SEALED | Inventory acceptance reviewer equals inventory issuer; neither is a private-input producer. | CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION |
 | T-B-SEAL-REVIEWER-ACTOR | CAMPAIGN_INVENTORY_SEALED | Inventory acceptance reviewer equals envelope seal actor; private-producer exclusion still passes. | CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION |
 | T-B-SEAL-REVIEWER-AUTHORITY | CAMPAIGN_INVENTORY_SEALED | Inventory acceptance reviewer equals seal-authority issuer only. | CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION |
+| T-B-SEAL-REVIEWER-TRIAL-ISSUER | CAMPAIGN_INVENTORY_SEALED | Inventory acceptance reviewer equals one included trial-definition issuer; all other roles remain valid. | CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION |
 | T-B-SEAL-ISSUER-ACTOR | CAMPAIGN_INVENTORY_SEALED | Inventory issuer equals seal actor only. | CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION |
 | T-B-SEAL-AUTHORIZED-ACTOR | CAMPAIGN_INVENTORY_SEALED | Envelope actor differs from resolved seal authority authorized_actor_id. | CAMPAIGN_INVENTORY_SEALED_AUTHORITY_ACTOR_MISMATCH |
 | T-B-FAM-STALE-TRIAL | TRIAL_ALLOCATED | Parent family acceptance is stale. | TRIAL_ALLOCATED_ACCEPTANCE_STALE |
@@ -433,6 +438,7 @@ mappings to freeze in the one design PR.
 | T-B-ACCESS-ATOMIC-ROLLBACK | ACCESS_STARTED | Force event validation failure after tentative ACCESS consumption within the transaction. | Injected append refusal; capability remains unconsumed, no event or head change. |
 | T-B-ACCESS-EMPTY-TRIALS | ACCESS_INTENT | Request affected_trial_ids is empty; current seal and all other evidence remain valid. | ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY |
 | T-B-ACCESS-COMPLETED-BEFORE-START | ACCESS_COMPLETED | started_at is earlier than retained ACCESS_STARTED.recorded_at; ended_at remains after started_at. Path A does not append this event. | ACCESS_COMPLETED_STARTED_AT_BEFORE_START_COMMIT |
+| T-B-ACCESS-EMPTY-EVIDENCE-REFS | ACCESS_INTENT, ACCESS_STARTED, ACCESS_COMPLETED | Request evidence_ref_ids is empty; all other evidence remains valid. Independent variants: ACCESS_INTENT; ACCESS_STARTED; ACCESS_COMPLETED. | {EVENT}_EVIDENCE_REF_SET_EMPTY |
 
 Positive controls: Path A first through ACCESS_INTENT then ACCESS_STARTED, stopping
 before ACCESS_COMPLETED because EXPOSURE_DECISION is not selected; Path B with all

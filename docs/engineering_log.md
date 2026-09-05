@@ -1,5 +1,19 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 design P1-FIX3 exact-head remediations
+
+- PR #198 head `e1c2953ac951b64f8fa4580e653ea42530695398` had one P1 and
+  two P2s from exact-head Codex review. Design-only remediations:
+  `evidence_ref_ids` is `1..4096` on ACCESS_INTENT, ACCESS_STARTED and
+  ACCESS_COMPLETED, with empty-array refusals
+  `{EVENT}_EVIDENCE_REF_SET_EMPTY`. External-reference readiness origin is
+  `STAGE3_SAMPLE_REFERENCE_BOUND`. Isolated seal case
+  `T-B-SEAL-REVIEWER-TRIAL-ISSUER` requires
+  `CAMPAIGN_INVENTORY_SEALED_ROLE_COLLISION` when the inventory reviewer
+  equals an included trial-definition issuer.
+- The 14-wire budget is unchanged. No SQLite runtime, 14-trial run, D8,
+  identity, or result access.
+
 ## 2026-09-05 - Track B v7 design P1-FIX2 exact-head remediations
 
 - PR #198 head `ca4153880e31d79b2c6141f95c6c8fd7dbb007fe` had two P1s and

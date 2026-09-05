@@ -297,7 +297,7 @@ names, with synthetic names in fixtures; it cannot carry raw restricted values.
 | `access_capability_record_schema_version` | literal sample_access_capability_record_v1 |
 | `access_capability_record_sha256` | sha256 |
 | `access_capability_record_version` | I-JSON safe integer, minimum 1; Boolean excluded |
-| `evidence_ref_ids` | sorted-unique safe_public_id array; 0..4096 |
+| `evidence_ref_ids` | sorted-unique safe_public_id array; 1..4096 |
 
 #### ACCESS_STARTED
 
@@ -315,7 +315,7 @@ names, with synthetic names in fixtures; it cannot carry raw restricted values.
 | `start_authority_record_sha256` | sha256 |
 | `start_authority_schema_version` | literal sample_access_start_authority_v1 |
 | `sample_id` | sample_id |
-| `evidence_ref_ids` | sorted-unique safe_public_id array; 0..4096 |
+| `evidence_ref_ids` | sorted-unique safe_public_id array; 1..4096 |
 
 #### ACCESS_COMPLETED
 
@@ -334,7 +334,7 @@ names, with synthetic names in fixtures; it cannot carry raw restricted values.
 | `started_at` | existing timestamp |
 | `ended_at` | existing timestamp |
 | `backfilled` | Boolean |
-| `evidence_ref_ids` | sorted-unique safe_public_id array; 0..4096 |
+| `evidence_ref_ids` | sorted-unique safe_public_id array; 1..4096 |
 
 `ACCESS_STARTED.recorded_at <= started_at <= ended_at`; the retained start
 fixes the sample, campaign, capability and reader. Completion reader
@@ -345,13 +345,14 @@ holdout status. Path A first checkpoint stops after ACCESS_STARTED and does
 not claim terminal access completion. ACCESS_COMPLETED remains in the selected
 14 for payload freeze only. EXPOSURE_DECISION stays unselected; adding it
 requires an owner gate and new authorization. Intent, start and completion each
-bind typed `evidence_ref_ids`; those references must resolve. Unknown extra
+bind nonempty typed `evidence_ref_ids`; empty arrays refuse
+`{EVENT}_EVIDENCE_REF_SET_EMPTY`. Those references must resolve. Unknown extra
 payload fields remain rejected. No paths or raw outcome fields may enter any
 ACCESS payload.
 
 The runtime must test exact replay, second start, wrong sample/reader, invalid
 scope/time, duplicate/unknown fields, capability expiry and concurrent consume.
-These are supplemental owner requirements alongside the 69-case v7 inventory,
+These are supplemental owner requirements alongside the 71-case v7 inventory,
 not claims that new runtime tests have run in this design candidate.
 
 The [v7 design](experiment_trial_ledger_track_b_v7_design.md) freezes the boundary predicates and refusal
