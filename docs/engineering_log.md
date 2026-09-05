@@ -1,5 +1,19 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 design P1-FIX2 exact-head remediations
+
+- PR #198 head `ca4153880e31d79b2c6141f95c6c8fd7dbb007fe` had two P1s and
+  two P2s from exact-head Codex review. Design-only remediations:
+  ACCESS_INTENT and ACCESS_STARTED now bind typed `evidence_ref_ids`;
+  ACCESS_COMPLETED, when later enabled, requires
+  `ACCESS_STARTED.recorded_at <= started_at <= ended_at` and has killing
+  test `T-B-ACCESS-COMPLETED-BEFORE-START`. Path A still stops after
+  ACCESS_STARTED. Readiness retained-source set lists campaign binding and
+  attempt allocation, with an external-reference specimen. Readiness entry
+  IDs are owner-native `trial_family_id`/`sample_id`/`trial_id`.
+- The 14-wire budget is unchanged. No SQLite runtime, 14-trial run, D8,
+  identity, or result access.
+
 ## 2026-09-05 - Track B v7 design P1 exact-head remediations
 
 - PR #198 head `1cc68fbec1241e70161b24b371648670b523f672` had two P1s and

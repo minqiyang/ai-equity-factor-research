@@ -1208,10 +1208,14 @@ distinct at intent. Accessor comes from resolved authorization, not the intent
 actor. The full authorization binds sample/campaign, a nonempty affected trial set,
 purpose, window, field classes and accessor code/environment exactly to the
 intent. Empty `affected_trial_ids` refuses
-`ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY`.
+`ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY`. Intent and start payloads each include
+typed `evidence_ref_ids` that resolve as immutable safe evidence references;
+unknown extra payload fields remain rejected.
 Intent authority additionally binds authorized actor and operation. Start
 authority binds retained intent ID/hash, authorized actor, accessor, sample,
-campaign and exact reader. Authorization and both authorities require current
+campaign and exact reader. When ACCESS_COMPLETED is later enabled,
+`ACCESS_STARTED.recorded_at <= started_at <= ended_at`. Path A does not append
+ACCESS_COMPLETED. Authorization and both authorities require current
 activation/revocation/supersession evidence at the consuming boundary. The
 three-field authorization key does not silently gain a generation field;
 currentness is resolved from its owner stream.

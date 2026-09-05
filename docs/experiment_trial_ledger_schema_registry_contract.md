@@ -297,6 +297,7 @@ names, with synthetic names in fixtures; it cannot carry raw restricted values.
 | `access_capability_record_schema_version` | literal sample_access_capability_record_v1 |
 | `access_capability_record_sha256` | sha256 |
 | `access_capability_record_version` | I-JSON safe integer, minimum 1; Boolean excluded |
+| `evidence_ref_ids` | sorted-unique safe_public_id array; 0..4096 |
 
 #### ACCESS_STARTED
 
@@ -314,6 +315,7 @@ names, with synthetic names in fixtures; it cannot carry raw restricted values.
 | `start_authority_record_sha256` | sha256 |
 | `start_authority_schema_version` | literal sample_access_start_authority_v1 |
 | `sample_id` | sample_id |
+| `evidence_ref_ids` | sorted-unique safe_public_id array; 0..4096 |
 
 #### ACCESS_COMPLETED
 
@@ -334,20 +336,22 @@ names, with synthetic names in fixtures; it cannot carry raw restricted values.
 | `backfilled` | Boolean |
 | `evidence_ref_ids` | sorted-unique safe_public_id array; 0..4096 |
 
-`started_at <= ended_at`; the retained start fixes the sample, campaign,
-capability and reader. Completion reader code/environment must equal the
-consumed capability, not the trial's executor. A broader actual window, unknown
-observation or backfill is retained conservatively under the baseline access
-contract; it never creates fresh holdout status. Path A first checkpoint stops
-after ACCESS_STARTED and does not claim terminal access completion.
-ACCESS_COMPLETED remains in the selected 14 for payload freeze only.
-EXPOSURE_DECISION stays unselected; adding it requires an owner gate and new
-authorization. Safe evidence references must resolve; no paths or raw outcome
-fields may enter any ACCESS payload.
+`ACCESS_STARTED.recorded_at <= started_at <= ended_at`; the retained start
+fixes the sample, campaign, capability and reader. Completion reader
+code/environment must equal the consumed capability, not the trial's executor.
+A broader actual window, unknown observation or backfill is retained
+conservatively under the baseline access contract; it never creates fresh
+holdout status. Path A first checkpoint stops after ACCESS_STARTED and does
+not claim terminal access completion. ACCESS_COMPLETED remains in the selected
+14 for payload freeze only. EXPOSURE_DECISION stays unselected; adding it
+requires an owner gate and new authorization. Intent, start and completion each
+bind typed `evidence_ref_ids`; those references must resolve. Unknown extra
+payload fields remain rejected. No paths or raw outcome fields may enter any
+ACCESS payload.
 
 The runtime must test exact replay, second start, wrong sample/reader, invalid
 scope/time, duplicate/unknown fields, capability expiry and concurrent consume.
-These are supplemental owner requirements alongside the 68-case v7 inventory,
+These are supplemental owner requirements alongside the 69-case v7 inventory,
 not claims that new runtime tests have run in this design candidate.
 
 The [v7 design](experiment_trial_ledger_track_b_v7_design.md) freezes the boundary predicates and refusal

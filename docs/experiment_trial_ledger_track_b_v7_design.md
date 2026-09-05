@@ -170,14 +170,17 @@ nonempty subset of the sealed set; empty set refuses
 and the access sample. Resolve the three-field authorization and intent authority
 and check currentness. Purpose cannot be `design`. Authorization issuer,
 intent-authority issuer, accessor, inventory issuer and seal actor are pairwise
-distinct.
+distinct. Bind typed `evidence_ref_ids` that resolve as immutable safe evidence
+references; unknown extra payload fields remain rejected.
 
 `ACCESS_STARTED`: intent digest matches, each affected trial's family and the
 sample revalidate, seal head remains current, start authority is current and bound
-to this intent/actor/scope. Consume ACCESS in the append transaction.
+to this intent/actor/scope. Consume ACCESS in the append transaction. Bind typed
+`evidence_ref_ids` that resolve; unknown extra payload fields remain rejected.
 `ACCESS_COMPLETED`: retained start exists; reader code/environment equal the
-consumed ACCESS capability's intended reader. Path A first checkpoint does not
-append this event.
+consumed ACCESS capability's intended reader;
+`ACCESS_STARTED.recorded_at <= started_at <= ended_at`. Path A first checkpoint
+does not append this event.
 
 The family/sample revalidation boundaries are all-and-only:
 
@@ -264,14 +267,14 @@ The same serialized transaction performs these steps:
 | `inventory_catalog_key` | Complete owner-typed 8-field inventory key, including sealed_trial_inventory_sha256 | Current inventory re-resolved from retained seal |
 | `inventory_acceptance` | Complete owner-typed 4-field inventory acceptance | Sole-current inventory acceptance re-resolved from retained seal |
 | `seal_event_id_sha256` | event_id and event_sha256 | Retained current inventory seal |
-| `family_definition_and_acceptance` | Complete 8-field definition key, 4-field acceptance, fam_id, for every inherited family | Same-transaction revalidate_family results |
-| `sample_record_acceptance_projection_publication_approval` | Complete 8-field record key, 4-field acceptance, 3-field projection, 4-field publication approval and smp_id, for every bound sample | Same-transaction revalidate_sample results |
-| `trial_definition_acceptance_projection_allocation_authority` | Complete 8-field definition key, 4-field acceptance, complete trial projection and approval, 4-field trial-allocation authority and trl_id | Same-transaction revalidate_trial_definition result |
+| `family_definition_and_acceptance` | Complete 8-field definition key, 4-field acceptance, trial_family_id, for every inherited family | Same-transaction revalidate_family results |
+| `sample_record_acceptance_projection_publication_approval` | Complete 8-field record key, 4-field acceptance, 3-field projection, 4-field publication approval and sample_id, for every bound sample | Same-transaction revalidate_sample results |
+| `trial_definition_acceptance_projection_allocation_authority` | Complete 8-field definition key, 4-field acceptance, complete trial projection and approval, 4-field trial-allocation authority and trial_id | Same-transaction revalidate_trial_definition result |
 | `attempt_plan_catalog_key` | Complete owner-typed 8-field attempt-plan catalog key | Exact plan key re-resolved from retained ATTEMPT_ALLOCATED at step 3 |
 | `attempt_plan_acceptance` | Complete owner-typed 4-field plan-acceptance tuple | Exact sole-current plan acceptance re-resolved from retained ATTEMPT_ALLOCATED at step 3 |
 | `attempt_allocation_authority` | Complete owner-typed 4-field attempt-allocation generation-authority tuple | Exact sole-current allocation authority re-resolved from retained ATTEMPT_ALLOCATED at step 3 |
 | `attempt_allocation_event` | event_id and event_sha256 | Retained ATTEMPT_ALLOCATED event |
-| `retained_source_event_id_hash` | Every source event_id and event_sha256: family registration, sample origin, trial allocation and inventory seal | Exact retained source events used by this transaction |
+| `retained_source_event_id_hash` | Every source event_id and event_sha256: family registration, sample origin, campaign binding, trial allocation, inventory seal and attempt allocation | Exact retained source events used by this transaction |
 
 In particular the plan, its acceptance and allocation authority are three distinct
 comparisons against step 3, in addition to the allocation event's ID/hash. Equal
@@ -368,7 +371,7 @@ mappings to freeze in the one design PR.
 | T-B-START-READY-ACC-TUPLE | ATTEMPT_STARTED | Mutate one readiness acceptance tuple. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid. Independent variants: inventory acceptance only; trial-definition acceptance only. | ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH |
 | T-B-START-READY-PUB-TUPLE | ATTEMPT_STARTED | Mutate only readiness sample publication-approval tuple. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid. | ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH |
 | T-B-START-READY-AUTH-TUPLE | ATTEMPT_STARTED | Mutate only readiness attempt-allocation authority tuple; never start-authority. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid. | ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH |
-| T-B-START-READY-SRC-TUPLE | ATTEMPT_STARTED | Mutate one readiness retained source event hash. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid. Independent variants: family registration; sample origin; trial allocation; inventory seal. | ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH |
+| T-B-START-READY-SRC-TUPLE | ATTEMPT_STARTED | Mutate one readiness retained source event hash. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid. Independent variants: family registration; sample origin; trial allocation; inventory seal; campaign binding; attempt allocation. | ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH |
 | T-B-START-READY-PLAN-TUPLE | ATTEMPT_STARTED | Mutate only readiness complete attempt-plan 8-field catalog key. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid. | ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH |
 | T-B-START-READY-PLAN-ACC-TUPLE | ATTEMPT_STARTED | Mutate only readiness complete plan-acceptance 4-field tuple. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid. | ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH |
 | T-B-START-READY-SEAL-TUPLE | ATTEMPT_STARTED | Mutate only readiness seal event id/hash. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid. | ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH |
@@ -429,6 +432,7 @@ mappings to freeze in the one design PR.
 | T-B-INGRESS-COMMIT-FIELDS | ledger_operation_request_v1 ingress | Caller supplies a store-owned event field. Independent variants: sequence; recorded_at; previous_event_sha256. | OPERATION_REQUEST_COMMIT_FIELD_FORBIDDEN |
 | T-B-ACCESS-ATOMIC-ROLLBACK | ACCESS_STARTED | Force event validation failure after tentative ACCESS consumption within the transaction. | Injected append refusal; capability remains unconsumed, no event or head change. |
 | T-B-ACCESS-EMPTY-TRIALS | ACCESS_INTENT | Request affected_trial_ids is empty; current seal and all other evidence remain valid. | ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY |
+| T-B-ACCESS-COMPLETED-BEFORE-START | ACCESS_COMPLETED | started_at is earlier than retained ACCESS_STARTED.recorded_at; ended_at remains after started_at. Path A does not append this event. | ACCESS_COMPLETED_STARTED_AT_BEFORE_START_COMMIT |
 
 Positive controls: Path A first through ACCESS_INTENT then ACCESS_STARTED, stopping
 before ACCESS_COMPLETED because EXPOSURE_DECISION is not selected; Path B with all
@@ -490,6 +494,7 @@ access_capability_record_canonicalization_id
 access_capability_record_schema_version
 access_capability_record_sha256
 access_capability_record_version
+evidence_ref_ids
 ```
 
 **ACCESS_STARTED_payload_all_and_only**
@@ -507,6 +512,7 @@ start_authority_id
 start_authority_record_sha256
 start_authority_schema_version
 sample_id
+evidence_ref_ids
 ```
 
 **ACCESS_COMPLETED_payload_all_and_only**

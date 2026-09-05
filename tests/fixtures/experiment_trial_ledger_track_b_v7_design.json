@@ -261,17 +261,17 @@
       },
       {
         "operand": "family_definition_and_acceptance",
-        "complete_fields": "Complete 8-field definition key, 4-field acceptance, fam_id, for every inherited family",
+        "complete_fields": "Complete 8-field definition key, 4-field acceptance, trial_family_id, for every inherited family",
         "right_hand_source": "Same-transaction revalidate_family results"
       },
       {
         "operand": "sample_record_acceptance_projection_publication_approval",
-        "complete_fields": "Complete 8-field record key, 4-field acceptance, 3-field projection, 4-field publication approval and smp_id, for every bound sample",
+        "complete_fields": "Complete 8-field record key, 4-field acceptance, 3-field projection, 4-field publication approval and sample_id, for every bound sample",
         "right_hand_source": "Same-transaction revalidate_sample results"
       },
       {
         "operand": "trial_definition_acceptance_projection_allocation_authority",
-        "complete_fields": "Complete 8-field definition key, 4-field acceptance, complete trial projection and approval, 4-field trial-allocation authority and trl_id",
+        "complete_fields": "Complete 8-field definition key, 4-field acceptance, complete trial projection and approval, 4-field trial-allocation authority and trial_id",
         "right_hand_source": "Same-transaction revalidate_trial_definition result"
       },
       {
@@ -296,7 +296,7 @@
       },
       {
         "operand": "retained_source_event_id_hash",
-        "complete_fields": "Every source event_id and event_sha256: family registration, sample origin, trial allocation and inventory seal",
+        "complete_fields": "Every source event_id and event_sha256: family registration, sample origin, campaign binding, trial allocation, inventory seal and attempt allocation",
         "right_hand_source": "Exact retained source events used by this transaction"
       }
     ],
@@ -390,7 +390,9 @@
           "family registration",
           "sample origin",
           "trial allocation",
-          "inventory seal"
+          "inventory seal",
+          "campaign binding",
+          "attempt allocation"
         ]
       },
       {
@@ -792,6 +794,12 @@
         "boundary": "ACCESS_INTENT",
         "fault": "Request affected_trial_ids is empty; current seal and all other evidence remain valid.",
         "refusal": "ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY"
+      },
+      {
+        "id": "T-B-ACCESS-COMPLETED-BEFORE-START",
+        "boundary": "ACCESS_COMPLETED",
+        "fault": "started_at is earlier than retained ACCESS_STARTED.recorded_at; ended_at remains after started_at. Path A does not append this event.",
+        "refusal": "ACCESS_COMPLETED_STARTED_AT_BEFORE_START_COMMIT"
       }
     ]
   },
@@ -898,7 +906,8 @@
       "access_capability_record_canonicalization_id",
       "access_capability_record_schema_version",
       "access_capability_record_sha256",
-      "access_capability_record_version"
+      "access_capability_record_version",
+      "evidence_ref_ids"
     ],
     "ACCESS_STARTED_payload_all_and_only": [
       "campaign_scope_ids",
@@ -912,7 +921,8 @@
       "start_authority_id",
       "start_authority_record_sha256",
       "start_authority_schema_version",
-      "sample_id"
+      "sample_id",
+      "evidence_ref_ids"
     ],
     "ACCESS_COMPLETED_payload_all_and_only": [
       "campaign_scope_ids",
@@ -1337,7 +1347,8 @@
       "T-M3-5-START-ACTOR",
       "T-B-INGRESS-COMMIT-FIELDS",
       "T-B-ACCESS-ATOMIC-ROLLBACK",
-      "T-B-ACCESS-EMPTY-TRIALS"
+      "T-B-ACCESS-EMPTY-TRIALS",
+      "T-B-ACCESS-COMPLETED-BEFORE-START"
     ],
     "TB-GROK-V6-M2-READINESS": [
       "T-B-START-READY-PLAN-TUPLE",
@@ -1425,7 +1436,8 @@
       "T-M3-5-START-ACTOR",
       "T-B-INGRESS-COMMIT-FIELDS",
       "T-B-ACCESS-ATOMIC-ROLLBACK",
-      "T-B-ACCESS-EMPTY-TRIALS"
+      "T-B-ACCESS-EMPTY-TRIALS",
+      "T-B-ACCESS-COMPLETED-BEFORE-START"
     ],
     "TB-V6-M1": [
       "T-B-START-READY-INV-TUPLE",
@@ -1495,7 +1507,8 @@
       "T-M3-5-START-ACTOR",
       "T-B-INGRESS-COMMIT-FIELDS",
       "T-B-ACCESS-ATOMIC-ROLLBACK",
-      "T-B-ACCESS-EMPTY-TRIALS"
+      "T-B-ACCESS-EMPTY-TRIALS",
+      "T-B-ACCESS-COMPLETED-BEFORE-START"
     ]
   },
   "required_scenarios": [
@@ -1614,6 +1627,22 @@
     {
       "test_id": "T-B-START-READY-SRC-TUPLE",
       "variant": "inventory seal",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SRC-TUPLE",
+      "variant": "campaign binding",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-SRC-TUPLE",
+      "variant": "attempt allocation",
       "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
       "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
       "expected_committed_changes": "none",
@@ -2226,6 +2255,14 @@
       "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
       "expected_committed_changes": "none",
       "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-COMPLETED-BEFORE-START",
+      "variant": "single fault",
+      "expected_refusal": "ACCESS_COMPLETED_STARTED_AT_BEFORE_START_COMMIT",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
     }
   ],
   "native_tuple_specimens": {
@@ -2789,6 +2826,78 @@
       }
     }
   ],
+  "external_reference_readiness_specimen": {
+    "kind": "EXTERNAL_REFERENCE_RETAINED_SOURCE_OPERAND_ONLY",
+    "retained_source_event_id_hash": [
+      {
+        "subject_type": "trial_family",
+        "subject_id": "fam_11111111111111111111111111111111",
+        "event_type": "TRIAL_FAMILY_REGISTERED",
+        "source": {
+          "event_id": "evt_11111111111111111111111111111111",
+          "event_sha256": "7a05a78d47bcc3c1b227c08381438494788793406acfdc0451917788c1b3173b"
+        }
+      },
+      {
+        "subject_type": "sample",
+        "subject_id": "smp_11111111111111111111111111111111",
+        "event_type": "SAMPLE_REGISTERED",
+        "source": {
+          "event_id": "evt_22222222222222222222222222222222",
+          "event_sha256": "4de788113729dea78050226f128510ad3a3ff7c2a99ffc6758dcf11b0953db6a"
+        }
+      },
+      {
+        "subject_type": "sample",
+        "subject_id": "smp_11111111111111111111111111111111",
+        "event_type": "CAMPAIGN_ENTITY_BOUND",
+        "source": {
+          "event_id": "evt_66666666666666666666666666666666",
+          "event_sha256": "b549b4806b4942eff2f411579b2e95e1619abd0c7554cc03a1d0a0f07d1947f0"
+        }
+      },
+      {
+        "subject_type": "trial",
+        "subject_id": "trl_33333333333333333333333333333333",
+        "event_type": "TRIAL_ALLOCATED",
+        "source": {
+          "event_id": "evt_33333333333333333333333333333333",
+          "event_sha256": "8ad831059ceb665db8557451194393369e5081f5c2dd150c4585afcf4c916c7a"
+        }
+      },
+      {
+        "subject_type": "campaign",
+        "subject_id": "cmp_44444444444444444444444444444444",
+        "event_type": "CAMPAIGN_INVENTORY_SEALED",
+        "source": {
+          "event_id": "evt_44444444444444444444444444444444",
+          "event_sha256": "830d013bd8fc69096b51b01fa50719ee46b61f00b7a9dddab7e2b89a0c6fd077"
+        }
+      },
+      {
+        "subject_type": "attempt",
+        "subject_id": "att_55555555555555555555555555555555",
+        "event_type": "ATTEMPT_ALLOCATED",
+        "source": {
+          "event_id": "evt_55555555555555555555555555555555",
+          "event_sha256": "ff058499de7fabaa3d004dafa46615b648d7b3ef56296b0f21c40d3be6723e00"
+        }
+      }
+    ]
+  },
+  "access_evidence_ref_specimen": {
+    "ACCESS_INTENT": {
+      "evidence_ref_ids": [
+        "synthetic_intent_evidence_ref"
+      ]
+    },
+    "ACCESS_STARTED": {
+      "evidence_ref_ids": [
+        "synthetic_intent_evidence_ref",
+        "synthetic_start_evidence_ref"
+      ]
+    }
+  },
   "specimen_limit": "Operands and role excerpts only; synthetic hashes bind named fixture strings, not complete external record bytes. No specimen is a passing runtime catalog.",
   "access_field_types": {
     "ACCESS_INTENT": {
@@ -2814,7 +2923,8 @@
       "access_capability_record_canonicalization_id": "literal pit_canonical_json_v1",
       "access_capability_record_schema_version": "literal sample_access_capability_record_v1",
       "access_capability_record_sha256": "sha256",
-      "access_capability_record_version": "I-JSON safe integer, minimum 1; Boolean excluded"
+      "access_capability_record_version": "I-JSON safe integer, minimum 1; Boolean excluded",
+      "evidence_ref_ids": "sorted-unique safe_public_id array; 0..4096"
     },
     "ACCESS_STARTED": {
       "campaign_scope_ids": "sorted-unique campaign_id array; exactly 1",
@@ -2828,7 +2938,8 @@
       "start_authority_id": "existing safe_public_id",
       "start_authority_record_sha256": "sha256",
       "start_authority_schema_version": "literal sample_access_start_authority_v1",
-      "sample_id": "sample_id"
+      "sample_id": "sample_id",
+      "evidence_ref_ids": "sorted-unique safe_public_id array; 0..4096"
     },
     "ACCESS_COMPLETED": {
       "campaign_scope_ids": "sorted-unique campaign_id array; exactly 1",

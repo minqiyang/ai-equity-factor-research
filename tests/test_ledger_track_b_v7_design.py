@@ -20,7 +20,7 @@ DESIGN_DELIVERABLES = (
     "tests/fixtures/experiment_trial_ledger_track_b_v7_design.json",
 )
 DESIGN_ARTIFACTS_MANIFEST_SHA256 = (
-    "fe1b29271d4da07e34339c3bce9e2222d3556436868dadf890e8a85771ae3f76"
+    "07f5531cb3fe2f814dbfb503a3a6498631cb617f3479b1b23b44a7bdb031e4ba"
 )
 
 
@@ -66,7 +66,7 @@ def test_plan_manifest_and_all_baseline_owner_bytes_remain_pinned():
 def test_exact_v7_required_test_content_and_bidirectional_markdown_mirror():
     tests = read_fixture()["append_boundary_checks"]["killing_tests_v7"]
     assert canonical_digest(tests) == (
-        "c55bfd06c577bddb30cf664a8200e59fea06cb68583f3add1bee4d0b466741ca"
+        "a6eb9e909b94bb88c464f360147b88e2ac8f91867450f1c3f700f81cca889d43"
     )
     rows = []
     for line in DESIGN.read_text().splitlines():
@@ -80,7 +80,7 @@ def test_exact_v7_required_test_content_and_bidirectional_markdown_mirror():
                 case["required_independent_variants"]
             ) + "."
         expected.append([case["id"], case["boundary"], fault, case["refusal"]])
-    assert len(rows) == len(tests) == len({case["id"] for case in tests}) == 68
+    assert len(rows) == len(tests) == len({case["id"] for case in tests}) == 69
     assert rows == expected
 
 
@@ -95,7 +95,7 @@ def test_all_variants_are_separate_scenarios_with_concrete_refusal_codes():
     scenarios = fixture["required_scenarios"]
     actual = Counter((s["test_id"], s["variant"]) for s in scenarios)
     assert actual == required
-    assert len(scenarios) == len(required) == 91
+    assert len(scenarios) == len(required) == 94
     for scenario in scenarios:
         assert re.fullmatch(r"[A-Z][A-Z0-9_]+", scenario["expected_refusal"])
         assert scenario["runtime_status"] == "NOT_EXECUTED"
@@ -143,7 +143,7 @@ def test_wire_partition_and_revalidation_boundaries_are_v7_exact():
         if k != "killing_tests_v7"
     }
     assert canonical_digest(boundaries) == (
-        "30cf297b1ba91df41c36d4e0432511be7997067708c09af699fe6d07d7cda977"
+        "42ac1af7f79db4db464834be4e85e3e85edb0a8a87b69701b0882c4e273cfe58"
     )
 
 
@@ -215,6 +215,31 @@ def test_readiness_specimen_has_all_eleven_operands_and_complete_nested_keys():
             ]
             for nested in resolve_specimen_path(ready, mapping["path"]):
                 assert set(nested) == set(fields)
+    for family in ready["family_definition_and_acceptance"]:
+        assert "trial_family_id" in family
+        assert "fam_id" not in family
+    for sample in ready["sample_record_acceptance_projection_publication_approval"]:
+        assert "sample_id" in sample
+        assert "smp_id" not in sample
+    trial = ready["trial_definition_acceptance_projection_allocation_authority"]
+    assert "trial_id" in trial
+    assert "trl_id" not in trial
+    for operand in operands:
+        text = operand["complete_fields"]
+        assert "fam_id" not in text
+        assert "smp_id" not in text
+        assert "trl_id" not in text
+    source_text = next(
+        item["complete_fields"] for item in operands
+        if item["operand"] == "retained_source_event_id_hash"
+    )
+    assert "campaign binding" in source_text
+    assert "attempt allocation" in source_text
+    local_types = {
+        row["event_type"]
+        for row in ready["retained_source_event_id_hash"]
+    }
+    assert "ATTEMPT_ALLOCATED" in local_types
     assert "start_authority" not in ready
     assert "NOT_COMPLETE" in specimen["kind"]
 
@@ -248,11 +273,48 @@ def test_seal_role_and_both_origin_specimens_use_the_frozen_paths():
     assert len(local["native_record_identity"]) == 8
 
 
+SAFE_PUBLIC_ID = re.compile(r"^[a-z0-9](?:[a-z0-9._-]{0,126}[a-z0-9])?$")
+
+
+def test_external_reference_readiness_retains_binding_and_attempt_sources():
+    fixture = read_fixture()
+    rows = fixture["external_reference_readiness_specimen"]["retained_source_event_id_hash"]
+    types = [row["event_type"] for row in rows]
+    assert "CAMPAIGN_ENTITY_BOUND" in types
+    assert "ATTEMPT_ALLOCATED" in types
+    assert "SAMPLE_REGISTERED" in types
+    for row in rows:
+        assert set(row["source"]) == {"event_id", "event_sha256"}
+        assert row["source"]["event_id"]
+        assert row["source"]["event_sha256"]
+
+
+def test_access_intent_and_start_bind_resolvable_evidence_refs():
+    fixture = read_fixture()
+    specimen = fixture["access_evidence_ref_specimen"]
+    for event in ("ACCESS_INTENT", "ACCESS_STARTED"):
+        fields = fixture["access_pack"][event + "_payload_all_and_only"]
+        types = fixture["access_field_types"][event]
+        assert "evidence_ref_ids" in fields
+        assert types["evidence_ref_ids"] == (
+            "sorted-unique safe_public_id array; 0..4096"
+        )
+        assert "unknown_field" not in fields
+        refs = specimen[event]["evidence_ref_ids"]
+        assert refs
+        assert refs == sorted(set(refs))
+        for ref in refs:
+            assert SAFE_PUBLIC_ID.fullmatch(ref)
+    started = specimen["ACCESS_STARTED"]["evidence_ref_ids"]
+    intended = specimen["ACCESS_INTENT"]["evidence_ref_ids"]
+    assert set(intended) <= set(started)
+
+
 @pytest.mark.parametrize("event", ["ACCESS_INTENT", "ACCESS_STARTED", "ACCESS_COMPLETED"])
 def test_access_pack_exact_fields_and_types_are_frozen_in_existing_owner(event):
     fixture = read_fixture()
     assert canonical_digest(fixture["access_pack"]) == (
-        "381c1939555658534238d0904a37847c3007615d78d3abc88a1bcf6ba4129fd1"
+        "e7389ccf4008ea02815933d5037848ca6ef8d36e1813d96cb02b03777a66900c"
     )
     fields = fixture["access_pack"][event + "_payload_all_and_only"]
     types = fixture["access_field_types"][event]
