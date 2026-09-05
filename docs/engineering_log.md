@@ -1,5 +1,19 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 design P1 exact-head remediations
+
+- PR #198 head `1cc68fbec1241e70161b24b371648670b523f672` had two P1s and
+  two P2s from exact-head Codex review. Design-only remediations: Path A
+  first checkpoint now stops after ACCESS_STARTED and does not claim
+  terminal ACCESS_COMPLETED, because EXPOSURE_DECISION is not selected;
+  the 14-wire budget is unchanged. ACCESS_INTENT requires a nonempty
+  sealed affected-trial set and refuses empty set as
+  `ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY`. The three previously empty
+  finding-coverage lists now carry the complete 68-test union. Public
+  design Markdown/JSON hashes are committed in
+  `docs/experiment_trial_ledger_track_b_v7_design.artifacts.sha256`.
+- No SQLite runtime, 14-trial run, D8, identity, or result access.
+
 ## 2026-09-04 - Live hosted-review check before merge
 
 - Owner correction: do not claim Codex (or any provider) is quota-limited

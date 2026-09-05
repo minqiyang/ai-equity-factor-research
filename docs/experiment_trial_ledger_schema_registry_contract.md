@@ -261,6 +261,8 @@ form a chain through exact event ID/hash references; no new access-entity ID
 is introduced. Both subject and explicit payload sample are required by this
 pack. Only ACCESS_INTENT mints its capability identity. ACCESS_STARTED consumes
 that same identity; ACCESS_COMPLETED records the already committed start.
+Path A first checkpoint stops after ACCESS_STARTED and does not append
+ACCESS_COMPLETED.
 
 All fields listed below are mandatory and all-and-only. Null, duplicate,
 unknown, wrong-type or cross-event fields fail closed. Bounds and new schema
@@ -276,7 +278,7 @@ names, with synthetic names in fixtures; it cannot carry raw restricted values.
 | `inventory_seal_event_id` | event_id |
 | `inventory_seal_event_sha256` | sha256 |
 | `sample_id` | sample_id |
-| `affected_trial_ids` | sorted-unique trial_id array; 0..4096; subset of current sealed set |
+| `affected_trial_ids` | sorted-unique trial_id array; 1..4096; nonempty subset of current sealed set |
 | `purpose` | closed enum: validation, evaluation; design is forbidden |
 | `intended_window_id` | existing safe_public_id |
 | `intended_field_class_ids` | sorted-unique safe_public_id array; 1..4096 |
@@ -336,13 +338,16 @@ names, with synthetic names in fixtures; it cannot carry raw restricted values.
 capability and reader. Completion reader code/environment must equal the
 consumed capability, not the trial's executor. A broader actual window, unknown
 observation or backfill is retained conservatively under the baseline access
-contract; it never creates fresh holdout status. Track B does not append an
-EXPOSURE_DECISION or certify a resulting classification. Safe evidence references
-must resolve; no paths or raw outcome fields may enter any ACCESS payload.
+contract; it never creates fresh holdout status. Path A first checkpoint stops
+after ACCESS_STARTED and does not claim terminal access completion.
+ACCESS_COMPLETED remains in the selected 14 for payload freeze only.
+EXPOSURE_DECISION stays unselected; adding it requires an owner gate and new
+authorization. Safe evidence references must resolve; no paths or raw outcome
+fields may enter any ACCESS payload.
 
 The runtime must test exact replay, second start, wrong sample/reader, invalid
 scope/time, duplicate/unknown fields, capability expiry and concurrent consume.
-These are supplemental owner requirements alongside the 67-case v7 inventory,
+These are supplemental owner requirements alongside the 68-case v7 inventory,
 not claims that new runtime tests have run in this design candidate.
 
 The [v7 design](experiment_trial_ledger_track_b_v7_design.md) freezes the boundary predicates and refusal

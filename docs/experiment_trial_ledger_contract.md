@@ -1205,8 +1205,10 @@ intent/operation. These are distinct typed owner tuples, never shortened hashes.
 
 All role values use existing `actor_id`. The first five principals are pairwise
 distinct at intent. Accessor comes from resolved authorization, not the intent
-actor. The full authorization binds sample/campaign, affected trial set, purpose,
-window, field classes and accessor code/environment exactly to the intent.
+actor. The full authorization binds sample/campaign, a nonempty affected trial set,
+purpose, window, field classes and accessor code/environment exactly to the
+intent. Empty `affected_trial_ids` refuses
+`ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY`.
 Intent authority additionally binds authorized actor and operation. Start
 authority binds retained intent ID/hash, authorized actor, accessor, sample,
 campaign and exact reader. Authorization and both authorities require current

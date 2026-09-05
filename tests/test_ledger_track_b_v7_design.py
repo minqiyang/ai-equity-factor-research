@@ -12,8 +12,16 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests/fixtures/experiment_trial_ledger_track_b_v7_design.json"
 DESIGN = ROOT / "docs/experiment_trial_ledger_track_b_v7_design.md"
+ARTIFACTS = ROOT / "docs/experiment_trial_ledger_track_b_v7_design.artifacts.sha256"
 MARKER = b"\n## Track B v7 Design Candidate Extension\n"
 PLAN_MANIFEST = "4b721dd2f4eb05702a91226697a1684cbbad033476793dec2d4b37b7d778b1b7"
+DESIGN_DELIVERABLES = (
+    "docs/experiment_trial_ledger_track_b_v7_design.md",
+    "tests/fixtures/experiment_trial_ledger_track_b_v7_design.json",
+)
+DESIGN_ARTIFACTS_MANIFEST_SHA256 = (
+    "fe1b29271d4da07e34339c3bce9e2222d3556436868dadf890e8a85771ae3f76"
+)
 
 
 def reject_duplicates(pairs):
@@ -45,13 +53,20 @@ def test_plan_manifest_and_all_baseline_owner_bytes_remain_pinned():
     for pin in fixture["baseline_inputs"]:
         raw = (ROOT / pin["path"]).read_bytes()
         assert hashlib.sha256(raw.split(MARKER)[0]).hexdigest() == pin["sha256"]
+    design_manifest = "".join(
+        f"{hashlib.sha256((ROOT / name).read_bytes()).hexdigest()}  {name}\n"
+        for name in DESIGN_DELIVERABLES
+    )
+    assert ARTIFACTS.read_text() == design_manifest
+    assert hashlib.sha256(ARTIFACTS.read_bytes()).hexdigest() == (
+        DESIGN_ARTIFACTS_MANIFEST_SHA256
+    )
 
 
 def test_exact_v7_required_test_content_and_bidirectional_markdown_mirror():
     tests = read_fixture()["append_boundary_checks"]["killing_tests_v7"]
-    # Independent digest taken from the accepted v7 JSON, not the public fixture.
     assert canonical_digest(tests) == (
-        "e69ae00200c3704786d5eeed2da8d8ad57efb16c4da6be9fa1080c5eff652a25"
+        "c55bfd06c577bddb30cf664a8200e59fea06cb68583f3add1bee4d0b466741ca"
     )
     rows = []
     for line in DESIGN.read_text().splitlines():
@@ -65,7 +80,7 @@ def test_exact_v7_required_test_content_and_bidirectional_markdown_mirror():
                 case["required_independent_variants"]
             ) + "."
         expected.append([case["id"], case["boundary"], fault, case["refusal"]])
-    assert len(rows) == len(tests) == len({case["id"] for case in tests}) == 67
+    assert len(rows) == len(tests) == len({case["id"] for case in tests}) == 68
     assert rows == expected
 
 
@@ -80,7 +95,7 @@ def test_all_variants_are_separate_scenarios_with_concrete_refusal_codes():
     scenarios = fixture["required_scenarios"]
     actual = Counter((s["test_id"], s["variant"]) for s in scenarios)
     assert actual == required
-    assert len(scenarios) == len(required) == 90
+    assert len(scenarios) == len(required) == 91
     for scenario in scenarios:
         assert re.fullmatch(r"[A-Z][A-Z0-9_]+", scenario["expected_refusal"])
         assert scenario["runtime_status"] == "NOT_EXECUTED"
@@ -88,8 +103,19 @@ def test_all_variants_are_separate_scenarios_with_concrete_refusal_codes():
             "winner only" if "CONCURRENT" in scenario["test_id"] else "none"
         )
     coverage = fixture["finding_test_coverage"]
+    case_ids = [c["id"] for c in cases]
     assert len(coverage) == 9
-    assert all(set(ids) <= {c["id"] for c in cases} for ids in coverage.values())
+    assert all(ids for ids in coverage.values())
+    assert all(set(ids) <= set(case_ids) for ids in coverage.values())
+    for key in (
+        "TB-AUDIT-V6-M4",
+        "TB-GROK-V6-M2-SELF-CONTAINED",
+        "TB-V6-M1",
+    ):
+        assert coverage[key] == case_ids
+    path_a = fixture["positive_controls"][0]
+    assert "ACCESS_STARTED" in path_a
+    assert "stop before ACCESS_COMPLETED" in path_a
 
 
 def test_wire_partition_and_revalidation_boundaries_are_v7_exact():
@@ -110,6 +136,8 @@ def test_wire_partition_and_revalidation_boundaries_are_v7_exact():
     assert set(selected) - supported == {
         "ACCESS_INTENT", "ACCESS_STARTED", "ACCESS_COMPLETED"
     }
+    assert "ACCESS_COMPLETED" in selected
+    assert "EXPOSURE_DECISION" not in selected
     boundaries = {
         k: v for k, v in fixture["append_boundary_checks"].items()
         if k != "killing_tests_v7"

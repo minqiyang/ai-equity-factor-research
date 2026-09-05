@@ -84,7 +84,10 @@ catalog or claim that the owner gate has approved the proposed mappings.
 The separately authorized later runtime PR uses stdlib `sqlite3`, a
 caller-supplied database outside the canonical repository and synthetic catalogs.
 Path A is first: epoch, campaign, experiment, family, local sample, trial, seal,
-ACCESS_INTENT, then valid ACCESS_STARTED and ACCESS_COMPLETED. No Stage 3 is
+ACCESS_INTENT, then valid ACCESS_STARTED. Path A stops before ACCESS_COMPLETED
+and does not claim terminal access completion, because EXPOSURE_DECISION is not
+selected in the 14-wire budget; adding it requires an explicit owner gate.
+ACCESS_COMPLETED remains selected only so its payload is frozen. No Stage 3 is
 needed there. Path B follows through first ATTEMPT_ALLOCATED and ATTEMPT_STARTED.
 No retry execution or terminal attempt is selected.
 
@@ -161,17 +164,20 @@ Plan reviewer, plan issuer, trial-definition issuer and allocation actor are
 pairwise distinct; reviewer and allocation actor must not be plan private-input
 producers. `ATTEMPT_STARTED`: section 6.2.
 
-`ACCESS_INTENT`: seal digest matches and is current; affected trial IDs are a subset
-of the sealed set; revalidate each affected trial's family and the access sample.
-Resolve the three-field authorization and intent authority and check currentness.
-Purpose cannot be `design`. Authorization issuer, intent-authority issuer,
-accessor, inventory issuer and seal actor are pairwise distinct.
+`ACCESS_INTENT`: seal digest matches and is current; affected trial IDs are a
+nonempty subset of the sealed set; empty set refuses
+`ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY`; revalidate each affected trial's family
+and the access sample. Resolve the three-field authorization and intent authority
+and check currentness. Purpose cannot be `design`. Authorization issuer,
+intent-authority issuer, accessor, inventory issuer and seal actor are pairwise
+distinct.
 
 `ACCESS_STARTED`: intent digest matches, each affected trial's family and the
 sample revalidate, seal head remains current, start authority is current and bound
 to this intent/actor/scope. Consume ACCESS in the append transaction.
 `ACCESS_COMPLETED`: retained start exists; reader code/environment equal the
-consumed ACCESS capability's intended reader.
+consumed ACCESS capability's intended reader. Path A first checkpoint does not
+append this event.
 
 The family/sample revalidation boundaries are all-and-only:
 
@@ -422,18 +428,22 @@ mappings to freeze in the one design PR.
 | T-M3-5-START-ACTOR | EXECUTE capability consume after ATTEMPT_STARTED | Use start-event actor as consumer when readiness executor is a different actor. | CAPABILITY_CONSUMER_MISMATCH |
 | T-B-INGRESS-COMMIT-FIELDS | ledger_operation_request_v1 ingress | Caller supplies a store-owned event field. Independent variants: sequence; recorded_at; previous_event_sha256. | OPERATION_REQUEST_COMMIT_FIELD_FORBIDDEN |
 | T-B-ACCESS-ATOMIC-ROLLBACK | ACCESS_STARTED | Force event validation failure after tentative ACCESS consumption within the transaction. | Injected append refusal; capability remains unconsumed, no event or head change. |
+| T-B-ACCESS-EMPTY-TRIALS | ACCESS_INTENT | Request affected_trial_ids is empty; current seal and all other evidence remain valid. | ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY |
 
-Positive controls: Path A first through ACCESS_INTENT and then ACCESS start/complete;
-Path B with all exact readiness operands equal; each origin path alone in a fresh
-epoch; later-campaign reference reusing the same sample_id; and matching EXECUTE
+Positive controls: Path A first through ACCESS_INTENT then ACCESS_STARTED, stopping
+before ACCESS_COMPLETED because EXPOSURE_DECISION is not selected; Path B with all
+exact readiness operands equal; each origin path alone in a fresh epoch;
+later-campaign reference reusing the same sample_id; and matching EXECUTE
 consumption by a readiness executor different from the start-event actor.
 
 Artifact QA must parse JSON; prove the 12/37/14/23 inventory, exact operand and
 boundary agreement, and bidirectional ID-set equality and uniqueness; compare every
 test row's boundary/fault/variants/refusal, retain all 40 predecessor markdown IDs,
-and map all nine OPEN MATERIAL findings independently. Hash both deliverables into
-`artifacts.sha256`, then hash the manifest. These document checks cannot establish
-runtime correctness or independent gate acceptance.
+and map all nine OPEN MATERIAL findings independently with nonempty coverage IDs.
+Hash both public design Markdown/JSON deliverables into
+`docs/experiment_trial_ledger_track_b_v7_design.artifacts.sha256`, then hash that
+manifest. These document checks cannot establish runtime correctness or independent
+gate acceptance.
 
 ## 7. Capability and ingress rules retained
 
