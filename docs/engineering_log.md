@@ -1,5 +1,16 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 design P2-FIX5 exact-head remediations
+
+- PR #198 head `c332ef02945efaa52e5b10f8c79c21da45e7353c` had two remaining
+  P2s. `T-B-ACCESS-ROLE-COLLISION` isolates each prohibited equality among
+  the five ACCESS_INTENT principals. `T-B-START-READY-FAM-SET` adds missing
+  and extra family variants mapped to
+  `ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH`.
+- Unchanged: `evidence_ref_ids` `1..4096`, `T-B-SEAL-REVIEWER-TRIAL-ISSUER`,
+  and the `operation_request_sha256` ingress variant. No SQLite runtime or
+  14-trial run.
+
 ## 2026-09-05 - Track B v7 design P2-FIX4 exact-head remediation
 
 - PR #198 head `b3bc1df8b05495ad29c441e58ce068b4fd45fee0` had one remaining

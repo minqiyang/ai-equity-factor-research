@@ -352,7 +352,7 @@ ACCESS payload.
 
 The runtime must test exact replay, second start, wrong sample/reader, invalid
 scope/time, duplicate/unknown fields, capability expiry and concurrent consume.
-These are supplemental owner requirements alongside the 71-case v7 inventory,
+These are supplemental owner requirements alongside the 73-case v7 inventory,
 not claims that new runtime tests have run in this design candidate.
 
 The [v7 design](experiment_trial_ledger_track_b_v7_design.md) freezes the boundary predicates and refusal

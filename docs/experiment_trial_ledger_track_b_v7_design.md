@@ -170,7 +170,7 @@ nonempty subset of the sealed set; empty set refuses
 and the access sample. Resolve the three-field authorization and intent authority
 and check currentness. Purpose cannot be `design`. Authorization issuer,
 intent-authority issuer, accessor, inventory issuer and seal actor are pairwise
-distinct. Bind nonempty typed `evidence_ref_ids` that resolve as immutable safe
+distinct; a prohibited equality refuses `ACCESS_INTENT_ROLE_COLLISION`. Bind nonempty typed `evidence_ref_ids` that resolve as immutable safe
 evidence references; empty arrays refuse `{EVENT}_EVIDENCE_REF_SET_EMPTY`.
 Unknown extra payload fields remain rejected.
 
@@ -383,6 +383,7 @@ mappings to freeze in the one design PR.
 | T-B-START-READY-TRIAL-AUTH-TUPLE | ATTEMPT_STARTED | Mutate only readiness trial-allocation authority tuple. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid. | ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH |
 | T-B-START-READY-TRIAL-PUB-TUPLE | ATTEMPT_STARTED | Mutate only readiness trial projection or approval. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid. Independent variants: projection only; approval only. | ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH |
 | T-B-START-READY-SAMPLE-SET | ATTEMPT_STARTED | Omit or add an inherited sample in readiness. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid. Independent variants: missing sample; extra sample. | ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH |
+| T-B-START-READY-FAM-SET | ATTEMPT_STARTED | Omit or add an inherited family in readiness. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid. Independent variants: missing family; extra family. | ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH |
 | T-B-START-PLAN-STALE | ATTEMPT_STARTED | Retained attempt plan acceptance is stale. | ATTEMPT_STARTED_ACCEPTANCE_STALE |
 | T-B-START-AUTH-STALE | ATTEMPT_STARTED | Event-payload start-authority is stale; inherited allocation authority remains valid. | ATTEMPT_STARTED_START_AUTHORITY_STALE |
 | T-B-START-ALLOC-AUTH-STALE | ATTEMPT_STARTED | Retained attempt-allocation authority is stale; event-payload start-authority remains valid. | ATTEMPT_STARTED_ALLOCATION_AUTHORITY_STALE |
@@ -439,6 +440,7 @@ mappings to freeze in the one design PR.
 | T-B-ACCESS-EMPTY-TRIALS | ACCESS_INTENT | Request affected_trial_ids is empty; current seal and all other evidence remain valid. | ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY |
 | T-B-ACCESS-COMPLETED-BEFORE-START | ACCESS_COMPLETED | started_at is earlier than retained ACCESS_STARTED.recorded_at; ended_at remains after started_at. Path A does not append this event. | ACCESS_COMPLETED_STARTED_AT_BEFORE_START_COMMIT |
 | T-B-ACCESS-EMPTY-EVIDENCE-REFS | ACCESS_INTENT, ACCESS_STARTED, ACCESS_COMPLETED | Request evidence_ref_ids is empty; all other evidence remains valid. Independent variants: ACCESS_INTENT; ACCESS_STARTED; ACCESS_COMPLETED. | {EVENT}_EVIDENCE_REF_SET_EMPTY |
+| T-B-ACCESS-ROLE-COLLISION | ACCESS_INTENT | One prohibited equality among the five pairwise-distinct resolved principals; all other evidence remains valid. Independent variants: authorization issuer=intent-authority issuer; authorization issuer=accessor; authorization issuer=inventory issuer; authorization issuer=seal actor; intent-authority issuer=accessor; intent-authority issuer=inventory issuer; intent-authority issuer=seal actor; accessor=inventory issuer; accessor=seal actor; inventory issuer=seal actor. | ACCESS_INTENT_ROLE_COLLISION |
 
 Positive controls: Path A first through ACCESS_INTENT then ACCESS_STARTED, stopping
 before ACCESS_COMPLETED because EXPOSURE_DECISION is not selected; Path B with all

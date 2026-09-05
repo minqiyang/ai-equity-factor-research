@@ -20,7 +20,7 @@ DESIGN_DELIVERABLES = (
     "tests/fixtures/experiment_trial_ledger_track_b_v7_design.json",
 )
 DESIGN_ARTIFACTS_MANIFEST_SHA256 = (
-    "410c69999f29d7ab25022b74bbc071d45fa484947a2ec42495ac8376b1f03556"
+    "c5222438065aa73c20629adc053edd40ef60d6ad731daa8296022db1d67f33cd"
 )
 
 
@@ -66,7 +66,7 @@ def test_plan_manifest_and_all_baseline_owner_bytes_remain_pinned():
 def test_exact_v7_required_test_content_and_bidirectional_markdown_mirror():
     tests = read_fixture()["append_boundary_checks"]["killing_tests_v7"]
     assert canonical_digest(tests) == (
-        "bfc9affd8487cce236561cbe8d06b3993fd0acf81fa86a213eaed7ff9f310152"
+        "2b9a68ff97ade180d4bee62dda44f7f8d1697e5e10ac4d3a5859f25288b04f53"
     )
     rows = []
     for line in DESIGN.read_text().splitlines():
@@ -80,7 +80,7 @@ def test_exact_v7_required_test_content_and_bidirectional_markdown_mirror():
                 case["required_independent_variants"]
             ) + "."
         expected.append([case["id"], case["boundary"], fault, case["refusal"]])
-    assert len(rows) == len(tests) == len({case["id"] for case in tests}) == 71
+    assert len(rows) == len(tests) == len({case["id"] for case in tests}) == 73
     assert rows == expected
 
 
@@ -95,7 +95,7 @@ def test_all_variants_are_separate_scenarios_with_concrete_refusal_codes():
     scenarios = fixture["required_scenarios"]
     actual = Counter((s["test_id"], s["variant"]) for s in scenarios)
     assert actual == required
-    assert len(scenarios) == len(required) == 99
+    assert len(scenarios) == len(required) == 111
     for scenario in scenarios:
         assert re.fullmatch(r"[A-Z][A-Z0-9_]+", scenario["expected_refusal"])
         assert scenario["runtime_status"] == "NOT_EXECUTED"

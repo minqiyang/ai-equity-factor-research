@@ -446,6 +446,16 @@
         ]
       },
       {
+        "id": "T-B-START-READY-FAM-SET",
+        "boundary": "ATTEMPT_STARTED",
+        "fault": "Omit or add an inherited family in readiness. Keep plan/trial/readiness code, environment, input, retry and expected-output values identical; keep the retained allocation and catalog revalidation valid.",
+        "refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+        "required_independent_variants": [
+          "missing family",
+          "extra family"
+        ]
+      },
+      {
         "id": "T-B-START-PLAN-STALE",
         "boundary": "ATTEMPT_STARTED",
         "fault": "Retained attempt plan acceptance is stale.",
@@ -817,6 +827,24 @@
           "ACCESS_INTENT",
           "ACCESS_STARTED",
           "ACCESS_COMPLETED"
+        ]
+      },
+      {
+        "id": "T-B-ACCESS-ROLE-COLLISION",
+        "boundary": "ACCESS_INTENT",
+        "fault": "One prohibited equality among the five pairwise-distinct resolved principals; all other evidence remains valid.",
+        "refusal": "ACCESS_INTENT_ROLE_COLLISION",
+        "required_independent_variants": [
+          "authorization issuer=intent-authority issuer",
+          "authorization issuer=accessor",
+          "authorization issuer=inventory issuer",
+          "authorization issuer=seal actor",
+          "intent-authority issuer=accessor",
+          "intent-authority issuer=inventory issuer",
+          "intent-authority issuer=seal actor",
+          "accessor=inventory issuer",
+          "accessor=seal actor",
+          "inventory issuer=seal actor"
         ]
       }
     ]
@@ -1319,6 +1347,7 @@
       "T-B-START-READY-TRIAL-AUTH-TUPLE",
       "T-B-START-READY-TRIAL-PUB-TUPLE",
       "T-B-START-READY-SAMPLE-SET",
+      "T-B-START-READY-FAM-SET",
       "T-B-START-PLAN-STALE",
       "T-B-START-AUTH-STALE",
       "T-B-START-ALLOC-AUTH-STALE",
@@ -1374,7 +1403,8 @@
       "T-B-ACCESS-ATOMIC-ROLLBACK",
       "T-B-ACCESS-EMPTY-TRIALS",
       "T-B-ACCESS-COMPLETED-BEFORE-START",
-      "T-B-ACCESS-EMPTY-EVIDENCE-REFS"
+      "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+      "T-B-ACCESS-ROLE-COLLISION"
     ],
     "TB-GROK-V6-M2-READINESS": [
       "T-B-START-READY-PLAN-TUPLE",
@@ -1410,6 +1440,7 @@
       "T-B-START-READY-TRIAL-AUTH-TUPLE",
       "T-B-START-READY-TRIAL-PUB-TUPLE",
       "T-B-START-READY-SAMPLE-SET",
+      "T-B-START-READY-FAM-SET",
       "T-B-START-PLAN-STALE",
       "T-B-START-AUTH-STALE",
       "T-B-START-ALLOC-AUTH-STALE",
@@ -1465,7 +1496,8 @@
       "T-B-ACCESS-ATOMIC-ROLLBACK",
       "T-B-ACCESS-EMPTY-TRIALS",
       "T-B-ACCESS-COMPLETED-BEFORE-START",
-      "T-B-ACCESS-EMPTY-EVIDENCE-REFS"
+      "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+      "T-B-ACCESS-ROLE-COLLISION"
     ],
     "TB-V6-M1": [
       "T-B-START-READY-INV-TUPLE",
@@ -1483,6 +1515,7 @@
       "T-B-START-READY-TRIAL-AUTH-TUPLE",
       "T-B-START-READY-TRIAL-PUB-TUPLE",
       "T-B-START-READY-SAMPLE-SET",
+      "T-B-START-READY-FAM-SET",
       "T-B-START-PLAN-STALE",
       "T-B-START-AUTH-STALE",
       "T-B-START-ALLOC-AUTH-STALE",
@@ -1538,7 +1571,8 @@
       "T-B-ACCESS-ATOMIC-ROLLBACK",
       "T-B-ACCESS-EMPTY-TRIALS",
       "T-B-ACCESS-COMPLETED-BEFORE-START",
-      "T-B-ACCESS-EMPTY-EVIDENCE-REFS"
+      "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
+      "T-B-ACCESS-ROLE-COLLISION"
     ]
   },
   "required_scenarios": [
@@ -1745,6 +1779,22 @@
     {
       "test_id": "T-B-START-READY-SAMPLE-SET",
       "variant": "extra sample",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-FAM-SET",
+      "variant": "missing family",
+      "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-START-READY-FAM-SET",
+      "variant": "extra family",
       "expected_refusal": "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
       "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
       "expected_committed_changes": "none",
@@ -2330,6 +2380,86 @@
       "test_id": "T-B-ACCESS-EMPTY-EVIDENCE-REFS",
       "variant": "ACCESS_COMPLETED",
       "expected_refusal": "ACCESS_COMPLETED_EVIDENCE_REF_SET_EMPTY",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "authorization issuer=intent-authority issuer",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "authorization issuer=accessor",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "authorization issuer=inventory issuer",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "authorization issuer=seal actor",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "intent-authority issuer=accessor",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "intent-authority issuer=inventory issuer",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "intent-authority issuer=seal actor",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "accessor=inventory issuer",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "accessor=seal actor",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
+      "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
+      "expected_committed_changes": "none",
+      "runtime_status": "NOT_EXECUTED"
+    },
+    {
+      "test_id": "T-B-ACCESS-ROLE-COLLISION",
+      "variant": "inventory issuer=seal actor",
+      "expected_refusal": "ACCESS_INTENT_ROLE_COLLISION",
       "fixture_precondition": "Passing synthetic boundary bundle; all earlier gates valid; recompute all dependent digests after isolated mutation.",
       "expected_committed_changes": "none",
       "runtime_status": "NOT_EXECUTED"

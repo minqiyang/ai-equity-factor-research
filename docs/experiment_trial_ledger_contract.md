@@ -1204,7 +1204,8 @@ intent/operation. These are distinct typed owner tuples, never shortened hashes.
 | Intended capability consumer | `sample_access_capability_record_v1.accessor_actor_id`, equals authorization accessor |
 
 All role values use existing `actor_id`. The first five principals are pairwise
-distinct at intent. Accessor comes from resolved authorization, not the intent
+distinct at intent; a prohibited equality refuses `ACCESS_INTENT_ROLE_COLLISION`.
+Accessor comes from resolved authorization, not the intent
 actor. The full authorization binds sample/campaign, a nonempty affected trial set,
 purpose, window, field classes and accessor code/environment exactly to the
 intent. Empty `affected_trial_ids` refuses
