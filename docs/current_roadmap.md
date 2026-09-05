@@ -16,7 +16,7 @@ operational checkpoint is in the [current handoff](current_handoff.md).
 - Historical CCA1 start baseline:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
 - Last live-verified protected main when this roadmap was authored:
-  `027e8ae`.
+  `027e8ae09f78b0930cf7a46261f092d232b032a1`.
 - PR #180 and PR #181 are merged. No pull request was open at the verified
   start of this work.
 - Track A PR 1 is complete through PR #177: the EODHD diagnostic scope,

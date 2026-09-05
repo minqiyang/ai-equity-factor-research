@@ -24,7 +24,9 @@ requirements.
 ## Latest Recorded Operational Checkpoint
 
 - Last externally verified protected baseline when this handoff was authored:
-  `027e8ae` after PR #195 and PR #196.
+  `027e8ae09f78b0930cf7a46261f092d232b032a1` after PR #195 and PR #196.
+- Historical CCA1 start baseline:
+  `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
 - PR #195 published 14-trial identity fail-closed status; PR #196 aligned review checks.
 - 14-trial remains REFUSED, reason ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL.
 - Terminal refusal is disposition, not PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
@@ -51,11 +53,12 @@ requirements.
 
 ## Current Research Gate Summary
 
-Stage 1 is accepted. PR 2 public surfaces and campaign DIAGNOSTIC_READY hashes
-are recorded. Formal interpretation is not granted. PR 3 runner code is on
-protected main. Stage 4 G-2 binding is accepted by hash. 14-trial remains
-REFUSED, reason ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL. Terminal
-refusal is disposition, not PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
+Stage 1 is accepted. See `docs/current_roadmap.md`. PR 2 public surfaces and
+campaign DIAGNOSTIC_READY hashes are recorded. Formal interpretation is not
+granted. PR 3 runner code is on protected main. Stage 4 G-2 binding is accepted
+by hash. 14-trial remains REFUSED, reason
+`ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`. Terminal refusal is
+disposition, not PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
 Synthetic Track B is separately eligible and not blocked by success-only Track A
 close. D8, A2, identity reopen, result/performance access stay closed. Do not
 claim v6 accepted or runtime delivered.
