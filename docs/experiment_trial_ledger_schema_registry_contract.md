@@ -228,3 +228,123 @@ set to simulate exact coverage.
 Backend, private-location, transaction/recovery, external checkpoint
 currentness, authentication/authorization, signature, fork resolution, and any
 new production dependency remain separate owner decisions.
+
+## Track B v7 Design Candidate Extension
+
+Status: proposed owner-contract extension for `OD-TB-V7-SCHEMA`; design only.
+The accepted plan manifest is pinned in the linked v7 design and its fixture.
+The preceding contract remains the frozen baseline. This additive section
+specifies required resolved-byte paths and additional predicates for the
+single Track B design candidate. Existing payload fields, tuple identity,
+canonicalization, privacy rules and stronger role checks remain binding.
+These paths are proposed schema additions where the baseline states only
+semantic bindings; they are not claims about an inspected external catalog.
+An owner catalog lacking any required operand remains inadmissible until
+this design and its owner-schema mapping are approved. No request field
+can substitute for a missing resolved-byte operand.
+
+### ACCESS schema extension TB-XPO-1
+
+This owner freezes the three exact proposed ACCESS payloads below. A later
+owner-approved registry release must express them using the existing closed
+schema language, canonicalization and envelope; this design creates no new
+registry release, DSL or validator. Packaged v9 still supports 11 event types;
+its three ACCESS types remain incomplete. The runtime design selects those 11
+plus these 3, exactly 14 of the existing 37 names, leaving 23 unselected.
+`WIRE_TYPE_NOT_SELECTED` is a future runtime selection refusal, not a claim
+that v9's existing schema refusal codes have changed.
+
+All three events have `subject_type = sample`, with existing allocated
+`subject_id` equal to `payload.sample_id`. Each uses the existing
+`ledger_event_v1` envelope and singleton campaign scope. Intent/start/completion
+form a chain through exact event ID/hash references; no new access-entity ID
+is introduced. Both subject and explicit payload sample are required by this
+pack. Only ACCESS_INTENT mints its capability identity. ACCESS_STARTED consumes
+that same identity; ACCESS_COMPLETED records the already committed start.
+
+All fields listed below are mandatory and all-and-only. Null, duplicate,
+unknown, wrong-type or cross-event fields fail closed. Bounds and new schema
+literals below are design-owner additions. This does not widen any public
+projection allowlist. `names_observed` contains only separately approved safe
+names, with synthetic names in fixtures; it cannot carry raw restricted values.
+
+#### ACCESS_INTENT
+
+| Field | Exact proposed schema |
+| --- | --- |
+| `campaign_scope_ids` | sorted-unique campaign_id array; exactly 1 |
+| `inventory_seal_event_id` | event_id |
+| `inventory_seal_event_sha256` | sha256 |
+| `sample_id` | sample_id |
+| `affected_trial_ids` | sorted-unique trial_id array; 0..4096; subset of current sealed set |
+| `purpose` | closed enum: validation, evaluation; design is forbidden |
+| `intended_window_id` | existing safe_public_id |
+| `intended_field_class_ids` | sorted-unique safe_public_id array; 1..4096 |
+| `accessor_code_tree_sha256` | sha256 |
+| `accessor_environment_id` | existing safe_public_id |
+| `accessor_environment_lock_sha256` | sha256 |
+| `authorization_record_id` | existing safe_public_id |
+| `authorization_record_schema_version` | literal sample_access_authorization_v1 |
+| `authorization_record_sha256` | sha256 |
+| `intent_authority_generation` | I-JSON safe integer, minimum 1; Boolean excluded |
+| `intent_authority_id` | existing safe_public_id |
+| `intent_authority_record_sha256` | sha256 |
+| `intent_authority_schema_version` | literal sample_access_intent_authority_v1 |
+| `access_capability_id` | existing cap_<32 lowercase hexadecimal digits> namespace |
+| `access_capability_record_canonicalization_id` | literal pit_canonical_json_v1 |
+| `access_capability_record_schema_version` | literal sample_access_capability_record_v1 |
+| `access_capability_record_sha256` | sha256 |
+| `access_capability_record_version` | I-JSON safe integer, minimum 1; Boolean excluded |
+
+#### ACCESS_STARTED
+
+| Field | Exact proposed schema |
+| --- | --- |
+| `campaign_scope_ids` | sorted-unique campaign_id array; exactly 1 |
+| `access_intent_event_id` | event_id |
+| `access_intent_event_sha256` | sha256 |
+| `access_capability_id` | existing cap_<32 lowercase hexadecimal digits> namespace |
+| `reader_code_tree_sha256` | sha256 |
+| `reader_environment_id` | existing safe_public_id |
+| `reader_environment_lock_sha256` | sha256 |
+| `start_authority_generation` | I-JSON safe integer, minimum 1; Boolean excluded |
+| `start_authority_id` | existing safe_public_id |
+| `start_authority_record_sha256` | sha256 |
+| `start_authority_schema_version` | literal sample_access_start_authority_v1 |
+| `sample_id` | sample_id |
+
+#### ACCESS_COMPLETED
+
+| Field | Exact proposed schema |
+| --- | --- |
+| `campaign_scope_ids` | sorted-unique campaign_id array; exactly 1 |
+| `access_started_event_id` | event_id |
+| `access_started_event_sha256` | sha256 |
+| `sample_id` | sample_id |
+| `actual_window_id` | existing safe_public_id |
+| `names_observed` | sorted-unique safe_public_id array; 0..4096 |
+| `protected_material_observed` | closed enum: NONE, SOME, UNKNOWN |
+| `reader_code_tree_sha256` | sha256 |
+| `reader_environment_id` | existing safe_public_id |
+| `reader_environment_lock_sha256` | sha256 |
+| `started_at` | existing timestamp |
+| `ended_at` | existing timestamp |
+| `backfilled` | Boolean |
+| `evidence_ref_ids` | sorted-unique safe_public_id array; 0..4096 |
+
+`started_at <= ended_at`; the retained start fixes the sample, campaign,
+capability and reader. Completion reader code/environment must equal the
+consumed capability, not the trial's executor. A broader actual window, unknown
+observation or backfill is retained conservatively under the baseline access
+contract; it never creates fresh holdout status. Track B does not append an
+EXPOSURE_DECISION or certify a resulting classification. Safe evidence references
+must resolve; no paths or raw outcome fields may enter any ACCESS payload.
+
+The runtime must test exact replay, second start, wrong sample/reader, invalid
+scope/time, duplicate/unknown fields, capability expiry and concurrent consume.
+These are supplemental owner requirements alongside the 67-case v7 inventory,
+not claims that new runtime tests have run in this design candidate.
+
+The [v7 design](experiment_trial_ledger_track_b_v7_design.md) freezes the boundary predicates and refusal
+inventory. Its synthetic fixtures check design consistency; they do not
+demonstrate append, catalog, currentness, capability or SQLite execution.

@@ -307,3 +307,60 @@ sample namespace, Stage 3 sample authority, local/external sample registration,
 alias/currentness policy, privacy projection, and event schemas. Any genuine
 owner-methodology gate follows the bounded reminder policy: four reminders at
 30-minute intervals, then the heartbeat pauses if the owner has not replied.
+
+## Track B v7 Design Candidate Extension
+
+Status: proposed owner-contract extension for `OD-TB-V7-SCHEMA`; design only.
+The accepted plan manifest is pinned in the linked v7 design and its fixture.
+The preceding contract remains the frozen baseline. This additive section
+specifies required resolved-byte paths and additional predicates for the
+single Track B design candidate. Existing payload fields, tuple identity,
+canonicalization, privacy rules and stronger role checks remain binding.
+These paths are proposed schema additions where the baseline states only
+semantic bindings; they are not claims about an inspected external catalog.
+An owner catalog lacking any required operand remains inadmissible until
+this design and its owner-schema mapping are approved. No request field
+can substitute for a missing resolved-byte operand.
+
+### Complete tuple paths
+
+Every field retains its exact baseline local type. Ordered tuples use the order
+below; nested objects compare all native keys and values. Acceptance, approval
+and authority resolution also includes the complete owning catalog/subject key.
+Identical IDs in different owner/schema streams do not merge those streams.
+
+| Tuple | Retained source paths (all fields) |
+| --- | --- |
+| `family_catalog_key` | `TRIAL_FAMILY_REGISTERED.payload.family_authority_id`, `TRIAL_FAMILY_REGISTERED.payload.family_authority_version`, `TRIAL_FAMILY_REGISTERED.payload.family_authority_registry_sha256`, `TRIAL_FAMILY_REGISTERED.payload.family_definition_record_id`, `TRIAL_FAMILY_REGISTERED.payload.family_definition_record_version`, `TRIAL_FAMILY_REGISTERED.payload.family_definition_schema_version`, `TRIAL_FAMILY_REGISTERED.payload.family_definition_canonicalization_id`, `TRIAL_FAMILY_REGISTERED.payload.family_definition_record_sha256` |
+| `family_acceptance` | `TRIAL_FAMILY_REGISTERED.payload.family_acceptance_decision_id`, `TRIAL_FAMILY_REGISTERED.payload.family_acceptance_generation`, `TRIAL_FAMILY_REGISTERED.payload.family_acceptance_schema_version`, `TRIAL_FAMILY_REGISTERED.payload.family_acceptance_record_sha256` |
+
+### Resolved role paths and content bindings
+
+Actor fields use the existing `actor_id` type and resolve to effective
+principals before comparison; aliases do not establish independence.
+`private_input_producer_actor_ids` is required, sorted-unique, with 0..4096
+`actor_id` values. Empty explicitly means no contributing private producer;
+omission is invalid. This is an owner-schema extension, not a bound inherited
+from campaign scope. Overflow blocks admission pending an owner decision.
+The full baseline record contents and canonical bytes remain required; these
+paths never replace complete records with partial hash manifests.
+
+| Complete record | Required path | Meaning |
+| --- | --- | --- |
+| `trial_family_definition_v1` | `issuer_actor_id` | Definition issuer |
+| `trial_family_definition_v1` | `private_input_producer_actor_ids` | Contributing producers |
+| `trial_family_definition_acceptance_v1` | `issuer_actor_id` | Equals definition issuer |
+| `trial_family_definition_acceptance_v1` | `reviewer_actor_id` | Independent reviewer |
+
+At registration, definition issuer, acceptance reviewer and request actor are
+pairwise distinct. Revalidation uses the retained registration tuples, binds
+`trial_family_id` to its subject and `campaign_scope_ids` to its accepted scope,
+proves source bytes and checks sole-current acceptance. The reviewer must be
+outside the definition's producer set. Subject/scope/issuer mismatch maps to
+`RECORD_CONTENT_MISMATCH`; role equalities and producer membership map separately
+to `{EVENT}_ROLE_COLLISION` and `{EVENT}_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION`.
+The consuming event qualifies the refusal, including downstream revalidation.
+
+The [v7 design](experiment_trial_ledger_track_b_v7_design.md) freezes the boundary predicates and refusal
+inventory. Its synthetic fixtures check design consistency; they do not
+demonstrate append, catalog, currentness, capability or SQLite execution.

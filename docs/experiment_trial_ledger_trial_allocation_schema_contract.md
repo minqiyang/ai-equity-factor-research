@@ -440,3 +440,75 @@ R1G is accepted on protected main, the next analysis covers the remaining 28
 incomplete events before the smallest next family is selected. A genuinely
 material architecture choice receives a concise owner memo and the bounded
 reminder policy; otherwise continuation remains automatic.
+
+## Track B v7 Design Candidate Extension
+
+Status: proposed owner-contract extension for `OD-TB-V7-SCHEMA`; design only.
+The accepted plan manifest is pinned in the linked v7 design and its fixture.
+The preceding contract remains the frozen baseline. This additive section
+specifies required resolved-byte paths and additional predicates for the
+single Track B design candidate. Existing payload fields, tuple identity,
+canonicalization, privacy rules and stronger role checks remain binding.
+These paths are proposed schema additions where the baseline states only
+semantic bindings; they are not claims about an inspected external catalog.
+An owner catalog lacking any required operand remains inadmissible until
+this design and its owner-schema mapping are approved. No request field
+can substitute for a missing resolved-byte operand.
+
+### Complete tuple paths
+
+Every field retains its exact baseline local type. Ordered tuples use the order
+below; nested objects compare all native keys and values. Acceptance, approval
+and authority resolution also includes the complete owning catalog/subject key.
+Identical IDs in different owner/schema streams do not merge those streams.
+
+| Tuple | Retained source paths (all fields) |
+| --- | --- |
+| `trial_catalog_key` | `TRIAL_ALLOCATED.payload.trial_definition_authority_id`, `TRIAL_ALLOCATED.payload.trial_definition_authority_registry_sha256`, `TRIAL_ALLOCATED.payload.trial_definition_authority_version`, `TRIAL_ALLOCATED.payload.trial_definition_record_id`, `TRIAL_ALLOCATED.payload.trial_definition_record_schema_version`, `TRIAL_ALLOCATED.payload.trial_definition_record_version`, `TRIAL_ALLOCATED.payload.trial_definition_record_canonicalization_id`, `TRIAL_ALLOCATED.payload.trial_definition_record_sha256` |
+| `trial_acceptance` | `TRIAL_ALLOCATED.payload.trial_definition_acceptance_decision_id`, `TRIAL_ALLOCATED.payload.trial_definition_acceptance_generation`, `TRIAL_ALLOCATED.payload.trial_definition_acceptance_schema_version`, `TRIAL_ALLOCATED.payload.trial_definition_acceptance_record_sha256` |
+| `trial_projection` | `TRIAL_ALLOCATED.payload.trial_definition_public_projection_id`, `TRIAL_ALLOCATED.payload.trial_definition_public_projection_schema_version`, `TRIAL_ALLOCATED.payload.trial_definition_public_projection_sha256` |
+| `trial_publication_approval` | `TRIAL_ALLOCATED.payload.trial_definition_publication_approval_id`, `TRIAL_ALLOCATED.payload.trial_definition_publication_approval_generation`, `TRIAL_ALLOCATED.payload.trial_definition_publication_approval_schema_version`, `TRIAL_ALLOCATED.payload.trial_definition_publication_approval_record_sha256` |
+| `trial_authority` | `TRIAL_ALLOCATED.payload.allocation_authority_id`, `TRIAL_ALLOCATED.payload.allocation_authority_generation`, `TRIAL_ALLOCATED.payload.allocation_authority_schema_version`, `TRIAL_ALLOCATED.payload.allocation_authority_record_sha256` |
+
+### Resolved role paths and content bindings
+
+Actor fields use the existing `actor_id` type and resolve to effective
+principals before comparison; aliases do not establish independence.
+`private_input_producer_actor_ids` is required, sorted-unique, with 0..4096
+`actor_id` values. Empty explicitly means no contributing private producer;
+omission is invalid. This is an owner-schema extension, not a bound inherited
+from campaign scope. Overflow blocks admission pending an owner decision.
+The full baseline record contents and canonical bytes remain required; these
+paths never replace complete records with partial hash manifests.
+
+| Complete record | Required path | Binding |
+| --- | --- | --- |
+| `trial_definition_record_v1` | `issuer_actor_id` | Definition issuer |
+| `trial_definition_record_v1` | `private_input_producer_actor_ids` | Contributing producers |
+| `trial_definition_acceptance_v1` | `reviewer_actor_id` | Independent reviewer |
+| `trial_allocation_authority_v1` | `issuer_actor_id` | Authority issuer |
+| `trial_allocation_authority_v1` | `authorized_actor_id` | Equals allocation request actor |
+
+Reviewer, definition issuer and allocation actor are pairwise distinct. Both
+reviewer and allocation actor are outside the definition's producer set.
+Revalidation includes definition, acceptance, projection, approval, allocation
+authority and every retained family/sample source. Freeze the source paths as
+`sample_bindings[].sample_id`, `sample_bindings[].source_event_id` and
+`sample_bindings[].source_event_sha256`, preserving all other baseline binding
+fields and the existing maximum 32. Exact sample sets must match, not counts.
+`trial_family_id` and the retained payload's family source ID/hash resolve the
+complete family registration through its binding when applicable.
+
+The comparison paths shared by definition, plan and readiness are
+`code_identity`, `environment_id`, `environment_lock_sha256`,
+`input_manifest_sha256`, `retry_policy_sha256` and
+`expected_output_inventory_sha256`. `code_identity` retains the exact baseline
+clean-tree/dirty-patch union; environment ID is `safe_public_id`; digests use
+the baseline SHA-256 type. These bind complete input, retry and output bytes;
+the complete bodies remain required. `prove_content_digest` verifies code/tree
+and patch contents. Operational mismatch at start is
+`ATTEMPT_STARTED_INHERITED_VALUE_MISMATCH`, separately from tuple mismatch.
+
+The [v7 design](experiment_trial_ledger_track_b_v7_design.md) freezes the boundary predicates and refusal
+inventory. Its synthetic fixtures check design consistency; they do not
+demonstrate append, catalog, currentness, capability or SQLite execution.

@@ -400,3 +400,48 @@ accepted on protected main, the remaining-event dependency/risk graph is
 analyzed read-only before the smallest next family is selected. Any genuine
 owner-methodology gate follows the bounded reminder policy: four reminders at
 30-minute intervals, then the heartbeat pauses if the owner has not replied.
+
+## Track B v7 Design Candidate Extension
+
+Status: proposed owner-contract extension for `OD-TB-V7-SCHEMA`; design only.
+The accepted plan manifest is pinned in the linked v7 design and its fixture.
+The preceding contract remains the frozen baseline. This additive section
+specifies required resolved-byte paths and additional predicates for the
+single Track B design candidate. Existing payload fields, tuple identity,
+canonicalization, privacy rules and stronger role checks remain binding.
+These paths are proposed schema additions where the baseline states only
+semantic bindings; they are not claims about an inspected external catalog.
+An owner catalog lacking any required operand remains inadmissible until
+this design and its owner-schema mapping are approved. No request field
+can substitute for a missing resolved-byte operand.
+
+### Symmetric origin and later-reference mappings
+
+Stage 3 uses every sample tuple and resolved path in the
+[sample owner](experiment_trial_ledger_sample_registration_schema_contract.md#track-b-v7-design-candidate-extension),
+including lineage, complete native record identity, roles, acceptance,
+projection and publication approval. Both origin events use the complete bundle.
+The v7 term `ledger_epoch_id` maps to existing `ledger_id`, introduced once by
+`LEDGER_EPOCH_CREATED`; it is not a new payload field or namespace.
+
+Under the writer lock, both origin appends inspect committed origins of both
+types across all campaigns. Independently enforce `(ledger_id, sample_id)`,
+`(ledger_id, canonical_sample_lineage_id)` and `(ledger_id, complete native
+sample authority/record identity tuple)` uniqueness. V7 section 6.4 freezes
+the exact refusal precedence. Catalog or acceptance changes do not reset lineage.
+
+External references follow `payload.source_reference_event_id` and
+`payload.source_reference_event_sha256`; local references follow
+`payload.source_registration_event_id` and
+`payload.source_registration_event_sha256`. Recompute retained source hashes.
+External target campaign allocation sequence must be strictly greater than
+origin campaign allocation sequence. Same campaign maps to
+`CAMPAIGN_ENTITY_BOUND_NOT_LATER_CAMPAIGN`, earlier to
+`CAMPAIGN_ENTITY_BOUND_EARLIER_CAMPAIGN`, absent allocation to
+`CAMPAIGN_ENTITY_BOUND_PARENT_ORDER`. A binding cannot allocate another sample,
+change native tuple, mix direct scope/binding or reserve an additional origin.
+The remaining exact refusals are in v7 section 6.3.
+
+The [v7 design](experiment_trial_ledger_track_b_v7_design.md) freezes the boundary predicates and refusal
+inventory. Its synthetic fixtures check design consistency; they do not
+demonstrate append, catalog, currentness, capability or SQLite execution.
