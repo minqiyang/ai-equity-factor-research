@@ -1,5 +1,15 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 design P2-FIX4 exact-head remediation
+
+- PR #198 head `b3bc1df8b05495ad29c441e58ce068b4fd45fee0` had one remaining
+  P2: `T-B-INGRESS-COMMIT-FIELDS` now includes independent variant
+  `operation_request_sha256`, refusing
+  `OPERATION_REQUEST_COMMIT_FIELD_FORBIDDEN`.
+- Evidence_ref_ids remains `1..4096`. `T-B-SEAL-REVIEWER-TRIAL-ISSUER`
+  is unchanged. The 14-wire budget is unchanged. No SQLite runtime or
+  14-trial run.
+
 ## 2026-09-05 - Track B v7 design P1-FIX3 exact-head remediations
 
 - PR #198 head `e1c2953ac951b64f8fa4580e653ea42530695398` had one P1 and

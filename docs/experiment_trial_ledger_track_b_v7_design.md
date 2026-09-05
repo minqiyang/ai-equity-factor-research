@@ -434,7 +434,7 @@ mappings to freeze in the one design PR.
 | T-B-PRIV-INV | CAMPAIGN_INVENTORY_SEALED | Inventory acceptance reviewer belongs to inventory private_input_producer_actor_ids despite otherwise separated actors. | CAMPAIGN_INVENTORY_SEALED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION |
 | T-B-PRIV-PLAN | ATTEMPT_ALLOCATED | Plan reviewer belongs to plan private_input_producer_actor_ids despite otherwise separated actors. | ATTEMPT_ALLOCATED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION |
 | T-M3-5-START-ACTOR | EXECUTE capability consume after ATTEMPT_STARTED | Use start-event actor as consumer when readiness executor is a different actor. | CAPABILITY_CONSUMER_MISMATCH |
-| T-B-INGRESS-COMMIT-FIELDS | ledger_operation_request_v1 ingress | Caller supplies a store-owned event field. Independent variants: sequence; recorded_at; previous_event_sha256. | OPERATION_REQUEST_COMMIT_FIELD_FORBIDDEN |
+| T-B-INGRESS-COMMIT-FIELDS | ledger_operation_request_v1 ingress | Caller supplies a store-owned event field. Independent variants: sequence; recorded_at; previous_event_sha256; operation_request_sha256. | OPERATION_REQUEST_COMMIT_FIELD_FORBIDDEN |
 | T-B-ACCESS-ATOMIC-ROLLBACK | ACCESS_STARTED | Force event validation failure after tentative ACCESS consumption within the transaction. | Injected append refusal; capability remains unconsumed, no event or head change. |
 | T-B-ACCESS-EMPTY-TRIALS | ACCESS_INTENT | Request affected_trial_ids is empty; current seal and all other evidence remain valid. | ACCESS_INTENT_AFFECTED_TRIAL_SET_EMPTY |
 | T-B-ACCESS-COMPLETED-BEFORE-START | ACCESS_COMPLETED | started_at is earlier than retained ACCESS_STARTED.recorded_at; ended_at remains after started_at. Path A does not append this event. | ACCESS_COMPLETED_STARTED_AT_BEFORE_START_COMMIT |
@@ -458,7 +458,8 @@ gate acceptance.
 ## 7. Capability and ingress rules retained
 
 Ingress is `ledger_operation_request_v1`. Reject caller-supplied commit-owned
-sequence, recorded_at and previous-event hash fields. The store assigns these
+sequence, recorded_at, previous-event hash and `operation_request_sha256`
+fields. The store assigns these
 inside `BEGIN IMMEDIATE`, then calls `validate_raw_event_bytes` on the constructed
 event only. Invalid requests never bypass event validation or advance the head.
 
