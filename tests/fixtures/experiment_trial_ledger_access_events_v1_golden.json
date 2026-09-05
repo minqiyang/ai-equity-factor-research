@@ -1,0 +1,138 @@
+{
+  "fixture_id": "experiment_trial_ledger_access_events_v1_golden",
+  "access_intent": {
+    "actor_id": "act_ffffffffffffffffffffffffffffffff",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "event_id": "evt_a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3",
+    "event_schema_version": "ledger_event_v1",
+    "event_type": "ACCESS_INTENT",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_11111111111111111111111111111111",
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "occurred_at": "2026-09-05T00:00:00Z",
+    "operation_id": "opn_22222222222222222222222222222222",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "payload": {
+      "access_capability_id": "cap_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "access_capability_record_canonicalization_id": "pit_canonical_json_v1",
+      "access_capability_record_schema_version": "sample_access_capability_record_v1",
+      "access_capability_record_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "access_capability_record_version": 1,
+      "accessor_code_tree_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "accessor_environment_id": "synthetic-accessor-environment",
+      "accessor_environment_lock_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "affected_trial_ids": [
+        "trl_cccccccccccccccccccccccccccccccc"
+      ],
+      "authorization_record_id": "synthetic-access-authorization",
+      "authorization_record_schema_version": "sample_access_authorization_v1",
+      "authorization_record_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "campaign_scope_ids": [
+        "cmp_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ],
+      "evidence_ref_ids": [
+        "synthetic_intent_evidence_ref"
+      ],
+      "intended_field_class_ids": [
+        "synthetic-field-class"
+      ],
+      "intended_window_id": "synthetic-window",
+      "intent_authority_generation": 1,
+      "intent_authority_id": "synthetic-intent-authority",
+      "intent_authority_record_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "intent_authority_schema_version": "sample_access_intent_authority_v1",
+      "inventory_seal_event_id": "evt_dddddddddddddddddddddddddddddddd",
+      "inventory_seal_event_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "purpose": "validation",
+      "sample_id": "smp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "previous_event_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "recorded_at": "2026-09-05T00:00:00Z",
+    "sequence": 8,
+    "subject_id": "smp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "subject_type": "sample"
+  },
+  "access_started": {
+    "actor_id": "act_ffffffffffffffffffffffffffffffff",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "event_id": "evt_a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4",
+    "event_schema_version": "ledger_event_v1",
+    "event_type": "ACCESS_STARTED",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_11111111111111111111111111111111",
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "occurred_at": "2026-09-05T00:00:00Z",
+    "operation_id": "opn_22222222222222222222222222222222",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "payload": {
+      "access_capability_id": "cap_eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "access_intent_event_id": "evt_33333333333333333333333333333333",
+      "access_intent_event_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "campaign_scope_ids": [
+        "cmp_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ],
+      "evidence_ref_ids": [
+        "synthetic_intent_evidence_ref",
+        "synthetic_start_evidence_ref"
+      ],
+      "reader_code_tree_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "reader_environment_id": "synthetic-accessor-environment",
+      "reader_environment_lock_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sample_id": "smp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "start_authority_generation": 1,
+      "start_authority_id": "synthetic-start-authority",
+      "start_authority_record_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "start_authority_schema_version": "sample_access_start_authority_v1"
+    },
+    "previous_event_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "recorded_at": "2026-09-05T00:00:00Z",
+    "sequence": 8,
+    "subject_id": "smp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "subject_type": "sample"
+  },
+  "access_completed": {
+    "actor_id": "act_ffffffffffffffffffffffffffffffff",
+    "canonicalization_id": "pit_canonical_json_v1",
+    "event_id": "evt_a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
+    "event_schema_version": "ledger_event_v1",
+    "event_type": "ACCESS_COMPLETED",
+    "identity_projection_id": "ledger_event_identity_v1",
+    "ledger_id": "ldg_11111111111111111111111111111111",
+    "ledger_schema_version": "experiment_trial_ledger_v1",
+    "occurred_at": "2026-09-05T00:00:00Z",
+    "operation_id": "opn_22222222222222222222222222222222",
+    "operation_request_projection_id": "ledger_operation_request_v1",
+    "operation_request_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "payload": {
+      "access_started_event_id": "evt_44444444444444444444444444444444",
+      "access_started_event_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "actual_window_id": "synthetic-window",
+      "backfilled": false,
+      "campaign_scope_ids": [
+        "cmp_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ],
+      "ended_at": "2026-09-05T00:00:02Z",
+      "evidence_ref_ids": [
+        "synthetic_completed_evidence_ref",
+        "synthetic_intent_evidence_ref",
+        "synthetic_start_evidence_ref"
+      ],
+      "names_observed": [
+        "synthetic-safe-name"
+      ],
+      "protected_material_observed": "NONE",
+      "reader_code_tree_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "reader_environment_id": "synthetic-accessor-environment",
+      "reader_environment_lock_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sample_id": "smp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "started_at": "2026-09-05T00:00:01Z"
+    },
+    "previous_event_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "recorded_at": "2026-09-05T00:00:00Z",
+    "sequence": 8,
+    "subject_id": "smp_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "subject_type": "sample"
+  }
+}

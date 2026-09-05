@@ -1,5 +1,27 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 Path A first checkpoint
+
+- Implemented the accepted Track B v7 Path A runtime in this worktree on
+  base `6a95d250b04907a4fa4296a480e08c96d4b7c183`, branch
+  `codex/track-b-runtime-path-a`. Stdlib sqlite3 only. Caller-supplied
+  database path outside the canonical repository. Synthetic catalogs only.
+- Registry `0.10.0` promotes ACCESS_INTENT, ACCESS_STARTED, and
+  ACCESS_COMPLETED payload schemas using the existing closed DSL. Releases
+  `0.1.0` through `0.9.0` remain byte-immutable. Default R0 entry point is
+  unchanged.
+- Path A happy path: LEDGER_EPOCH_CREATED through local SAMPLE_REGISTERED,
+  TRIAL_ALLOCATED, CAMPAIGN_INVENTORY_SEALED, ACCESS_INTENT, then
+  ACCESS_STARTED. ACCESS_STARTED consumes the ACCESS capability in the
+  same transaction. Path A stops before ACCESS_COMPLETED and does not
+  append EXPOSURE_DECISION. Evidence ceiling remains DIAGNOSTIC_ONLY.
+- Deterministic tests cover the Path A happy path and frozen Path A
+  refusals, including unselected `WIRE_TYPE_NOT_SELECTED`, ingress commit
+  fields, empty affected trials and evidence refs, ACCESS role collisions,
+  seal role/parent-staleness refusals, and injected ACCESS consume rollback.
+- No 14-trial run, D8, identity reopen, real/private market data, brokerage,
+  or vendor API.
+
 ## 2026-09-05 - Track B v7 design P2-FIX5 exact-head remediations
 
 - PR #198 head `c332ef02945efaa52e5b10f8c79c21da45e7353c` had two remaining
