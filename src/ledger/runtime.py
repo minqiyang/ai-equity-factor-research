@@ -1,7 +1,10 @@
-"""Track B v7 Path A sqlite3 ledger runtime.
+"""Track B v7 Path A/B sqlite3 ledger runtime.
 
 Caller-supplied database path, stdlib sqlite3, and synthetic catalogs only.
 Evidence ceiling is DIAGNOSTIC_ONLY. Path A stops before ACCESS_COMPLETED.
+Path B first checkpoint appends ATTEMPT_ALLOCATED then ATTEMPT_STARTED after
+inventory/seal. It does not append retry, terminal attempt, ACCESS_COMPLETED,
+or EXPOSURE_DECISION.
 """
 
 from __future__ import annotations
@@ -51,6 +54,20 @@ PATH_A_EVENT_TYPES = frozenset(
         "ACCESS_INTENT",
         "ACCESS_STARTED",
     }
+)
+PATH_B_EVENT_TYPES = PATH_A_EVENT_TYPES | frozenset(
+    {
+        "ATTEMPT_ALLOCATED",
+        "ATTEMPT_STARTED",
+    }
+)
+OPERATIONAL_VALUE_FIELDS = (
+    "code_identity",
+    "environment_id",
+    "environment_lock_sha256",
+    "input_manifest_sha256",
+    "retry_policy_sha256",
+    "expected_output_inventory_sha256",
 )
 COMMIT_OWNED_FIELDS = frozenset(
     {
@@ -130,7 +147,7 @@ CREATE TABLE IF NOT EXISTS campaign_seal_head (
 
 
 class LedgerRuntimeError(ValueError):
-    """Fail-closed Path A runtime refusal."""
+    """Fail-closed Path A/B runtime refusal."""
 
     def __init__(self, code: str, message: str) -> None:
         super().__init__(f"{code}: {message}")
@@ -147,7 +164,7 @@ class Clock:
 
 
 class FixedClock(Clock):
-    """Deterministic clock for synthetic Path A tests."""
+    """Deterministic clock for synthetic Path A/B tests."""
 
     def __init__(self, stamp: str) -> None:
         self.stamp = stamp
@@ -280,7 +297,7 @@ class SyntheticCatalog:
 
 
 class LedgerStore:
-    """Path A append-only sqlite3 ledger with synthetic catalog currentness."""
+    """Path A/B append-only sqlite3 ledger with synthetic catalog currentness."""
 
     def __init__(
         self,
@@ -288,13 +305,17 @@ class LedgerStore:
         catalog: SyntheticCatalog,
         *,
         clock: Clock | None = None,
+        checkpoint: str = "path_a",
         inject_access_started_failure: bool = False,
         inject_catalog_mutation: Callable[[], None] | None = None,
     ) -> None:
+        if checkpoint not in {"path_a", "path_b"}:
+            _fail("INVALID_OPERATION_REQUEST", f"unknown checkpoint {checkpoint}")
         self.database_path = Path(database_path).expanduser()
         self.catalog = catalog
         self._tx_catalog: SyntheticCatalog | None = None
         self.clock = clock or Clock()
+        self.checkpoint = checkpoint
         self.inject_access_started_failure = inject_access_started_failure
         self.inject_catalog_mutation = inject_catalog_mutation
         self.registry = load_registry_release(REGISTRY_VERSION)
@@ -338,6 +359,68 @@ class LedgerStore:
         record["consumed"] = bool(row[1])
         return record
 
+    def consume_execute(
+        self,
+        *,
+        capability_id: str,
+        consumer_actor_id: str,
+        trial_id: str,
+        attempt_id: str,
+        code_tree_sha256: str,
+        environment_id: str,
+        environment_lock_sha256: str,
+    ) -> dict[str, Any]:
+        """Consume the one-shot EXECUTE capability minted with ATTEMPT_STARTED."""
+        self._conn.execute("BEGIN IMMEDIATE")
+        try:
+            row = self._conn.execute(
+                "SELECT record_json, consumed, kind FROM capabilities "
+                "WHERE capability_id = ?",
+                (capability_id,),
+            ).fetchone()
+            if row is None:
+                _fail("PARENT_EVENT_MISSING", "EXECUTE capability was not minted")
+            record = json.loads(row[0])
+            if row[2] != "EXECUTE":
+                _fail("RECORD_CONTENT_MISMATCH", "capability is not an EXECUTE capability")
+            if row[1]:
+                _fail(
+                    "EXECUTE_CAPABILITY_ALREADY_CONSUMED",
+                    "EXECUTE capability already consumed",
+                )
+            if record.get("executor_actor_id") != consumer_actor_id:
+                _fail(
+                    "CAPABILITY_CONSUMER_MISMATCH",
+                    "EXECUTE consumer is not the readiness executor",
+                )
+            if (
+                record.get("trial_id") != trial_id
+                or record.get("attempt_id") != attempt_id
+                or record.get("code_tree_sha256") != code_tree_sha256
+                or record.get("environment_id") != environment_id
+                or record.get("environment_lock_sha256") != environment_lock_sha256
+            ):
+                _fail(
+                    "RECORD_CONTENT_MISMATCH",
+                    "EXECUTE consume does not bind trial, attempt, code, and environment",
+                )
+            updated = self._conn.execute(
+                "UPDATE capabilities SET consumed = 1 WHERE capability_id = ? "
+                "AND consumed = 0",
+                (capability_id,),
+            ).rowcount
+            if updated != 1:
+                _fail(
+                    "EXECUTE_CAPABILITY_ALREADY_CONSUMED",
+                    "EXECUTE consume did not land",
+                )
+            self._conn.execute("COMMIT")
+            record["consumed"] = True
+            return record
+        except Exception:
+            self._conn.execute("ROLLBACK")
+            raise
+
     def append(self, request: object) -> dict[str, Any]:
         raw_request = _require_mapping(request, context="operation request")
         for forbidden in COMMIT_OWNED_FIELDS:
@@ -357,16 +440,22 @@ class LedgerStore:
                 "WIRE_TYPE_NOT_SELECTED",
                 f"event type is outside the selected 14-wire budget: {event_type}",
             )
-        if event_type not in PATH_A_EVENT_TYPES:
-            if event_type == "ACCESS_COMPLETED":
+        allowed = (
+            PATH_A_EVENT_TYPES if self.checkpoint == "path_a" else PATH_B_EVENT_TYPES
+        )
+        if event_type not in allowed:
+            if event_type == "ACCESS_COMPLETED" and self.checkpoint == "path_a":
                 _fail(
                     "PATH_A_STOPS_BEFORE_ACCESS_COMPLETED",
                     "Path A first checkpoint does not append ACCESS_COMPLETED",
                 )
-            _fail(
-                "PATH_A_CHECKPOINT_EXCLUDES_EVENT",
-                f"Path A first checkpoint does not append {event_type}",
+            code = (
+                "PATH_A_CHECKPOINT_EXCLUDES_EVENT"
+                if self.checkpoint == "path_a"
+                else "PATH_B_CHECKPOINT_EXCLUDES_EVENT"
             )
+            label = "Path A" if self.checkpoint == "path_a" else "Path B"
+            _fail(code, f"{label} first checkpoint does not append {event_type}")
         payload = _require_mapping(raw_request.get("payload"), context="payload")
         if event_type in {"ACCESS_INTENT", "ACCESS_STARTED"}:
             refs = payload.get("evidence_ref_ids")
@@ -413,6 +502,8 @@ class LedgerStore:
             "SAMPLE_REGISTERED": self._check_sample,
             "TRIAL_ALLOCATED": self._check_trial,
             "CAMPAIGN_INVENTORY_SEALED": self._check_seal,
+            "ATTEMPT_ALLOCATED": self._check_attempt_allocated,
+            "ATTEMPT_STARTED": self._check_attempt_started,
             "ACCESS_INTENT": self._check_access_intent,
             "ACCESS_STARTED": self._check_access_started,
         }
@@ -422,6 +513,8 @@ class LedgerStore:
             extra_insert = self._mint_access_capability
         elif event_type == "ACCESS_STARTED":
             extra_insert = self._consume_access_capability
+        elif event_type == "ATTEMPT_STARTED":
+            extra_insert = self._mint_execute_capability
         return self._commit_event(request, as_of, extra_insert=extra_insert)
 
     @property
@@ -525,7 +618,10 @@ class LedgerStore:
         except LedgerSchemaError as exc:
             _fail(exc.code, exc.message)
         event_sha256 = digest_json(event)
-        if extra_insert is not None and request["event_type"] == "ACCESS_INTENT":
+        if extra_insert is not None and request["event_type"] in {
+            "ACCESS_INTENT",
+            "ATTEMPT_STARTED",
+        }:
             extra_insert(event, event_sha256)
         self._conn.execute(
             "INSERT INTO events ("
@@ -559,6 +655,7 @@ class LedgerStore:
             "TRIAL_FAMILY_REGISTERED",
             "SAMPLE_REGISTERED",
             "TRIAL_ALLOCATED",
+            "ATTEMPT_ALLOCATED",
         }:
             try:
                 self._conn.execute(
@@ -976,6 +1073,351 @@ class LedgerStore:
             "CAMPAIGN_INVENTORY_SEALED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION",
         )
 
+    def _check_attempt_allocated(self, request: dict[str, Any], as_of: str) -> None:
+        self._require_epoch(request)
+        payload = request["payload"]
+        attempt_id = request["subject_id"]
+        if request["subject_type"] != "attempt":
+            _fail("RECORD_CONTENT_MISMATCH", "attempt subject_type mismatch")
+        self._unused_entity(attempt_id)
+        campaign_id = _campaign_id(payload)
+        trial_id = payload["trial_id"]
+        relation = payload.get("relation") or {}
+        if (
+            relation.get("attempt_kind") != "first_attempt"
+            or relation.get("attempt_ordinal") != 1
+        ):
+            _fail(
+                "ATTEMPT_ALLOCATED_RETRY_NOT_SELECTED",
+                "Path B first checkpoint does not append retry attempts",
+            )
+        seal = self._current_seal(campaign_id)
+        if (
+            payload["campaign_inventory_seal_event_id"] != seal["event_id"]
+            or payload["campaign_inventory_seal_event_sha256"] != seal["event_sha256"]
+        ):
+            _fail(
+                "ATTEMPT_ALLOCATED_SEAL_NOT_CURRENT",
+                "referenced seal is not the current seal head",
+            )
+        if trial_id not in seal["sealed_trial_ids"]:
+            _fail(
+                "ATTEMPT_ALLOCATED_TRIAL_NOT_IN_SEAL",
+                "requested trial is absent from sealed_trial_ids",
+            )
+        if self._attempts_for_trial(trial_id):
+            _fail(
+                "ATTEMPT_ALLOCATED_NOT_FIRST",
+                "Path B allocates the first attempt only",
+            )
+        trial_event = self._require_event(
+            payload["trial_allocation_event_id"],
+            payload["trial_allocation_event_sha256"],
+            event_type="TRIAL_ALLOCATED",
+            subject_id=trial_id,
+        )
+        if _campaign_id(trial_event["payload"]) != campaign_id:
+            _fail("RECORD_CONTENT_MISMATCH", "trial campaign scope mismatch")
+        self._revalidate_trial_event(trial_event, as_of, "ATTEMPT_ALLOCATED")
+        definition = self._revalidate_trial_definition(
+            trial_event["payload"],
+            trial_id,
+            campaign_id,
+            as_of,
+            event_type="ATTEMPT_ALLOCATED",
+        )
+        plan = self._resolve_attempt_plan(payload)
+        plan_acceptance = self._resolve_attempt_plan_acceptance(payload)
+        authority = self._resolve_attempt_allocation_authority(payload)
+        self._require_current(
+            plan_acceptance, as_of, event_type="ATTEMPT_ALLOCATED", kind="acceptance"
+        )
+        self._require_current(
+            authority, as_of, event_type="ATTEMPT_ALLOCATED", kind="authority"
+        )
+        if (
+            plan.body.get("trial_id") != trial_id
+            or plan.body.get("attempt_id") != attempt_id
+            or plan.body.get("campaign_id") != campaign_id
+        ):
+            _fail("RECORD_CONTENT_MISMATCH", "attempt plan does not bind this attempt")
+        if self._operational_values(plan.body) != self._operational_values(
+            definition.body
+        ):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "attempt plan operational values do not match trial definition",
+            )
+        if payload["expected_output_inventory_sha256"] != plan.body.get(
+            "expected_output_inventory_sha256"
+        ):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "expected_output_inventory_sha256 does not match attempt plan",
+            )
+        self._prove_code_digest(plan.body["code_identity"])
+        if authority.body.get("authorized_actor_id") != request["actor_id"]:
+            _fail(
+                "ATTEMPT_ALLOCATED_AUTHORITY_ACTOR_MISMATCH",
+                "allocation actor is not the authorized actor",
+            )
+        if (
+            authority.body.get("operation") != "ATTEMPT_ALLOCATED"
+            or authority.body.get("campaign_id") != campaign_id
+            or authority.body.get("trial_id") != trial_id
+            or authority.body.get("attempt_id") != attempt_id
+            or authority.body.get("attempt_plan_record_id")
+            != payload["attempt_plan_record_id"]
+            or authority.body.get("attempt_plan_record_sha256")
+            != payload["attempt_plan_record_sha256"]
+        ):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "attempt allocation authority does not bind this allocation",
+            )
+        if plan_acceptance.body.get("reviewer_actor_id") is None:
+            _fail("RECORD_CONTENT_MISMATCH", "attempt plan acceptance reviewer missing")
+        issuer = plan.body["issuer_actor_id"]
+        reviewer = plan_acceptance.body["reviewer_actor_id"]
+        trial_issuer = definition.body["issuer_actor_id"]
+        allocator = request["actor_id"]
+        self._require_distinct(
+            {
+                "plan_issuer": issuer,
+                "plan_reviewer": reviewer,
+                "trial_issuer": trial_issuer,
+                "actor": allocator,
+            },
+            "ATTEMPT_ALLOCATED_ROLE_COLLISION",
+        )
+        producers = plan.body.get("private_input_producer_actor_ids") or []
+        self._exclude_private_producers(
+            reviewer,
+            producers,
+            "ATTEMPT_ALLOCATED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION",
+        )
+        self._exclude_private_producers(
+            allocator,
+            producers,
+            "ATTEMPT_ALLOCATED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION",
+        )
+
+    def _check_attempt_started(self, request: dict[str, Any], as_of: str) -> None:
+        self._require_epoch(request)
+        payload = request["payload"]
+        attempt_id = request["subject_id"]
+        if request["subject_type"] != "attempt":
+            _fail("RECORD_CONTENT_MISMATCH", "attempt subject_type mismatch")
+        campaign_id = _campaign_id(payload)
+        trial_id = payload["trial_id"]
+        allocation = self._require_event(
+            payload["attempt_allocation_event_id"],
+            payload["attempt_allocation_event_sha256"],
+            event_type="ATTEMPT_ALLOCATED",
+            subject_id=attempt_id,
+        )
+        if allocation["payload"]["trial_id"] != trial_id:
+            _fail("RECORD_CONTENT_MISMATCH", "start trial does not match allocation")
+        if _campaign_id(allocation["payload"]) != campaign_id:
+            _fail("RECORD_CONTENT_MISMATCH", "start campaign does not match allocation")
+        if self._has_attempt_start(attempt_id):
+            _fail("ATTEMPT_STARTED_ALREADY_STARTED", "attempt already started")
+        seal = self._current_seal(campaign_id)
+        if (
+            allocation["payload"]["campaign_inventory_seal_event_id"] != seal["event_id"]
+            or allocation["payload"]["campaign_inventory_seal_event_sha256"]
+            != seal["event_sha256"]
+        ):
+            _fail(
+                "ATTEMPT_STARTED_SEAL_NOT_CURRENT",
+                "seal head is no longer current",
+            )
+        if trial_id not in seal["sealed_trial_ids"]:
+            _fail(
+                "ATTEMPT_STARTED_TRIAL_NOT_IN_SEAL",
+                "trial is absent from the current sealed set",
+            )
+        seal_event = self._require_event(seal["event_id"], seal["event_sha256"])
+        inventory = self._resolve_inventory_record(seal_event["payload"])
+        inventory_acceptance = self._resolve_inventory_acceptance(seal_event["payload"])
+        self._require_current(
+            inventory_acceptance,
+            as_of,
+            event_type="ATTEMPT_STARTED",
+            kind="acceptance",
+        )
+        trial_event = self._require_event(
+            allocation["payload"]["trial_allocation_event_id"],
+            allocation["payload"]["trial_allocation_event_sha256"],
+            event_type="TRIAL_ALLOCATED",
+            subject_id=trial_id,
+        )
+        self._revalidate_trial_event(trial_event, as_of, "ATTEMPT_STARTED")
+        definition = self._revalidate_trial_definition(
+            trial_event["payload"],
+            trial_id,
+            campaign_id,
+            as_of,
+            event_type="ATTEMPT_STARTED",
+        )
+        family_event = self._require_event(
+            trial_event["payload"]["trial_family_source_event_id"],
+            trial_event["payload"]["trial_family_source_event_sha256"],
+            event_type="TRIAL_FAMILY_REGISTERED",
+        )
+        sample_events = []
+        for binding in definition.body.get("sample_bindings") or []:
+            sample_events.append(
+                self._require_event(
+                    binding["source_event_id"],
+                    binding["source_event_sha256"],
+                    event_type="SAMPLE_REGISTERED",
+                    subject_id=binding["sample_id"],
+                )
+            )
+        plan = self._resolve_attempt_plan(allocation["payload"])
+        plan_acceptance = self._resolve_attempt_plan_acceptance(allocation["payload"])
+        allocation_authority = self._resolve_attempt_allocation_authority(
+            allocation["payload"]
+        )
+        self._require_current(
+            plan_acceptance, as_of, event_type="ATTEMPT_STARTED", kind="acceptance"
+        )
+        self._require_current(
+            allocation_authority,
+            as_of,
+            event_type="ATTEMPT_STARTED",
+            kind="allocation_authority",
+        )
+        readiness = self._resolve_attempt_readiness(payload)
+        self._require_current(
+            readiness, as_of, event_type="ATTEMPT_STARTED", kind="readiness"
+        )
+        if readiness.body.get("outcome") != "READY":
+            _fail(
+                "ATTEMPT_STARTED_READINESS_NOT_CURRENT",
+                "readiness outcome is not READY",
+            )
+        if (
+            readiness.body.get("trial_id") != trial_id
+            or readiness.body.get("attempt_id") != attempt_id
+            or readiness.body.get("campaign_id") != campaign_id
+        ):
+            _fail("RECORD_CONTENT_MISMATCH", "readiness does not bind this attempt")
+        start_authority = self._resolve_attempt_start_authority(payload)
+        self._require_current(
+            start_authority,
+            as_of,
+            event_type="ATTEMPT_STARTED",
+            kind="start_authority",
+        )
+        executor = readiness.body.get("executor_actor_id")
+        if start_authority.body.get("executor_actor_id") != executor:
+            _fail(
+                "ATTEMPT_STARTED_EXECUTOR_MISMATCH",
+                "start-authority executor does not match readiness executor",
+            )
+        if start_authority.body.get("authorized_actor_id") != request["actor_id"]:
+            _fail(
+                "ATTEMPT_STARTED_AUTHORITY_ACTOR_MISMATCH",
+                "start actor is not the authorized actor",
+            )
+        if (
+            start_authority.body.get("attempt_id") != attempt_id
+            or start_authority.body.get("trial_id") != trial_id
+            or start_authority.body.get("campaign_id") != campaign_id
+            or start_authority.body.get("attempt_allocation_event_id")
+            != allocation["event_id"]
+            or start_authority.body.get("attempt_allocation_event_sha256")
+            != digest_json(allocation)
+            or start_authority.body.get("readiness_record_id")
+            != payload["readiness_record_id"]
+            or start_authority.body.get("readiness_record_sha256")
+            != payload["readiness_record_sha256"]
+        ):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "start authority does not bind this start",
+            )
+        if self._operational_values(readiness.body) != self._operational_values(
+            plan.body
+        ) or self._operational_values(readiness.body) != self._operational_values(
+            definition.body
+        ):
+            _fail(
+                "ATTEMPT_STARTED_INHERITED_VALUE_MISMATCH",
+                "readiness operational values do not match plan and trial definition",
+            )
+        expected = {
+            "inventory_catalog_key": self._inventory_catalog_key(seal_event["payload"]),
+            "inventory_acceptance": self._inventory_acceptance_tuple(
+                seal_event["payload"]
+            ),
+            "seal_event_id_sha256": {
+                "event_id": seal["event_id"],
+                "event_sha256": seal["event_sha256"],
+            },
+            "family_definition_and_acceptance": [self._family_tuple(family_event)],
+            "sample_record_acceptance_projection_publication_approval": [
+                self._sample_tuple(sample_event) for sample_event in sample_events
+            ],
+            "trial_definition_acceptance_projection_allocation_authority": (
+                self._trial_tuple(trial_event)
+            ),
+            "attempt_plan_catalog_key": self._plan_catalog_key(allocation["payload"]),
+            "attempt_plan_acceptance": self._plan_acceptance_tuple(
+                allocation["payload"]
+            ),
+            "attempt_allocation_authority": self._attempt_allocation_authority_tuple(
+                allocation["payload"]
+            ),
+            "attempt_allocation_event": {
+                "event_id": allocation["event_id"],
+                "event_sha256": digest_json(allocation),
+            },
+            "retained_source_event_id_hash": self._retained_sources(
+                family_event=family_event,
+                sample_events=sample_events,
+                trial_event=trial_event,
+                seal_event=seal_event,
+                allocation_event=allocation,
+            ),
+        }
+        actual = {
+            key: readiness.body.get(key) for key in expected
+        }
+        actual["family_definition_and_acceptance"] = sorted(
+            actual.get("family_definition_and_acceptance") or [],
+            key=lambda item: item.get("trial_family_id") or "",
+        )
+        actual["sample_record_acceptance_projection_publication_approval"] = sorted(
+            actual.get("sample_record_acceptance_projection_publication_approval")
+            or [],
+            key=lambda item: item.get("sample_id") or "",
+        )
+        actual["retained_source_event_id_hash"] = sorted(
+            actual.get("retained_source_event_id_hash") or [],
+            key=lambda item: (item.get("source") or {}).get("event_id") or "",
+        )
+        expected["family_definition_and_acceptance"] = sorted(
+            expected["family_definition_and_acceptance"],
+            key=lambda item: item.get("trial_family_id") or "",
+        )
+        expected["sample_record_acceptance_projection_publication_approval"] = sorted(
+            expected["sample_record_acceptance_projection_publication_approval"],
+            key=lambda item: item.get("sample_id") or "",
+        )
+        expected["retained_source_event_id_hash"] = sorted(
+            expected["retained_source_event_id_hash"],
+            key=lambda item: (item.get("source") or {}).get("event_id") or "",
+        )
+        if digest_json(actual) != digest_json(expected):
+            _fail(
+                "ATTEMPT_STARTED_INHERITED_TUPLE_MISMATCH",
+                "readiness tuples do not equal same-transaction revalidated tuples",
+            )
+        del inventory
+
     def _check_access_intent(self, request: dict[str, Any], as_of: str) -> None:
         self._require_epoch(request)
         payload = request["payload"]
@@ -1219,6 +1661,75 @@ class LedgerStore:
             _fail("ACCESS_CAPABILITY_ALREADY_CONSUMED", "ACCESS consume did not land")
         del event_sha256
 
+    def _mint_execute_capability(self, event: dict[str, Any], event_sha256: str) -> None:
+        payload = event["payload"]
+        readiness = self._resolve_attempt_readiness(payload)
+        allocation = self._require_event(
+            payload["attempt_allocation_event_id"],
+            payload["attempt_allocation_event_sha256"],
+        )
+        record = self._execution_capability_record(
+            event,
+            readiness=readiness,
+            allocation=allocation,
+        )
+        record_sha256 = digest_json(record)
+        if record_sha256 != payload["execution_capability_record_sha256"]:
+            _fail("RECORD_CONTENT_MISMATCH", "EXECUTE capability digest mismatch")
+        self._conn.execute(
+            "INSERT INTO capabilities ("
+            "capability_id, kind, record_json, record_sha256, consumed, minted_event_id) "
+            "VALUES (?, 'EXECUTE', ?, ?, 0, ?)",
+            (
+                payload["execution_capability_id"],
+                json.dumps(record, sort_keys=True, separators=(",", ":")),
+                record_sha256,
+                event["event_id"],
+            ),
+        )
+        del event_sha256
+
+    def _execution_capability_record(
+        self,
+        event: dict[str, Any],
+        *,
+        readiness: CatalogRecord,
+        allocation: dict[str, Any],
+    ) -> dict[str, Any]:
+        payload = event["payload"]
+        code = readiness.body["code_identity"]
+        return {
+            "schema_version": "attempt_execution_capability_record_v1",
+            "canonicalization_id": "pit_canonical_json_v1",
+            "execution_capability_id": payload["execution_capability_id"],
+            "execution_capability_record_version": payload[
+                "execution_capability_record_version"
+            ],
+            "ledger_id": event["ledger_id"],
+            "campaign_id": _campaign_id(payload),
+            "trial_id": payload["trial_id"],
+            "attempt_id": event["subject_id"],
+            "start_event_id": event["event_id"],
+            "attempt_allocation_event_id": allocation["event_id"],
+            "attempt_allocation_event_sha256": digest_json(allocation),
+            "readiness_record_id": payload["readiness_record_id"],
+            "readiness_record_sha256": payload["readiness_record_sha256"],
+            "start_authority_id": payload["start_authority_id"],
+            "start_authority_record_sha256": payload["start_authority_record_sha256"],
+            "executor_actor_id": readiness.body["executor_actor_id"],
+            "code_tree_sha256": code["code_tree_sha256"],
+            "environment_id": readiness.body["environment_id"],
+            "environment_lock_sha256": readiness.body["environment_lock_sha256"],
+            "activation": (
+                self._active_catalog.capability_activation or event["recorded_at"]
+            ),
+            "expiry": (
+                self._active_catalog.capability_expiry or DEFAULT_CAPABILITY_EXPIRY
+            ),
+            "one_use": True,
+            "state": "CREATED",
+        }
+
     def _insert_origin(self, event: dict[str, Any], event_sha256: str) -> None:
         record = self._resolve_sample_record(event["payload"])
         lineage = record.body["canonical_sample_lineage_id"]
@@ -1397,19 +1908,21 @@ class LedgerStore:
         trial_id: str,
         campaign_id: str,
         as_of: str,
+        *,
+        event_type: str = "TRIAL_ALLOCATED",
     ) -> CatalogRecord:
         definition = self._resolve_trial_definition(payload)
         acceptance = self._resolve_trial_acceptance(payload)
         projection = self._resolve_trial_projection(payload)
         approval = self._resolve_trial_publication_approval(payload)
         self._require_current(
-            acceptance, as_of, event_type="TRIAL_ALLOCATED", kind="acceptance"
+            acceptance, as_of, event_type=event_type, kind="acceptance"
         )
         self._require_current(
-            projection, as_of, event_type="TRIAL_ALLOCATED", kind="projection"
+            projection, as_of, event_type=event_type, kind="projection"
         )
         self._require_current(
-            approval, as_of, event_type="TRIAL_ALLOCATED", kind="publication_approval"
+            approval, as_of, event_type=event_type, kind="publication_approval"
         )
         body = definition.body
         if body.get("trial_id") != trial_id:
@@ -1485,6 +1998,27 @@ class LedgerStore:
         event_type: str,
         kind: str,
     ) -> None:
+        if kind == "readiness":
+            if (
+                record.status in {"revoked", "superseded"}
+                or record.status != "accepted"
+                or not record.active_at(as_of)
+            ):
+                _fail(
+                    "ATTEMPT_STARTED_READINESS_NOT_CURRENT",
+                    "readiness is not current",
+                )
+            accepted_current = [
+                item
+                for item in self._active_catalog.stream(record.stream_key)
+                if item.status == "accepted" and item.active_at(as_of)
+            ]
+            if len(accepted_current) != 1 or accepted_current[0].sha256 != record.sha256:
+                _fail(
+                    "ATTEMPT_STARTED_READINESS_NOT_CURRENT",
+                    "readiness is not sole-current",
+                )
+            return
         if kind == "acceptance":
             prefix = f"{event_type}_ACCEPTANCE"
         elif kind == "publication_approval":
@@ -1493,6 +2027,10 @@ class LedgerStore:
             prefix = f"{event_type}_PROJECTION"
         elif kind == "authorization":
             prefix = f"{event_type}_AUTHORIZATION"
+        elif kind == "start_authority":
+            prefix = f"{event_type}_START_AUTHORITY"
+        elif kind == "allocation_authority":
+            prefix = f"{event_type}_ALLOCATION_AUTHORITY"
         else:
             prefix = f"{event_type}_AUTHORITY"
         if record.status == "revoked":
@@ -1846,6 +2384,430 @@ class LedgerStore:
             },
         )
 
+    def _resolve_attempt_plan(self, payload: dict[str, Any]) -> CatalogRecord:
+        return self._resolve_or_fail(
+            "attempt_plan",
+            payload["attempt_plan_record_id"],
+            payload["attempt_plan_record_sha256"],
+            version=payload["attempt_plan_record_version"],
+            event_type="ATTEMPT_ALLOCATED",
+            incomplete_kind="attempt_plan",
+            expected={
+                "schema_version": payload["attempt_plan_record_schema_version"],
+                "canonicalization_id": payload["attempt_plan_record_canonicalization_id"],
+                "authority_id": payload["attempt_plan_authority_id"],
+                "authority_version": payload["attempt_plan_authority_version"],
+                "registry_sha256": payload["attempt_plan_authority_registry_sha256"],
+            },
+        )
+
+    def _resolve_attempt_plan_acceptance(self, payload: dict[str, Any]) -> CatalogRecord:
+        return self._resolve_or_fail(
+            "attempt_plan_acceptance",
+            payload["attempt_plan_acceptance_decision_id"],
+            payload["attempt_plan_acceptance_record_sha256"],
+            generation=payload["attempt_plan_acceptance_generation"],
+            event_type="ATTEMPT_ALLOCATED",
+            incomplete_kind="attempt_plan_acceptance",
+            expected={
+                "schema_version": payload["attempt_plan_acceptance_schema_version"],
+            },
+        )
+
+    def _resolve_attempt_allocation_authority(
+        self, payload: dict[str, Any]
+    ) -> CatalogRecord:
+        return self._resolve_or_fail(
+            "attempt_allocation_authority",
+            payload["allocation_authority_id"],
+            payload["allocation_authority_record_sha256"],
+            generation=payload["allocation_authority_generation"],
+            event_type="ATTEMPT_ALLOCATED",
+            incomplete_kind="attempt_allocation_authority",
+            expected={
+                "schema_version": payload["allocation_authority_schema_version"],
+            },
+        )
+
+    def _resolve_attempt_readiness(self, payload: dict[str, Any]) -> CatalogRecord:
+        return self._resolve_or_fail(
+            "attempt_readiness",
+            payload["readiness_record_id"],
+            payload["readiness_record_sha256"],
+            version=payload["readiness_record_version"],
+            event_type="ATTEMPT_STARTED",
+            incomplete_kind="attempt_readiness",
+            expected={
+                "schema_version": payload["readiness_record_schema_version"],
+                "canonicalization_id": payload["readiness_record_canonicalization_id"],
+                "authority_id": payload["readiness_authority_id"],
+                "authority_version": payload["readiness_authority_version"],
+                "registry_sha256": payload["readiness_authority_registry_sha256"],
+            },
+        )
+
+    def _resolve_attempt_start_authority(self, payload: dict[str, Any]) -> CatalogRecord:
+        return self._resolve_or_fail(
+            "attempt_start_authority",
+            payload["start_authority_id"],
+            payload["start_authority_record_sha256"],
+            generation=payload["start_authority_generation"],
+            event_type="ATTEMPT_STARTED",
+            incomplete_kind="attempt_start_authority",
+            expected={
+                "schema_version": payload["start_authority_schema_version"],
+            },
+        )
+
+    def _attempts_for_trial(self, trial_id: str) -> list[dict[str, Any]]:
+        rows = self._conn.execute(
+            "SELECT event_json FROM events WHERE event_type = 'ATTEMPT_ALLOCATED' "
+            "ORDER BY sequence"
+        ).fetchall()
+        found = []
+        for row in rows:
+            event = json.loads(row[0])
+            if event["payload"].get("trial_id") == trial_id:
+                found.append(event)
+        return found
+
+    def _has_attempt_start(self, attempt_id: str) -> bool:
+        row = self._conn.execute(
+            "SELECT 1 FROM events WHERE event_type = 'ATTEMPT_STARTED' "
+            "AND subject_id = ? LIMIT 1",
+            (attempt_id,),
+        ).fetchone()
+        return row is not None
+
+    @staticmethod
+    def _operational_values(body: dict[str, Any]) -> dict[str, Any]:
+        return {field: body.get(field) for field in OPERATIONAL_VALUE_FIELDS}
+
+    @staticmethod
+    def _inventory_catalog_key(payload: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "inventory_authority_id": payload["inventory_authority_id"],
+            "inventory_authority_registry_sha256": payload[
+                "inventory_authority_registry_sha256"
+            ],
+            "inventory_authority_version": payload["inventory_authority_version"],
+            "inventory_record_id": payload["inventory_record_id"],
+            "inventory_record_schema_version": payload["inventory_record_schema_version"],
+            "inventory_record_version": payload["inventory_record_version"],
+            "inventory_record_canonicalization_id": payload[
+                "inventory_record_canonicalization_id"
+            ],
+            "sealed_trial_inventory_sha256": payload["sealed_trial_inventory_sha256"],
+        }
+
+    @staticmethod
+    def _inventory_acceptance_tuple(payload: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "inventory_acceptance_decision_id": payload[
+                "inventory_acceptance_decision_id"
+            ],
+            "inventory_acceptance_generation": payload["inventory_acceptance_generation"],
+            "inventory_acceptance_schema_version": payload[
+                "inventory_acceptance_schema_version"
+            ],
+            "inventory_acceptance_record_sha256": payload[
+                "inventory_acceptance_record_sha256"
+            ],
+        }
+
+    @staticmethod
+    def _plan_catalog_key(payload: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "attempt_plan_authority_id": payload["attempt_plan_authority_id"],
+            "attempt_plan_authority_registry_sha256": payload[
+                "attempt_plan_authority_registry_sha256"
+            ],
+            "attempt_plan_authority_version": payload["attempt_plan_authority_version"],
+            "attempt_plan_record_id": payload["attempt_plan_record_id"],
+            "attempt_plan_record_schema_version": payload[
+                "attempt_plan_record_schema_version"
+            ],
+            "attempt_plan_record_version": payload["attempt_plan_record_version"],
+            "attempt_plan_record_canonicalization_id": payload[
+                "attempt_plan_record_canonicalization_id"
+            ],
+            "attempt_plan_record_sha256": payload["attempt_plan_record_sha256"],
+        }
+
+    @staticmethod
+    def _plan_acceptance_tuple(payload: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "attempt_plan_acceptance_decision_id": payload[
+                "attempt_plan_acceptance_decision_id"
+            ],
+            "attempt_plan_acceptance_generation": payload[
+                "attempt_plan_acceptance_generation"
+            ],
+            "attempt_plan_acceptance_schema_version": payload[
+                "attempt_plan_acceptance_schema_version"
+            ],
+            "attempt_plan_acceptance_record_sha256": payload[
+                "attempt_plan_acceptance_record_sha256"
+            ],
+        }
+
+    @staticmethod
+    def _attempt_allocation_authority_tuple(payload: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "allocation_authority_id": payload["allocation_authority_id"],
+            "allocation_authority_generation": payload["allocation_authority_generation"],
+            "allocation_authority_schema_version": payload[
+                "allocation_authority_schema_version"
+            ],
+            "allocation_authority_record_sha256": payload[
+                "allocation_authority_record_sha256"
+            ],
+        }
+
+    @staticmethod
+    def _family_tuple(family_event: dict[str, Any]) -> dict[str, Any]:
+        payload = family_event["payload"]
+        return {
+            "trial_family_id": family_event["subject_id"],
+            "definition": {
+                "family_authority_id": payload["family_authority_id"],
+                "family_authority_version": payload["family_authority_version"],
+                "family_authority_registry_sha256": payload[
+                    "family_authority_registry_sha256"
+                ],
+                "family_definition_record_id": payload["family_definition_record_id"],
+                "family_definition_record_version": payload[
+                    "family_definition_record_version"
+                ],
+                "family_definition_schema_version": payload[
+                    "family_definition_schema_version"
+                ],
+                "family_definition_canonicalization_id": payload[
+                    "family_definition_canonicalization_id"
+                ],
+                "family_definition_record_sha256": payload[
+                    "family_definition_record_sha256"
+                ],
+            },
+            "acceptance": {
+                "family_acceptance_decision_id": payload[
+                    "family_acceptance_decision_id"
+                ],
+                "family_acceptance_generation": payload["family_acceptance_generation"],
+                "family_acceptance_schema_version": payload[
+                    "family_acceptance_schema_version"
+                ],
+                "family_acceptance_record_sha256": payload[
+                    "family_acceptance_record_sha256"
+                ],
+            },
+        }
+
+    @staticmethod
+    def _sample_tuple(sample_event: dict[str, Any]) -> dict[str, Any]:
+        payload = sample_event["payload"]
+        return {
+            "sample_id": sample_event["subject_id"],
+            "record": {
+                "sample_authority_id": payload["sample_authority_id"],
+                "sample_authority_version": payload["sample_authority_version"],
+                "sample_authority_registry_sha256": payload[
+                    "sample_authority_registry_sha256"
+                ],
+                "sample_record_id": payload["sample_record_id"],
+                "sample_record_version": payload["sample_record_version"],
+                "sample_record_schema_version": payload["sample_record_schema_version"],
+                "sample_record_canonicalization_id": payload[
+                    "sample_record_canonicalization_id"
+                ],
+                "sample_record_sha256": payload["sample_record_sha256"],
+            },
+            "acceptance": {
+                "sample_acceptance_decision_id": payload[
+                    "sample_acceptance_decision_id"
+                ],
+                "sample_acceptance_generation": payload["sample_acceptance_generation"],
+                "sample_acceptance_schema_version": payload[
+                    "sample_acceptance_schema_version"
+                ],
+                "sample_acceptance_record_sha256": payload[
+                    "sample_acceptance_record_sha256"
+                ],
+            },
+            "projection": {
+                "sample_public_projection_id": payload["sample_public_projection_id"],
+                "sample_public_projection_schema_version": payload[
+                    "sample_public_projection_schema_version"
+                ],
+                "sample_public_projection_sha256": payload[
+                    "sample_public_projection_sha256"
+                ],
+            },
+            "publication_approval": {
+                "sample_publication_approval_id": payload[
+                    "sample_publication_approval_id"
+                ],
+                "sample_publication_approval_generation": payload[
+                    "sample_publication_approval_generation"
+                ],
+                "sample_publication_approval_schema_version": payload[
+                    "sample_publication_approval_schema_version"
+                ],
+                "sample_publication_approval_record_sha256": payload[
+                    "sample_publication_approval_record_sha256"
+                ],
+            },
+        }
+
+    @staticmethod
+    def _trial_tuple(trial_event: dict[str, Any]) -> dict[str, Any]:
+        payload = trial_event["payload"]
+        return {
+            "trial_id": trial_event["subject_id"],
+            "definition": {
+                "trial_definition_authority_id": payload["trial_definition_authority_id"],
+                "trial_definition_authority_registry_sha256": payload[
+                    "trial_definition_authority_registry_sha256"
+                ],
+                "trial_definition_authority_version": payload[
+                    "trial_definition_authority_version"
+                ],
+                "trial_definition_record_id": payload["trial_definition_record_id"],
+                "trial_definition_record_schema_version": payload[
+                    "trial_definition_record_schema_version"
+                ],
+                "trial_definition_record_version": payload[
+                    "trial_definition_record_version"
+                ],
+                "trial_definition_record_canonicalization_id": payload[
+                    "trial_definition_record_canonicalization_id"
+                ],
+                "trial_definition_record_sha256": payload[
+                    "trial_definition_record_sha256"
+                ],
+            },
+            "acceptance": {
+                "trial_definition_acceptance_decision_id": payload[
+                    "trial_definition_acceptance_decision_id"
+                ],
+                "trial_definition_acceptance_generation": payload[
+                    "trial_definition_acceptance_generation"
+                ],
+                "trial_definition_acceptance_schema_version": payload[
+                    "trial_definition_acceptance_schema_version"
+                ],
+                "trial_definition_acceptance_record_sha256": payload[
+                    "trial_definition_acceptance_record_sha256"
+                ],
+            },
+            "projection": {
+                "trial_definition_public_projection_id": payload[
+                    "trial_definition_public_projection_id"
+                ],
+                "trial_definition_public_projection_schema_version": payload[
+                    "trial_definition_public_projection_schema_version"
+                ],
+                "trial_definition_public_projection_sha256": payload[
+                    "trial_definition_public_projection_sha256"
+                ],
+            },
+            "publication_approval": {
+                "trial_definition_publication_approval_id": payload[
+                    "trial_definition_publication_approval_id"
+                ],
+                "trial_definition_publication_approval_generation": payload[
+                    "trial_definition_publication_approval_generation"
+                ],
+                "trial_definition_publication_approval_schema_version": payload[
+                    "trial_definition_publication_approval_schema_version"
+                ],
+                "trial_definition_publication_approval_record_sha256": payload[
+                    "trial_definition_publication_approval_record_sha256"
+                ],
+            },
+            "allocation_authority": {
+                "allocation_authority_id": payload["allocation_authority_id"],
+                "allocation_authority_generation": payload[
+                    "allocation_authority_generation"
+                ],
+                "allocation_authority_schema_version": payload[
+                    "allocation_authority_schema_version"
+                ],
+                "allocation_authority_record_sha256": payload[
+                    "allocation_authority_record_sha256"
+                ],
+            },
+        }
+
+    @staticmethod
+    def _source_entry(
+        subject_type: str,
+        subject_id: str,
+        event_type: str,
+        event: dict[str, Any],
+    ) -> dict[str, Any]:
+        return {
+            "subject_type": subject_type,
+            "subject_id": subject_id,
+            "event_type": event_type,
+            "source": {
+                "event_id": event["event_id"],
+                "event_sha256": digest_json(event)
+                if "event_sha256" not in event
+                else event["event_sha256"],
+            },
+        }
+
+    def _retained_sources(
+        self,
+        *,
+        family_event: dict[str, Any],
+        sample_events: list[dict[str, Any]],
+        trial_event: dict[str, Any],
+        seal_event: dict[str, Any],
+        allocation_event: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        sources = [
+            self._source_entry(
+                "trial_family",
+                family_event["subject_id"],
+                "TRIAL_FAMILY_REGISTERED",
+                family_event,
+            )
+        ]
+        for sample_event in sample_events:
+            sources.append(
+                self._source_entry(
+                    "sample",
+                    sample_event["subject_id"],
+                    "SAMPLE_REGISTERED",
+                    sample_event,
+                )
+            )
+        sources.extend(
+            [
+                self._source_entry(
+                    "trial",
+                    trial_event["subject_id"],
+                    "TRIAL_ALLOCATED",
+                    trial_event,
+                ),
+                self._source_entry(
+                    "campaign",
+                    seal_event["subject_id"],
+                    "CAMPAIGN_INVENTORY_SEALED",
+                    seal_event,
+                ),
+                self._source_entry(
+                    "attempt",
+                    allocation_event["subject_id"],
+                    "ATTEMPT_ALLOCATED",
+                    allocation_event,
+                ),
+            ]
+        )
+        return sources
+
     @staticmethod
     def _assert_path_outside_repository(database_path: Path) -> None:
         resolved = database_path.resolve()
@@ -1870,6 +2832,24 @@ def open_path_a_store(
         database_path,
         catalog,
         clock=clock,
+        checkpoint="path_a",
         inject_access_started_failure=inject_access_started_failure,
+        inject_catalog_mutation=inject_catalog_mutation,
+    )
+
+
+def open_path_b_store(
+    database_path: str | Path,
+    catalog: SyntheticCatalog,
+    *,
+    clock: Clock | None = None,
+    inject_catalog_mutation: Callable[[], None] | None = None,
+) -> LedgerStore:
+    """Open a Path B ledger at a caller-supplied path outside the repository."""
+    return LedgerStore(
+        database_path,
+        catalog,
+        clock=clock,
+        checkpoint="path_b",
         inject_catalog_mutation=inject_catalog_mutation,
     )

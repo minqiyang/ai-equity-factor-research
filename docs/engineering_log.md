@@ -1,5 +1,26 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 Path B first checkpoint
+
+- Implemented the accepted Track B v7 Path B runtime in this worktree on
+  base `e4f2545fc17cf15a6541d690d7d61ae6e302b356`, branch
+  `codex/track-b-runtime-path-b`. Extends the existing stdlib sqlite3 Path A
+  runtime. Caller-supplied database path outside the canonical repository.
+  Synthetic catalogs only. No extra DB package.
+- Path B happy path: Path A inventory/seal prerequisites, then first
+  ATTEMPT_ALLOCATED and valid ATTEMPT_STARTED. EXECUTE capability is minted
+  with start and consumed by the readiness executor. Retry relation and
+  terminal attempt events are refused. Path B does not append
+  ACCESS_COMPLETED or EXPOSURE_DECISION. Evidence ceiling remains
+  DIAGNOSTIC_ONLY.
+- Deterministic tests cover the Path B happy path and frozen Path B
+  refusals, including unselected `WIRE_TYPE_NOT_SELECTED`, retry,
+  ATTEMPT_ALLOCATED seal/trial/family/private-producer refusals, inherited
+  tuple and operational-value mismatches, start/plan/allocation-authority
+  currentness, executor mismatch, and EXECUTE consumer mismatch.
+- No 14-trial run, D8, identity reopen, real/private market data, brokerage,
+  or vendor API.
+
 ## 2026-09-05 - Track B v7 Path A exact-head P1-FIX2 remediations
 
 - PR #199 head `86a7ca5331b6b2d174cbfe72f9c295ba3ec54cde` still had live

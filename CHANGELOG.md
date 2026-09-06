@@ -22,6 +22,15 @@ profitability, or trading readiness.
 
 ### Added
 
+- Track B v7 Path B first checkpoint: extend the stdlib sqlite3 Path A
+  ledger runtime with first-attempt `ATTEMPT_ALLOCATED` then valid
+  `ATTEMPT_STARTED` after inventory/seal. Caller-supplied database path
+  outside the repository, synthetic catalogs only, DIAGNOSTIC_ONLY.
+  Unselected names refuse `WIRE_TYPE_NOT_SELECTED`. Retry and terminal
+  attempt events are not appended. Path B does not claim ACCESS_COMPLETED
+  or EXPOSURE_DECISION. This adds no private data, 14-trial run, D8,
+  identity reopen, brokerage, or vendor API.
+
 - Track B v7 Path A first checkpoint: stdlib sqlite3 ledger runtime with a
   caller-supplied database path outside the repository, synthetic catalogs
   only, and registry `0.10.0` ACCESS payload schemas. Happy path is epoch
