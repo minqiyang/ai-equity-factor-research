@@ -1,5 +1,55 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 Path A exact-head P1-FIX2 remediations
+
+- PR #199 head `86a7ca5331b6b2d174cbfe72f9c295ba3ec54cde` still had live
+  catalog/authority P1s plus new identity, code, approval, resolver-tuple,
+  seal-authority, and ACCESS capability-bound findings. Runtime remediations:
+  catalog `get` recomputes body digest; trial definition binds experiment
+  and complete `code_identity`; publication approval binds sample/projection;
+  allocation authority binds operation/campaign/trial/definition; seal
+  revalidates allocation authority; resolvers compare schema/owner/
+  canonicalization; ACCESS capabilities carry activation/expiry.
+- Killing tests cover each listed P1. No 14-trial, D8, identity reopen, or
+  real data.
+
+## 2026-09-05 - Track B v7 Path A exact-head P1 remediations
+
+- PR #199 head `d6e1f58dea03d5edcef8203d8e1de41a5f27137e` had eight P1s and
+  one P2 from exact-head Codex review. Runtime remediations only: catalog
+  `get` refuses body/digest mismatch; each append snapshots the synthetic
+  catalog under the writer lock through commit; SAMPLE_REGISTERED requires
+  current content-bound projection; ACCESS intent authority binds operation,
+  sample, and campaign; ACCESS_STARTED start-authority accessor must equal
+  the capability accessor; trial allocation resolves the public projection
+  tuple; trial definition binds requested `trial_family_id`; sample resolver
+  compares the eight-field authority key and does not overwrite catalog
+  metadata. Exact replay now returns `event_sha256`.
+- Killing tests cover each P1. No 14-trial, D8, identity, real data, or
+  Path B expansion.
+
+## 2026-09-05 - Track B v7 Path A first checkpoint
+
+- Implemented the accepted Track B v7 Path A runtime in this worktree on
+  base `6a95d250b04907a4fa4296a480e08c96d4b7c183`, branch
+  `codex/track-b-runtime-path-a`. Stdlib sqlite3 only. Caller-supplied
+  database path outside the canonical repository. Synthetic catalogs only.
+- Registry `0.10.0` promotes ACCESS_INTENT, ACCESS_STARTED, and
+  ACCESS_COMPLETED payload schemas using the existing closed DSL. Releases
+  `0.1.0` through `0.9.0` remain byte-immutable. Default R0 entry point is
+  unchanged.
+- Path A happy path: LEDGER_EPOCH_CREATED through local SAMPLE_REGISTERED,
+  TRIAL_ALLOCATED, CAMPAIGN_INVENTORY_SEALED, ACCESS_INTENT, then
+  ACCESS_STARTED. ACCESS_STARTED consumes the ACCESS capability in the
+  same transaction. Path A stops before ACCESS_COMPLETED and does not
+  append EXPOSURE_DECISION. Evidence ceiling remains DIAGNOSTIC_ONLY.
+- Deterministic tests cover the Path A happy path and frozen Path A
+  refusals, including unselected `WIRE_TYPE_NOT_SELECTED`, ingress commit
+  fields, empty affected trials and evidence refs, ACCESS role collisions,
+  seal role/parent-staleness refusals, and injected ACCESS consume rollback.
+- No 14-trial run, D8, identity reopen, real/private market data, brokerage,
+  or vendor API.
+
 ## 2026-09-05 - Track B v7 design P2-FIX5 exact-head remediations
 
 - PR #198 head `c332ef02945efaa52e5b10f8c79c21da45e7353c` had two remaining

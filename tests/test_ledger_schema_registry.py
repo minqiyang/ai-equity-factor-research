@@ -137,7 +137,7 @@ def test_registry_release_loads_are_isolated_from_caller_mutation() -> None:
 def test_unsupported_registry_release_still_fail_closed() -> None:
     _assert_code(
         "INVALID_REGISTRY",
-        lambda: load_registry_release("0.10.0"),
+        lambda: load_registry_release("0.11.0"),
     )
 
 
