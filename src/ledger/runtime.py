@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import hashlib
 import json
+import re
 import sqlite3
 from pathlib import Path
 import threading
@@ -21,6 +22,7 @@ from typing import Any, Callable
 
 from ledger.schema_registry import (
     LedgerSchemaError,
+    _same_json_value,
     load_registry_release,
     validate_raw_event_bytes,
 )
@@ -190,6 +192,7 @@ def digest_json(value: object) -> str:
 
 
 _CANONICAL_UTC = "%Y-%m-%dT%H:%M:%SZ"
+_ACTOR_ID_PATTERN = re.compile(r"act_[0-9a-f]{32}\Z")
 
 
 def _parse_canonical_utc(value: object, *, code: str) -> datetime:
@@ -202,6 +205,17 @@ def _parse_canonical_utc(value: object, *, code: str) -> datetime:
         _fail(code, "timestamp is not canonical UTC")
         raise
     return parsed.replace(tzinfo=timezone.utc)
+
+
+def _canonical_interval_active(
+    record: "CatalogRecord", as_of_dt: datetime, *, code: str
+) -> bool:
+    """True when as_of is inside a canonical [valid_from, valid_until) interval."""
+    from_dt = _parse_canonical_utc(record.valid_from, code=code)
+    until_dt = None
+    if record.valid_until is not None:
+        until_dt = _parse_canonical_utc(record.valid_until, code=code)
+    return as_of_dt >= from_dt and (until_dt is None or as_of_dt < until_dt)
 
 
 def _fail(code: str, message: str) -> None:
@@ -293,8 +307,8 @@ class SyntheticCatalog:
             for item in self.records
             if item.kind == kind
             and item.record_id == record_id
-            and (generation is None or item.generation == generation)
-            and (version is None or item.version == version)
+            and (generation is None or _same_json_value(item.generation, generation))
+            and (version is None or _same_json_value(item.version, version))
         ]
         if len(matches) != 1:
             return None
@@ -1122,7 +1136,7 @@ class LedgerStore:
         relation = payload.get("relation") or {}
         if (
             relation.get("attempt_kind") != "first_attempt"
-            or relation.get("attempt_ordinal") != 1
+            or not _same_json_value(relation.get("attempt_ordinal"), 1)
         ):
             _fail(
                 "ATTEMPT_ALLOCATED_RETRY_NOT_SELECTED",
@@ -1188,7 +1202,7 @@ class LedgerStore:
             != payload["campaign_inventory_seal_event_id"]
             or plan.body.get("campaign_inventory_seal_event_sha256")
             != payload["campaign_inventory_seal_event_sha256"]
-            or plan.body.get("relation") != payload.get("relation")
+            or not _same_json_value(plan.body.get("relation"), payload.get("relation"))
         ):
             _fail("RECORD_CONTENT_MISMATCH", "attempt plan does not bind this attempt")
         if self._operational_values(plan.body) != self._operational_values(
@@ -1220,14 +1234,18 @@ class LedgerStore:
             != payload["attempt_plan_authority_id"]
             or authority.body.get("attempt_plan_authority_registry_sha256")
             != payload["attempt_plan_authority_registry_sha256"]
-            or authority.body.get("attempt_plan_authority_version")
-            != payload["attempt_plan_authority_version"]
+            or not _same_json_value(
+                authority.body.get("attempt_plan_authority_version"),
+                payload["attempt_plan_authority_version"],
+            )
             or authority.body.get("attempt_plan_record_id")
             != payload["attempt_plan_record_id"]
             or authority.body.get("attempt_plan_record_schema_version")
             != payload["attempt_plan_record_schema_version"]
-            or authority.body.get("attempt_plan_record_version")
-            != payload["attempt_plan_record_version"]
+            or not _same_json_value(
+                authority.body.get("attempt_plan_record_version"),
+                payload["attempt_plan_record_version"],
+            )
             or authority.body.get("attempt_plan_record_canonicalization_id")
             != payload["attempt_plan_record_canonicalization_id"]
             or authority.body.get("attempt_plan_record_sha256")
@@ -1253,15 +1271,21 @@ class LedgerStore:
             != payload["attempt_plan_authority_id"]
             or plan_acceptance.body.get("attempt_plan_authority_registry_sha256")
             != payload["attempt_plan_authority_registry_sha256"]
-            or plan_acceptance.body.get("attempt_plan_authority_version")
-            != payload["attempt_plan_authority_version"]
+            or not _same_json_value(
+                plan_acceptance.body.get("attempt_plan_authority_version"),
+                payload["attempt_plan_authority_version"],
+            )
             or plan_acceptance.body.get("attempt_plan_record_schema_version")
             != payload["attempt_plan_record_schema_version"]
-            or plan_acceptance.body.get("attempt_plan_record_version")
-            != payload["attempt_plan_record_version"]
+            or not _same_json_value(
+                plan_acceptance.body.get("attempt_plan_record_version"),
+                payload["attempt_plan_record_version"],
+            )
             or plan_acceptance.body.get("attempt_plan_record_canonicalization_id")
             != payload["attempt_plan_record_canonicalization_id"]
-            or plan_acceptance.body.get("relation") != payload.get("relation")
+            or not _same_json_value(
+                plan_acceptance.body.get("relation"), payload.get("relation")
+            )
             or plan_acceptance.body.get("campaign_inventory_seal_event_id")
             != payload["campaign_inventory_seal_event_id"]
             or plan_acceptance.body.get("campaign_inventory_seal_event_sha256")
@@ -1398,7 +1422,9 @@ class LedgerStore:
             != alloc_payload["campaign_inventory_seal_event_id"]
             or plan.body.get("campaign_inventory_seal_event_sha256")
             != alloc_payload["campaign_inventory_seal_event_sha256"]
-            or plan.body.get("relation") != alloc_payload.get("relation")
+            or not _same_json_value(
+                plan.body.get("relation"), alloc_payload.get("relation")
+            )
         ):
             _fail(
                 "RECORD_CONTENT_MISMATCH",
@@ -2169,27 +2195,8 @@ class LedgerStore:
         kind: str,
     ) -> None:
         if kind == "readiness":
-            if (
-                record.status in {"revoked", "superseded"}
-                or record.status != "accepted"
-                or not record.active_at(as_of)
-            ):
-                _fail(
-                    "ATTEMPT_STARTED_READINESS_NOT_CURRENT",
-                    "readiness is not current",
-                )
-            accepted_current = [
-                item
-                for item in self._active_catalog.stream(record.stream_key)
-                if item.status == "accepted" and item.active_at(as_of)
-            ]
-            if len(accepted_current) != 1 or accepted_current[0].sha256 != record.sha256:
-                _fail(
-                    "ATTEMPT_STARTED_READINESS_NOT_CURRENT",
-                    "readiness is not sole-current",
-                )
-            return
-        if kind == "acceptance":
+            prefix = f"{event_type}_READINESS"
+        elif kind == "acceptance":
             prefix = f"{event_type}_ACCEPTANCE"
         elif kind == "publication_approval":
             prefix = f"{event_type}_PUBLICATION_APPROVAL"
@@ -2205,47 +2212,44 @@ class LedgerStore:
             prefix = f"{event_type}_PLAN"
         else:
             prefix = f"{event_type}_AUTHORITY"
-        plan_inactive = False
-        if kind == "plan":
-            ts_code = f"{prefix}_TIMESTAMP_INVALID"
-            as_of_dt = _parse_canonical_utc(as_of, code=ts_code)
-            from_dt = _parse_canonical_utc(record.valid_from, code=ts_code)
-            until_dt = None
-            if record.valid_until is not None:
-                until_dt = _parse_canonical_utc(record.valid_until, code=ts_code)
-            plan_inactive = as_of_dt < from_dt or (
-                until_dt is not None and as_of_dt >= until_dt
-            )
+        ts_code = f"{prefix}_TIMESTAMP_INVALID"
+        as_of_dt = _parse_canonical_utc(as_of, code=ts_code)
+        inactive = not _canonical_interval_active(record, as_of_dt, code=ts_code)
+        accepted_current = []
+        for item in self._active_catalog.stream(record.stream_key):
+            item_active = _canonical_interval_active(item, as_of_dt, code=ts_code)
+            if item.status == "accepted" and item_active:
+                accepted_current.append(item)
+        if kind == "readiness":
+            if (
+                record.status in {"revoked", "superseded"}
+                or record.status != "accepted"
+                or inactive
+            ):
+                _fail(
+                    "ATTEMPT_STARTED_READINESS_NOT_CURRENT",
+                    "readiness is not current",
+                )
+            if len(accepted_current) != 1 or accepted_current[0].sha256 != record.sha256:
+                _fail(
+                    "ATTEMPT_STARTED_READINESS_NOT_CURRENT",
+                    "readiness is not sole-current",
+                )
+            return
         if record.status == "revoked":
             _fail(f"{prefix}_REVOKED", f"{kind} is revoked")
         if record.status == "superseded":
             _fail(f"{prefix}_SUPERSEDED", f"{kind} is superseded")
-        if kind == "plan":
-            if plan_inactive:
-                _fail(f"{prefix}_STALE", f"{kind} is stale at as_of")
-        elif not record.active_at(as_of):
+        if inactive:
             _fail(f"{prefix}_STALE", f"{kind} is stale at as_of")
         if record.status != "accepted":
             _fail(f"{prefix}_NOT_CURRENT", f"{kind} is not current")
-        current = [
-            item
-            for item in self._active_catalog.stream(record.stream_key)
-            if item.status == "accepted"
-            and not (item.status == "revoked" or item.status == "superseded")
-            and item.active_at(as_of)
-        ]
-        accepted_current = [
-            item
-            for item in self._active_catalog.stream(record.stream_key)
-            if item.status == "accepted" and item.active_at(as_of)
-        ]
         if len(accepted_current) != 1 or accepted_current[0].sha256 != record.sha256:
-            if record.status == "accepted" and record.active_at(as_of):
+            if record.status == "accepted" and not inactive:
                 if len(accepted_current) != 1:
                     _fail(f"{prefix}_NOT_CURRENT", f"{kind} is not sole-current")
             else:
                 _fail(f"{prefix}_NOT_CURRENT", f"{kind} is not sole-current")
-        del current
 
     def _assert_content_scope(
         self,
@@ -2295,7 +2299,10 @@ class LedgerStore:
                 "RECORD_CONTENT_MISMATCH",
                 f"{event_type} private_input_producer_actor_ids exceeds 4096",
             )
-        if any(not isinstance(item, str) or item == "" for item in producers):
+        if any(
+            not isinstance(item, str) or _ACTOR_ID_PATTERN.fullmatch(item) is None
+            for item in producers
+        ):
             _fail(
                 "RECORD_CONTENT_MISMATCH",
                 f"{event_type} private_input_producer_actor_ids is malformed",

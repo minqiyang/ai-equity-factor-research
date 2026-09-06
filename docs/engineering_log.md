@@ -1,5 +1,20 @@
 # Engineering Log
 
+## 2026-09-06 - Track B v7 Path B PR 200 extra MATERIAL remediations
+
+- PR #200 head `bf149827e8ff5d85f4de18883212ac7dcc1b6ef4` still admitted
+  noncanonical plan stream-member timestamps as sole-current, coerced
+  Boolean `True` to integer `1` on relation ordinals and plan-tuple
+  versions, and treated garbage `valid_until` as current for readiness,
+  plan acceptance, and allocation/start authority.
+- Runtime remediations only. Canonical UTC parse now covers every
+  `_require_current` kind and stream member. Relation and plan-tuple
+  integers use type-strict JSON equality. Producer helper members must
+  match `act_<32 lowercase hex>`. Killing tests refuse the listed
+  counterexamples with unchanged seal or allocated state and no EXECUTE
+  capability on start refusals.
+- No 14-trial, D8, identity reopen, GitHub review, or real data.
+
 ## 2026-09-05 - Track B v7 Path B PR 200 P1-FIX3 remediations
 
 - PR #200 head `81239b4c75cd968109d1cc5d74a026f06498ebd0` remaining P1s:
