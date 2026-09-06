@@ -1180,6 +1180,15 @@ class LedgerStore:
             or plan.body.get("attempt_id") != attempt_id
             or plan.body.get("campaign_id") != campaign_id
             or plan.body.get("ledger_id") != request["ledger_id"]
+            or plan.body.get("trial_allocation_event_id")
+            != payload["trial_allocation_event_id"]
+            or plan.body.get("trial_allocation_event_sha256")
+            != payload["trial_allocation_event_sha256"]
+            or plan.body.get("campaign_inventory_seal_event_id")
+            != payload["campaign_inventory_seal_event_id"]
+            or plan.body.get("campaign_inventory_seal_event_sha256")
+            != payload["campaign_inventory_seal_event_sha256"]
+            or plan.body.get("relation") != payload.get("relation")
         ):
             _fail("RECORD_CONTENT_MISMATCH", "attempt plan does not bind this attempt")
         if self._operational_values(plan.body) != self._operational_values(
@@ -1207,8 +1216,20 @@ class LedgerStore:
             or authority.body.get("campaign_id") != campaign_id
             or authority.body.get("trial_id") != trial_id
             or authority.body.get("attempt_id") != attempt_id
+            or authority.body.get("attempt_plan_authority_id")
+            != payload["attempt_plan_authority_id"]
+            or authority.body.get("attempt_plan_authority_registry_sha256")
+            != payload["attempt_plan_authority_registry_sha256"]
+            or authority.body.get("attempt_plan_authority_version")
+            != payload["attempt_plan_authority_version"]
             or authority.body.get("attempt_plan_record_id")
             != payload["attempt_plan_record_id"]
+            or authority.body.get("attempt_plan_record_schema_version")
+            != payload["attempt_plan_record_schema_version"]
+            or authority.body.get("attempt_plan_record_version")
+            != payload["attempt_plan_record_version"]
+            or authority.body.get("attempt_plan_record_canonicalization_id")
+            != payload["attempt_plan_record_canonicalization_id"]
             or authority.body.get("attempt_plan_record_sha256")
             != payload["attempt_plan_record_sha256"]
             or authority.body.get("ledger_id") != request["ledger_id"]
@@ -1268,7 +1289,9 @@ class LedgerStore:
             },
             "ATTEMPT_ALLOCATED_ROLE_COLLISION",
         )
-        producers = plan.body.get("private_input_producer_actor_ids") or []
+        producers = self._require_private_input_producer_ids(
+            plan.body, "ATTEMPT_ALLOCATED"
+        )
         self._exclude_private_producers(
             reviewer,
             producers,
@@ -1361,6 +1384,26 @@ class LedgerStore:
         self._require_current(
             plan, as_of, event_type="ATTEMPT_STARTED", kind="plan"
         )
+        alloc_payload = allocation["payload"]
+        if (
+            plan.body.get("trial_id") != trial_id
+            or plan.body.get("attempt_id") != attempt_id
+            or plan.body.get("campaign_id") != campaign_id
+            or plan.body.get("ledger_id") != request["ledger_id"]
+            or plan.body.get("trial_allocation_event_id")
+            != alloc_payload["trial_allocation_event_id"]
+            or plan.body.get("trial_allocation_event_sha256")
+            != alloc_payload["trial_allocation_event_sha256"]
+            or plan.body.get("campaign_inventory_seal_event_id")
+            != alloc_payload["campaign_inventory_seal_event_id"]
+            or plan.body.get("campaign_inventory_seal_event_sha256")
+            != alloc_payload["campaign_inventory_seal_event_sha256"]
+            or plan.body.get("relation") != alloc_payload.get("relation")
+        ):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "attempt plan does not bind retained trial, seal, and relation",
+            )
         self._require_current(
             plan_acceptance, as_of, event_type="ATTEMPT_STARTED", kind="acceptance"
         )
@@ -1383,6 +1426,8 @@ class LedgerStore:
             readiness.body.get("trial_id") != trial_id
             or readiness.body.get("attempt_id") != attempt_id
             or readiness.body.get("campaign_id") != campaign_id
+            or readiness.body.get("ledger_id") != request["ledger_id"]
+            or readiness.body.get("ledger_id") != allocation["ledger_id"]
         ):
             _fail("RECORD_CONTENT_MISMATCH", "readiness does not bind this attempt")
         issuer = self._require_actor_id(
@@ -2160,11 +2205,25 @@ class LedgerStore:
             prefix = f"{event_type}_PLAN"
         else:
             prefix = f"{event_type}_AUTHORITY"
+        plan_inactive = False
+        if kind == "plan":
+            ts_code = f"{prefix}_TIMESTAMP_INVALID"
+            as_of_dt = _parse_canonical_utc(as_of, code=ts_code)
+            from_dt = _parse_canonical_utc(record.valid_from, code=ts_code)
+            until_dt = None
+            if record.valid_until is not None:
+                until_dt = _parse_canonical_utc(record.valid_until, code=ts_code)
+            plan_inactive = as_of_dt < from_dt or (
+                until_dt is not None and as_of_dt >= until_dt
+            )
         if record.status == "revoked":
             _fail(f"{prefix}_REVOKED", f"{kind} is revoked")
         if record.status == "superseded":
             _fail(f"{prefix}_SUPERSEDED", f"{kind} is superseded")
-        if not record.active_at(as_of):
+        if kind == "plan":
+            if plan_inactive:
+                _fail(f"{prefix}_STALE", f"{kind} is stale at as_of")
+        elif not record.active_at(as_of):
             _fail(f"{prefix}_STALE", f"{kind} is stale at as_of")
         if record.status != "accepted":
             _fail(f"{prefix}_NOT_CURRENT", f"{kind} is not current")

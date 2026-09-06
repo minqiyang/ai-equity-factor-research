@@ -107,6 +107,11 @@ def build_path_b_catalog(
             "attempt_id": ids.attempt,
             "campaign_id": ids.a.campaign,
             "ledger_id": ids.a.ledger,
+            "relation": {"attempt_kind": "first_attempt", "attempt_ordinal": 1},
+            "campaign_inventory_seal_event_id": ids.a.seal_event,
+            "campaign_inventory_seal_event_sha256": "pending-seal-event",
+            "trial_allocation_event_id": ids.a.trial_event,
+            "trial_allocation_event_sha256": "pending-trial-event",
             "code_identity": definition.body["code_identity"],
             "environment_id": ENVIRONMENT,
             "environment_lock_sha256": ENV_LOCK,
@@ -168,7 +173,17 @@ def build_path_b_catalog(
             "campaign_id": ids.a.campaign,
             "trial_id": ids.a.trial,
             "attempt_id": ids.attempt,
+            "attempt_plan_authority_id": records["attempt_plan"].authority_id,
+            "attempt_plan_authority_registry_sha256": records[
+                "attempt_plan"
+            ].registry_sha256,
+            "attempt_plan_authority_version": records["attempt_plan"].authority_version,
             "attempt_plan_record_id": "attempt-plan-1",
+            "attempt_plan_record_schema_version": records["attempt_plan"].schema_version,
+            "attempt_plan_record_version": records["attempt_plan"].version,
+            "attempt_plan_record_canonicalization_id": records[
+                "attempt_plan"
+            ].canonicalization_id,
             "attempt_plan_record_sha256": records["attempt_plan"].sha256,
             "ledger_id": ids.a.ledger,
         },
@@ -190,6 +205,7 @@ def build_path_b_catalog(
             "trial_id": ids.a.trial,
             "attempt_id": ids.attempt,
             "campaign_id": ids.a.campaign,
+            "ledger_id": ids.a.ledger,
             "code_identity": definition.body["code_identity"],
             "environment_id": ENVIRONMENT,
             "environment_lock_sha256": ENV_LOCK,
@@ -277,7 +293,15 @@ def append_through_seal(store, ids: PathAIds, records: dict[str, CatalogRecord])
 def refresh_plan_and_authority(records: dict[str, CatalogRecord]) -> None:
     records["attempt_plan"].sha256 = digest_json(records["attempt_plan"].body)
     authority = records["attempt_allocation_authority"]
-    authority.body["attempt_plan_record_sha256"] = records["attempt_plan"].sha256
+    plan = records["attempt_plan"]
+    authority.body["attempt_plan_authority_id"] = plan.authority_id
+    authority.body["attempt_plan_authority_registry_sha256"] = plan.registry_sha256
+    authority.body["attempt_plan_authority_version"] = plan.authority_version
+    authority.body["attempt_plan_record_id"] = plan.record_id
+    authority.body["attempt_plan_record_schema_version"] = plan.schema_version
+    authority.body["attempt_plan_record_version"] = plan.version
+    authority.body["attempt_plan_record_canonicalization_id"] = plan.canonicalization_id
+    authority.body["attempt_plan_record_sha256"] = plan.sha256
     authority.sha256 = digest_json(authority.body)
     acceptance = records["attempt_plan_acceptance"]
     acceptance.body["attempt_plan_record_id"] = records["attempt_plan"].record_id
@@ -327,6 +351,14 @@ def bind_readiness_after_seal(
     readiness.body["trial_definition_acceptance_projection_allocation_authority"] = (
         LedgerStore._trial_tuple(trial)
     )
+    plan = records["attempt_plan"]
+    plan.body["campaign_inventory_seal_event_id"] = committed["seal"]["event_id"]
+    plan.body["campaign_inventory_seal_event_sha256"] = committed["seal"][
+        "event_sha256"
+    ]
+    plan.body["trial_allocation_event_id"] = committed["trial"]["event_id"]
+    plan.body["trial_allocation_event_sha256"] = committed["trial"]["event_sha256"]
+    refresh_plan_and_authority(records)
     readiness.body["attempt_plan_catalog_key"] = {
         "attempt_plan_authority_id": records["attempt_plan"].authority_id,
         "attempt_plan_authority_registry_sha256": records["attempt_plan"].registry_sha256,

@@ -9,6 +9,12 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Path B plan producer IDs no longer coerce missing/null to `[]`; plan
+  validity timestamps parse as canonical UTC instants; the plan binds
+  retained trial/seal tuples and relation; allocation authority compares
+  the complete eight-field plan tuple; readiness binds `ledger_id`.
+  DIAGNOSTIC_ONLY.
+
 - Path B plan acceptance compares the complete plan tuple (including version,
   schema, and canonicalization) and relation; readiness
   `private_input_producer_actor_ids` no longer coerces missing/null to `[]`;

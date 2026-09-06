@@ -1,5 +1,19 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 Path B PR 200 P1-FIX3 remediations
+
+- PR #200 head `81239b4c75cd968109d1cc5d74a026f06498ebd0` remaining P1s:
+  plan `private_input_producer_actor_ids` still coerced missing/null to `[]`;
+  plan validity timestamps compared lexically; plan omitted retained
+  trial/seal/relation; allocation authority compared only plan id/hash;
+  readiness omitted `ledger_id`.
+- Runtime remediations only. Killing tests prove unchanged sealed or
+  allocated state for omitted/null/malformed plan producers, offset and
+  `not-a-timestamp` plan validity, isolated trial/seal/relation mismatches,
+  complete allocation-authority plan-tuple mismatches, and
+  missing/null/wrong readiness ledger_id with no EXECUTE capability.
+- No 14-trial, D8, identity reopen, or real data.
+
 ## 2026-09-05 - Track B v7 Path B PR 200 P1-FIX2 remediations
 
 - PR #200 head `24e0001ca25d168133d1bdb9a56345b68639701b` had remaining P1s:

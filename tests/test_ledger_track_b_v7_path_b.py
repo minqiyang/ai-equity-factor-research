@@ -899,6 +899,200 @@ def test_plan_and_authorities_bind_ledger_and_readiness_tuple(
     assert [event["event_type"] for event in store4.events()][-1] == "ATTEMPT_ALLOCATED"
 
 
+def _sealed_attempt_request(ids, records, committed):
+    req = attempt_request(ids, records)
+    req["payload"]["campaign_inventory_seal_event_sha256"] = committed["seal"][
+        "event_sha256"
+    ]
+    req["payload"]["trial_allocation_event_sha256"] = committed["trial"]["event_sha256"]
+    return req
+
+
+def test_plan_private_input_producer_ids_required(tmp_path: Path) -> None:
+    ids, catalog, records = build_path_b_catalog()
+    store = _store(tmp_path / "missing", catalog)
+    committed = append_through_seal(store, ids.a, records)
+    refresh_plan_and_authority(records)
+    bind_readiness_after_seal(records, committed)
+    records["attempt_plan"].body.pop("private_input_producer_actor_ids")
+    refresh_plan_and_authority(records)
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store.append(_sealed_attempt_request(ids, records, committed)),
+    )
+    assert [event["event_type"] for event in store.events()][-1] == (
+        "CAMPAIGN_INVENTORY_SEALED"
+    )
+
+    ids2, catalog2, records2 = build_path_b_catalog()
+    store2 = _store(tmp_path / "null", catalog2)
+    committed2 = append_through_seal(store2, ids2.a, records2)
+    refresh_plan_and_authority(records2)
+    bind_readiness_after_seal(records2, committed2)
+    records2["attempt_plan"].body["private_input_producer_actor_ids"] = None
+    refresh_plan_and_authority(records2)
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store2.append(_sealed_attempt_request(ids2, records2, committed2)),
+    )
+    assert len(store2.events()) == 7
+
+    ids3, catalog3, records3 = build_path_b_catalog()
+    store3 = _store(tmp_path / "malformed", catalog3)
+    committed3 = append_through_seal(store3, ids3.a, records3)
+    refresh_plan_and_authority(records3)
+    bind_readiness_after_seal(records3, committed3)
+    records3["attempt_plan"].body["private_input_producer_actor_ids"] = "not-a-list"
+    refresh_plan_and_authority(records3)
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store3.append(_sealed_attempt_request(ids3, records3, committed3)),
+    )
+    assert [event["event_type"] for event in store3.events()][-1] == (
+        "CAMPAIGN_INVENTORY_SEALED"
+    )
+
+
+def test_plan_validity_timestamps_must_be_canonical_utc(tmp_path: Path) -> None:
+    offset = "2026-09-06T00:00:00+00:00"
+    malformed = "not-a-timestamp"
+    ids, catalog, records = build_path_b_catalog()
+    store = _store(tmp_path / "alloc-offset", catalog)
+    committed = append_through_seal(store, ids.a, records)
+    refresh_plan_and_authority(records)
+    bind_readiness_after_seal(records, committed)
+    records["attempt_plan"].valid_until = offset
+    _assert_code(
+        "ATTEMPT_ALLOCATED_PLAN_TIMESTAMP_INVALID",
+        lambda: store.append(_sealed_attempt_request(ids, records, committed)),
+    )
+    assert [event["event_type"] for event in store.events()][-1] == (
+        "CAMPAIGN_INVENTORY_SEALED"
+    )
+
+    ids2, catalog2, records2 = build_path_b_catalog()
+    store2 = _store(tmp_path / "alloc-malformed", catalog2)
+    committed2 = append_through_seal(store2, ids2.a, records2)
+    refresh_plan_and_authority(records2)
+    bind_readiness_after_seal(records2, committed2)
+    records2["attempt_plan"].valid_until = malformed
+    _assert_code(
+        "ATTEMPT_ALLOCATED_PLAN_TIMESTAMP_INVALID",
+        lambda: store2.append(_sealed_attempt_request(ids2, records2, committed2)),
+    )
+
+    ids3, _catalog3, records3, store3, committed3 = _through_allocation(
+        tmp_path / "start-offset"
+    )
+    records3["attempt_plan"].valid_until = offset
+    _assert_code(
+        "ATTEMPT_STARTED_PLAN_TIMESTAMP_INVALID",
+        lambda: store3.append(started_request(ids3, records3, committed3["attempt"])),
+    )
+    assert store3.capability(ids3.execute_capability) is None
+    assert [event["event_type"] for event in store3.events()][-1] == "ATTEMPT_ALLOCATED"
+
+    ids4, _catalog4, records4, store4, committed4 = _through_allocation(
+        tmp_path / "start-malformed"
+    )
+    records4["attempt_plan"].valid_until = malformed
+    _assert_code(
+        "ATTEMPT_STARTED_PLAN_TIMESTAMP_INVALID",
+        lambda: store4.append(started_request(ids4, records4, committed4["attempt"])),
+    )
+    assert store4.capability(ids4.execute_capability) is None
+
+
+def test_plan_binds_trial_seal_and_relation(tmp_path: Path) -> None:
+    cases = [
+        ("trial_allocation_event_sha256", "99" * 32),
+        ("campaign_inventory_seal_event_sha256", "99" * 32),
+        ("relation", {"attempt_kind": "first_attempt", "attempt_ordinal": 2}),
+    ]
+    for field, value in cases:
+        ids, catalog, records = build_path_b_catalog()
+        store = _store(tmp_path / field, catalog)
+        committed = append_through_seal(store, ids.a, records)
+        refresh_plan_and_authority(records)
+        bind_readiness_after_seal(records, committed)
+        records["attempt_plan"].body[field] = value
+        refresh_plan_and_authority(records)
+        _assert_code(
+            "RECORD_CONTENT_MISMATCH",
+            lambda store=store, ids=ids, records=records, committed=committed: store.append(
+                _sealed_attempt_request(ids, records, committed)
+            ),
+        )
+        assert [event["event_type"] for event in store.events()][-1] == (
+            "CAMPAIGN_INVENTORY_SEALED"
+        )
+        assert len(store.events()) == 7
+
+
+def test_allocation_authority_binds_complete_plan_tuple(tmp_path: Path) -> None:
+    cases = [
+        ("attempt_plan_authority_id", "other-plan-authority"),
+        ("attempt_plan_record_id", "other-plan"),
+        ("attempt_plan_record_version", 9),
+        ("attempt_plan_record_schema_version", "other_plan_v1"),
+        ("attempt_plan_record_canonicalization_id", "other_canonicalization_v1"),
+        ("attempt_plan_record_sha256", "99" * 32),
+    ]
+    for field, value in cases:
+        ids, catalog, records = build_path_b_catalog()
+        store = _store(tmp_path / field, catalog)
+        committed = append_through_seal(store, ids.a, records)
+        refresh_plan_and_authority(records)
+        bind_readiness_after_seal(records, committed)
+        records["attempt_allocation_authority"].body[field] = value
+        records["attempt_allocation_authority"].sha256 = digest_json(
+            records["attempt_allocation_authority"].body
+        )
+        _assert_code(
+            "RECORD_CONTENT_MISMATCH",
+            lambda store=store, ids=ids, records=records, committed=committed: store.append(
+                _sealed_attempt_request(ids, records, committed)
+            ),
+        )
+        assert [event["event_type"] for event in store.events()][-1] == (
+            "CAMPAIGN_INVENTORY_SEALED"
+        )
+        assert len(store.events()) == 7
+
+
+def test_readiness_must_bind_ledger_id(tmp_path: Path) -> None:
+    ids, _catalog, records, store, committed = _through_allocation(tmp_path / "missing")
+    records["attempt_readiness"].body.pop("ledger_id")
+    refresh_readiness(records)
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store.append(started_request(ids, records, committed["attempt"])),
+    )
+    assert store.capability(ids.execute_capability) is None
+    assert [event["event_type"] for event in store.events()][-1] == "ATTEMPT_ALLOCATED"
+
+    ids2, _catalog2, records2, store2, committed2 = _through_allocation(tmp_path / "null")
+    records2["attempt_readiness"].body["ledger_id"] = None
+    refresh_readiness(records2)
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store2.append(started_request(ids2, records2, committed2["attempt"])),
+    )
+    assert store2.capability(ids2.execute_capability) is None
+
+    ids3, _catalog3, records3, store3, committed3 = _through_allocation(
+        tmp_path / "wrong"
+    )
+    records3["attempt_readiness"].body["ledger_id"] = typed_id("ldg", 9)
+    refresh_readiness(records3)
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store3.append(started_request(ids3, records3, committed3["attempt"])),
+    )
+    assert store3.capability(ids3.execute_capability) is None
+    assert [event["event_type"] for event in store3.events()][-1] == "ATTEMPT_ALLOCATED"
+
+
 def _append_path_b_started(store, ids, records, *, activation=None, expiry=None):
     committed = append_through_seal(store, ids.a, records)
     refresh_plan_and_authority(records)
