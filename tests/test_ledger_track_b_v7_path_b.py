@@ -538,6 +538,18 @@ def test_start_authority_executor_mismatch(tmp_path: Path) -> None:
     )
 
 
+def _consume(store, ids):
+    return store.consume_execute(
+        capability_id=ids.execute_capability,
+        consumer_actor_id=ids.executor,
+        trial_id=ids.a.trial,
+        attempt_id=ids.attempt,
+        code_tree_sha256=CODE_TREE,
+        environment_id=ENVIRONMENT,
+        environment_lock_sha256=ENV_LOCK,
+    )
+
+
 def test_execute_consume_rejects_start_actor(tmp_path: Path) -> None:
     ids, catalog, records = build_path_b_catalog()
     store = _store(tmp_path, catalog)
@@ -555,6 +567,165 @@ def test_execute_consume_rejects_start_actor(tmp_path: Path) -> None:
         ),
     )
     assert store.capability(ids.execute_capability)["consumed"] is False
+
+
+def test_plan_acceptance_must_bind_plan_attempt_trial_seal_and_scope(
+    tmp_path: Path,
+) -> None:
+    cases = [
+        ("attempt_id", typed_id("att", 9)),
+        ("trial_id", typed_id("trl", 9)),
+        ("campaign_id", typed_id("cmp", 9)),
+        ("attempt_plan_record_id", "other-plan"),
+        ("campaign_inventory_seal_event_sha256", "99" * 32),
+    ]
+    for field, value in cases:
+        ids, catalog, records = build_path_b_catalog()
+        store = _store(tmp_path / field, catalog)
+        committed = append_through_seal(store, ids.a, records)
+        refresh_plan_and_authority(records)
+        bind_readiness_after_seal(records, committed)
+        records["attempt_plan_acceptance"].body[field] = value
+        if field == "campaign_id":
+            records["attempt_plan_acceptance"].body["campaign_scope_ids"] = [value]
+        records["attempt_plan_acceptance"].sha256 = digest_json(
+            records["attempt_plan_acceptance"].body
+        )
+        req = attempt_request(ids, records)
+        req["payload"]["campaign_inventory_seal_event_sha256"] = committed["seal"][
+            "event_sha256"
+        ]
+        req["payload"]["trial_allocation_event_sha256"] = committed["trial"][
+            "event_sha256"
+        ]
+        _assert_code("RECORD_CONTENT_MISMATCH", lambda req=req, store=store: store.append(req))
+        assert [event["event_type"] for event in store.events()][-1] == (
+            "CAMPAIGN_INVENTORY_SEALED"
+        )
+        assert len(store.events()) == 7
+
+
+def test_readiness_role_independence_and_missing_roles(tmp_path: Path) -> None:
+    ids, _catalog, records, store, committed = _through_allocation(tmp_path / "issuer")
+    records["attempt_readiness"].body["issuer_actor_id"] = ids.executor
+    refresh_readiness(records)
+    _assert_code(
+        "ATTEMPT_STARTED_ROLE_COLLISION",
+        lambda: store.append(started_request(ids, records, committed["attempt"])),
+    )
+    assert store.capability(ids.execute_capability) is None
+    assert [event["event_type"] for event in store.events()][-1] == "ATTEMPT_ALLOCATED"
+
+    ids2, _catalog2, records2, store2, committed2 = _through_allocation(
+        tmp_path / "reviewer"
+    )
+    records2["attempt_readiness"].body["reviewer_actor_id"] = ids2.executor
+    refresh_readiness(records2)
+    _assert_code(
+        "ATTEMPT_STARTED_ROLE_COLLISION",
+        lambda: store2.append(started_request(ids2, records2, committed2["attempt"])),
+    )
+    assert store2.capability(ids2.execute_capability) is None
+
+    for field, folder in (
+        ("issuer_actor_id", "missing-issuer"),
+        ("reviewer_actor_id", "missing-reviewer"),
+        ("executor_actor_id", "missing-executor"),
+    ):
+        ids_m, _catalog_m, records_m, store_m, committed_m = _through_allocation(
+            tmp_path / folder
+        )
+        records_m["attempt_readiness"].body.pop(field)
+        refresh_readiness(records_m)
+        _assert_code(
+            "RECORD_CONTENT_MISMATCH",
+            lambda ids_m=ids_m, records_m=records_m, store_m=store_m, committed_m=committed_m: store_m.append(
+                started_request(ids_m, records_m, committed_m["attempt"])
+            ),
+        )
+        assert store_m.capability(ids_m.execute_capability) is None
+        assert [event["event_type"] for event in store_m.events()][-1] == (
+            "ATTEMPT_ALLOCATED"
+        )
+
+
+def test_start_authority_must_bind_attempt_started_operation(tmp_path: Path) -> None:
+    ids, _catalog, records, store, committed = _through_allocation(tmp_path)
+    records["attempt_start_authority"].body["operation"] = "ATTEMPT_ALLOCATED"
+    records["attempt_start_authority"].sha256 = digest_json(
+        records["attempt_start_authority"].body
+    )
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store.append(started_request(ids, records, committed["attempt"])),
+    )
+    assert store.capability(ids.execute_capability) is None
+    assert [event["event_type"] for event in store.events()][-1] == "ATTEMPT_ALLOCATED"
+
+    ids2, _catalog2, records2, store2, committed2 = _through_allocation(
+        tmp_path / "missing-op"
+    )
+    records2["attempt_start_authority"].body.pop("operation")
+    records2["attempt_start_authority"].sha256 = digest_json(
+        records2["attempt_start_authority"].body
+    )
+    _assert_code(
+        "RECORD_CONTENT_MISMATCH",
+        lambda: store2.append(started_request(ids2, records2, committed2["attempt"])),
+    )
+    assert store2.capability(ids2.execute_capability) is None
+    assert [event["event_type"] for event in store2.events()][-1] == "ATTEMPT_ALLOCATED"
+
+
+def test_execute_consume_activation_and_expiry(tmp_path: Path) -> None:
+    future = "2026-09-06T00:00:00Z"
+    earlier = "2026-09-05T11:00:00Z"
+    ids, catalog, records = build_path_b_catalog()
+    catalog.capability_activation = future
+    store = _store(tmp_path / "before", catalog)
+    committed = _append_path_b_started(store, ids, records, activation=future)
+    _assert_code("EXECUTE_CAPABILITY_NOT_ACTIVE", lambda: _consume(store, ids))
+    assert store.capability(ids.execute_capability)["consumed"] is False
+    del committed
+
+    ids2, catalog2, records2 = build_path_b_catalog()
+    catalog2.capability_expiry = STAMP
+    store2 = _store(tmp_path / "at-expiry", catalog2)
+    _append_path_b_started(store2, ids2, records2, expiry=STAMP)
+    _assert_code("EXECUTE_CAPABILITY_EXPIRED", lambda: _consume(store2, ids2))
+    assert store2.capability(ids2.execute_capability)["consumed"] is False
+
+    ids3, catalog3, records3 = build_path_b_catalog()
+    catalog3.capability_expiry = earlier
+    store3 = _store(tmp_path / "after-expiry", catalog3)
+    _append_path_b_started(store3, ids3, records3, expiry=earlier)
+    _assert_code("EXECUTE_CAPABILITY_EXPIRED", lambda: _consume(store3, ids3))
+    assert store3.capability(ids3.execute_capability)["consumed"] is False
+
+
+def _append_path_b_started(store, ids, records, *, activation=None, expiry=None):
+    committed = append_through_seal(store, ids.a, records)
+    refresh_plan_and_authority(records)
+    bind_readiness_after_seal(records, committed)
+    attempt_req = attempt_request(ids, records)
+    attempt_req["payload"]["campaign_inventory_seal_event_sha256"] = committed["seal"][
+        "event_sha256"
+    ]
+    attempt_req["payload"]["trial_allocation_event_sha256"] = committed["trial"][
+        "event_sha256"
+    ]
+    committed["attempt"] = store.append(attempt_req)
+    bind_readiness_after_allocation(records, committed)
+    committed["started"] = store.append(
+        started_request(
+            ids,
+            records,
+            committed["attempt"],
+            activation=activation,
+            expiry=expiry,
+        )
+    )
+    return committed
 
 
 def test_path_b_does_not_claim_access_completed_or_profitability() -> None:

@@ -404,6 +404,24 @@ class LedgerStore:
                     "RECORD_CONTENT_MISMATCH",
                     "EXECUTE consume does not bind trial, attempt, code, and environment",
                 )
+            as_of = self.clock.now_utc()
+            activation = record.get("activation")
+            expiry = record.get("expiry")
+            if not isinstance(activation, str) or not isinstance(expiry, str):
+                _fail(
+                    "RECORD_CONTENT_MISMATCH",
+                    "EXECUTE capability is missing activation or expiry",
+                )
+            if as_of < activation:
+                _fail(
+                    "EXECUTE_CAPABILITY_NOT_ACTIVE",
+                    "EXECUTE capability is not yet active",
+                )
+            if as_of >= expiry:
+                _fail(
+                    "EXECUTE_CAPABILITY_EXPIRED",
+                    "EXECUTE capability has expired",
+                )
             updated = self._conn.execute(
                 "UPDATE capabilities SET consumed = 1 WHERE capability_id = ? "
                 "AND consumed = 0",
@@ -1177,6 +1195,34 @@ class LedgerStore:
             )
         if plan_acceptance.body.get("reviewer_actor_id") is None:
             _fail("RECORD_CONTENT_MISMATCH", "attempt plan acceptance reviewer missing")
+        if (
+            plan_acceptance.body.get("attempt_id") != attempt_id
+            or plan_acceptance.body.get("trial_id") != trial_id
+            or plan_acceptance.body.get("campaign_id") != campaign_id
+            or plan_acceptance.body.get("campaign_scope_ids") != [campaign_id]
+            or plan_acceptance.body.get("attempt_plan_record_id")
+            != payload["attempt_plan_record_id"]
+            or plan_acceptance.body.get("attempt_plan_record_sha256")
+            != payload["attempt_plan_record_sha256"]
+            or plan_acceptance.body.get("attempt_plan_authority_id")
+            != payload["attempt_plan_authority_id"]
+            or plan_acceptance.body.get("attempt_plan_authority_registry_sha256")
+            != payload["attempt_plan_authority_registry_sha256"]
+            or plan_acceptance.body.get("attempt_plan_authority_version")
+            != payload["attempt_plan_authority_version"]
+            or plan_acceptance.body.get("campaign_inventory_seal_event_id")
+            != payload["campaign_inventory_seal_event_id"]
+            or plan_acceptance.body.get("campaign_inventory_seal_event_sha256")
+            != payload["campaign_inventory_seal_event_sha256"]
+            or plan_acceptance.body.get("trial_allocation_event_id")
+            != payload["trial_allocation_event_id"]
+            or plan_acceptance.body.get("trial_allocation_event_sha256")
+            != payload["trial_allocation_event_sha256"]
+        ):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                "attempt plan acceptance does not bind this plan, attempt, trial, seal, and scope",
+            )
         issuer = plan.body["issuer_actor_id"]
         reviewer = plan_acceptance.body["reviewer_actor_id"]
         trial_issuer = definition.body["issuer_actor_id"]
@@ -1304,6 +1350,34 @@ class LedgerStore:
             or readiness.body.get("campaign_id") != campaign_id
         ):
             _fail("RECORD_CONTENT_MISMATCH", "readiness does not bind this attempt")
+        issuer = self._require_actor_id(
+            readiness.body, "issuer_actor_id", "ATTEMPT_STARTED"
+        )
+        reviewer = self._require_actor_id(
+            readiness.body, "reviewer_actor_id", "ATTEMPT_STARTED"
+        )
+        executor = self._require_actor_id(
+            readiness.body, "executor_actor_id", "ATTEMPT_STARTED"
+        )
+        trial_acceptance = self._resolve_trial_acceptance(trial_event["payload"])
+        if reviewer in {
+            issuer,
+            executor,
+            allocation["actor_id"],
+            plan.body["issuer_actor_id"],
+            plan_acceptance.body["reviewer_actor_id"],
+            definition.body["issuer_actor_id"],
+            trial_acceptance.body["reviewer_actor_id"],
+        } or issuer in {executor, allocation["actor_id"]}:
+            _fail(
+                "ATTEMPT_STARTED_ROLE_COLLISION",
+                "readiness issuer, reviewer, and executor are not independent",
+            )
+        self._exclude_private_producers(
+            reviewer,
+            readiness.body.get("private_input_producer_actor_ids") or [],
+            "ATTEMPT_STARTED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION",
+        )
         start_authority = self._resolve_attempt_start_authority(payload)
         self._require_current(
             start_authority,
@@ -1311,7 +1385,6 @@ class LedgerStore:
             event_type="ATTEMPT_STARTED",
             kind="start_authority",
         )
-        executor = readiness.body.get("executor_actor_id")
         if start_authority.body.get("executor_actor_id") != executor:
             _fail(
                 "ATTEMPT_STARTED_EXECUTOR_MISMATCH",
@@ -1323,7 +1396,8 @@ class LedgerStore:
                 "start actor is not the authorized actor",
             )
         if (
-            start_authority.body.get("attempt_id") != attempt_id
+            start_authority.body.get("operation") != "ATTEMPT_STARTED"
+            or start_authority.body.get("attempt_id") != attempt_id
             or start_authority.body.get("trial_id") != trial_id
             or start_authority.body.get("campaign_id") != campaign_id
             or start_authority.body.get("attempt_allocation_event_id")
@@ -2081,6 +2155,13 @@ class LedgerStore:
         values = list(principals.values())
         if len(values) != len(set(values)):
             _fail(code, "required principals are not pairwise distinct")
+
+    @staticmethod
+    def _require_actor_id(body: dict[str, Any], field: str, event_type: str) -> str:
+        value = body.get(field)
+        if not isinstance(value, str) or value == "":
+            _fail("RECORD_CONTENT_MISMATCH", f"{event_type} missing {field}")
+        return value
 
     def _exclude_private_producers(
         self, actor_id: str, producers: list[Any], code: str

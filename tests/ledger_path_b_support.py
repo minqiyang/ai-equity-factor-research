@@ -131,6 +131,19 @@ def build_path_b_catalog(
             "issuer_actor_id": ids.plan_issuer,
             "trial_id": ids.a.trial,
             "attempt_id": ids.attempt,
+            "campaign_id": ids.a.campaign,
+            "campaign_scope_ids": [ids.a.campaign],
+            "attempt_plan_authority_id": records["attempt_plan"].authority_id,
+            "attempt_plan_authority_registry_sha256": records[
+                "attempt_plan"
+            ].registry_sha256,
+            "attempt_plan_authority_version": records["attempt_plan"].authority_version,
+            "attempt_plan_record_id": records["attempt_plan"].record_id,
+            "attempt_plan_record_sha256": records["attempt_plan"].sha256,
+            "campaign_inventory_seal_event_id": ids.a.seal_event,
+            "campaign_inventory_seal_event_sha256": "pending-seal-event",
+            "trial_allocation_event_id": ids.a.trial_event,
+            "trial_allocation_event_sha256": "pending-trial-event",
         },
         generation=1,
         stream_key="attempt_plan_acceptance:attempt-1",
@@ -247,9 +260,17 @@ def refresh_plan_and_authority(records: dict[str, CatalogRecord]) -> None:
     authority = records["attempt_allocation_authority"]
     authority.body["attempt_plan_record_sha256"] = records["attempt_plan"].sha256
     authority.sha256 = digest_json(authority.body)
-    records["attempt_plan_acceptance"].sha256 = digest_json(
-        records["attempt_plan_acceptance"].body
-    )
+    acceptance = records["attempt_plan_acceptance"]
+    acceptance.body["attempt_plan_record_id"] = records["attempt_plan"].record_id
+    acceptance.body["attempt_plan_record_sha256"] = records["attempt_plan"].sha256
+    acceptance.body["attempt_plan_authority_id"] = records["attempt_plan"].authority_id
+    acceptance.body["attempt_plan_authority_registry_sha256"] = records[
+        "attempt_plan"
+    ].registry_sha256
+    acceptance.body["attempt_plan_authority_version"] = records[
+        "attempt_plan"
+    ].authority_version
+    acceptance.sha256 = digest_json(acceptance.body)
 
 
 def bind_readiness_after_seal(
@@ -292,17 +313,21 @@ def bind_readiness_after_seal(
         ].canonicalization_id,
         "attempt_plan_record_sha256": records["attempt_plan"].sha256,
     }
+    acceptance = records["attempt_plan_acceptance"]
+    acceptance.body["campaign_inventory_seal_event_id"] = committed["seal"]["event_id"]
+    acceptance.body["campaign_inventory_seal_event_sha256"] = committed["seal"][
+        "event_sha256"
+    ]
+    acceptance.body["trial_allocation_event_id"] = committed["trial"]["event_id"]
+    acceptance.body["trial_allocation_event_sha256"] = committed["trial"][
+        "event_sha256"
+    ]
+    acceptance.sha256 = digest_json(acceptance.body)
     readiness.body["attempt_plan_acceptance"] = {
-        "attempt_plan_acceptance_decision_id": records[
-            "attempt_plan_acceptance"
-        ].record_id,
-        "attempt_plan_acceptance_generation": records[
-            "attempt_plan_acceptance"
-        ].generation,
-        "attempt_plan_acceptance_schema_version": records[
-            "attempt_plan_acceptance"
-        ].schema_version,
-        "attempt_plan_acceptance_record_sha256": records["attempt_plan_acceptance"].sha256,
+        "attempt_plan_acceptance_decision_id": acceptance.record_id,
+        "attempt_plan_acceptance_generation": acceptance.generation,
+        "attempt_plan_acceptance_schema_version": acceptance.schema_version,
+        "attempt_plan_acceptance_record_sha256": acceptance.sha256,
     }
     readiness.body["attempt_allocation_authority"] = {
         "allocation_authority_id": records["attempt_allocation_authority"].record_id,
@@ -416,6 +441,8 @@ def execution_capability_record(
     allocation: dict[str, Any],
     *,
     recorded_at: str = STAMP,
+    activation: str | None = None,
+    expiry: str | None = None,
 ) -> dict[str, Any]:
     readiness = records["attempt_readiness"]
     authority = records["attempt_start_authority"]
@@ -436,12 +463,12 @@ def execution_capability_record(
         "readiness_record_sha256": readiness.sha256,
         "start_authority_id": authority.record_id,
         "start_authority_record_sha256": authority.sha256,
-        "executor_actor_id": readiness.body["executor_actor_id"],
+        "executor_actor_id": readiness.body.get("executor_actor_id"),
         "code_tree_sha256": code["code_tree_sha256"],
         "environment_id": readiness.body["environment_id"],
         "environment_lock_sha256": readiness.body["environment_lock_sha256"],
-        "activation": recorded_at,
-        "expiry": DEFAULT_CAPABILITY_EXPIRY,
+        "activation": activation or recorded_at,
+        "expiry": expiry or DEFAULT_CAPABILITY_EXPIRY,
         "one_use": True,
         "state": "CREATED",
     }
@@ -451,11 +478,20 @@ def started_request(
     ids: PathBIds,
     records: dict[str, CatalogRecord],
     allocation: dict[str, Any],
+    *,
+    activation: str | None = None,
+    expiry: str | None = None,
 ) -> dict[str, Any]:
     readiness = records["attempt_readiness"]
     authority = records["attempt_start_authority"]
     capability_sha256 = digest_json(
-        execution_capability_record(ids, records, allocation)
+        execution_capability_record(
+            ids,
+            records,
+            allocation,
+            activation=activation,
+            expiry=expiry,
+        )
     )
     return request(
         event_type="ATTEMPT_STARTED",

@@ -9,6 +9,12 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Path B ATTEMPT_ALLOCATED binds plan acceptance to the exact plan, attempt,
+  trial, seal, and scope. ATTEMPT_STARTED enforces readiness role
+  independence and missing role fields, and start-authority must bind
+  operation `ATTEMPT_STARTED`. EXECUTE consume checks activation/expiry
+  against transaction `as_of`. DIAGNOSTIC_ONLY.
+
 - Path A catalog `get` refuses body/digest mismatch, appends snapshot
   catalog evidence through commit, SAMPLE_REGISTERED requires current
   projection, ACCESS authorities bind operation/sample/campaign and

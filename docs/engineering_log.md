@@ -1,5 +1,19 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 Path B PR 200 P1 remediations
+
+- PR #200 head `ac25ca0001d643d991eed09729ed26719215ad98` had four P1s:
+  plan acceptance did not bind plan/attempt/trial/seal/scope;
+  ATTEMPT_STARTED skipped readiness role independence and missing roles;
+  start-authority did not bind operation ATTEMPT_STARTED;
+  EXECUTE consume ignored activation/expiry.
+- Runtime remediations only. Killing tests cover wrong-subject acceptance
+  with unchanged state, issuer/reviewer=executor and missing role fields,
+  wrong/missing start operation with no event or capability, and consume
+  before activation, at expiry, and after expiry leaving the capability
+  unconsumed.
+- No 14-trial, D8, identity reopen, or real data.
+
 ## 2026-09-05 - Track B v7 Path B first checkpoint
 
 - Implemented the accepted Track B v7 Path B runtime in this worktree on
