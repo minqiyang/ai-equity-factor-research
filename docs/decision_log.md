@@ -15,6 +15,61 @@ investment performance.
 
 ---
 
+## 2026-09-06 - Record Merged Track B Path A And Path B First Checkpoints
+
+Context:
+
+- Protected `main` is at `425b7c88a6e049b63aa2ddeae8560fea08fda23e` after
+  PR #199 and PR #200. No pull request was open at the verified start of
+  this work.
+- Path A first checkpoint merged as PR #199. Path B first checkpoint merged
+  as PR #200.
+- Public handoff and roadmap still said not to claim Track B runtime
+  delivered.
+- Research safety invariants apply: no private paths, tickers, prices, or
+  performance values.
+
+Decision:
+
+- Record Path A first checkpoint as merged PR #199 and Path B first
+  checkpoint as merged PR #200 at `425b7c8`.
+- Keep evidence ceiling `DIAGNOSTIC_ONLY`.
+- Record that 14-trial remains REFUSED, reason
+  ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL.
+- Record that terminal refusal is disposition, not Stage 4 / PR 4
+  completion.
+- Record that D8, A2, identity reopen, result/performance access stay
+  closed.
+- Record that optional 37-event completion and factor-zoo stay off the
+  critical path.
+- Publish no private paths, tickers, prices, or performance values.
+- Do not claim ACCESS_COMPLETED, EXPOSURE_DECISION, 14-trial execution, or
+  Stage 4 / PR 4 completion.
+
+Rationale:
+
+- A GitHub clone should see the merged Path A and Path B first checkpoints
+  rather than an undelivered Track B runtime.
+- First-checkpoint status is not full Track B completion and does not reopen
+  closed diagnostic gates.
+
+Consequences:
+
+- Public resume surfaces record the merged first checkpoints.
+- 14-trial remains REFUSED; Stage 4 stays incomplete; evidence ceiling
+  remains `DIAGNOSTIC_ONLY`.
+- D8, A2, identity reopen, result/performance access, and brokerage remain
+  strictly closed.
+- Optional 37-event completion and factor-zoo stay off the critical path.
+- No private paths, tickers, prices, or performance values are published.
+
+Follow-up:
+
+- Remain at the merged Path A and Path B first-checkpoint baseline.
+- Keep D8, A2, identity reopen, result/performance access closed.
+
+---
+
 ## 2026-09-05 - Transfer Owner-Accepted Astra R1 Recommendations Into Public-Safe Roadmap And Handoff
 
 Context:

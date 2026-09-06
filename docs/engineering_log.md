@@ -1,5 +1,20 @@
 # Engineering Log
 
+## 2026-09-06 - Public-safe Track B Path A/B first-checkpoint status
+
+- Protected main at authoring:
+  `425b7c88a6e049b63aa2ddeae8560fea08fda23e` after PR #199 Path A first
+  checkpoint and PR #200 Path B first checkpoint. No open pull request at
+  the verified start of this work.
+- Public handoff, roadmap, and decision log now record those merged first
+  checkpoints. Docs no longer say Track B runtime is undelivered.
+- Evidence ceiling remains `DIAGNOSTIC_ONLY`. 14-trial remains REFUSED,
+  reason `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`. Terminal
+  refusal is disposition, not Stage 4 / PR 4 completion.
+- D8, A2, identity reopen, result/performance access stay closed. Optional
+  37-event completion and factor-zoo stay off the critical path.
+- No private paths, tickers, prices, or performance values.
+
 ## 2026-09-06 - Track B v7 Path B PR 200 extra MATERIAL remediations
 
 - PR #200 head `bf149827e8ff5d85f4de18883212ac7dcc1b6ef4` still admitted
