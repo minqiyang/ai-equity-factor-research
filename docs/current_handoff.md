@@ -1,6 +1,6 @@
 # Current Handoff
 
-Updated: 2026-09-05 after owner-accepted Astra R1 conclusions.
+Updated: 2026-09-06 after merged Track B Path A and Path B first checkpoints.
 
 Canonical responsibility: the latest recorded operational checkpoint, exact
 last-verified repository and PR facts, immediate blockers or owner decisions,
@@ -24,34 +24,36 @@ requirements.
 ## Latest Recorded Operational Checkpoint
 
 - Last externally verified protected baseline when this handoff was authored:
-  `027e8ae09f78b0930cf7a46261f092d232b032a1`.
+  `425b7c88a6e049b63aa2ddeae8560fea08fda23e`.
 - Historical CCA1 start baseline:
   `c178d16d84a455774bcde73f21a9e3ff39ea7b2c`.
 - PR #180 is merged. It records the long-term factor-to-portfolio direction
   and leaves the frozen Track A campaign in place.
 - PR #181 is merged at `12e280d9afa2f23aa2850b13a08f7e8447c4b89e`.
-- PR #195 and PR #196 are merged on that protected baseline.
+- PR #199 Path A first checkpoint and PR #200 Path B first checkpoint are
+  merged. PR #200 landed at that protected baseline.
 - No pull request was open at the verified start of this work.
 - This publication began from a clean `main` checkout at the baseline above.
   Its live PR and merge state must be checked separately after publication.
 - The 14-trial run is REFUSED. Named reason:
   `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`.
-- Terminal refusal is disposition, not PR 4 completion; Stage 4 incomplete;
-  evidence ceiling remains `DIAGNOSTIC_ONLY`.
-- Synthetic Track B is separately eligible and not blocked by success-only
-  Track A close. Do not claim v6 accepted or runtime delivered.
+- Terminal refusal is disposition, not Stage 4 / PR 4 completion; Stage 4
+  incomplete; evidence ceiling remains `DIAGNOSTIC_ONLY`.
+- Track B Path A first checkpoint is merged as PR #199. Path B first
+  checkpoint is merged as PR #200. These are first checkpoints only.
 - Raw private data, ticker lists, provider responses, and performance values
   remain outside the public repository.
 
 ## Recorded Delivery Scope
 
-- Public-safe documentation alignment to owner-accepted Astra R1 conclusions.
+- Public-safe operational checkpoint after merged Path A and Path B first
+  checkpoints.
 - Keep 14-trial REFUSED, reason ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL.
-- Terminal refusal is disposition, not PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
-- Synthetic Track B is separately eligible and not blocked by success-only Track A close.
+- Terminal refusal is disposition, not Stage 4 / PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
+- Path A first checkpoint merged as PR #199; Path B first checkpoint merged as
+  PR #200 at `425b7c88a6e049b63aa2ddeae8560fea08fda23e`.
 - D8, A2, identity reopen, result/performance access stay closed.
 - No private paths, tickers, prices, or performance values.
-- Do not claim v6 accepted or runtime delivered.
 - Optional 37-event completion and factor-zoo stay off the critical path.
 - First future empirical slice is later/planning; do not authorize data access here.
 
@@ -62,25 +64,23 @@ campaign DIAGNOSTIC_READY hashes are recorded. Formal interpretation is not
 granted. PR 3 runner code is on protected main. Stage 4 G-2 binding is accepted
 by hash. 14-trial remains REFUSED, reason
 `ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL`. Terminal refusal is
-disposition, not PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
-Synthetic Track B is separately eligible and not blocked by success-only Track A
-close. D8, A2, identity reopen, result/performance access stay closed. Do not
-claim v6 accepted or runtime delivered.
+disposition, not Stage 4 / PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
+Path A first checkpoint is merged as PR #199. Path B first checkpoint is merged
+as PR #200. D8, A2, identity reopen, result/performance access stay closed.
 
 ## Immediate Blockers Or Owner Decisions
 
 - 14-trial remains REFUSED, reason ACCEPTED_IDENTITIES_ZERO_NO_LINEAGE_CONFORMANT_PANEL.
-- Terminal refusal is disposition, not PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
+- Terminal refusal is disposition, not Stage 4 / PR 4 completion; Stage 4 incomplete; DIAGNOSTIC_ONLY.
 - D8, A2, identity reopen, result/performance access stay closed.
 - Private control-tree bodies remain off GitHub and need a private channel.
 
 ## Next Safe Action
 
-- Proceed with synthetic Track B planning and review under planning authority.
-- Do not claim v6 accepted or runtime delivered.
+- Remain at the merged Path A and Path B first-checkpoint baseline.
+- Keep D8, A2, identity reopen, result/performance access closed.
 - Optional 37-event completion and factor-zoo stay off the critical path.
 - First future empirical slice is later/planning; do not authorize data access here.
-- Keep D8, A2, identity reopen, result/performance access closed.
 - No private paths, tickers, prices, or performance values.
 
 ## Source Routing
