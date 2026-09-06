@@ -189,6 +189,21 @@ def digest_json(value: object) -> str:
     return hashlib.sha256(canonical_json_bytes(value)).hexdigest()
 
 
+_CANONICAL_UTC = "%Y-%m-%dT%H:%M:%SZ"
+
+
+def _parse_canonical_utc(value: object, *, code: str) -> datetime:
+    """Parse a canonical UTC instant YYYY-MM-DDTHH:MM:SSZ. Offset/malformed fail."""
+    if not isinstance(value, str):
+        _fail(code, "timestamp must be a canonical UTC string")
+    try:
+        parsed = datetime.strptime(value, _CANONICAL_UTC)
+    except ValueError:
+        _fail(code, "timestamp is not canonical UTC")
+        raise
+    return parsed.replace(tzinfo=timezone.utc)
+
+
 def _fail(code: str, message: str) -> None:
     raise LedgerRuntimeError(code, message)
 
@@ -407,17 +422,21 @@ class LedgerStore:
             as_of = self.clock.now_utc()
             activation = record.get("activation")
             expiry = record.get("expiry")
-            if not isinstance(activation, str) or not isinstance(expiry, str):
-                _fail(
-                    "RECORD_CONTENT_MISMATCH",
-                    "EXECUTE capability is missing activation or expiry",
-                )
-            if as_of < activation:
+            as_of_dt = _parse_canonical_utc(
+                as_of, code="EXECUTE_CAPABILITY_TIMESTAMP_INVALID"
+            )
+            activation_dt = _parse_canonical_utc(
+                activation, code="EXECUTE_CAPABILITY_TIMESTAMP_INVALID"
+            )
+            expiry_dt = _parse_canonical_utc(
+                expiry, code="EXECUTE_CAPABILITY_TIMESTAMP_INVALID"
+            )
+            if as_of_dt < activation_dt:
                 _fail(
                     "EXECUTE_CAPABILITY_NOT_ACTIVE",
                     "EXECUTE capability is not yet active",
                 )
-            if as_of >= expiry:
+            if as_of_dt >= expiry_dt:
                 _fail(
                     "EXECUTE_CAPABILITY_EXPIRED",
                     "EXECUTE capability has expired",
@@ -1148,6 +1167,9 @@ class LedgerStore:
         plan_acceptance = self._resolve_attempt_plan_acceptance(payload)
         authority = self._resolve_attempt_allocation_authority(payload)
         self._require_current(
+            plan, as_of, event_type="ATTEMPT_ALLOCATED", kind="plan"
+        )
+        self._require_current(
             plan_acceptance, as_of, event_type="ATTEMPT_ALLOCATED", kind="acceptance"
         )
         self._require_current(
@@ -1157,6 +1179,7 @@ class LedgerStore:
             plan.body.get("trial_id") != trial_id
             or plan.body.get("attempt_id") != attempt_id
             or plan.body.get("campaign_id") != campaign_id
+            or plan.body.get("ledger_id") != request["ledger_id"]
         ):
             _fail("RECORD_CONTENT_MISMATCH", "attempt plan does not bind this attempt")
         if self._operational_values(plan.body) != self._operational_values(
@@ -1188,6 +1211,7 @@ class LedgerStore:
             != payload["attempt_plan_record_id"]
             or authority.body.get("attempt_plan_record_sha256")
             != payload["attempt_plan_record_sha256"]
+            or authority.body.get("ledger_id") != request["ledger_id"]
         ):
             _fail(
                 "RECORD_CONTENT_MISMATCH",
@@ -1210,6 +1234,13 @@ class LedgerStore:
             != payload["attempt_plan_authority_registry_sha256"]
             or plan_acceptance.body.get("attempt_plan_authority_version")
             != payload["attempt_plan_authority_version"]
+            or plan_acceptance.body.get("attempt_plan_record_schema_version")
+            != payload["attempt_plan_record_schema_version"]
+            or plan_acceptance.body.get("attempt_plan_record_version")
+            != payload["attempt_plan_record_version"]
+            or plan_acceptance.body.get("attempt_plan_record_canonicalization_id")
+            != payload["attempt_plan_record_canonicalization_id"]
+            or plan_acceptance.body.get("relation") != payload.get("relation")
             or plan_acceptance.body.get("campaign_inventory_seal_event_id")
             != payload["campaign_inventory_seal_event_id"]
             or plan_acceptance.body.get("campaign_inventory_seal_event_sha256")
@@ -1218,6 +1249,7 @@ class LedgerStore:
             != payload["trial_allocation_event_id"]
             or plan_acceptance.body.get("trial_allocation_event_sha256")
             != payload["trial_allocation_event_sha256"]
+            or plan_acceptance.body.get("ledger_id") != request["ledger_id"]
         ):
             _fail(
                 "RECORD_CONTENT_MISMATCH",
@@ -1327,6 +1359,9 @@ class LedgerStore:
             allocation["payload"]
         )
         self._require_current(
+            plan, as_of, event_type="ATTEMPT_STARTED", kind="plan"
+        )
+        self._require_current(
             plan_acceptance, as_of, event_type="ATTEMPT_STARTED", kind="acceptance"
         )
         self._require_current(
@@ -1373,9 +1408,12 @@ class LedgerStore:
                 "ATTEMPT_STARTED_ROLE_COLLISION",
                 "readiness issuer, reviewer, and executor are not independent",
             )
+        producers = self._require_private_input_producer_ids(
+            readiness.body, "ATTEMPT_STARTED"
+        )
         self._exclude_private_producers(
             reviewer,
-            readiness.body.get("private_input_producer_actor_ids") or [],
+            producers,
             "ATTEMPT_STARTED_PRIVATE_INPUT_PRODUCER_ROLE_COLLISION",
         )
         start_authority = self._resolve_attempt_start_authority(payload)
@@ -1400,12 +1438,25 @@ class LedgerStore:
             or start_authority.body.get("attempt_id") != attempt_id
             or start_authority.body.get("trial_id") != trial_id
             or start_authority.body.get("campaign_id") != campaign_id
+            or start_authority.body.get("ledger_id") != request["ledger_id"]
             or start_authority.body.get("attempt_allocation_event_id")
             != allocation["event_id"]
             or start_authority.body.get("attempt_allocation_event_sha256")
             != digest_json(allocation)
+            or start_authority.body.get("readiness_authority_id")
+            != payload["readiness_authority_id"]
+            or start_authority.body.get("readiness_authority_registry_sha256")
+            != payload["readiness_authority_registry_sha256"]
+            or start_authority.body.get("readiness_authority_version")
+            != payload["readiness_authority_version"]
             or start_authority.body.get("readiness_record_id")
             != payload["readiness_record_id"]
+            or start_authority.body.get("readiness_record_schema_version")
+            != payload["readiness_record_schema_version"]
+            or start_authority.body.get("readiness_record_version")
+            != payload["readiness_record_version"]
+            or start_authority.body.get("readiness_record_canonicalization_id")
+            != payload["readiness_record_canonicalization_id"]
             or start_authority.body.get("readiness_record_sha256")
             != payload["readiness_record_sha256"]
         ):
@@ -2105,6 +2156,8 @@ class LedgerStore:
             prefix = f"{event_type}_START_AUTHORITY"
         elif kind == "allocation_authority":
             prefix = f"{event_type}_ALLOCATION_AUTHORITY"
+        elif kind == "plan":
+            prefix = f"{event_type}_PLAN"
         else:
             prefix = f"{event_type}_AUTHORITY"
         if record.status == "revoked":
@@ -2162,6 +2215,38 @@ class LedgerStore:
         if not isinstance(value, str) or value == "":
             _fail("RECORD_CONTENT_MISMATCH", f"{event_type} missing {field}")
         return value
+
+    @staticmethod
+    def _require_private_input_producer_ids(
+        body: dict[str, Any], event_type: str
+    ) -> list[Any]:
+        if "private_input_producer_actor_ids" not in body:
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                f"{event_type} missing private_input_producer_actor_ids",
+            )
+        producers = body["private_input_producer_actor_ids"]
+        if not isinstance(producers, list):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                f"{event_type} private_input_producer_actor_ids is malformed",
+            )
+        if len(producers) > 4096:
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                f"{event_type} private_input_producer_actor_ids exceeds 4096",
+            )
+        if any(not isinstance(item, str) or item == "" for item in producers):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                f"{event_type} private_input_producer_actor_ids is malformed",
+            )
+        if producers != sorted(set(producers)):
+            _fail(
+                "RECORD_CONTENT_MISMATCH",
+                f"{event_type} private_input_producer_actor_ids must be sorted-unique",
+            )
+        return producers
 
     def _exclude_private_producers(
         self, actor_id: str, producers: list[Any], code: str

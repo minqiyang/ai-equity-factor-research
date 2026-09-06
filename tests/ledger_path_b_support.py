@@ -139,7 +139,14 @@ def build_path_b_catalog(
             ].registry_sha256,
             "attempt_plan_authority_version": records["attempt_plan"].authority_version,
             "attempt_plan_record_id": records["attempt_plan"].record_id,
+            "attempt_plan_record_schema_version": records["attempt_plan"].schema_version,
+            "attempt_plan_record_version": records["attempt_plan"].version,
+            "attempt_plan_record_canonicalization_id": records[
+                "attempt_plan"
+            ].canonicalization_id,
             "attempt_plan_record_sha256": records["attempt_plan"].sha256,
+            "relation": {"attempt_kind": "first_attempt", "attempt_ordinal": 1},
+            "ledger_id": ids.a.ledger,
             "campaign_inventory_seal_event_id": ids.a.seal_event,
             "campaign_inventory_seal_event_sha256": "pending-seal-event",
             "trial_allocation_event_id": ids.a.trial_event,
@@ -163,6 +170,7 @@ def build_path_b_catalog(
             "attempt_id": ids.attempt,
             "attempt_plan_record_id": "attempt-plan-1",
             "attempt_plan_record_sha256": records["attempt_plan"].sha256,
+            "ledger_id": ids.a.ledger,
         },
         generation=1,
         stream_key="attempt_allocation_authority:attempt-1",
@@ -211,7 +219,18 @@ def build_path_b_catalog(
             "attempt_id": ids.attempt,
             "attempt_allocation_event_id": ids.attempt_event,
             "attempt_allocation_event_sha256": "pending-attempt-event",
+            "ledger_id": ids.a.ledger,
+            "readiness_authority_id": records["attempt_readiness"].authority_id,
+            "readiness_authority_registry_sha256": records[
+                "attempt_readiness"
+            ].registry_sha256,
+            "readiness_authority_version": records["attempt_readiness"].authority_version,
             "readiness_record_id": "attempt-readiness-1",
+            "readiness_record_schema_version": records["attempt_readiness"].schema_version,
+            "readiness_record_version": records["attempt_readiness"].version,
+            "readiness_record_canonicalization_id": records[
+                "attempt_readiness"
+            ].canonicalization_id,
             "readiness_record_sha256": records["attempt_readiness"].sha256,
         },
         generation=1,
@@ -270,6 +289,13 @@ def refresh_plan_and_authority(records: dict[str, CatalogRecord]) -> None:
     acceptance.body["attempt_plan_authority_version"] = records[
         "attempt_plan"
     ].authority_version
+    acceptance.body["attempt_plan_record_schema_version"] = records[
+        "attempt_plan"
+    ].schema_version
+    acceptance.body["attempt_plan_record_version"] = records["attempt_plan"].version
+    acceptance.body["attempt_plan_record_canonicalization_id"] = records[
+        "attempt_plan"
+    ].canonicalization_id
     acceptance.sha256 = digest_json(acceptance.body)
 
 
@@ -381,6 +407,21 @@ def bind_readiness_after_allocation(
     authority.body["attempt_allocation_event_sha256"] = committed["attempt"][
         "event_sha256"
     ]
+    _bind_start_authority_readiness(records)
+
+
+def _bind_start_authority_readiness(records: dict[str, CatalogRecord]) -> None:
+    readiness = records["attempt_readiness"]
+    authority = records["attempt_start_authority"]
+    authority.body["readiness_authority_id"] = readiness.authority_id
+    authority.body["readiness_authority_registry_sha256"] = readiness.registry_sha256
+    authority.body["readiness_authority_version"] = readiness.authority_version
+    authority.body["readiness_record_id"] = readiness.record_id
+    authority.body["readiness_record_schema_version"] = readiness.schema_version
+    authority.body["readiness_record_version"] = readiness.version
+    authority.body["readiness_record_canonicalization_id"] = (
+        readiness.canonicalization_id
+    )
     authority.body["readiness_record_sha256"] = readiness.sha256
     authority.sha256 = digest_json(authority.body)
 
@@ -389,9 +430,7 @@ def refresh_readiness(records: dict[str, CatalogRecord]) -> None:
     records["attempt_readiness"].sha256 = digest_json(
         records["attempt_readiness"].body
     )
-    authority = records["attempt_start_authority"]
-    authority.body["readiness_record_sha256"] = records["attempt_readiness"].sha256
-    authority.sha256 = digest_json(authority.body)
+    _bind_start_authority_readiness(records)
 
 
 def attempt_request(ids: PathBIds, records: dict[str, CatalogRecord]) -> dict[str, Any]:

@@ -9,6 +9,14 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Path B plan acceptance compares the complete plan tuple (including version,
+  schema, and canonicalization) and relation; readiness
+  `private_input_producer_actor_ids` no longer coerces missing/null to `[]`;
+  EXECUTE consume requires canonical UTC instants; plan currentness is checked
+  at allocation and start; plan and authorities bind the same ledger and start
+  authority binds the complete readiness tuple including version.
+  DIAGNOSTIC_ONLY.
+
 - Path B ATTEMPT_ALLOCATED binds plan acceptance to the exact plan, attempt,
   trial, seal, and scope. ATTEMPT_STARTED enforces readiness role
   independence and missing role fields, and start-authority must bind

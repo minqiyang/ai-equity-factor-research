@@ -1,5 +1,19 @@
 # Engineering Log
 
+## 2026-09-05 - Track B v7 Path B PR 200 P1-FIX2 remediations
+
+- PR #200 head `24e0001ca25d168133d1bdb9a56345b68639701b` had remaining P1s:
+  plan acceptance omitted plan tuple version/schema/canonicalization and
+  relation; readiness coerced missing/null producer IDs to `[]`; EXECUTE
+  consume compared timestamps lexically; plan currentness was not checked
+  at allocation or start; plan/authorities did not bind ledger and start
+  authority omitted readiness version.
+- Runtime remediations only. Isolated mismatch tests roll back allocation.
+  Producer missing/null/malformed/collision tests, canonical-UTC consume
+  refusals, revoked/stale plan at allocation and after allocation, and
+  ledger/readiness-tuple binding tests are included.
+- No 14-trial, D8, identity reopen, or real data.
+
 ## 2026-09-05 - Track B v7 Path B PR 200 P1 remediations
 
 - PR #200 head `ac25ca0001d643d991eed09729ed26719215ad98` had four P1s:
