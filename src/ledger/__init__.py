@@ -8,6 +8,7 @@ from ledger.runtime import (
     SELECTED_14,
     SyntheticCatalog,
     open_path_a_store,
+    open_path_b_store,
 )
 from ledger.schema_registry import (
     LedgerSchemaError,
@@ -36,6 +37,7 @@ __all__ = [
     "load_registry_release",
     "load_registry_bytes",
     "open_path_a_store",
+    "open_path_b_store",
     "parse_json_bytes",
     "registry_digest",
     "run_conformance_vectors",

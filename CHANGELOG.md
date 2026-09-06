@@ -9,6 +9,26 @@ profitability, or trading readiness.
 
 ### Fixed
 
+- Path B plan producer IDs no longer coerce missing/null to `[]`; plan
+  validity timestamps parse as canonical UTC instants; the plan binds
+  retained trial/seal tuples and relation; allocation authority compares
+  the complete eight-field plan tuple; readiness binds `ledger_id`.
+  DIAGNOSTIC_ONLY.
+
+- Path B plan acceptance compares the complete plan tuple (including version,
+  schema, and canonicalization) and relation; readiness
+  `private_input_producer_actor_ids` no longer coerces missing/null to `[]`;
+  EXECUTE consume requires canonical UTC instants; plan currentness is checked
+  at allocation and start; plan and authorities bind the same ledger and start
+  authority binds the complete readiness tuple including version.
+  DIAGNOSTIC_ONLY.
+
+- Path B ATTEMPT_ALLOCATED binds plan acceptance to the exact plan, attempt,
+  trial, seal, and scope. ATTEMPT_STARTED enforces readiness role
+  independence and missing role fields, and start-authority must bind
+  operation `ATTEMPT_STARTED`. EXECUTE consume checks activation/expiry
+  against transaction `as_of`. DIAGNOSTIC_ONLY.
+
 - Path A catalog `get` refuses body/digest mismatch, appends snapshot
   catalog evidence through commit, SAMPLE_REGISTERED requires current
   projection, ACCESS authorities bind operation/sample/campaign and
@@ -21,6 +41,15 @@ profitability, or trading readiness.
   and expiry. DIAGNOSTIC_ONLY.
 
 ### Added
+
+- Track B v7 Path B first checkpoint: extend the stdlib sqlite3 Path A
+  ledger runtime with first-attempt `ATTEMPT_ALLOCATED` then valid
+  `ATTEMPT_STARTED` after inventory/seal. Caller-supplied database path
+  outside the repository, synthetic catalogs only, DIAGNOSTIC_ONLY.
+  Unselected names refuse `WIRE_TYPE_NOT_SELECTED`. Retry and terminal
+  attempt events are not appended. Path B does not claim ACCESS_COMPLETED
+  or EXPOSURE_DECISION. This adds no private data, 14-trial run, D8,
+  identity reopen, brokerage, or vendor API.
 
 - Track B v7 Path A first checkpoint: stdlib sqlite3 ledger runtime with a
   caller-supplied database path outside the repository, synthetic catalogs

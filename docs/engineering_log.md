@@ -1,5 +1,83 @@
 # Engineering Log
 
+## 2026-09-06 - Track B v7 Path B PR 200 extra MATERIAL remediations
+
+- PR #200 head `bf149827e8ff5d85f4de18883212ac7dcc1b6ef4` still admitted
+  noncanonical plan stream-member timestamps as sole-current, coerced
+  Boolean `True` to integer `1` on relation ordinals and plan-tuple
+  versions, and treated garbage `valid_until` as current for readiness,
+  plan acceptance, and allocation/start authority.
+- Runtime remediations only. Canonical UTC parse now covers every
+  `_require_current` kind and stream member. Relation and plan-tuple
+  integers use type-strict JSON equality. Producer helper members must
+  match `act_<32 lowercase hex>`. Killing tests refuse the listed
+  counterexamples with unchanged seal or allocated state and no EXECUTE
+  capability on start refusals.
+- No 14-trial, D8, identity reopen, GitHub review, or real data.
+
+## 2026-09-05 - Track B v7 Path B PR 200 P1-FIX3 remediations
+
+- PR #200 head `81239b4c75cd968109d1cc5d74a026f06498ebd0` remaining P1s:
+  plan `private_input_producer_actor_ids` still coerced missing/null to `[]`;
+  plan validity timestamps compared lexically; plan omitted retained
+  trial/seal/relation; allocation authority compared only plan id/hash;
+  readiness omitted `ledger_id`.
+- Runtime remediations only. Killing tests prove unchanged sealed or
+  allocated state for omitted/null/malformed plan producers, offset and
+  `not-a-timestamp` plan validity, isolated trial/seal/relation mismatches,
+  complete allocation-authority plan-tuple mismatches, and
+  missing/null/wrong readiness ledger_id with no EXECUTE capability.
+- No 14-trial, D8, identity reopen, or real data.
+
+## 2026-09-05 - Track B v7 Path B PR 200 P1-FIX2 remediations
+
+- PR #200 head `24e0001ca25d168133d1bdb9a56345b68639701b` had remaining P1s:
+  plan acceptance omitted plan tuple version/schema/canonicalization and
+  relation; readiness coerced missing/null producer IDs to `[]`; EXECUTE
+  consume compared timestamps lexically; plan currentness was not checked
+  at allocation or start; plan/authorities did not bind ledger and start
+  authority omitted readiness version.
+- Runtime remediations only. Isolated mismatch tests roll back allocation.
+  Producer missing/null/malformed/collision tests, canonical-UTC consume
+  refusals, revoked/stale plan at allocation and after allocation, and
+  ledger/readiness-tuple binding tests are included.
+- No 14-trial, D8, identity reopen, or real data.
+
+## 2026-09-05 - Track B v7 Path B PR 200 P1 remediations
+
+- PR #200 head `ac25ca0001d643d991eed09729ed26719215ad98` had four P1s:
+  plan acceptance did not bind plan/attempt/trial/seal/scope;
+  ATTEMPT_STARTED skipped readiness role independence and missing roles;
+  start-authority did not bind operation ATTEMPT_STARTED;
+  EXECUTE consume ignored activation/expiry.
+- Runtime remediations only. Killing tests cover wrong-subject acceptance
+  with unchanged state, issuer/reviewer=executor and missing role fields,
+  wrong/missing start operation with no event or capability, and consume
+  before activation, at expiry, and after expiry leaving the capability
+  unconsumed.
+- No 14-trial, D8, identity reopen, or real data.
+
+## 2026-09-05 - Track B v7 Path B first checkpoint
+
+- Implemented the accepted Track B v7 Path B runtime in this worktree on
+  base `e4f2545fc17cf15a6541d690d7d61ae6e302b356`, branch
+  `codex/track-b-runtime-path-b`. Extends the existing stdlib sqlite3 Path A
+  runtime. Caller-supplied database path outside the canonical repository.
+  Synthetic catalogs only. No extra DB package.
+- Path B happy path: Path A inventory/seal prerequisites, then first
+  ATTEMPT_ALLOCATED and valid ATTEMPT_STARTED. EXECUTE capability is minted
+  with start and consumed by the readiness executor. Retry relation and
+  terminal attempt events are refused. Path B does not append
+  ACCESS_COMPLETED or EXPOSURE_DECISION. Evidence ceiling remains
+  DIAGNOSTIC_ONLY.
+- Deterministic tests cover the Path B happy path and frozen Path B
+  refusals, including unselected `WIRE_TYPE_NOT_SELECTED`, retry,
+  ATTEMPT_ALLOCATED seal/trial/family/private-producer refusals, inherited
+  tuple and operational-value mismatches, start/plan/allocation-authority
+  currentness, executor mismatch, and EXECUTE consumer mismatch.
+- No 14-trial run, D8, identity reopen, real/private market data, brokerage,
+  or vendor API.
+
 ## 2026-09-05 - Track B v7 Path A exact-head P1-FIX2 remediations
 
 - PR #199 head `86a7ca5331b6b2d174cbfe72f9c295ba3ec54cde` still had live

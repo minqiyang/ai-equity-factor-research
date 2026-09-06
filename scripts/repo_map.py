@@ -47,7 +47,7 @@ MAJOR_DIRS = [
     ("src/data", "Strict local CSV loaders and metadata review helpers."),
     (
         "src/ledger",
-        "Fail-closed Stage 4B schema-registry helpers and Path A sqlite3 runtime; caller-supplied DB path outside the repository.",
+        "Fail-closed Stage 4B schema-registry helpers and Path A/B sqlite3 runtime; caller-supplied DB path outside the repository.",
     ),
     (
         "src/reporting",
